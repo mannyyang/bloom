@@ -18,9 +18,14 @@ function detectRepo(): string | null {
   }
 }
 
+/** Only allow "owner/repo" with safe characters — no shell metacharacters. */
+function isValidRepo(repo: string): boolean {
+  return /^[\w.\-]+\/[\w.\-]+$/.test(repo);
+}
+
 export function fetchCommunityIssues(): CommunityIssue[] {
   const repo = detectRepo();
-  if (!repo) return [];
+  if (!repo || !isValidRepo(repo)) return [];
 
   try {
     const raw = execSync(

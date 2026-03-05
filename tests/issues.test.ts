@@ -23,4 +23,16 @@ describe("fetchCommunityIssues", () => {
     const result = fetchCommunityIssues();
     expect(result).toEqual([]);
   });
+
+  it("returns empty array for malicious repo containing shell metacharacters", () => {
+    process.env.GITHUB_REPOSITORY = "foo/bar; rm -rf ~";
+    const result = fetchCommunityIssues();
+    expect(result).toEqual([]);
+  });
+
+  it("returns empty array for repo with backtick injection attempt", () => {
+    process.env.GITHUB_REPOSITORY = "foo/`whoami`";
+    const result = fetchCommunityIssues();
+    expect(result).toEqual([]);
+  });
 });
