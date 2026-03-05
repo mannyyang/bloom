@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.bloom.evolve</string>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/myang/git/bloom</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/myang/git/bloom/node_modules/.bin/tsx</string>
+        <string>src/index.ts</string>
+    </array>
+
+    <key>StartInterval</key>
+    <integer>14400</integer>
+
+    <key>StandardOutPath</key>
+    <string>/Users/myang/git/bloom/logs/evolve.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/myang/git/bloom/logs/evolve.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+        <key>HOME</key>
+        <string>/Users/myang</string>
+    </dict>
+</dict>
+</plist>

@@ -1,0 +1,94 @@
+import { query } from "@anthropic-ai/claude-agent-sdk";
+import { readFileSync } from "fs";
+import { execSync } from "child_process";
+import { incrementDayCount } from "./utils.js";
+import { fetchCommunityIssues } from "./issues.js";
+import { buildAssessmentPrompt, buildEvolutionPrompt } from "./evolve.js";
+import {
+  protectIdentity,
+  enforceAppendOnly,
+  blockDangerousCommands,
+} from "./safety.js";
+
+async function main() {
+  const dayCount = incrementDayCount();
+  console.log(`Bloom evolution day ${dayCount}`);
+
+  // Pre-flight check
+  try {
+    execSync("pnpm build && pnpm test", { stdio: "inherit" });
+  } catch {
+    console.error("Pre-flight check failed. Aborting evolution.");
+    process.exit(1);
+  }
+
+  // Create safety tag
+  try {
+    execSync(`git tag -f pre-evolution-day-${dayCount}`, { stdio: "inherit" });
+  } catch {
+    // Tag creation is optional
+  }
+
+  const identity = readFileSync("IDENTITY.md", "utf-8");
+  const journal = readFileSync("JOURNAL.md", "utf-8");
+  const issues = fetchCommunityIssues();
+
+  // Phase 1: Assessment (read-only)
+  console.log("\n--- Phase 1: Assessment ---");
+  let assessment = "";
+  for await (const msg of query({
+    prompt: buildAssessmentPrompt({ identity, journal, issues, dayCount }),
+    options: {
+      cwd: process.cwd(),
+      allowedTools: ["Read", "Glob", "Grep", "Bash"],
+      permissionMode: "dontAsk",
+      maxTurns: 20,
+    },
+  })) {
+    if ("result" in msg) assessment = msg.result;
+  }
+
+  if (!assessment) {
+    console.error("Assessment produced no output. Aborting.");
+    process.exit(1);
+  }
+
+  console.log("\nAssessment complete.");
+
+  // Phase 2: Evolution (read-write with safety hooks)
+  console.log("\n--- Phase 2: Evolution ---");
+  for await (const msg of query({
+    prompt: buildEvolutionPrompt(assessment),
+    options: {
+      cwd: process.cwd(),
+      allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
+      permissionMode: "acceptEdits",
+      systemPrompt: identity,
+      maxTurns: 50,
+      maxBudgetUsd: 5.0,
+      hooks: {
+        PreToolUse: [
+          { matcher: "Write|Edit", hooks: [protectIdentity] },
+          { matcher: "Write|Edit", hooks: [enforceAppendOnly] },
+          { matcher: "Bash", hooks: [blockDangerousCommands] },
+        ],
+      },
+    },
+  })) {
+    if ("result" in msg) console.log(msg.result);
+  }
+
+  // Phase 3: Push
+  console.log("\n--- Phase 3: Push ---");
+  try {
+    execSync("git push origin main", { stdio: "inherit" });
+    console.log("Changes pushed successfully.");
+  } catch {
+    console.error("Push failed. Changes remain local.");
+  }
+}
+
+main().catch((err) => {
+  console.error("Evolution failed:", err);
+  process.exit(1);
+});
