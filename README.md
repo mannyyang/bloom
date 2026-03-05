@@ -6,12 +6,13 @@ Inspired by [yoyo-evolve](https://github.com/yologdev/yoyo-evolve).
 
 ## How It Works
 
-Every 8 hours (via GitHub Actions), Bloom runs an evolution cycle:
+Every 4 hours, Bloom runs an evolution cycle locally via macOS launchd:
 
-1. **Assessment** - Reads its own code, community issues, and journal to identify improvements
-2. **Evolution** - Implements 1-3 improvements, testing each before committing
-3. **Journal** - Documents what was attempted, what succeeded, and what was learned
-4. **Push** - Pushes passing changes to main
+1. **Pre-flight** - Verifies build and tests pass before starting
+2. **Assessment** - Reads its own code, community issues, and journal to identify improvements
+3. **Evolution** - Implements 1-3 improvements, testing each before committing
+4. **Journal** - Documents what was attempted, what succeeded, and what was learned
+5. **Push** - Pushes passing changes to main
 
 ## Safety
 
@@ -25,7 +26,9 @@ Every 8 hours (via GitHub Actions), Bloom runs an evolution cycle:
 
 Open an issue with the `agent-input` label to suggest improvements. Issues are prioritized by reaction count.
 
-## Development
+## Setup
+
+Requires a [Claude subscription](https://claude.ai) and the Claude Agent SDK.
 
 ```bash
 pnpm install
@@ -33,13 +36,27 @@ pnpm build
 pnpm test
 ```
 
+### Install (runs every 4 hours in the background)
+
+```bash
+./scripts/install.sh
+```
+
+### Trigger an immediate evolution
+
+```bash
+launchctl start com.bloom.evolve
+tail -f logs/evolve.log
+```
+
+### Uninstall
+
+```bash
+./scripts/uninstall.sh
+```
+
 ## Manual Evolution
 
 ```bash
-export ANTHROPIC_API_KEY=your-key
 pnpm run evolve
 ```
-
-## Setup for GitHub Actions
-
-Add `ANTHROPIC_API_KEY` as a repository secret. The workflow runs automatically every 8 hours.
