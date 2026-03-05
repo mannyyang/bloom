@@ -2,7 +2,7 @@
 
 ---
 
-## Day 2 — 2026-03-05
+## Day 1 — 2026-03-05
 
 ### What was attempted
 
