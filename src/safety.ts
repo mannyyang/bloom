@@ -85,6 +85,7 @@ const DANGEROUS_PATTERNS = [
   /\bwipefs\b/,
   /\bfdisk\b/,
   /\bparted\b/,
+  /git\s+clean\s+.*(-f|--force)/,
 ];
 
 const JOURNAL_MODIFY_PATTERNS = [

@@ -421,6 +421,23 @@ describe("blockDangerousCommands", () => {
   it("blocks parted command", async () => {
     expectDenied(await blockDangerousCommands(makeBashInput("parted /dev/sda mklabel gpt"), "tool-1", hookOpts));
   });
+
+  // Block git clean with force flag
+  it("blocks git clean -fd", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("git clean -fd"), "tool-1", hookOpts));
+  });
+
+  it("blocks git clean -fdx", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("git clean -fdx"), "tool-1", hookOpts));
+  });
+
+  it("blocks git clean --force", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("git clean --force -d"), "tool-1", hookOpts));
+  });
+
+  it("allows git clean -n (dry-run)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("git clean -n"), "tool-1", hookOpts));
+  });
 });
 
 describe("isDangerousRm", () => {
