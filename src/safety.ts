@@ -79,6 +79,9 @@ const DANGEROUS_PATTERNS = [
   // Arbitrary code execution — eval, shell -c run uncontrolled strings
   /\beval\s/,
   /(?:[\w./]*\/)?(?:ba|z|da|k)?sh\s+-c\b/,
+  // Shell script execution — source and dot-script (`. `) execute arbitrary files
+  /\bsource\s/,
+  /(?:^|[;&|]\s*)\.\s+\S/,
   // Untrusted package execution — npx/npm exec/pnpm exec/pnpm dlx/yarn dlx run arbitrary packages
   /\bnpx\s/,
   /\bnpm\s+exec\b/,
