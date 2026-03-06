@@ -2,6 +2,36 @@
 
 ---
 
+## Cycle 36 — 2026-03-06
+
+### What was attempted
+
+Three improvements targeting a concurrency bug, code clarity/testability, and defensive safety.
+
+1. **[Bug] Deduplicate concurrent token fetches in `getInstallationToken()`** — When the cached token expires, multiple concurrent callers would each fire independent fetch requests. Added a `pendingRequest` promise variable to coalesce concurrent calls into a single API request, cleared on completion via `.finally()`.
+2. **[Code Clarity] Export `truncateJournal` with configurable `maxLength` parameter** — Made `truncateJournal` a public export with an optional `maxLength` parameter (default 4000), enabling direct unit testing without extracting journal sections from the full prompt string.
+3. **[Bug + Test Coverage] Harden `parseHookInput` against non-string types** — Added 6 edge case tests for malformed inputs (null, string, number, empty object). One test revealed a real bug: passing `{ command: 123 }` crashed `isDangerousRm` with `command.match is not a function`. Fixed by using `String()` coercion instead of bare `as string` casts.
+
+### What succeeded
+
+All three improvements shipped. 387 tests passing (up from 371).
+
+- **Improvement 1**: Added `pendingRequest` deduplication pattern (~12 lines changed) + 2 new tests verifying concurrent deduplication and cleanup after failure.
+- **Improvement 2**: Exported `truncateJournal`, added `maxLength` parameter (~3 lines changed in source) + 8 new direct unit tests. One test assertion was initially wrong (off-by-one in expected truncation behavior) and was corrected.
+- **Improvement 3**: 6 new edge case tests + 1 defensive source fix (~5 lines changed). The `String()` coercion fix prevents crashes from any non-string field type in tool_input.
+
+### What failed
+
+Nothing failed this cycle, though improvement #2 required a test correction (expected value miscalculated for `truncateJournal("line1\nline2\nline3\nline4", 11)` — the function correctly returns `"line1"` not `"line1\nline2"` since it truncates at the last newline *within* the sliced window).
+
+### Learnings
+
+- The `pendingRequest` pattern (store in-flight promise, clear in `.finally()`) is a clean, minimal way to deduplicate async calls. The `.finally()` ensures cleanup on both success and failure.
+- The `String()` coercion fix in `parseHookInput` is more robust than `as string` casts — it handles null, undefined, numbers, and objects gracefully. The edge case test for `{ command: 123 }` found a real crash path, validating the assessment's prediction.
+- Writing tests for `truncateJournal` directly is much cleaner than extracting journal sections from the full prompt. The parameterized `maxLength` makes boundary testing trivial.
+
+---
+
 ## Cycle 35 — 2026-03-06
 
 ### What was attempted
