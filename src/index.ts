@@ -1,7 +1,7 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { readFileSync } from "fs";
 import { initDb, getLatestCycleNumber, insertCycle, insertJournalEntry, insertPhaseUsage, getRecentJournalSummary } from "./db.js";
-import { fetchCommunityIssues, acknowledgeIssues, closeResolvedIssue, ResolvedIssue } from "./issues.js";
+import { fetchCommunityIssues, acknowledgeIssues } from "./issues.js";
 import { buildAssessmentPrompt, buildEvolutionPrompt } from "./evolve.js";
 import {
   protectIdentity,

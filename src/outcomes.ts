@@ -3,8 +3,6 @@
  * Captures structured success/failure data to answer "how are you measuring success?"
  */
 
-import { readFileSync, writeFileSync } from "fs";
-
 export interface CycleOutcome {
   cycleNumber: number;
   preflightPassed: boolean;
@@ -77,31 +75,3 @@ export function formatOutcomeForJournal(outcome: CycleOutcome): string {
   return lines.join("\n");
 }
 
-const DEFAULT_METRICS_PATH = "METRICS.json";
-
-/**
- * Load all persisted cycle outcomes from the metrics file.
- * Returns an empty array if the file does not exist or is invalid.
- */
-export function loadOutcomes(path: string = DEFAULT_METRICS_PATH): CycleOutcome[] {
-  try {
-    const data = readFileSync(path, "utf-8");
-    const parsed = JSON.parse(data);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Persist a cycle outcome by appending it to the metrics JSON file.
- * Creates the file if it does not exist.
- */
-export function persistOutcome(
-  outcome: CycleOutcome,
-  path: string = DEFAULT_METRICS_PATH,
-): void {
-  const existing = loadOutcomes(path);
-  existing.push(outcome);
-  writeFileSync(path, JSON.stringify(existing, null, 2) + "\n", "utf-8");
-}

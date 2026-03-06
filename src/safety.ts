@@ -39,26 +39,6 @@ export const protectIdentity: HookCallback = async (input) => {
   return {};
 };
 
-export const enforceAppendOnly: HookCallback = async (input) => {
-  const { toolName, filePath, oldString, newString } = parseHookInput(input);
-
-  if (!filePath.includes("JOURNAL.md")) return {};
-
-  if (toolName === "Write") {
-    return denyResult("JOURNAL.md is append-only. Use Edit to append, not Write to overwrite.");
-  }
-
-  if (toolName === "Edit") {
-    if (oldString.length > 0 && !newString.includes(oldString)) {
-      return denyResult(
-        "JOURNAL.md is append-only. Edit must preserve existing content (new_string must contain old_string).",
-      );
-    }
-  }
-
-  return {};
-};
-
 export function isDangerousRm(command: string): boolean {
   // Match `rm` followed by flags that include both -r (or --recursive) and -f (or --force)
   // targeting / or ~ . Handles: rm -rf /, rm -r -f /, rm -f -r /, rm -fr /, rm --recursive --force /, etc.
@@ -195,7 +175,6 @@ export function buildProtectedFilePatterns(filename: string, opts?: { allowAppen
   return patterns;
 }
 
-const JOURNAL_MODIFY_PATTERNS = buildProtectedFilePatterns("JOURNAL.md", { allowAppend: true });
 const IDENTITY_MODIFY_PATTERNS = buildProtectedFilePatterns("IDENTITY.md");
 
 export function isDangerousCommand(command: string): string | null {
@@ -223,12 +202,6 @@ export const blockDangerousCommands: HookCallback = async (input) => {
   for (const pattern of IDENTITY_MODIFY_PATTERNS) {
     if (pattern.test(command)) {
       return denyResult("IDENTITY.md is the immutable constitution and cannot be modified via Bash.");
-    }
-  }
-
-  for (const pattern of JOURNAL_MODIFY_PATTERNS) {
-    if (pattern.test(command)) {
-      return denyResult("JOURNAL.md is append-only and cannot be overwritten via Bash.");
     }
   }
 

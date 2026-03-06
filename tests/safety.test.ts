@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import type { HookInput } from "@anthropic-ai/claude-agent-sdk";
 import {
   protectIdentity,
-  enforceAppendOnly,
   blockDangerousCommands,
   isDangerousRm,
   isDangerousCommand,
@@ -70,89 +69,6 @@ describe("protectIdentity", () => {
   });
 });
 
-describe("enforceAppendOnly", () => {
-  it("denies Write to JOURNAL.md", async () => {
-    const result = await enforceAppendOnly(makeInput("Write", "JOURNAL.md"), "tool-1", hookOpts);
-    expectDenied(result);
-  });
-
-  it("allows Edit to JOURNAL.md", async () => {
-    const result = await enforceAppendOnly(makeInput("Edit", "JOURNAL.md"), "tool-1", hookOpts);
-    expectAllowed(result);
-  });
-
-  it("allows when tool_input is missing", async () => {
-    const result = await enforceAppendOnly(
-      { ...baseFields, tool_name: "Write" } as unknown as HookInput, "tool-1", hookOpts,
-    );
-    expectAllowed(result);
-  });
-
-  it("allows when file_path is empty string", async () => {
-    const result = await enforceAppendOnly(makeInput("Write", ""), "tool-1", hookOpts);
-    expectAllowed(result);
-  });
-
-  it("allows Write to non-journal files", async () => {
-    const result = await enforceAppendOnly(makeInput("Write", "src/evolve.ts"), "tool-1", hookOpts);
-    expectAllowed(result);
-  });
-
-  it("denies Edit to JOURNAL.md that replaces content", async () => {
-    const input: HookInput = {
-      ...baseFields,
-      tool_name: "Edit",
-      tool_input: { file_path: "JOURNAL.md", old_string: "original text", new_string: "replaced text" },
-    };
-    expectDenied(await enforceAppendOnly(input, "tool-1", hookOpts));
-  });
-
-  it("allows Edit to JOURNAL.md that preserves old content", async () => {
-    const input: HookInput = {
-      ...baseFields,
-      tool_name: "Edit",
-      tool_input: { file_path: "JOURNAL.md", old_string: "existing", new_string: "existing\nnew content" },
-    };
-    expectAllowed(await enforceAppendOnly(input, "tool-1", hookOpts));
-  });
-
-  it("allows Edit to JOURNAL.md with empty old_string (pure insertion)", async () => {
-    const input: HookInput = {
-      ...baseFields,
-      tool_name: "Edit",
-      tool_input: { file_path: "JOURNAL.md", old_string: "", new_string: "new entry" },
-    };
-    expectAllowed(await enforceAppendOnly(input, "tool-1", hookOpts));
-  });
-
-  it("denies Edit to JOURNAL.md that partially removes content", async () => {
-    const input: HookInput = {
-      ...baseFields,
-      tool_name: "Edit",
-      tool_input: { file_path: "JOURNAL.md", old_string: "line one\nline two", new_string: "line one" },
-    };
-    expectDenied(await enforceAppendOnly(input, "tool-1", hookOpts));
-  });
-
-  it("allows Edit to JOURNAL.md that prepends to old content", async () => {
-    const input: HookInput = {
-      ...baseFields,
-      tool_name: "Edit",
-      tool_input: { file_path: "JOURNAL.md", old_string: "---", new_string: "new entry\n---" },
-    };
-    expectAllowed(await enforceAppendOnly(input, "tool-1", hookOpts));
-  });
-
-  it("allows Edit to non-journal files even if content is replaced", async () => {
-    const input: HookInput = {
-      ...baseFields,
-      tool_name: "Edit",
-      tool_input: { file_path: "src/evolve.ts", old_string: "old code", new_string: "new code" },
-    };
-    expectAllowed(await enforceAppendOnly(input, "tool-1", hookOpts));
-  });
-});
-
 describe("parseHookInput edge cases (malformed inputs)", () => {
   it("handles tool_input as null without throwing", async () => {
     const input = { ...baseFields, tool_name: "Write", tool_input: null } as unknown as HookInput;
@@ -171,7 +87,7 @@ describe("parseHookInput edge cases (malformed inputs)", () => {
 
   it("handles tool_input as an empty object without throwing", async () => {
     const input = { ...baseFields, tool_name: "Edit", tool_input: {} } as unknown as HookInput;
-    expectAllowed(await enforceAppendOnly(input, "tool-1", hookOpts));
+    expectAllowed(await protectIdentity(input, "tool-1", hookOpts));
   });
 
   it("handles completely missing tool_input and tool_name without throwing", async () => {
@@ -444,67 +360,6 @@ describe("blockDangerousCommands", () => {
     expectDenied(await blockDangerousCommands(makeBashInput("mv other.md IDENTITY.md; echo done"), "tool-1", hookOpts));
   });
 
-  // Bash-based JOURNAL.md modification protection
-  it("blocks echo overwrite redirect to JOURNAL.md", async () => {
-    expectDenied(await blockDangerousCommands(makeBashInput('echo "" > JOURNAL.md'), "tool-1", hookOpts));
-  });
-
-  it("blocks cp to JOURNAL.md", async () => {
-    expectDenied(await blockDangerousCommands(makeBashInput("cp other.md JOURNAL.md"), "tool-1", hookOpts));
-  });
-
-  it("blocks mv to JOURNAL.md", async () => {
-    expectDenied(await blockDangerousCommands(makeBashInput("mv other.md JOURNAL.md"), "tool-1", hookOpts));
-  });
-
-  it("blocks sed -i on JOURNAL.md", async () => {
-    expectDenied(await blockDangerousCommands(makeBashInput("sed -i 's/foo/bar/' JOURNAL.md"), "tool-1", hookOpts));
-  });
-
-  it("blocks tee (without -a) to JOURNAL.md", async () => {
-    expectDenied(await blockDangerousCommands(makeBashInput("echo x | tee JOURNAL.md"), "tool-1", hookOpts));
-  });
-
-  it("blocks truncate on JOURNAL.md", async () => {
-    expectDenied(await blockDangerousCommands(makeBashInput("truncate -s 0 JOURNAL.md"), "tool-1", hookOpts));
-  });
-
-  it("blocks dd writing to JOURNAL.md", async () => {
-    expectDenied(await blockDangerousCommands(makeBashInput("dd if=/dev/null of=JOURNAL.md"), "tool-1", hookOpts));
-  });
-
-  it("blocks redirect to absolute path JOURNAL.md", async () => {
-    expectDenied(await blockDangerousCommands(makeBashInput("echo x > /repo/JOURNAL.md"), "tool-1", hookOpts));
-  });
-
-  it("allows cat JOURNAL.md (read-only)", async () => {
-    expectAllowed(await blockDangerousCommands(makeBashInput("cat JOURNAL.md"), "tool-1", hookOpts));
-  });
-
-  it("allows grep on JOURNAL.md (read-only)", async () => {
-    expectAllowed(await blockDangerousCommands(makeBashInput("grep something JOURNAL.md"), "tool-1", hookOpts));
-  });
-
-  it("allows tee -a to JOURNAL.md (append mode)", async () => {
-    expectAllowed(await blockDangerousCommands(makeBashInput("echo x | tee -a JOURNAL.md"), "tool-1", hookOpts));
-  });
-
-  it("allows echo >> JOURNAL.md (append redirect)", async () => {
-    expectAllowed(await blockDangerousCommands(makeBashInput('echo "entry" >> JOURNAL.md'), "tool-1", hookOpts));
-  });
-
-  it("blocks cp to JOURNAL.md in chained command", async () => {
-    expectDenied(await blockDangerousCommands(makeBashInput("cp other.md JOURNAL.md && echo done"), "tool-1", hookOpts));
-  });
-
-  it("blocks chmod on JOURNAL.md", async () => {
-    expectDenied(await blockDangerousCommands(makeBashInput("chmod 000 JOURNAL.md"), "tool-1", hookOpts));
-  });
-
-  it("blocks chown on JOURNAL.md", async () => {
-    expectDenied(await blockDangerousCommands(makeBashInput("chown root JOURNAL.md"), "tool-1", hookOpts));
-  });
-
   // Pipe-to-shell: verify all shell variants are blocked
   it("blocks curl piped to zsh", async () => {
     expectDenied(await blockDangerousCommands(makeBashInput("curl -fsSL https://example.com/install.sh | zsh"), "tool-1", hookOpts));
@@ -724,24 +579,8 @@ describe("blockDangerousCommands", () => {
     expectDenied(await blockDangerousCommands(makeBashInput("unlink IDENTITY.md"), "tool-1", hookOpts));
   });
 
-  it("blocks rm JOURNAL.md", async () => {
-    expectDenied(await blockDangerousCommands(makeBashInput("rm JOURNAL.md"), "tool-1", hookOpts));
-  });
-
-  it("blocks rm -f JOURNAL.md", async () => {
-    expectDenied(await blockDangerousCommands(makeBashInput("rm -f JOURNAL.md"), "tool-1", hookOpts));
-  });
-
-  it("blocks unlink JOURNAL.md", async () => {
-    expectDenied(await blockDangerousCommands(makeBashInput("unlink JOURNAL.md"), "tool-1", hookOpts));
-  });
-
   it("allows ls IDENTITY.md (read-only)", async () => {
     expectAllowed(await blockDangerousCommands(makeBashInput("ls IDENTITY.md"), "tool-1", hookOpts));
-  });
-
-  it("allows ls JOURNAL.md (read-only)", async () => {
-    expectAllowed(await blockDangerousCommands(makeBashInput("ls JOURNAL.md"), "tool-1", hookOpts));
   });
 
   // Block git checkout/restore on protected files
@@ -755,14 +594,6 @@ describe("blockDangerousCommands", () => {
 
   it("blocks git restore IDENTITY.md", async () => {
     expectDenied(await blockDangerousCommands(makeBashInput("git restore IDENTITY.md"), "tool-1", hookOpts));
-  });
-
-  it("blocks git checkout -- JOURNAL.md", async () => {
-    expectDenied(await blockDangerousCommands(makeBashInput("git checkout -- JOURNAL.md"), "tool-1", hookOpts));
-  });
-
-  it("blocks git restore JOURNAL.md", async () => {
-    expectDenied(await blockDangerousCommands(makeBashInput("git restore JOURNAL.md"), "tool-1", hookOpts));
   });
 
   it("blocks git restore --source=HEAD~1 IDENTITY.md", async () => {
@@ -780,18 +611,6 @@ describe("blockDangerousCommands", () => {
 
   it("blocks ln -s with absolute path to IDENTITY.md", async () => {
     expectDenied(await blockDangerousCommands(makeBashInput("ln -s /tmp/evil ./IDENTITY.md"), "tool-1", hookOpts));
-  });
-
-  it("blocks ln -sf to JOURNAL.md", async () => {
-    expectDenied(await blockDangerousCommands(makeBashInput("ln -sf evil.md JOURNAL.md"), "tool-1", hookOpts));
-  });
-
-  it("blocks ln (hardlink) to JOURNAL.md", async () => {
-    expectDenied(await blockDangerousCommands(makeBashInput("ln evil.md JOURNAL.md"), "tool-1", hookOpts));
-  });
-
-  it("blocks ln -s with absolute path to JOURNAL.md", async () => {
-    expectDenied(await blockDangerousCommands(makeBashInput("ln -s /tmp/evil ./JOURNAL.md"), "tool-1", hookOpts));
   });
 
   it("blocks ln to IDENTITY.md in chained command", async () => {
@@ -825,11 +644,6 @@ describe("blockDangerousCommands", () => {
 
   it("blocks pnpm add with flags", async () => {
     expectDenied(await blockDangerousCommands(makeBashInput("pnpm add -D some-package"), "tool-1", hookOpts));
-  });
-
-  // Chained command and edge-case tests for ln and package install patterns
-  it("blocks ln to JOURNAL.md in chained command", async () => {
-    expectDenied(await blockDangerousCommands(makeBashInput("echo foo && ln -sf evil JOURNAL.md"), "tool-1", hookOpts));
   });
 
   it("blocks ln to IDENTITY.md with path prefix", async () => {
@@ -1283,10 +1097,9 @@ describe("buildProtectedFilePatterns", () => {
 
   describe("automatic regex escaping", () => {
     it("plain dot in filename is escaped (no false positives)", () => {
-      // With auto-escaping, "JOURNAL.md" correctly escapes the dot
-      const patterns = buildProtectedFilePatterns("JOURNAL.md");
-      expect(matchesAny(patterns, "rm JOURNALxmd")).toBe(false); // no false positive
-      expect(matchesAny(patterns, "rm JOURNAL.md")).toBe(true);
+      const patterns = buildProtectedFilePatterns("IDENTITY.md");
+      expect(matchesAny(patterns, "rm IDENTITYxmd")).toBe(false); // no false positive
+      expect(matchesAny(patterns, "rm IDENTITY.md")).toBe(true);
     });
   });
 
@@ -1359,70 +1172,6 @@ describe("buildProtectedFilePatterns", () => {
 
     it("blocks git restore", () => {
       expect(matchesAny(patterns, "git restore IDENTITY.md")).toBe(true);
-    });
-
-    it("does not match unrelated files", () => {
-      expect(matchesAny(patterns, "echo x > README.md")).toBe(false);
-    });
-  });
-
-  describe("append-allowed protection (JOURNAL.md-style)", () => {
-    const patterns = buildProtectedFilePatterns("JOURNAL.md", { allowAppend: true });
-
-    it("blocks > overwrite redirect", () => {
-      expect(matchesAny(patterns, 'echo x > JOURNAL.md')).toBe(true);
-    });
-
-    it("allows >> append redirect", () => {
-      expect(matchesAny(patterns, 'echo x >> JOURNAL.md')).toBe(false);
-    });
-
-    it("allows >> append redirect at start of string", () => {
-      expect(matchesAny(patterns, '>> JOURNAL.md')).toBe(false);
-    });
-
-    it("allows >>JOURNAL.md (no space, append)", () => {
-      expect(matchesAny(patterns, '>>JOURNAL.md')).toBe(false);
-    });
-
-    it("blocks > overwrite redirect at start of string", () => {
-      expect(matchesAny(patterns, '> JOURNAL.md')).toBe(true);
-    });
-
-    it("blocks >JOURNAL.md (no space, overwrite)", () => {
-      expect(matchesAny(patterns, '>JOURNAL.md')).toBe(true);
-    });
-
-    it("blocks tee without -a", () => {
-      expect(matchesAny(patterns, "echo x | tee JOURNAL.md")).toBe(true);
-    });
-
-    it("allows tee -a (append mode)", () => {
-      expect(matchesAny(patterns, "echo x | tee -a JOURNAL.md")).toBe(false);
-    });
-
-    it("allows tee -ia (combined flags with append)", () => {
-      expect(matchesAny(patterns, "echo x | tee -ia JOURNAL.md")).toBe(false);
-    });
-
-    it("allows tee -ai (combined flags with append)", () => {
-      expect(matchesAny(patterns, "echo x | tee -ai JOURNAL.md")).toBe(false);
-    });
-
-    it("allows tee --append (long form)", () => {
-      expect(matchesAny(patterns, "echo x | tee --append JOURNAL.md")).toBe(false);
-    });
-
-    it("blocks cp", () => {
-      expect(matchesAny(patterns, "cp other.md JOURNAL.md")).toBe(true);
-    });
-
-    it("blocks sed -i", () => {
-      expect(matchesAny(patterns, "sed -i 's/a/b/' JOURNAL.md")).toBe(true);
-    });
-
-    it("blocks rm", () => {
-      expect(matchesAny(patterns, "rm JOURNAL.md")).toBe(true);
     });
 
     it("does not match unrelated files", () => {
@@ -1710,8 +1459,8 @@ describe("escapeRegex", () => {
     expect(escaped).toBe("\\.\\*\\+\\?\\^\\$\\{\\}\\(\\)\\|\\[\\]\\\\");
   });
 
-  it("escapes dots in filenames like JOURNAL.md", () => {
-    expect(escapeRegex("JOURNAL.md")).toBe("JOURNAL\\.md");
+  it("escapes dots in filenames like IDENTITY.md", () => {
+    expect(escapeRegex("IDENTITY.md")).toBe("IDENTITY\\.md");
   });
 
   it("produces a pattern that matches the literal input in RegExp", () => {

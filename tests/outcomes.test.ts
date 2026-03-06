@@ -1,11 +1,8 @@
-import { describe, it, expect, afterEach } from "vitest";
-import { unlinkSync, writeFileSync } from "fs";
+import { describe, it, expect } from "vitest";
 import {
   parseTestCount,
   createOutcome,
   formatOutcomeForJournal,
-  loadOutcomes,
-  persistOutcome,
   CycleOutcome,
 } from "../src/outcomes.js";
 
@@ -160,64 +157,3 @@ describe("formatOutcomeForJournal", () => {
   });
 });
 
-describe("loadOutcomes", () => {
-  const testPath = "test-metrics-load.json";
-
-  afterEach(() => {
-    try { unlinkSync(testPath); } catch { /* ignore */ }
-  });
-
-  it("returns empty array when file does not exist", () => {
-    expect(loadOutcomes(testPath)).toEqual([]);
-  });
-
-  it("returns empty array when file contains invalid JSON", () => {
-    writeFileSync(testPath, "not json", "utf-8");
-    expect(loadOutcomes(testPath)).toEqual([]);
-  });
-
-  it("returns empty array when file contains a non-array JSON value", () => {
-    writeFileSync(testPath, '{"key": "value"}', "utf-8");
-    expect(loadOutcomes(testPath)).toEqual([]);
-  });
-
-  it("loads an array of outcomes from file", () => {
-    const outcomes = [createOutcome(1), createOutcome(2)];
-    writeFileSync(testPath, JSON.stringify(outcomes), "utf-8");
-    expect(loadOutcomes(testPath)).toEqual(outcomes);
-  });
-});
-
-describe("persistOutcome", () => {
-  const testPath = "test-metrics-persist.json";
-
-  afterEach(() => {
-    try { unlinkSync(testPath); } catch { /* ignore */ }
-  });
-
-  it("creates file with single outcome when file does not exist", () => {
-    const outcome = createOutcome(1);
-    outcome.preflightPassed = true;
-    persistOutcome(outcome, testPath);
-    const loaded = loadOutcomes(testPath);
-    expect(loaded).toHaveLength(1);
-    expect(loaded[0].cycleNumber).toBe(1);
-    expect(loaded[0].preflightPassed).toBe(true);
-  });
-
-  it("appends to existing outcomes", () => {
-    persistOutcome(createOutcome(1), testPath);
-    persistOutcome(createOutcome(2), testPath);
-    const loaded = loadOutcomes(testPath);
-    expect(loaded).toHaveLength(2);
-    expect(loaded[0].cycleNumber).toBe(1);
-    expect(loaded[1].cycleNumber).toBe(2);
-  });
-
-  it("writes valid JSON with trailing newline", () => {
-    persistOutcome(createOutcome(5), testPath);
-    const raw = require("fs").readFileSync(testPath, "utf-8");
-    expect(raw.endsWith("\n")).toBe(true);
-    expect(() => JSON.parse(raw)).not.toThrow();
-  });
-});
