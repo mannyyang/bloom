@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { fetchCommunityIssues, acknowledgeIssues, hasBloomComment, labelIssue, isValidRepo } from "../src/issues.js";
+import { fetchCommunityIssues, acknowledgeIssues, hasBloomComment, labelIssue, isValidRepo, isSafeIssueNumber } from "../src/issues.js";
 
 describe("isValidRepo", () => {
   it("accepts a standard owner/repo format", () => {
@@ -135,5 +135,39 @@ describe("hasBloomComment", () => {
     // Even if called with bad input, should not throw.
     const result = hasBloomComment(1, "not-valid");
     expect(result).toBe(false);
+  });
+
+  it("returns false for NaN issue number", () => {
+    expect(hasBloomComment(NaN, "owner/repo")).toBe(false);
+  });
+
+  it("returns false for negative issue number", () => {
+    expect(hasBloomComment(-1, "owner/repo")).toBe(false);
+  });
+});
+
+describe("isSafeIssueNumber", () => {
+  it("accepts a positive integer", () => {
+    expect(isSafeIssueNumber(42)).toBe(true);
+  });
+
+  it("rejects NaN", () => {
+    expect(isSafeIssueNumber(NaN)).toBe(false);
+  });
+
+  it("rejects Infinity", () => {
+    expect(isSafeIssueNumber(Infinity)).toBe(false);
+  });
+
+  it("rejects zero", () => {
+    expect(isSafeIssueNumber(0)).toBe(false);
+  });
+
+  it("rejects negative numbers", () => {
+    expect(isSafeIssueNumber(-1)).toBe(false);
+  });
+
+  it("rejects floats", () => {
+    expect(isSafeIssueNumber(1.5)).toBe(false);
   });
 });

@@ -18,6 +18,11 @@ function detectRepo(): string | null {
   }
 }
 
+/** Validate that an issue number is a positive integer — safe for shell interpolation. */
+export function isSafeIssueNumber(n: number): boolean {
+  return Number.isInteger(n) && n > 0;
+}
+
 /** Only allow "owner/repo" with safe characters — no shell metacharacters. */
 export function isValidRepo(repo: string): boolean {
   return /^[\w.\-]+\/[\w.\-]+$/.test(repo);
@@ -61,6 +66,7 @@ export function hasBloomComment(
   issueNumber: number,
   repo: string,
 ): boolean {
+  if (!isSafeIssueNumber(issueNumber)) return false;
   if (!isValidRepo(repo)) return false;
   try {
     const raw = execSync(
@@ -86,6 +92,7 @@ export function labelIssue(
   repo: string,
   label: string,
 ): void {
+  if (!isSafeIssueNumber(issueNumber)) return;
   if (!isValidRepo(repo)) return;
   // Sanitise label — only allow printable non-shell-meta characters.
   if (!/^[\w.\- ]+$/.test(label)) return;
