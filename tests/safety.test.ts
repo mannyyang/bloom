@@ -529,6 +529,39 @@ describe("blockDangerousCommands", () => {
   it("blocks git restore --source=HEAD~1 IDENTITY.md", async () => {
     expectDenied(await blockDangerousCommands(makeBashInput("git restore --source=HEAD~1 IDENTITY.md"), "tool-1", hookOpts));
   });
+
+  // Block ln (symlink/hardlink) on protected files
+  it("blocks ln -sf to IDENTITY.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("ln -sf evil.md IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks ln (hardlink) to IDENTITY.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("ln evil.md IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks ln -s with absolute path to IDENTITY.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("ln -s /tmp/evil ./IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks ln -sf to JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("ln -sf evil.md JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks ln (hardlink) to JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("ln evil.md JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks ln -s with absolute path to JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("ln -s /tmp/evil ./JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks ln to IDENTITY.md in chained command", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("echo foo; ln -sf evil IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("allows ls -ln (not a link command)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("ls -ln IDENTITY.md"), "tool-1", hookOpts));
+  });
 });
 
 describe("isDangerousRm", () => {
