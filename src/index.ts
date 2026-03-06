@@ -53,6 +53,7 @@ async function main() {
       allowedTools: ["Read", "Glob", "Grep", "Bash"],
       permissionMode: "dontAsk",
       maxTurns: 20,
+      maxBudgetUsd: 2.0,
     },
   })) {
     if ("result" in msg) assessment = msg.result;
