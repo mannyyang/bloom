@@ -1428,6 +1428,82 @@ describe("buildProtectedFilePatterns", () => {
       expect(matchesAny(patterns, "echo x | tee -a CUSTOM.txt")).toBe(false);
     });
   });
+
+  describe("path prefix handling per pattern type", () => {
+    const patterns = buildProtectedFilePatterns("IDENTITY\\.md");
+
+    it("blocks > redirect with path prefix", () => {
+      expect(matchesAny(patterns, "echo x > ./IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks >> redirect with absolute path prefix", () => {
+      expect(matchesAny(patterns, "echo x >> /repo/IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks tee with path prefix", () => {
+      expect(matchesAny(patterns, "echo x | tee ./IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks cp with path prefix on target", () => {
+      expect(matchesAny(patterns, "cp other.md /repo/IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks mv with path prefix on target", () => {
+      expect(matchesAny(patterns, "mv other.md ./IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks dd with path prefix in of=", () => {
+      expect(matchesAny(patterns, "dd if=/dev/null of=./IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks ln with path prefix on target", () => {
+      expect(matchesAny(patterns, "ln -s /tmp/evil /repo/IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks git restore with path prefix", () => {
+      expect(matchesAny(patterns, "git restore ./IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks git checkout -- with path prefix", () => {
+      expect(matchesAny(patterns, "git checkout -- ./IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks truncate with path prefix", () => {
+      expect(matchesAny(patterns, "truncate -s 0 /repo/IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks sed -i with path prefix", () => {
+      expect(matchesAny(patterns, "sed -i 's/a/b/' ./IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks chmod with path prefix", () => {
+      expect(matchesAny(patterns, "chmod 000 /repo/IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks chown with path prefix", () => {
+      expect(matchesAny(patterns, "chown root ./IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks unlink with path prefix", () => {
+      expect(matchesAny(patterns, "unlink /repo/IDENTITY.md")).toBe(true);
+    });
+  });
+
+  describe("false positive checks (no pattern matches unrelated files)", () => {
+    const patterns = buildProtectedFilePatterns("IDENTITY\\.md");
+
+    it("allows cat IDENTITY.md (read-only)", () => {
+      expect(matchesAny(patterns, "cat IDENTITY.md")).toBe(false);
+    });
+
+    it("allows grep in IDENTITY.md (read-only)", () => {
+      expect(matchesAny(patterns, "grep -n 'safety' IDENTITY.md")).toBe(false);
+    });
+
+    it("allows echo without redirect", () => {
+      expect(matchesAny(patterns, "echo IDENTITY.md")).toBe(false);
+    });
+  });
 });
 
 describe("parseHookInput (direct)", () => {
