@@ -65,60 +65,65 @@ export function isDangerousRm(command: string): boolean {
   return hasRecursive && hasForce && (hasDangerousPath || hasCriticalPath);
 }
 
-const DANGEROUS_PATTERNS = [
+interface DangerousPattern {
+  pattern: RegExp;
+  category: string;
+}
+
+const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Git history destruction — force push overwrites remote history
-  /git\s+push\s+(-f|--force)/,
+  { pattern: /git\s+push\s+(-f|--force)/, category: "git-history-destruction" },
   // Git history destruction — hard reset to arbitrary ref loses uncommitted work
-  /git\s+reset\s+--hard\s+(?!HEAD(?:\s*$|\s*[;&|]))/,
+  { pattern: /git\s+reset\s+--hard\s+(?!HEAD(?:\s*$|\s*[;&|]))/, category: "git-history-destruction" },
   // Remote code execution — piping downloaded content into a shell
-  /\bcurl\b.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh/,
-  /\bwget\b.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh/,
+  { pattern: /\bcurl\b.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh/, category: "remote-code-execution" },
+  { pattern: /\bwget\b.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh/, category: "remote-code-execution" },
   // Remote code execution — process substitution download-and-execute
-  /(?:[\w./]*\/)?(?:ba|z|da|k)?sh\s+<\(\s*(?:curl|wget)\b/,
+  { pattern: /(?:[\w./]*\/)?(?:ba|z|da|k)?sh\s+<\(\s*(?:curl|wget)\b/, category: "remote-code-execution" },
   // Remote code execution — piping downloaded content into script interpreters
-  /\bcurl\b.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby)\b/,
-  /\bwget\b.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby)\b/,
+  { pattern: /\bcurl\b.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby)\b/, category: "remote-code-execution" },
+  { pattern: /\bwget\b.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby)\b/, category: "remote-code-execution" },
   // Arbitrary code execution — eval, shell -c run uncontrolled strings
-  /\beval\s/,
-  /(?:[\w./]*\/)?(?:ba|z|da|k)?sh\s+-c\b/,
+  { pattern: /\beval\s/, category: "arbitrary-code-execution" },
+  { pattern: /(?:[\w./]*\/)?(?:ba|z|da|k)?sh\s+-c\b/, category: "arbitrary-code-execution" },
   // Inline interpreter code execution — functionally equivalent to sh -c
-  /\b(?:python3?|python3\.\d+)\s+-c\b/,
-  /\bnode\s+(?:-e|--eval)\b/,
-  /\bperl\s+(?:-e|-E)\b/,
-  /\bruby\s+-e\b/,
+  { pattern: /\b(?:python3?|python3\.\d+)\s+-c\b/, category: "inline-code-execution" },
+  { pattern: /\bnode\s+(?:-e|--eval)\b/, category: "inline-code-execution" },
+  { pattern: /\bperl\s+(?:-e|-E)\b/, category: "inline-code-execution" },
+  { pattern: /\bruby\s+-e\b/, category: "inline-code-execution" },
   // Shell script execution — source and dot-script (`. `) execute arbitrary files
-  /\bsource\s/,
-  /(?:^|[;&|]\s*)\.\s+\S/,
+  { pattern: /\bsource\s/, category: "shell-script-execution" },
+  { pattern: /(?:^|[;&|]\s*)\.\s+\S/, category: "shell-script-execution" },
   // Untrusted package execution — npx/npm exec/pnpm exec/pnpm dlx/yarn dlx run arbitrary packages
-  /\bnpx\s/,
-  /\bnpm\s+exec\b/,
-  /\bpnpm\s+exec\b/,
-  /\bpnpm\s+dlx\s/,
-  /\byarn\s+dlx\s/,
+  { pattern: /\bnpx\s/, category: "untrusted-package-execution" },
+  { pattern: /\bnpm\s+exec\b/, category: "untrusted-package-execution" },
+  { pattern: /\bpnpm\s+exec\b/, category: "untrusted-package-execution" },
+  { pattern: /\bpnpm\s+dlx\s/, category: "untrusted-package-execution" },
+  { pattern: /\byarn\s+dlx\s/, category: "untrusted-package-execution" },
   // Git ref destruction — force-delete branches, delete reflog, prune objects
-  /git\s+branch\s+(-D|--delete\s+--force)\b/,
-  /git\s+reflog\s+delete\b/,
-  /git\s+gc\s+.*--prune=(now|all)\b/,
+  { pattern: /git\s+branch\s+(-D|--delete\s+--force)\b/, category: "git-ref-destruction" },
+  { pattern: /git\s+reflog\s+delete\b/, category: "git-ref-destruction" },
+  { pattern: /git\s+gc\s+.*--prune=(now|all)\b/, category: "git-ref-destruction" },
   // Git internals tampering — changing permissions/ownership of .git/
-  /\bchmod\s+.*\.git\//,
-  /\bchown\s+.*\.git\//,
+  { pattern: /\bchmod\s+.*\.git\//, category: "git-internals-tampering" },
+  { pattern: /\bchown\s+.*\.git\//, category: "git-internals-tampering" },
   // Disk/partition destruction — writing to raw devices or reformatting
-  /\bdd\s+.*of=\/dev\//,
-  /\bmkfs\b/,
-  /\bwipefs\b/,
-  /\bfdisk\b/,
-  /\bparted\b/,
+  { pattern: /\bdd\s+.*of=\/dev\//, category: "disk-destruction" },
+  { pattern: /\bmkfs\b/, category: "disk-destruction" },
+  { pattern: /\bwipefs\b/, category: "disk-destruction" },
+  { pattern: /\bfdisk\b/, category: "disk-destruction" },
+  { pattern: /\bparted\b/, category: "disk-destruction" },
   // Git working tree destruction — force-clean untracked files
-  /git\s+clean\s+.*(-f|--force)/,
+  { pattern: /git\s+clean\s+.*(-f|--force)/, category: "git-working-tree-destruction" },
   // Git history rewriting — filter-branch rewrites/removes files from history
-  /git\s+filter-branch\b/,
+  { pattern: /git\s+filter-branch\b/, category: "git-history-rewriting" },
   // Data exfiltration — curl/wget sending data to external servers
-  /\bcurl\s+.*(-d\b|--data\b|--data-binary\b|--data-raw\b|--data-urlencode\b|--upload-file\b|-F\b|--form\b|--json\b)/,
-  /\bwget\s+.*--post-(data|file)\b/,
+  { pattern: /\bcurl\s+.*(-d\b|--data\b|--data-binary\b|--data-raw\b|--data-urlencode\b|--upload-file\b|-F\b|--form\b|--json\b)/, category: "data-exfiltration" },
+  { pattern: /\bwget\s+.*--post-(data|file)\b/, category: "data-exfiltration" },
   // Untrusted package installation — adding deps pulls arbitrary code
-  /\bpnpm\s+add\b/,
-  /\bnpm\s+(?:install|i)\s+(?:-\S+\s+)*[a-zA-Z@]/,
-  /\byarn\s+add\b/,
+  { pattern: /\bpnpm\s+add\b/, category: "untrusted-package-installation" },
+  { pattern: /\bnpm\s+(?:install|i)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  { pattern: /\byarn\s+add\b/, category: "untrusted-package-installation" },
 ];
 
 /**
@@ -167,13 +172,13 @@ export function buildProtectedFilePatterns(filename: string, opts?: { allowAppen
 const JOURNAL_MODIFY_PATTERNS = buildProtectedFilePatterns("JOURNAL\\.md", { allowAppend: true });
 const IDENTITY_MODIFY_PATTERNS = buildProtectedFilePatterns("IDENTITY\\.md");
 
-export function isDangerousCommand(command: string): boolean {
-  for (const pattern of DANGEROUS_PATTERNS) {
+export function isDangerousCommand(command: string): string | null {
+  for (const { pattern, category } of DANGEROUS_PATTERNS) {
     if (pattern.test(command)) {
-      return true;
+      return category;
     }
   }
-  return false;
+  return null;
 }
 
 export const blockDangerousCommands: HookCallback = async (input) => {
@@ -184,8 +189,9 @@ export const blockDangerousCommands: HookCallback = async (input) => {
     return denyResult(`Blocked dangerous command: ${command}`);
   }
 
-  if (isDangerousCommand(command)) {
-    return denyResult(`Blocked dangerous command: ${command}`);
+  const category = isDangerousCommand(command);
+  if (category) {
+    return denyResult(`Blocked [${category}]: pattern matched in command`);
   }
 
   for (const pattern of IDENTITY_MODIFY_PATTERNS) {

