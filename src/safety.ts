@@ -57,7 +57,12 @@ export function isDangerousRm(command: string): boolean {
   const hasRecursive = /(?:^|\s)--recursive(?:\s|$)/.test(rest) || /(?:^|\s)-\w*r/.test(rest);
   const hasForce = /(?:^|\s)--force(?:\s|$)/.test(rest) || /(?:^|\s)-\w*f/.test(rest);
   const hasDangerousPath = /(?:^|\s)\/(?:\s|$|\*)/.test(rest) || /(?:^|\s)~\/?(?:\s|$|\*)/.test(rest);
-  return hasRecursive && hasForce && hasDangerousPath;
+
+  // Critical system directories — no legitimate use in Bloom's context
+  const CRITICAL_DIRS = /(?:^|\s)\/(?:etc|usr|var|boot|bin|sbin|lib|proc|sys)(?:\/?\s|\/?\*|\/?\||\/?;|\/?&|\/?$)/;
+  const hasCriticalPath = CRITICAL_DIRS.test(rest);
+
+  return hasRecursive && hasForce && (hasDangerousPath || hasCriticalPath);
 }
 
 const DANGEROUS_PATTERNS = [

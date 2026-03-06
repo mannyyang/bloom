@@ -479,4 +479,33 @@ describe("isDangerousRm", () => {
   it("detects rm --no-preserve-root without other flags", () => {
     expect(isDangerousRm("rm --no-preserve-root /")).toBe(true);
   });
+
+  // Critical system directory protection
+  it("detects rm -rf /etc", () => {
+    expect(isDangerousRm("rm -rf /etc")).toBe(true);
+  });
+
+  it("detects rm -rf /usr", () => {
+    expect(isDangerousRm("rm -rf /usr")).toBe(true);
+  });
+
+  it("detects rm -rf /var", () => {
+    expect(isDangerousRm("rm -rf /var")).toBe(true);
+  });
+
+  it("detects rm -rf /boot", () => {
+    expect(isDangerousRm("rm -rf /boot")).toBe(true);
+  });
+
+  it("detects rm -rf /bin", () => {
+    expect(isDangerousRm("rm -rf /bin")).toBe(true);
+  });
+
+  it("allows rm -rf on path containing critical dir name as substring", () => {
+    expect(isDangerousRm("rm -rf /home/user/etc-notes")).toBe(false);
+  });
+
+  it("allows rm -rf /usr/local/share/myapp (deep subpath)", () => {
+    expect(isDangerousRm("rm -rf /usr/local/share/myapp")).toBe(false);
+  });
 });
