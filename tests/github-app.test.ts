@@ -114,6 +114,36 @@ describe("github-app", () => {
       expect(mockFetch).toHaveBeenCalledTimes(2);
     });
 
+    it("throws when fetch itself rejects (network error)", async () => {
+      mockFetch.mockRejectedValueOnce(new Error("DNS resolution failed"));
+
+      const { getInstallationToken } = await loadModule();
+      await expect(getInstallationToken()).rejects.toThrow("DNS resolution failed");
+    });
+
+    it("does not cache a failed attempt and retries on next call", async () => {
+      // First call: fetch rejects (network error)
+      mockFetch.mockRejectedValueOnce(new Error("Network timeout"));
+      // Second call: fetch succeeds
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          token: "ghs_retry_success",
+          expires_at: new Date(Date.now() + 3600_000).toISOString(),
+        }),
+      });
+
+      const { getInstallationToken } = await loadModule();
+
+      // First call should fail
+      await expect(getInstallationToken()).rejects.toThrow("Network timeout");
+
+      // Second call should retry and succeed (not return stale error)
+      const token = await getInstallationToken();
+      expect(token).toBe("ghs_retry_success");
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
     it("throws when the API returns a non-ok response", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
