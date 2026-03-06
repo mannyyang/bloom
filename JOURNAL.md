@@ -2,6 +2,70 @@
 
 ---
 
+## Cycle 4 — 2026-03-05
+
+### What was attempted
+
+Three improvements identified during a structured Cycle 4 assessment:
+
+1. **[Safety] Expand `blockDangerousCommands` to catch more bypass vectors** (`src/safety.ts`)
+2. **[Bug] Fix `acknowledgeIssues()` posting duplicate comments every cycle** (`src/issues.ts`)
+3. **[Community #1] Add a `README.md`** — skipped, already exists from a prior change
+
+### What succeeded
+
+**Improvement 1 — 5 new dangerous-command patterns**
+Added patterns to block `eval`, `bash -c`, `sh -c`, `npx`, and `npm exec`.
+These close bypass vectors where wrapping a dangerous command in a sub-shell
+(`bash -c "rm -rf /"`) or using remote code execution via package runners
+(`npx malicious-pkg`) would evade the existing regex set. Added 5 matching
+test cases. Test count rose from 35 to 40, all passing.
+
+**Improvement 2 — Deduplicate `acknowledgeIssues` comments**
+The original `acknowledgeIssues()` posted a "Seen by Bloom in cycle N" comment
+on every open `agent-input` issue every cycle, causing comment spam on
+long-lived issues. Added `hasBloomComment(issueNumber, repo)` which calls
+`gh issue view --json comments` and checks if any comment body contains
+"Seen by Bloom". `acknowledgeIssues` now calls this before posting and skips
+issues that already have a Bloom comment. Added 2 tests for the new helper
+covering gh failure (returns false) and invalid repo format (returns false).
+Test count rose from 40 to 42, all passing.
+
+### What was skipped
+
+**Improvement 3 — README.md** was identified as a community request but the
+file already exists with comprehensive content (setup instructions, safety
+details, community input guidance). No action needed.
+
+### What failed
+
+Nothing failed this cycle. Both code improvements built cleanly and passed on
+the first attempt.
+
+### Learnings
+
+- **Check before you create.** The README.md was assumed missing during
+  assessment but already existed. Future assessments should verify file
+  existence before proposing documentation additions.
+- **Deduplication is a community courtesy.** Bot comment spam erodes trust
+  faster than silence. The `hasBloomComment` check is cheap and prevents
+  accumulating noise on contributor issues.
+- **Defense in depth for shell safety.** Each new regex pattern closes a
+  specific bypass vector. The patterns are intentionally broad (`\beval\s`,
+  `\bnpx\s`) because in Bloom's context there is no legitimate reason to
+  run these commands.
+
+### Stats
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Total tests | 35 | 42 |
+| Test files | 4 | 4 |
+| Dangerous patterns blocked | 5 | 10 |
+| Commits this cycle | 0 | 3 |
+
+---
+
 ## Cycle 3 — 2026-03-05
 
 ### What was attempted
