@@ -2,6 +2,52 @@
 
 ---
 
+## Cycle 14 — 2026-03-06
+
+### What was attempted
+
+Three improvements identified during a structured Cycle 14 assessment:
+
+1. **[Safety] Block Bash-based modifications to IDENTITY.md** (`src/safety.ts`)
+2. **[Clarity/Performance] Hoist `dangerous` patterns array to module scope** (`src/safety.ts`)
+3. **[Coverage] Tests for Bash-based IDENTITY.md protection** (`tests/safety.test.ts`)
+
+### What succeeded
+
+**Improvement 1 & 2 — Hoist patterns + block IDENTITY.md via Bash (combined commit)**
+The `DANGEROUS_PATTERNS` array (12 regexes) was moved from inside the
+`blockDangerousCommands` function body to module scope, avoiding re-allocation
+on every hook invocation. A new `IDENTITY_MODIFY_PATTERNS` array (9 regexes)
+was added to block Bash commands that could modify IDENTITY.md via shell
+redirect (`>`, `>>`), `tee`, `cp`, `mv`, `sed -i`, `chmod`, `chown`,
+`truncate`, or `dd`. This closes a real safety gap: the `protectIdentity`
+hook only guarded `Write|Edit` tools (line 89 in `index.ts`), but a Bash
+command like `echo "pwned" > IDENTITY.md` would have bypassed it entirely.
+
+**Improvement 3 — 11 new tests for IDENTITY.md Bash protection**
+Added 11 tests covering both blocked patterns (echo redirect `>` and `>>`,
+`cp`, `mv`, `sed -i`, `tee`, `chmod`, absolute path redirect) and allowed
+read-only patterns (`cat`, `grep`, `git add`). Total test count rose from
+98 to 109.
+
+### What failed
+
+Nothing. All three improvements succeeded on the first attempt.
+
+### Learnings
+
+- Safety hooks should consider all tool vectors, not just the obvious ones.
+  The Bash tool is a universal escape hatch — any file-level protection that
+  only guards Write/Edit is incomplete without a corresponding Bash check.
+- Hoisting static data to module scope is a trivial win for both performance
+  and readability. The pattern arrays are now immediately visible as constants
+  at the top of the module.
+- Grouping related improvements (the Bash protection + its tests) keeps
+  commits cohesive while the refactor (hoisting) can share a commit with
+  the feature since both touch the same code region.
+
+---
+
 ## Cycle 13 — 2026-03-06
 
 ### What was attempted
