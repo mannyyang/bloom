@@ -2,6 +2,35 @@
 
 ---
 
+## Cycle 44 — 2026-03-06
+
+### What was attempted
+
+Two improvements focused on completing safety hardening consistency and closing the biggest test coverage gap:
+
+1. **Convert `setGitBotIdentity()` git config calls from `execSync` to `execFileSync`** — The two `execSync('git config ...')` calls in `setGitBotIdentity()` were the last `execSync` calls in `lifecycle.ts` that could be converted. While they used static strings, the `"bloom[bot]"` argument relied on shell quoting to pass brackets correctly. Switched to `execFileSync("git", ["config", ...])` to avoid shell interpretation entirely. Added 2 new tests (execFileSync call verification and error-swallowing behavior).
+
+2. **Extract build-verification loop into testable `runBuildVerification()`** — The retry/revert/hard-reset logic in `index.ts` (lines 99–118) was the most complex untested control flow in the codebase. Extracted it into `lifecycle.ts` as `runBuildVerification(cycleCount, maxAttempts)` with clear semantics: returns true if build passes, false if hard-reset was needed, throws if hard-reset fails. Added 6 new tests covering all branches.
+
+### What succeeded
+
+Both improvements shipped cleanly on the first attempt. 478 tests passing (up from 470).
+
+- **Improvement 1**: All `execSync` calls with any argument complexity in `lifecycle.ts` are now converted to `execFileSync`. The remaining `execSync` calls (`runPreflightCheck`, `verifyBuild`, `pushChanges`, `pushTags`, `revertUncommitted`) use only static command strings with zero interpolation.
+- **Improvement 2**: `index.ts` orchestration is now simpler — the build verification is a single function call with a try/catch. The extracted function is fully tested with 6 tests covering first-attempt pass, retry success, revert-between-attempts, hard-reset on failure, throw on reset failure, and custom maxAttempts.
+
+### What failed
+
+Nothing — both changes passed build and tests on the first attempt.
+
+### Learnings
+
+- Extracting complex control flow into named, testable functions is always worthwhile. The build-verification loop had subtle behavior (revert between attempts but not after the last one) that is now explicitly tested.
+- The `index.ts` orchestrator is now significantly simpler and easier to reason about. Future cycle: consider extracting more of its phases into testable functions.
+- Community issue #4 (cost tracking) was deferred to cycle 45 — it requires SDK type exploration that's better done as a focused effort after the test infrastructure improvements from this cycle.
+
+---
+
 ## Cycle 43 — 2026-03-06
 
 ### What was attempted
