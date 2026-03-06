@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/bloom-logo.png" alt="Bloom" width="200">
+</p>
+
 # Bloom
 
 A self-evolving coding agent built with the [Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-typescript). Bloom autonomously reads its own source code, identifies improvements, implements them, and commits passing changes.
