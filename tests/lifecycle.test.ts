@@ -20,6 +20,7 @@ import {
   hardResetTo,
   isValidGitRef,
   createSafetyTag,
+  runBuildVerification,
 } from "../src/lifecycle.js";
 
 describe("lifecycle helpers", () => {
@@ -229,6 +230,76 @@ describe("lifecycle helpers", () => {
 
     it("throws on empty ref", () => {
       expect(() => hardResetTo("")).toThrow("Invalid git ref");
+    });
+  });
+
+  describe("runBuildVerification", () => {
+    it("returns true when build passes on first attempt", () => {
+      mockedExecSync.mockReturnValue(Buffer.from(""));
+      expect(runBuildVerification(42)).toBe(true);
+      // verifyBuild called once, revertUncommitted not called
+      expect(mockedExecSync).toHaveBeenCalledTimes(1);
+    });
+
+    it("retries and returns true when build passes on second attempt", () => {
+      mockedExecSync
+        .mockImplementationOnce(() => { throw new Error("build failed"); }) // attempt 1: verifyBuild fails
+        .mockReturnValueOnce(Buffer.from(""))  // attempt 1: revertUncommitted (git checkout .)
+        .mockReturnValueOnce(Buffer.from("")); // attempt 2: verifyBuild passes
+      expect(runBuildVerification(42)).toBe(true);
+    });
+
+    it("reverts between attempts but not after last attempt", () => {
+      const calls: string[] = [];
+      mockedExecSync.mockImplementation((cmd: unknown) => {
+        const cmdStr = String(cmd);
+        calls.push(cmdStr);
+        if (cmdStr.includes("pnpm")) throw new Error("build failed");
+        return Buffer.from("");
+      });
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+      // All 3 builds fail → hard reset
+      expect(runBuildVerification(42, 3)).toBe(false);
+      // Should have: build, revert, build, revert, build (no revert after last)
+      const revertCount = calls.filter(c => c.includes("checkout")).length;
+      expect(revertCount).toBe(2);
+    });
+
+    it("hard resets and returns false when all attempts fail", () => {
+      mockedExecSync.mockImplementation((cmd: unknown) => {
+        if (String(cmd).includes("pnpm")) throw new Error("build failed");
+        return Buffer.from("");
+      });
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+      expect(runBuildVerification(42, 3)).toBe(false);
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["reset", "--hard", "pre-evolution-cycle-42"],
+        expect.objectContaining({ timeout: 10_000 }),
+      );
+    });
+
+    it("throws when hard reset fails (manual intervention needed)", () => {
+      mockedExecSync.mockImplementation((cmd: unknown) => {
+        if (String(cmd).includes("pnpm")) throw new Error("build failed");
+        return Buffer.from("");
+      });
+      mockedExecFileSync.mockImplementation(() => { throw new Error("reset failed"); });
+      expect(() => runBuildVerification(42, 3)).toThrow();
+    });
+
+    it("respects custom maxAttempts parameter", () => {
+      let buildCallCount = 0;
+      mockedExecSync.mockImplementation((cmd: unknown) => {
+        if (String(cmd).includes("pnpm")) {
+          buildCallCount++;
+          throw new Error("build failed");
+        }
+        return Buffer.from("");
+      });
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+      runBuildVerification(42, 5);
+      expect(buildCallCount).toBe(5);
     });
   });
 });

@@ -102,6 +102,32 @@ export function createSafetyTag(cycleCount: number): boolean {
 }
 
 /**
+ * Post-evolution build verification with retry logic.
+ * Attempts up to `maxAttempts` builds, reverting uncommitted changes between
+ * attempts. If all attempts fail, performs a hard reset to the safety tag.
+ * Returns true if a build eventually passed, false if hard-reset was needed.
+ * Throws if the hard-reset itself fails (manual intervention required).
+ */
+export function runBuildVerification(
+  cycleCount: number,
+  maxAttempts: number = 3,
+): boolean {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    if (verifyBuild()) {
+      return true;
+    }
+    console.error(`Build verification failed (attempt ${attempt}/${maxAttempts})`);
+    if (attempt < maxAttempts) {
+      revertUncommitted();
+    }
+  }
+
+  console.error("Build broken after all attempts. Reverting to pre-evolution state.");
+  hardResetTo(`pre-evolution-cycle-${cycleCount}`);
+  return false;
+}
+
+/**
  * Validate that a string is a safe git ref (no shell metacharacters).
  */
 export function isValidGitRef(ref: string): boolean {
