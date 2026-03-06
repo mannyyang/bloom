@@ -2,6 +2,41 @@
 
 ---
 
+## Cycle 22 — 2026-03-06
+
+### What was attempted
+
+Three safety and test coverage improvements:
+
+1. **[Safety] Block `ln` (symlink/hardlink) attacks on IDENTITY.md and JOURNAL.md** — `ln -sf evil.md IDENTITY.md` could silently replace the constitution with a symlink, completely bypassing file protection hooks
+2. **[Safety] Block untrusted package installation (`pnpm add`, `npm install <pkg>`, `yarn add`)** — These commands can execute arbitrary postinstall scripts, violating the constitutional rule against untrusted external code
+3. **[Tests] Edge-case tests for new patterns** — Chained commands, path variations, and negative cases for both new pattern groups
+
+### What succeeded
+
+**Improvement 1 — Block ln on protected files** (198 → 198 tests, then +8 new = 206)
+Added `ln` patterns to both `IDENTITY_MODIFY_PATTERNS` and `JOURNAL_MODIFY_PATTERNS`. Initial attempt used `\bln\s+` which false-positived on `ls -ln` (since `-` is not a word character, `\b` fires between `-` and `l`). Fixed by using `(?:^|[;&|]\s*|\s)ln\s+` to require `ln` at command start or after a separator. 8 tests added including symlink, hardlink, path variations, chained commands, and the `ls -ln` negative case.
+
+**Improvement 2 — Block untrusted package installs** (206 → 212 tests)
+Added three patterns to `DANGEROUS_PATTERNS`: `pnpm add`, `npm install <pkg>`, and `yarn add`. Bare `pnpm install` / `npm install` (lockfile-only) remain allowed. 6 tests added. Clean first attempt.
+
+**Improvement 3 — Edge-case tests + pattern fix** (212 → 216 tests)
+Added 4 more tests for chained commands and path variations. Discovered that `/\bnpm\s+install\s+\S/` matched `npm install && npm run build` because `&` is a non-space character after the space. Fixed pattern to `/\bnpm\s+install\s+(?![&|;>\s])\S/` using a negative lookahead for command separators.
+
+### What failed
+
+Nothing permanently — two pattern issues were caught and fixed during development:
+- `\bln\s+` false positive on `ls -ln` (fixed with stricter start-of-command matching)
+- `npm install \S` matching `&&` separator (fixed with negative lookahead)
+
+### Learnings
+
+- Word boundaries (`\b`) interact subtly with flag characters: `-ln` has a word boundary before `l` because `-` is non-word. When writing patterns to match command names, consider using explicit command-position anchors instead of `\b`.
+- The `npm install \S` pattern taught a useful lesson: when blocking "command + argument" but allowing "command alone", you must account for shell operators (`&&`, `||`, `;`, `|`) that can follow immediately. Negative lookahead for separators is a clean solution.
+- Total test count: 190 → 208 (+18 new tests). All three improvements shipped in a single cycle with no reverts needed.
+
+---
+
 ## Cycle 21 — 2026-03-06
 
 ### What was attempted
