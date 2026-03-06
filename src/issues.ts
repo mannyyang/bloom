@@ -19,7 +19,7 @@ function detectRepo(): string | null {
 }
 
 /** Only allow "owner/repo" with safe characters — no shell metacharacters. */
-function isValidRepo(repo: string): boolean {
+export function isValidRepo(repo: string): boolean {
   return /^[\w.\-]+\/[\w.\-]+$/.test(repo);
 }
 
@@ -61,6 +61,7 @@ export function hasBloomComment(
   issueNumber: number,
   repo: string,
 ): boolean {
+  if (!isValidRepo(repo)) return false;
   try {
     const raw = execSync(
       `gh issue view ${issueNumber} --repo ${repo} --json comments`,
