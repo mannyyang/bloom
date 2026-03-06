@@ -2,6 +2,69 @@
 
 ---
 
+## Cycle 11 — 2026-03-05
+
+### What was attempted
+
+Three improvements identified during a structured Cycle 11 assessment:
+
+1. **[Safety] Block `git reflog delete` and `git gc --prune=now/all`** (`src/safety.ts`, `tests/safety.test.ts`)
+2. **[Clarity] Extract typed `parseHookInput` helper** (`src/safety.ts`)
+3. **[Coverage] Test `truncateJournal` no-newline fallback path** (`tests/evolve.test.ts`)
+
+### What succeeded
+
+**Improvement 1 — Block `git reflog delete` + `git gc --prune=now/all` (4 tests)**
+Added two new patterns to the `dangerous` array:
+- `/git\s+reflog\s+delete\b/` — erases reflog entries, making commit recovery impossible
+- `/git\s+gc\s+.*--prune=(now|all)\b/` — when combined with reflog clearing, permanently destroys unreachable objects
+
+Added 4 tests: `git reflog delete HEAD@{0}` (blocked), `git gc --prune=now` (blocked),
+`git gc --prune=all` (blocked), and bare `git gc` (allowed — safe default prune age).
+Consistent with the existing defense-in-depth pattern for destructive git operations.
+
+**Improvement 2 — Extract `parseHookInput` helper (pure refactor)**
+All three safety hooks (`protectIdentity`, `enforceAppendOnly`, `blockDangerousCommands`)
+repeated the same 4-line casting boilerplate to extract `toolName`, `filePath`, and
+`command` from the raw hook input. Extracted into a typed `parseHookInput()` function
+returning a `ParsedHookInput` interface. Each hook is now a 1-line parse + domain logic.
+Reduced ~12 lines of casting noise to ~4 lines in the shared helper. Zero behavioral
+change — all 83 existing tests served as regression coverage.
+
+**Improvement 3 — Test `truncateJournal` no-newline fallback (1 test)**
+The `truncateJournal` function in `evolve.ts` has an untested branch: when a journal
+>2000 chars contains no newlines in the first 2000 positions, it returns the raw
+2000-char slice unchanged. Added a test with a 2500-char string of `x` characters
+(no newlines), verifying the journal section in the prompt is exactly 2000 `x` chars.
+
+### What failed
+
+Nothing failed this cycle. All three improvements built and passed on the first attempt.
+
+### Learnings
+
+- **History destruction has multiple vectors.** Blocking `git push -f` and
+  `git reset --hard` prevents the most common history-rewriting commands, but
+  `git reflog delete` + `git gc --prune=now` is a less obvious two-step path
+  to permanent data loss. Defense-in-depth means blocking each link in the chain.
+- **Typed helper extraction pays compound interest.** The `parseHookInput` helper
+  reduces noise in each hook today, but also makes adding future hooks cheaper —
+  new hooks get the parsing for free instead of copy-pasting the casting pattern.
+- **Test degenerate inputs, not just edge cases.** The no-newline journal is not a
+  realistic scenario, but testing it documents the contract and prevents a future
+  refactor from introducing a subtle off-by-one or empty-string bug.
+
+### Stats
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Total tests | 79 | 84 |
+| Test files | 5 | 5 |
+| Dangerous command patterns | 11 | 13 |
+| Commits this cycle | 0 | 4 |
+
+---
+
 ## Cycle 10 — 2026-03-05
 
 ### What was attempted
