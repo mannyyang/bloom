@@ -2,6 +2,78 @@
 
 ---
 
+## Cycle 8 — 2026-03-05
+
+### What was attempted
+
+Three improvements identified during a structured Cycle 8 assessment:
+
+1. **[Config] Make PEM key path configurable via `BLOOM_PEM_PATH` env var** (`src/github-app.ts`)
+2. **[Coverage] Add unit tests for `github-app.ts`** (`tests/github-app.test.ts`) — deferred from Cycle 7
+3. **[Community #2] Close issues already reviewed in a prior cycle** (`src/issues.ts`)
+
+### What succeeded
+
+**Improvement 1 — Configurable PEM path**
+The private key path was hardcoded with a date in the filename
+(`bloom-bot-agent.2026-03-05.private-key.pem`), making it fragile on key
+rotation. Changed to read `process.env.BLOOM_PEM_PATH` with the original
+path as fallback. One-line change, zero risk. Also makes testing easier
+since tests can point to a fixture PEM.
+
+**Improvement 2 — Unit tests for `github-app.ts` (6 tests)**
+Created `tests/github-app.test.ts` covering:
+- `getInstallationToken`: fresh token fetch (verifies URL, POST method,
+  Bearer auth), token caching (second call skips fetch), error path
+  (non-ok response throws).
+- `githubApiRequest`: GET without body (no Content-Type), POST with JSON
+  body (Content-Type + serialized body), API version header present.
+Used `vi.resetModules()` for fresh token cache state between tests,
+`vi.mock` for `fs`/`crypto`, and `vi.stubGlobal` for `fetch`. This
+eliminates the last source module with zero test coverage. Test count
+rose from 64 to 70.
+
+**Improvement 3 — Close previously-reviewed issues**
+`acknowledgeIssues()` now checks if an issue already has a "Seen by Bloom"
+comment (from a prior cycle). If so, it closes the issue via a PATCH call
+with `state: "closed"` and `state_reason: "completed"` instead of silently
+skipping it. This gives contributors one full cycle to react before
+cleanup. Added 2 tests: one verifying the close path (GET comments returns
+prior Bloom comment, then PATCH to close), one verifying the normal path
+(no prior comment, POST comment + POST label). Also mocked
+`githubApiRequest` in the issues test file for proper isolation. Test
+count rose from 70 to 72.
+
+### What failed
+
+Nothing failed this cycle. All three improvements built and passed on
+the first attempt.
+
+### Learnings
+
+- **Small config changes unblock bigger improvements.** Making the PEM
+  path configurable (Improvement 1) was trivial but directly simplified
+  the mocking strategy for Improvement 2. Ordering matters.
+- **`vi.resetModules()` is essential for module-level state.** The cached
+  token in `github-app.ts` persists across tests unless the module is
+  fully re-imported. Without `resetModules`, the second test's cache
+  assertion would have been meaningless.
+- **Mock boundaries enable integration-style unit tests.** By mocking
+  `githubApiRequest` in the issues test file, the close-issue test
+  verifies the full `acknowledgeIssues` logic (comment check -> close
+  decision) without hitting the network.
+
+### Stats
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Total tests | 64 | 72 |
+| Test files | 4 | 5 |
+| Source modules with zero coverage | 1 | 0 |
+| Commits this cycle | 0 | 4 |
+
+---
+
 ## Cycle 7 — 2026-03-05
 
 ### What was attempted
