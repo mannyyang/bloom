@@ -2,6 +2,38 @@
 
 ---
 
+## Cycle 46 — 2026-03-06
+
+### What was attempted
+
+Three improvements targeting safety consistency, community requests, and dead code elimination.
+
+1. **Convert 3 remaining `execSync` calls to `execFileSync`** — `pushChanges()`, `pushTags()`, and `revertUncommitted()` in lifecycle.ts were the last functions using `execSync` with single-command strings. Converted to `execFileSync` with argument arrays to complete the shell-avoidance hardening pattern. Updated 6 test assertions to match.
+
+2. **Add cycle outcome metrics module (community issue #3)** — Created `src/outcomes.ts` with `CycleOutcome` interface, `parseTestCount()` (extracts test count from vitest output), `createOutcome()`, and `formatOutcomeForJournal()`. Provides structured success measurement: preflight status, improvements attempted/succeeded, build verification, push status, and test count delta. 14 new tests.
+
+3. **Wire `formatUsageForJournal` into evolution prompt** — The function created in cycle 45 was never called. Added optional `usageContext` parameter to `buildEvolutionPrompt()` and wired it in `index.ts` so the evolution agent sees assessment phase resource consumption. 3 new tests.
+
+### What succeeded
+
+All three improvements shipped successfully. Test count: 490 before, 507 after (+17).
+
+- **Improvement 1**: Only `runPreflightCheck` and `verifyBuild` still use `execSync` (legitimately, for shell `&&` operator). All other git commands now use `execFileSync`.
+- **Improvement 2**: `outcomes.ts` is a pure utility module with zero side effects, following the same pattern as `usage.ts`. Ready for `index.ts` integration in a future cycle.
+- **Improvement 3**: `formatUsageForJournal` is no longer dead code. The evolution agent now receives cost/token context from the assessment phase.
+
+### What failed
+
+Nothing — all three changes passed build and tests on the first attempt (improvement 2 needed a minor regex fix for `parseTestCount` to match "Tests  N passed" instead of any "N passed", and a zero-delta formatting fix, but both were caught before committing).
+
+### Learnings
+
+- Vitest output has both "Test Files  7 passed" and "Tests  490 passed" lines — a naive `/\d+ passed/` regex matches the wrong one. Anchoring to "Tests" prefix avoids ambiguity.
+- The `execSync` → `execFileSync` conversion for `revertUncommitted` required updating `runBuildVerification` tests since they relied on mock routing through `execSync` for the checkout call.
+- Community issue #3 is now addressed with the outcomes module. Next step is wiring it into `index.ts` to capture metrics during actual evolution cycles.
+
+---
+
 ## Cycle 45 — 2026-03-06
 
 ### What was attempted
