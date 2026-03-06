@@ -100,6 +100,13 @@ describe("fetchCommunityIssues", () => {
       "/repos/owner/repo/issues?labels=agent-input&state=open&per_page=20",
     );
   });
+
+  it("returns empty array when githubApiRequest throws (network error)", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest.mockRejectedValueOnce(new Error("network failure"));
+    const result = await fetchCommunityIssues();
+    expect(result).toEqual([]);
+  });
 });
 
 describe("acknowledgeIssues", () => {
@@ -195,6 +202,37 @@ describe("acknowledgeIssues", () => {
 
     // No API calls should have been made — all issues have unsafe numbers
     expect(mockGithubApiRequest).not.toHaveBeenCalled();
+  });
+
+  it("completes gracefully when githubApiRequest throws on POST comment", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    const issues = [
+      { number: 1, title: "Will fail on comment", body: "", reactions: 0 },
+      { number: 2, title: "Should still run", body: "", reactions: 0 },
+    ];
+
+    // Issue 1: GET comments succeeds (no Bloom comment)
+    mockGithubApiRequest.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    } as unknown as Response);
+    // Issue 1: POST comment throws — triggers outer catch block
+    mockGithubApiRequest.mockRejectedValueOnce(new Error("boom"));
+    // Issue 2: GET comments succeeds (no Bloom comment)
+    mockGithubApiRequest.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    } as unknown as Response);
+    // Issue 2: POST comment succeeds
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+    // Issue 2: POST label succeeds
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+
+    // Should not throw — the outer catch block swallows the error
+    await expect(acknowledgeIssues(issues, 10)).resolves.toBeUndefined();
+
+    // Issue 1: 2 calls (GET comments + failed POST), Issue 2: 3 calls
+    expect(mockGithubApiRequest).toHaveBeenCalledTimes(5);
   });
 });
 
