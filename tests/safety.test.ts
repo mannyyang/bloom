@@ -235,6 +235,26 @@ describe("blockDangerousCommands", () => {
     expectDenied(await blockDangerousCommands(makeBashInput("git push -f"), "tool-1", hookOpts));
   });
 
+  it("blocks git push origin main --force (flag after remote/branch)", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("git push origin main --force"), "tool-1", hookOpts));
+  });
+
+  it("blocks git push origin main -f (short flag after remote/branch)", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("git push origin main -f"), "tool-1", hookOpts));
+  });
+
+  it("blocks git push --force-with-lease origin main", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("git push --force-with-lease origin main"), "tool-1", hookOpts));
+  });
+
+  it("blocks git push origin main --force-with-lease", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("git push origin main --force-with-lease"), "tool-1", hookOpts));
+  });
+
+  it("blocks git push --force-if-includes origin main", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("git push --force-if-includes origin main"), "tool-1", hookOpts));
+  });
+
   it("allows git push origin main (no force)", async () => {
     expectAllowed(await blockDangerousCommands(makeBashInput("git push origin main"), "tool-1", hookOpts));
   });
