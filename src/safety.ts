@@ -108,7 +108,7 @@ const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bperl\s+(?:-e|-E)\b/, category: "inline-code-execution" },
   { pattern: /\bruby\s+-e\b/, category: "inline-code-execution" },
   // Shell script execution — source and dot-script (`. `) execute arbitrary files
-  { pattern: /\bsource\s/, category: "shell-script-execution" },
+  { pattern: /(?:^|[;&|]\s*)source\s/, category: "shell-script-execution" },
   { pattern: /(?:^|[;&|]\s*)\.\s+\S/, category: "shell-script-execution" },
   // Untrusted package execution — npx/npm exec/pnpm exec/pnpm dlx/yarn dlx run arbitrary packages
   { pattern: /\bnpx\s/, category: "untrusted-package-execution" },
