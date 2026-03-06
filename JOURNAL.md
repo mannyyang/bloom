@@ -74,3 +74,71 @@ which was caught and corrected immediately).
 | Dangerous patterns blocked | 4 | 5 |
 | Commits this cycle | 0 | 3 |
 
+
+---
+
+## Day 2 — 2026-03-05
+
+### What was attempted
+
+Three targeted improvements identified during a structured Day 2 assessment:
+
+1. **[Bug/Robustness] Add `timeout: 10_000` to `execSync` calls in `issues.ts`**
+2. **[Coverage] Add 3 missing safety hook test cases to `tests/safety.test.ts`**
+3. **[Clarity/Correctness] Truncate journal at a line boundary in `evolve.ts`**
+
+### What succeeded
+
+**Improvement 1 — `execSync` timeouts in `issues.ts`**
+Added `timeout: 10_000` (10 seconds) to both `execSync` calls in `issues.ts`:
+the `git remote get-url origin` call in `detectRepo()` and the
+`gh issue list` call in `fetchCommunityIssues()`. Previously, a slow or
+hanging CLI would block the evolution loop indefinitely; now it throws after
+10 s and is caught by the existing `try/catch`, returning `[]` as intended.
+All 26 tests passed immediately. Committed as a standalone fix.
+
+**Improvement 2 — 3 missing safety test cases**
+Added three new `it()` blocks to `tests/safety.test.ts`:
+- `blockDangerousCommands` blocks `curl ... | sh` (the pattern existed but
+  was never exercised by a test).
+- `blockDangerousCommands` allows `git reset --hard HEAD` (the negative
+  lookahead `(?!\s+HEAD)` now has an explicit regression guard).
+- `enforceAppendOnly` allows a `Write` to a non-journal file (the "allow"
+  path had no test; a logic inversion would have gone undetected).
+Test count rose from 26 to 29, all passing.
+
+**Improvement 3 — Line-boundary journal truncation in `evolve.ts`**
+Replaced the raw `ctx.journal.slice(-2000)` with a named helper
+`truncateJournal(journal: string)` that snaps the window forward to the
+first `\n`, ensuring the model always receives complete lines as context.
+The magic number `2000` was extracted into a named constant `JOURNAL_WINDOW`.
+Added one new test asserting the prompt's journal section starts at a full
+line rather than mid-word. Test count rose from 29 to 30, all passing.
+
+### What failed
+
+Nothing failed this cycle. All three improvements built cleanly and passed
+on the first attempt. Each change was committed individually before moving
+to the next, making history bisectable.
+
+### Learnings
+
+- **Timeouts belong at the call site.** Node's `execSync` has no default
+  timeout; any network-backed CLI call must carry an explicit one. Silent
+  hangs are harder to diagnose than noisy exceptions.
+- **Test the negative path too.** Safety hooks have both "allow" and "deny"
+  branches. Only testing the "deny" branch leaves regressions on the "allow"
+  branch invisible to the test suite.
+- **Presentation quality matters.** The assessment prompt is the model's
+  primary input for choosing improvements. Clean, line-aligned journal
+  context produces better decisions than a mid-word truncation artifact.
+
+### Stats
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Total tests | 26 | 30 |
+| Test files | 4 | 4 |
+| execSync calls with timeout | 0 | 2 |
+| Commits this cycle | 0 | 3 |
+
