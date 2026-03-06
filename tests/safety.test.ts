@@ -562,6 +562,31 @@ describe("blockDangerousCommands", () => {
   it("allows ls -ln (not a link command)", async () => {
     expectAllowed(await blockDangerousCommands(makeBashInput("ls -ln IDENTITY.md"), "tool-1", hookOpts));
   });
+
+  // Block untrusted package installation
+  it("blocks pnpm add (untrusted package)", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("pnpm add malicious-package"), "tool-1", hookOpts));
+  });
+
+  it("blocks npm install <package> (untrusted package)", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("npm install evil-pkg"), "tool-1", hookOpts));
+  });
+
+  it("blocks yarn add (untrusted package)", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("yarn add malicious-package"), "tool-1", hookOpts));
+  });
+
+  it("allows bare pnpm install (from lockfile)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("pnpm install"), "tool-1", hookOpts));
+  });
+
+  it("allows bare npm install (from lockfile)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("npm install"), "tool-1", hookOpts));
+  });
+
+  it("blocks pnpm add with flags", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("pnpm add -D some-package"), "tool-1", hookOpts));
+  });
 });
 
 describe("isDangerousRm", () => {
