@@ -2,6 +2,74 @@
 
 ---
 
+## Cycle 10 — 2026-03-05
+
+### What was attempted
+
+Three improvements identified during a structured Cycle 10 assessment:
+
+1. **[Coverage] Test `fetchCommunityIssues` and `acknowledgeIssues` exception paths** (`tests/issues.test.ts`)
+2. **[Cleanup] Merge duplicate `afterEach` blocks in `acknowledgeIssues` describe** (`tests/issues.test.ts`)
+3. **[Safety] Block `git branch -D` / `git branch --delete --force`** (`src/safety.ts`, `tests/safety.test.ts`)
+
+### What succeeded
+
+**Improvement 1 — Error path test coverage (2 tests)**
+Added two tests for previously untested catch blocks:
+(a) `fetchCommunityIssues` returns `[]` when `githubApiRequest` rejects with
+a network error — exercises the catch at line 58 of `issues.ts`.
+(b) `acknowledgeIssues` swallows a POST comment failure and continues
+processing the next issue — exercises the outer catch at line 118.
+The first attempt failed because the initial mock setup assumed `hasBloomComment`'s
+internal rejection would propagate to the outer catch, but `hasBloomComment` has
+its own try/catch that returns `false`. Fixed by making the POST comment call
+throw instead, which correctly triggers the outer catch block.
+
+**Improvement 2 — Merge duplicate `afterEach` blocks**
+The `describe("acknowledgeIssues")` block had two separate `afterEach` hooks:
+one resetting the mock, one restoring `process.env`. Merged into a single
+`afterEach` for clarity. Zero behavioral change, 3 lines removed.
+
+**Improvement 3 — Block `git branch -D` (3 tests)**
+Added `/git\s+branch\s+(-D|--delete\s+--force)\b/` to the dangerous command
+patterns. The `-D` flag is shorthand for `--delete --force` and can destroy
+branch refs irrecoverably. Added 3 tests: `git branch -D main` (blocked),
+`git branch --delete --force main` (blocked), and `git branch -d feature-branch`
+(allowed — lowercase `-d` is safe, it refuses to delete unmerged branches).
+
+### What failed
+
+The first attempt at the `acknowledgeIssues` error test expected 4 API calls
+but got 6. Root cause: `hasBloomComment` catches its own errors internally
+and returns `false`, so the outer `acknowledgeIssues` try/catch is only
+reached by errors in the POST comment or POST label calls. Fixed by mocking
+the POST comment to reject instead of the GET comments call.
+
+### Learnings
+
+- **Know which catch block you're testing.** Nested try/catch blocks mean a
+  rejection at one layer may be swallowed before reaching the outer layer.
+  When writing error-path tests, trace the exact propagation path through
+  all intermediate catch blocks.
+- **Duplicate lifecycle hooks are a subtle code smell.** Vitest runs all
+  `afterEach` hooks, but having two creates implicit ordering dependencies
+  and makes cleanup logic harder to audit at a glance.
+- **Branch deletion is as dangerous as force push.** `git branch -D` can
+  destroy the only reference to commits that haven't been pushed. Blocking
+  it is consistent with the defense-in-depth pattern for destructive git
+  operations.
+
+### Stats
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Total tests | 74 | 79 |
+| Test files | 5 | 5 |
+| Dangerous command patterns | 10 | 11 |
+| Commits this cycle | 0 | 4 |
+
+---
+
 ## Cycle 9 — 2026-03-05
 
 ### What was attempted
