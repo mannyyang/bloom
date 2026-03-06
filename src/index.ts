@@ -70,7 +70,7 @@ async function main() {
   console.log("\nAssessment complete.");
 
   // Acknowledge all community issues so contributors see their input was seen.
-  acknowledgeIssues(issues, cycleCount);
+  await acknowledgeIssues(issues, cycleCount);
 
   // Phase 2: Evolution (read-write with safety hooks)
   console.log("\n--- Phase 2: Evolution ---");

@@ -1,4 +1,5 @@
 import { execSync } from "child_process";
+import { githubApiRequest } from "./github-app.js";
 
 export interface CommunityIssue {
   number: number;
@@ -62,47 +63,17 @@ export function fetchCommunityIssues(): CommunityIssue[] {
  * Check whether Bloom has already posted a "Seen by Bloom" comment on the
  * given issue, to avoid duplicate comment spam across cycles.
  */
-export function hasBloomComment(
+async function hasBloomComment(
   issueNumber: number,
   repo: string,
-): boolean {
-  if (!isSafeIssueNumber(issueNumber)) return false;
-  if (!isValidRepo(repo)) return false;
+): Promise<boolean> {
   try {
-    const raw = execSync(
-      `gh issue view ${issueNumber} --repo ${repo} --json comments`,
-      { encoding: "utf-8", timeout: 10_000 },
-    );
-    const data = JSON.parse(raw) as {
-      comments: Array<{ body: string }>;
-    };
-    return data.comments.some((c) => c.body.includes("Seen by Bloom"));
+    const res = await githubApiRequest("GET", `/repos/${repo}/issues/${issueNumber}/comments`);
+    if (!res.ok) return false;
+    const comments = (await res.json()) as Array<{ body: string }>;
+    return comments.some((c) => c.body.includes("Seen by Bloom"));
   } catch {
-    // If we can't check, assume not commented (will attempt to post).
     return false;
-  }
-}
-
-/**
- * Add a label to an issue.  Best-effort: failures are swallowed so a
- * missing label or permission issue never blocks evolution.
- */
-export function labelIssue(
-  issueNumber: number,
-  repo: string,
-  label: string,
-): void {
-  if (!isSafeIssueNumber(issueNumber)) return;
-  if (!isValidRepo(repo)) return;
-  // Sanitise label — only allow printable non-shell-meta characters.
-  if (!/^[\w.\- ]+$/.test(label)) return;
-  try {
-    execSync(
-      `gh issue edit ${issueNumber} --repo ${repo} --add-label "${label}"`,
-      { timeout: 10_000 },
-    );
-  } catch {
-    // Best-effort: don't let a failed label block evolution.
   }
 }
 
@@ -113,22 +84,27 @@ export function labelIssue(
  * "bloom-reviewed" label for at-a-glance visibility.  Failures are
  * swallowed — a missing comment must never block evolution.
  */
-export function acknowledgeIssues(
+export async function acknowledgeIssues(
   issues: CommunityIssue[],
   cycleCount: number,
-): void {
+): Promise<void> {
   if (issues.length === 0) return;
   const repo = detectRepo();
   if (!repo || !isValidRepo(repo)) return;
 
   for (const issue of issues) {
     try {
-      if (hasBloomComment(issue.number, repo)) continue;
-      execSync(
-        `gh issue comment ${issue.number} --repo ${repo} --body "Seen by Bloom in cycle ${cycleCount}. Thank you for your input!"`,
-        { timeout: 10_000 },
-      );
-      labelIssue(issue.number, repo, "bloom-reviewed");
+      if (!isSafeIssueNumber(issue.number)) continue;
+      if (await hasBloomComment(issue.number, repo)) continue;
+
+      await githubApiRequest("POST", `/repos/${repo}/issues/${issue.number}/comments`, {
+        body: `Seen by Bloom in cycle ${cycleCount}. Thank you for your input!`,
+      });
+
+      // Add label — best-effort
+      await githubApiRequest("POST", `/repos/${repo}/issues/${issue.number}/labels`, {
+        labels: ["bloom-reviewed"],
+      }).catch(() => {});
     } catch {
       // Best-effort: don't let a failed comment block evolution.
     }
