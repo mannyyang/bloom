@@ -1,5 +1,12 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { fetchCommunityIssues, acknowledgeIssues, isValidRepo, isSafeIssueNumber } from "../src/issues.js";
+import { githubApiRequest } from "../src/github-app.js";
+
+vi.mock("../src/github-app.js", () => ({
+  githubApiRequest: vi.fn(),
+}));
+
+const mockGithubApiRequest = vi.mocked(githubApiRequest);
 
 describe("isValidRepo", () => {
   it("accepts a standard owner/repo format", () => {
@@ -75,6 +82,10 @@ describe("acknowledgeIssues", () => {
   const originalEnv = process.env.GITHUB_REPOSITORY;
 
   afterEach(() => {
+    mockGithubApiRequest.mockReset();
+  });
+
+  afterEach(() => {
     if (originalEnv !== undefined) {
       process.env.GITHUB_REPOSITORY = originalEnv;
     } else {
@@ -91,6 +102,61 @@ describe("acknowledgeIssues", () => {
     process.env.GITHUB_REPOSITORY = "not-a-valid-repo";
     const issue = { number: 1, title: "Test", body: "", reactions: 0 };
     await expect(acknowledgeIssues([issue], 3)).resolves.toBeUndefined();
+  });
+
+  it("closes an issue that already has a Bloom comment from a prior cycle", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    const issue = { number: 7, title: "Old issue", body: "", reactions: 0 };
+
+    // First call: GET comments — returns a prior "Seen by Bloom" comment
+    mockGithubApiRequest.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ body: "Seen by Bloom in cycle 5. Thank you for your input!" }],
+    } as unknown as Response);
+    // Second call: PATCH to close the issue
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+
+    await acknowledgeIssues([issue], 6);
+
+    // Verify the PATCH call to close the issue
+    expect(mockGithubApiRequest).toHaveBeenCalledWith(
+      "PATCH",
+      "/repos/owner/repo/issues/7",
+      { state: "closed", state_reason: "completed" },
+    );
+    // Should NOT have posted a new comment (only 2 calls: GET comments + PATCH close)
+    expect(mockGithubApiRequest).toHaveBeenCalledTimes(2);
+  });
+
+  it("posts a comment and label for a new issue without prior Bloom comment", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    const issue = { number: 10, title: "New issue", body: "", reactions: 0 };
+
+    // First call: GET comments — no Bloom comment found
+    mockGithubApiRequest.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ body: "Some other comment" }],
+    } as unknown as Response);
+    // Second call: POST comment
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+    // Third call: POST label
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+
+    await acknowledgeIssues([issue], 8);
+
+    // Verify comment was posted
+    expect(mockGithubApiRequest).toHaveBeenCalledWith(
+      "POST",
+      "/repos/owner/repo/issues/10/comments",
+      { body: "Seen by Bloom in cycle 8. Thank you for your input!" },
+    );
+    // Verify label was added
+    expect(mockGithubApiRequest).toHaveBeenCalledWith(
+      "POST",
+      "/repos/owner/repo/issues/10/labels",
+      { labels: ["bloom-reviewed"] },
+    );
+    expect(mockGithubApiRequest).toHaveBeenCalledTimes(3);
   });
 });
 
