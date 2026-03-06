@@ -7,7 +7,7 @@ interface AssessmentContext {
   cycleCount: number;
 }
 
-const JOURNAL_WINDOW = 2000;
+const JOURNAL_WINDOW = 4000;
 
 function truncateJournal(journal: string): string {
   if (journal.length <= JOURNAL_WINDOW) return journal;
