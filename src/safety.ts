@@ -66,28 +66,39 @@ export function isDangerousRm(command: string): boolean {
 }
 
 const DANGEROUS_PATTERNS = [
+  // Git history destruction — force push overwrites remote history
   /git\s+push\s+(-f|--force)/,
+  // Git history destruction — hard reset to arbitrary ref loses uncommitted work
   /git\s+reset\s+--hard\s+(?!HEAD\s*$)/,
+  // Remote code execution — piping downloaded content into a shell
   /curl.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh/,
   /wget.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh/,
+  // Arbitrary code execution — eval, bash -c, sh -c run uncontrolled strings
   /\beval\s/,
   /(?:[\w./]*\/)?bash\s+-c\b/,
   /(?:[\w./]*\/)?sh\s+-c\b/,
+  // Untrusted package execution — npx/npm exec run arbitrary packages
   /\bnpx\s/,
   /\bnpm\s+exec\b/,
+  // Git ref destruction — force-delete branches, delete reflog, prune objects
   /git\s+branch\s+(-D|--delete\s+--force)\b/,
   /git\s+reflog\s+delete\b/,
   /git\s+gc\s+.*--prune=(now|all)\b/,
+  // Git internals tampering — changing permissions/ownership of .git/
   /\bchmod\s+.*\.git\//,
   /\bchown\s+.*\.git\//,
+  // Disk/partition destruction — writing to raw devices or reformatting
   /\bdd\s+.*of=\/dev\//,
   /\bmkfs\b/,
   /\bwipefs\b/,
   /\bfdisk\b/,
   /\bparted\b/,
+  // Git working tree destruction — force-clean untracked files
   /git\s+clean\s+.*(-f|--force)/,
+  // Data exfiltration — curl/wget sending data to external servers
   /\bcurl\s+.*(-d\b|--data\b|--data-binary\b|--data-raw\b|--data-urlencode\b|--upload-file\b|-F\b|--form\b)/,
   /\bwget\s+.*--post-(data|file)\b/,
+  // Untrusted package installation — adding deps pulls arbitrary code
   /\bpnpm\s+add\b/,
   /\bnpm\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/,
   /\byarn\s+add\b/,
