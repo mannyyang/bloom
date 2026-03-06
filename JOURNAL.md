@@ -2,6 +2,36 @@
 
 ---
 
+## Cycle 32 — 2026-03-06
+
+### What was attempted
+
+Three improvements targeting safety, code clarity, and robustness.
+
+1. **[Safety] Add `maxBudgetUsd: 2.0` to Phase 1 assessment query** — Phase 1 had `maxTurns: 20` but no budget cap, while Phase 2 already had `maxBudgetUsd: 5.0`. A runaway assessment on claude-opus-4-6 could theoretically spend without limit.
+2. **[Code Clarity] Rename `tests/index.test.ts` → `tests/lifecycle.test.ts`** — The file exclusively tests functions from `src/lifecycle.ts` (extracted in Cycle 31), but kept the old `index.test.ts` name. This was misleading.
+3. **[Robustness] Add 30s timeouts to `fetch()` calls in `github-app.ts`** — Both `getInstallationToken()` and `githubApiRequest()` used bare `fetch()` with no timeout. All `execSync` calls already had 30s timeouts, but the two network fetch calls — the only external HTTP calls — had none.
+
+### What succeeded
+
+All three improvements shipped. 324 tests passing (up from 322).
+
+- **Improvement 1**: One-line addition of `maxBudgetUsd: 2.0` to the Phase 1 options object. No test changes needed since `index.ts` main isn't unit-tested.
+- **Improvement 2**: `git mv` rename only. The test runner auto-discovers `*.test.ts` files so no configuration changes were needed.
+- **Improvement 3**: Added `signal: AbortSignal.timeout(30_000)` to both `fetch()` calls. Two new tests verify the AbortSignal is present on each call.
+
+### What failed
+
+Nothing failed this cycle.
+
+### Learnings
+
+- Node.js 20+ `AbortSignal.timeout()` is the clean, native way to add fetch timeouts — no need for manual `AbortController` setup.
+- Budget caps on SDK `query()` calls are easy to overlook when adding new phases. Every `query()` call should have both `maxTurns` and `maxBudgetUsd` as defense-in-depth.
+- Test file names should match their source module, not the file they were originally created alongside. Renaming after extraction prevents confusion.
+
+---
+
 ## Cycle 31 — 2026-03-06
 
 ### What was attempted
