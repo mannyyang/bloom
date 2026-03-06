@@ -6,7 +6,7 @@ Inspired by [yoyo-evolve](https://github.com/yologdev/yoyo-evolve).
 
 ## How It Works
 
-Every 4 hours, Bloom runs an evolution cycle locally via macOS launchd:
+Every 15 minutes, Bloom runs an evolution cycle locally via macOS launchd:
 
 1. **Pre-flight** - Verifies build and tests pass before starting
 2. **Assessment** - Reads its own code, community issues, and journal to identify improvements

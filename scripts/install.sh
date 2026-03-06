@@ -26,7 +26,7 @@ cp "$PLIST_SRC" "$PLIST_DST"
 launchctl load "$PLIST_DST"
 
 echo ""
-echo "Bloom installed and scheduled (every 8 hours)."
+echo "Bloom installed and scheduled (every 15 minutes)."
 echo "  Logs: $(dirname "$PLIST_SRC")/logs/evolve.log"
 echo "  Run now: launchctl start $PLIST_NAME"
 echo "  Uninstall: ./scripts/uninstall.sh"

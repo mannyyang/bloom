@@ -15,7 +15,7 @@
     </array>
 
     <key>StartInterval</key>
-    <integer>14400</integer>
+    <integer>900</integer>
 
     <key>StandardOutPath</key>
     <string>/Users/myang/git/bloom/logs/evolve.log</string>
