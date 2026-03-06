@@ -201,6 +201,50 @@ describe("acknowledgeIssues", () => {
     expect(mockGithubApiRequest).not.toHaveBeenCalled();
   });
 
+  it("posts comment when hasBloomComment API returns !res.ok (treats as no prior comment)", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    const issue = { number: 15, title: "API error on comments", body: "", reactions: 0 };
+
+    // First call: GET comments returns !ok — hasBloomComment returns false
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: false } as Response);
+    // Second call: POST comment succeeds
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+    // Third call: POST label succeeds
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+
+    await acknowledgeIssues([issue], 11);
+
+    // Should have posted a new comment (not closed the issue)
+    expect(mockGithubApiRequest).toHaveBeenCalledWith(
+      "POST",
+      "/repos/owner/repo/issues/15/comments",
+      { body: "Seen by Bloom in cycle 11. Thank you for your input!" },
+    );
+    expect(mockGithubApiRequest).toHaveBeenCalledTimes(3);
+  });
+
+  it("posts comment when hasBloomComment API throws (treats as no prior comment)", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    const issue = { number: 20, title: "Network error on comments", body: "", reactions: 0 };
+
+    // First call: GET comments throws — hasBloomComment returns false
+    mockGithubApiRequest.mockRejectedValueOnce(new Error("network down"));
+    // Second call: POST comment succeeds
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+    // Third call: POST label succeeds
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+
+    await acknowledgeIssues([issue], 12);
+
+    // Should have posted a new comment (not closed the issue)
+    expect(mockGithubApiRequest).toHaveBeenCalledWith(
+      "POST",
+      "/repos/owner/repo/issues/20/comments",
+      { body: "Seen by Bloom in cycle 12. Thank you for your input!" },
+    );
+    expect(mockGithubApiRequest).toHaveBeenCalledTimes(3);
+  });
+
   it("completes gracefully when githubApiRequest throws on POST comment", async () => {
     process.env.GITHUB_REPOSITORY = "owner/repo";
     const issues = [
