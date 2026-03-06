@@ -145,12 +145,19 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
 ];
 
 /**
+ * Escape a string for safe interpolation into a `new RegExp(...)`.
+ * Replaces every regex-special character with its backslash-escaped form.
+ */
+export function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
  * Build an array of RegExp patterns that detect dangerous shell commands
  * targeting a specific protected file.
  *
- * @param filename - A **regex-escaped** filename string (e.g., `"JOURNAL\\.md"`,
- *   not `"JOURNAL.md"`). The value is interpolated directly into `new RegExp(...)`,
- *   so an unescaped `.` would match any character, causing false positives.
+ * @param filename - A plain filename string (e.g., `"JOURNAL.md"`).
+ *   The function escapes regex-special characters automatically.
  * @param opts.allowAppend - If true, permits append operations (`>>` and `tee -a`)
  *   while still blocking overwrites. Used for JOURNAL.md which is append-only.
  * @returns Array of RegExp patterns covering redirects, cp, mv, sed -i, truncate,
@@ -158,37 +165,38 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
  *
  * @example
  * ```ts
- * const patterns = buildProtectedFilePatterns("JOURNAL\\.md", { allowAppend: true });
+ * const patterns = buildProtectedFilePatterns("JOURNAL.md", { allowAppend: true });
  * ```
  */
 export function buildProtectedFilePatterns(filename: string, opts?: { allowAppend?: boolean }): RegExp[] {
+  const escaped = escapeRegex(filename);
   const patterns: RegExp[] = [
     // Redirect: for append-allowed files, only block overwrite (>); otherwise block both (> and >>)
     opts?.allowAppend
-      ? new RegExp(`(?:^|[^>])>\\s*(?:\\S*\\/)?${filename}`)
-      : new RegExp(`(?:>|>>)\\s*(?:\\S*\\/)?${filename}`),
+      ? new RegExp(`(?:^|[^>])>\\s*(?:\\S*\\/)?${escaped}`)
+      : new RegExp(`(?:>|>>)\\s*(?:\\S*\\/)?${escaped}`),
     // tee: for append-allowed files, allow tee -a; otherwise block all tee
     opts?.allowAppend
-      ? new RegExp(`\\btee\\s+(?!.*-\\w*a)(?:.*\\s)?(?:\\S*\\/)?${filename}`)
-      : new RegExp(`\\btee\\s+(?:.*\\s)?(?:\\S*\\/)?${filename}`),
-    new RegExp(`\\bcp\\s+(?:.*\\s)?(?:\\S*\\/)?${filename}(?:\\s|$|;|&|\\|)`),
-    new RegExp(`\\bmv\\s+(?:.*\\s)?(?:\\S*\\/)?${filename}(?:\\s|$|;|&|\\|)`),
-    new RegExp(`\\bsed\\s+-i\\b.*${filename}`),
-    new RegExp(`\\btruncate\\s+.*${filename}`),
-    new RegExp(`\\bdd\\s+.*of=(?:\\S*\\/)?${filename}`),
-    new RegExp(`\\bchmod\\s+.*${filename}`),
-    new RegExp(`\\bchown\\s+.*${filename}`),
-    new RegExp(`\\brm\\s+.*${filename}`),
-    new RegExp(`\\bunlink\\s+.*${filename}`),
-    new RegExp(`(?:^|[;&|]\\s*|\\s)ln\\s+.*${filename}`),
-    new RegExp(`git\\s+checkout\\s+.*--\\s+.*${filename}`),
-    new RegExp(`git\\s+restore\\s+.*${filename}`),
+      ? new RegExp(`\\btee\\s+(?!.*-\\w*a)(?:.*\\s)?(?:\\S*\\/)?${escaped}`)
+      : new RegExp(`\\btee\\s+(?:.*\\s)?(?:\\S*\\/)?${escaped}`),
+    new RegExp(`\\bcp\\s+(?:.*\\s)?(?:\\S*\\/)?${escaped}(?:\\s|$|;|&|\\|)`),
+    new RegExp(`\\bmv\\s+(?:.*\\s)?(?:\\S*\\/)?${escaped}(?:\\s|$|;|&|\\|)`),
+    new RegExp(`\\bsed\\s+-i\\b.*${escaped}`),
+    new RegExp(`\\btruncate\\s+.*${escaped}`),
+    new RegExp(`\\bdd\\s+.*of=(?:\\S*\\/)?${escaped}`),
+    new RegExp(`\\bchmod\\s+.*${escaped}`),
+    new RegExp(`\\bchown\\s+.*${escaped}`),
+    new RegExp(`\\brm\\s+.*${escaped}`),
+    new RegExp(`\\bunlink\\s+.*${escaped}`),
+    new RegExp(`(?:^|[;&|]\\s*|\\s)ln\\s+.*${escaped}`),
+    new RegExp(`git\\s+checkout\\s+.*--\\s+.*${escaped}`),
+    new RegExp(`git\\s+restore\\s+.*${escaped}`),
   ];
   return patterns;
 }
 
-const JOURNAL_MODIFY_PATTERNS = buildProtectedFilePatterns("JOURNAL\\.md", { allowAppend: true });
-const IDENTITY_MODIFY_PATTERNS = buildProtectedFilePatterns("IDENTITY\\.md");
+const JOURNAL_MODIFY_PATTERNS = buildProtectedFilePatterns("JOURNAL.md", { allowAppend: true });
+const IDENTITY_MODIFY_PATTERNS = buildProtectedFilePatterns("IDENTITY.md");
 
 export function isDangerousCommand(command: string): string | null {
   for (const { pattern, category } of DANGEROUS_PATTERNS) {

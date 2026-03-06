@@ -1280,22 +1280,17 @@ describe("buildProtectedFilePatterns", () => {
     return patterns.some((p) => p.test(command));
   }
 
-  describe("regex-escaped filename contract", () => {
-    it("unescaped dot matches unintended filenames (demonstrates the footgun)", () => {
-      // Without escaping, "." matches any character — JOURNALXMD would match
-      const badPatterns = buildProtectedFilePatterns("JOURNAL.md");
-      expect(matchesAny(badPatterns, "rm JOURNALxmd")).toBe(true); // false positive!
-    });
-
-    it("escaped dot only matches literal dot", () => {
-      const goodPatterns = buildProtectedFilePatterns("JOURNAL\\.md");
-      expect(matchesAny(goodPatterns, "rm JOURNALxmd")).toBe(false); // correctly rejected
-      expect(matchesAny(goodPatterns, "rm JOURNAL.md")).toBe(true);
+  describe("automatic regex escaping", () => {
+    it("plain dot in filename is escaped (no false positives)", () => {
+      // With auto-escaping, "JOURNAL.md" correctly escapes the dot
+      const patterns = buildProtectedFilePatterns("JOURNAL.md");
+      expect(matchesAny(patterns, "rm JOURNALxmd")).toBe(false); // no false positive
+      expect(matchesAny(patterns, "rm JOURNAL.md")).toBe(true);
     });
   });
 
   describe("full protection (IDENTITY.md-style)", () => {
-    const patterns = buildProtectedFilePatterns("IDENTITY\\.md");
+    const patterns = buildProtectedFilePatterns("IDENTITY.md");
 
     it("blocks > redirect", () => {
       expect(matchesAny(patterns, 'echo x > IDENTITY.md')).toBe(true);
@@ -1371,7 +1366,7 @@ describe("buildProtectedFilePatterns", () => {
   });
 
   describe("append-allowed protection (JOURNAL.md-style)", () => {
-    const patterns = buildProtectedFilePatterns("JOURNAL\\.md", { allowAppend: true });
+    const patterns = buildProtectedFilePatterns("JOURNAL.md", { allowAppend: true });
 
     it("blocks > overwrite redirect", () => {
       expect(matchesAny(patterns, 'echo x > JOURNAL.md')).toBe(true);
@@ -1434,8 +1429,8 @@ describe("buildProtectedFilePatterns", () => {
     });
   });
 
-  describe("custom filename (CUSTOM\\.txt) verifies genericity", () => {
-    const patterns = buildProtectedFilePatterns("CUSTOM\\.txt");
+  describe("custom filename (CUSTOM.txt) verifies genericity", () => {
+    const patterns = buildProtectedFilePatterns("CUSTOM.txt");
 
     it("blocks > redirect", () => {
       expect(matchesAny(patterns, "echo x > CUSTOM.txt")).toBe(true);
@@ -1515,7 +1510,7 @@ describe("buildProtectedFilePatterns", () => {
   });
 
   describe("custom filename with allowAppend", () => {
-    const patterns = buildProtectedFilePatterns("CUSTOM\\.txt", { allowAppend: true });
+    const patterns = buildProtectedFilePatterns("CUSTOM.txt", { allowAppend: true });
 
     it("blocks > overwrite redirect", () => {
       expect(matchesAny(patterns, "echo x > CUSTOM.txt")).toBe(true);
@@ -1535,7 +1530,7 @@ describe("buildProtectedFilePatterns", () => {
   });
 
   describe("path prefix handling per pattern type", () => {
-    const patterns = buildProtectedFilePatterns("IDENTITY\\.md");
+    const patterns = buildProtectedFilePatterns("IDENTITY.md");
 
     it("blocks > redirect with path prefix", () => {
       expect(matchesAny(patterns, "echo x > ./IDENTITY.md")).toBe(true);
@@ -1595,7 +1590,7 @@ describe("buildProtectedFilePatterns", () => {
   });
 
   describe("false positive checks (no pattern matches unrelated files)", () => {
-    const patterns = buildProtectedFilePatterns("IDENTITY\\.md");
+    const patterns = buildProtectedFilePatterns("IDENTITY.md");
 
     it("allows cat IDENTITY.md (read-only)", () => {
       expect(matchesAny(patterns, "cat IDENTITY.md")).toBe(false);
