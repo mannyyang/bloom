@@ -6,7 +6,9 @@ import { fileURLToPath } from "url";
 const APP_ID = "3021184";
 const INSTALLATION_ID = "114372557";
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const PEM_PATH = resolve(__dirname, "../bloom-bot-agent.2026-03-05.private-key.pem");
+const PEM_PATH = process.env.BLOOM_PEM_PATH
+  ? resolve(process.env.BLOOM_PEM_PATH)
+  : resolve(__dirname, "../bloom-bot-agent.2026-03-05.private-key.pem");
 
 function createJwt(): string {
   const now = Math.floor(Date.now() / 1000);
