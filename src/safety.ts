@@ -57,6 +57,7 @@ export const blockDangerousCommands: HookCallback = async (input) => {
     /\bsh\s+-c\b/,
     /\bnpx\s/,
     /\bnpm\s+exec\b/,
+    /git\s+branch\s+(-D|--delete\s+--force)\b/,
   ];
 
   for (const pattern of dangerous) {

@@ -313,6 +313,37 @@ describe("blockDangerousCommands", () => {
     expect(result).toEqual({});
   });
 
+  it("blocks git branch -D main (force delete)", async () => {
+    const result = await blockDangerousCommands(
+      makeBashInput("git branch -D main"),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(
+      (result as Record<string, unknown>).hookSpecificOutput,
+    ).toHaveProperty("permissionDecision", "deny");
+  });
+
+  it("blocks git branch --delete --force main", async () => {
+    const result = await blockDangerousCommands(
+      makeBashInput("git branch --delete --force main"),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(
+      (result as Record<string, unknown>).hookSpecificOutput,
+    ).toHaveProperty("permissionDecision", "deny");
+  });
+
+  it("allows git branch -d feature (safe delete)", async () => {
+    const result = await blockDangerousCommands(
+      makeBashInput("git branch -d feature-branch"),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(result).toEqual({});
+  });
+
   it("allows safe commands", async () => {
     const result = await blockDangerousCommands(
       makeBashInput("pnpm build && pnpm test"),
