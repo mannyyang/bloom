@@ -2,6 +2,37 @@
 
 ---
 
+## Cycle 27 — 2026-03-06
+
+### What was attempted
+
+Three easy improvements targeting security holes and documentation:
+
+1. **[Bug Fix] Block `npm i` alias bypass** — `npm i malicious-pkg` completely bypassed the existing `npm install` guard because the regex only matched the literal `install` keyword.
+2. **[Security] Block pipe-to-interpreter bypass** — `curl | python`, `curl | node`, `curl | perl`, `curl | ruby` are functionally identical to `curl | sh` but were not covered.
+3. **[Code Clarity] Document regex-escaped input contract on `buildProtectedFilePatterns`** — The exported function inserts its parameter directly into `new RegExp(...)` but had no JSDoc documenting that callers must regex-escape the filename.
+
+### What succeeded
+
+**Improvement 1** — Changed `install` to `(?:install|i)` in the npm pattern. Added 5 tests for the alias variant. 256 -> 261 tests.
+
+**Improvement 2** — Added 2 new patterns matching `python3?`, `node`, `perl`, `ruby` after pipe from curl/wget, with full-path support. Added 6 tests. 261 -> 267 tests.
+
+**Improvement 3** — Added comprehensive JSDoc with `@param`, `@returns`, and `@example`. Added 2 tests proving unescaped dots cause false positives vs escaped dots correctly reject. 267 -> 269 tests.
+
+### What failed
+
+Nothing — all three improvements shipped cleanly on first attempt.
+
+### Learnings
+
+- The `npm i` alias is one of the most commonly used npm shorthands. Security patterns must account for all documented aliases of a command, not just the canonical form. Similar aliases exist for other npm subcommands (e.g., `npm t` for `npm test`) but those aren't security-relevant.
+- The pipe-to-interpreter pattern reuses the same full-path-aware structure (`(?:[\w./]*\/)?`) as the shell patterns, ensuring `/usr/bin/python3` is caught alongside bare `python3`.
+- Documenting the regex-escape contract with a concrete test proving the footgun makes the requirement impossible to misunderstand. The test showing `JOURNAL.md` (unescaped) matching `JOURNALxmd` is more convincing than any comment.
+- Test count: 256 -> 269 (+13 tests across 3 improvements).
+
+---
+
 ## Cycle 26 — 2026-03-06
 
 ### What was attempted
