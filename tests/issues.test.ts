@@ -219,6 +219,14 @@ describe("acknowledgeIssues", () => {
     await expect(acknowledgeIssues([issue], 3)).resolves.toBeUndefined();
   });
 
+  it("does nothing when detectRepo returns null (no env, git remote fails)", async () => {
+    delete process.env.GITHUB_REPOSITORY;
+    mockExecSync.mockImplementationOnce(() => { throw new Error("not a git repo"); });
+    const issue = { number: 1, title: "Test", body: "", reactions: 0 };
+    await expect(acknowledgeIssues([issue], 5)).resolves.toBeUndefined();
+    expect(mockGithubApiRequest).not.toHaveBeenCalled();
+  });
+
   it("closes an issue that already has a Bloom comment from a prior cycle", async () => {
     process.env.GITHUB_REPOSITORY = "owner/repo";
     const issue = { number: 7, title: "Old issue", body: "", reactions: 0 };
