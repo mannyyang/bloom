@@ -26,36 +26,47 @@ function createJwt(): string {
 }
 
 let cachedToken: { token: string; expiresAt: number } | null = null;
+let pendingRequest: Promise<string> | null = null;
 
 export async function getInstallationToken(): Promise<string> {
   if (cachedToken && Date.now() < cachedToken.expiresAt) {
     return cachedToken.token;
   }
 
-  const jwt = createJwt();
-  const res = await fetch(
-    `https://api.github.com/app/installations/${INSTALLATION_ID}/access_tokens`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${jwt}`,
-        Accept: "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
-      signal: AbortSignal.timeout(30_000),
-    },
-  );
-
-  if (!res.ok) {
-    throw new Error(`Failed to get installation token: ${res.status} ${await res.text()}`);
+  if (pendingRequest) {
+    return pendingRequest;
   }
 
-  const data = (await res.json()) as { token: string; expires_at: string };
-  cachedToken = {
-    token: data.token,
-    expiresAt: new Date(data.expires_at).getTime() - 60_000,
-  };
-  return cachedToken.token;
+  pendingRequest = (async () => {
+    const jwt = createJwt();
+    const res = await fetch(
+      `https://api.github.com/app/installations/${INSTALLATION_ID}/access_tokens`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+          Accept: "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+        signal: AbortSignal.timeout(30_000),
+      },
+    );
+
+    if (!res.ok) {
+      throw new Error(`Failed to get installation token: ${res.status} ${await res.text()}`);
+    }
+
+    const data = (await res.json()) as { token: string; expires_at: string };
+    cachedToken = {
+      token: data.token,
+      expiresAt: new Date(data.expires_at).getTime() - 60_000,
+    };
+    return cachedToken.token;
+  })().finally(() => {
+    pendingRequest = null;
+  });
+
+  return pendingRequest;
 }
 
 export async function githubApiRequest(

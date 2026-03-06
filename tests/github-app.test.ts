@@ -160,6 +160,46 @@ describe("github-app", () => {
       expect(callOpts.signal).toBeInstanceOf(AbortSignal);
     });
 
+    it("deduplicates concurrent token fetches into a single request", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          token: "ghs_dedup",
+          expires_at: new Date(Date.now() + 3600_000).toISOString(),
+        }),
+      });
+
+      const { getInstallationToken } = await loadModule();
+      // Fire two concurrent requests before either resolves
+      const [t1, t2] = await Promise.all([getInstallationToken(), getInstallationToken()]);
+
+      expect(t1).toBe("ghs_dedup");
+      expect(t2).toBe("ghs_dedup");
+      // Only one fetch should have been made
+      expect(mockFetch).toHaveBeenCalledOnce();
+    });
+
+    it("clears pending request after failure so retries work", async () => {
+      mockFetch.mockRejectedValueOnce(new Error("Connection refused"));
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          token: "ghs_after_fail",
+          expires_at: new Date(Date.now() + 3600_000).toISOString(),
+        }),
+      });
+
+      const { getInstallationToken } = await loadModule();
+
+      // First call fails
+      await expect(getInstallationToken()).rejects.toThrow("Connection refused");
+
+      // pendingRequest should be cleared, so retry works
+      const token = await getInstallationToken();
+      expect(token).toBe("ghs_after_fail");
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
     it("throws when the API returns a non-ok response", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
