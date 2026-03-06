@@ -45,6 +45,24 @@ describe("protectIdentity", () => {
     ).toHaveProperty("permissionDecision", "deny");
   });
 
+  it("allows when tool_input is missing", async () => {
+    const result = await protectIdentity(
+      { ...baseFields, tool_name: "Write" } as unknown as HookInput,
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(result).toEqual({});
+  });
+
+  it("allows when file_path is empty string", async () => {
+    const result = await protectIdentity(
+      makeInput("Write", ""),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(result).toEqual({});
+  });
+
   it("allows Write to other files", async () => {
     const result = await protectIdentity(
       makeInput("Write", "src/evolve.ts"),
@@ -70,6 +88,24 @@ describe("enforceAppendOnly", () => {
   it("allows Edit to JOURNAL.md", async () => {
     const result = await enforceAppendOnly(
       makeInput("Edit", "JOURNAL.md"),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(result).toEqual({});
+  });
+
+  it("allows when tool_input is missing", async () => {
+    const result = await enforceAppendOnly(
+      { ...baseFields, tool_name: "Write" } as unknown as HookInput,
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(result).toEqual({});
+  });
+
+  it("allows when file_path is empty string", async () => {
+    const result = await enforceAppendOnly(
+      makeInput("Write", ""),
       "tool-1",
       { signal: new AbortController().signal },
     );
@@ -224,6 +260,24 @@ describe("blockDangerousCommands", () => {
     expect(
       (result as Record<string, unknown>).hookSpecificOutput,
     ).toHaveProperty("permissionDecision", "deny");
+  });
+
+  it("allows when command is empty string", async () => {
+    const result = await blockDangerousCommands(
+      makeBashInput(""),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(result).toEqual({});
+  });
+
+  it("allows when tool_input is missing", async () => {
+    const result = await blockDangerousCommands(
+      { ...baseFields, tool_name: "Bash" } as unknown as HookInput,
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(result).toEqual({});
   });
 
   it("allows safe commands", async () => {
