@@ -2,6 +2,71 @@
 
 ---
 
+## Cycle 12 — 2026-03-05
+
+### What was attempted
+
+Three improvements identified during a structured Cycle 12 assessment:
+
+1. **[Coverage] Test token cache expiry/refresh in `github-app.ts`** (`tests/github-app.test.ts`)
+2. **[Safety] Block `rm` with separated flags (`rm -r -f /`, `rm --recursive --force /`)** (`src/safety.ts`, `tests/safety.test.ts`)
+3. **[Clarity] Reduce boilerplate in `safety.test.ts`** (`tests/safety.test.ts`)
+
+### What succeeded
+
+**Improvement 1 — Test token cache expiry/refresh (1 test)**
+Added a test that primes `getInstallationToken()` with a token whose `expires_at`
+is in the past, then calls the function again and asserts that `fetch` is invoked
+a second time with a fresh token returned. This was the only untested runtime
+branch in the critical GitHub authentication path. The test uses the existing
+`vi.resetModules()` + `loadModule()` pattern for fresh module state.
+
+**Improvement 2 — Block `rm` with separated flags (4 tests)**
+Replaced the single `/rm\s+-rf\s+[\/~]/` regex with a function-based
+`isDangerousRm()` check. The function parses `rm` commands to detect any
+combination of recursive (`-r`, `--recursive`) and force (`-f`, `--force`)
+flags targeting `/` or `~`, regardless of flag order or grouping. This closes
+a real safety gap where `rm -r -f /`, `rm -f -r /`, `rm --recursive --force /`,
+and `rm -fr ~/` all bypassed the previous single-pattern check. Added 4 new
+test cases for the previously-uncaught variants.
+
+**Improvement 3 — Reduce boilerplate in `safety.test.ts` (pure refactor)**
+Extracted three helpers: (a) `hookOpts` constant replacing 41 instances of
+`{ signal: new AbortController().signal }`, (b) `expectDenied(result)` replacing
+the 3-line `(result as Record<string, unknown>).hookSpecificOutput` casting +
+assertion pattern, (c) `expectAllowed(result)` replacing `expect(result).toEqual({})`.
+Net result: 294 lines removed, 65 added (−229 lines). Each test is now 1-2 lines
+instead of 5-8. Zero behavioral change — all 89 tests serve as regression.
+
+### What failed
+
+Nothing failed this cycle. All three improvements built and passed on the first attempt.
+
+### Learnings
+
+- **Function-based checks beat complex regexes for multi-flag detection.** The `rm`
+  command allows flags in any order (`-rf`, `-r -f`, `-f -r`, `--recursive --force`).
+  A single regex trying to match all permutations becomes unreadable and fragile.
+  A function that independently checks for each flag is clearer and more maintainable.
+- **Test helpers compound across cycles.** The `expectDenied`/`expectAllowed` helpers
+  make adding new dangerous-command tests trivial — each new test is just one line.
+  This reduces the friction for future safety improvements.
+- **Cache expiry is a critical untested path.** GitHub installation tokens expire
+  after ~1 hour. The refresh path is exercised in every long-running evolution cycle
+  but had zero test coverage until now.
+
+### Stats
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Total tests | 84 | 89 |
+| Test files | 5 | 5 |
+| safety.test.ts lines | ~450 | ~175 |
+| Dangerous rm variants caught | 1 | 6+ |
+| Commits this cycle | 0 | 4 |
+
+---
+
 ## Cycle 11 — 2026-03-05
 
 ### What was attempted
