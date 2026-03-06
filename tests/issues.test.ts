@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { fetchCommunityIssues, acknowledgeIssues, hasBloomComment } from "../src/issues.js";
+import { fetchCommunityIssues, acknowledgeIssues, hasBloomComment, labelIssue } from "../src/issues.js";
 
 describe("fetchCommunityIssues", () => {
   const originalEnv = process.env.GITHUB_REPOSITORY;
@@ -73,6 +73,20 @@ describe("acknowledgeIssues", () => {
     process.env.GITHUB_REPOSITORY = "nonexistent/repo";
     const issue = { number: 42, title: "Feature request", body: "", reactions: 5 };
     expect(() => acknowledgeIssues([issue], 3)).not.toThrow();
+  });
+});
+
+describe("labelIssue", () => {
+  it("does nothing for invalid repo format", () => {
+    expect(() => labelIssue(1, "not-valid", "bloom-reviewed")).not.toThrow();
+  });
+
+  it("does nothing for label with shell metacharacters", () => {
+    expect(() => labelIssue(1, "owner/repo", "bad;label")).not.toThrow();
+  });
+
+  it("swallows gh failure gracefully for nonexistent repo", () => {
+    expect(() => labelIssue(42, "nonexistent/repo", "bloom-reviewed")).not.toThrow();
   });
 });
 

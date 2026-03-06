@@ -78,9 +78,32 @@ export function hasBloomComment(
 }
 
 /**
+ * Add a label to an issue.  Best-effort: failures are swallowed so a
+ * missing label or permission issue never blocks evolution.
+ */
+export function labelIssue(
+  issueNumber: number,
+  repo: string,
+  label: string,
+): void {
+  if (!isValidRepo(repo)) return;
+  // Sanitise label — only allow printable non-shell-meta characters.
+  if (!/^[\w.\- ]+$/.test(label)) return;
+  try {
+    execSync(
+      `gh issue edit ${issueNumber} --repo ${repo} --add-label "${label}"`,
+      { timeout: 10_000 },
+    );
+  } catch {
+    // Best-effort: don't let a failed label block evolution.
+  }
+}
+
+/**
  * Post a "seen by Bloom" comment on each community issue so contributors
  * know their input was considered during this cycle.  Skips issues that
- * already have a Bloom comment to avoid duplicate spam.  Failures are
+ * already have a Bloom comment to avoid duplicate spam.  Also adds a
+ * "bloom-reviewed" label for at-a-glance visibility.  Failures are
  * swallowed — a missing comment must never block evolution.
  */
 export function acknowledgeIssues(
@@ -98,6 +121,7 @@ export function acknowledgeIssues(
         `gh issue comment ${issue.number} --repo ${repo} --body "Seen by Bloom in cycle ${cycleCount}. Thank you for your input!"`,
         { timeout: 10_000 },
       );
+      labelIssue(issue.number, repo, "bloom-reviewed");
     } catch {
       // Best-effort: don't let a failed comment block evolution.
     }
