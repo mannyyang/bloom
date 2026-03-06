@@ -162,4 +162,20 @@ describe("buildEvolutionPrompt", () => {
     expect(prompt).toContain("pnpm build && pnpm test");
     expect(prompt).toContain("NEVER modify IDENTITY.md");
   });
+
+  it("includes usage context when provided", () => {
+    const prompt = buildEvolutionPrompt("assessment text", "Cost: $0.50");
+    expect(prompt).toContain("Resource usage so far this cycle:");
+    expect(prompt).toContain("Cost: $0.50");
+  });
+
+  it("omits usage section when no context provided", () => {
+    const prompt = buildEvolutionPrompt("assessment text");
+    expect(prompt).not.toContain("Resource usage");
+  });
+
+  it("omits usage section when context is undefined", () => {
+    const prompt = buildEvolutionPrompt("assessment text", undefined);
+    expect(prompt).not.toContain("Resource usage");
+  });
 });

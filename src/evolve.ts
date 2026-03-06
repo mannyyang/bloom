@@ -45,10 +45,14 @@ Read all files in src/ and tests/, then provide a structured assessment:
 - For each: what to change, why, and expected difficulty.`;
 }
 
-export function buildEvolutionPrompt(assessment: string): string {
+export function buildEvolutionPrompt(assessment: string, usageContext?: string): string {
+  const usageSection = usageContext
+    ? `\n\nResource usage so far this cycle:\n${usageContext}\n`
+    : "";
+
   return `Based on this assessment, implement the improvements.
 
-${assessment}
+${assessment}${usageSection}
 
 RULES:
 1. Make ONE change at a time.

@@ -22,6 +22,7 @@ import {
   aggregateUsage,
   formatPhaseUsage,
   formatCycleUsage,
+  formatUsageForJournal,
   PhaseUsage,
 } from "./usage.js";
 
@@ -82,8 +83,10 @@ async function main() {
 
   // Phase 2: Evolution (read-write with safety hooks)
   console.log("\n--- Phase 2: Evolution ---");
+  const assessmentUsage = aggregateUsage(phaseUsages);
+  const usageContext = formatUsageForJournal(assessmentUsage);
   for await (const msg of query({
-    prompt: buildEvolutionPrompt(assessment),
+    prompt: buildEvolutionPrompt(assessment, usageContext),
     options: {
       cwd: process.cwd(),
       model: "claude-opus-4-6",
