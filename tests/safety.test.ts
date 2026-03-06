@@ -10,6 +10,7 @@ import {
   parseHookInput,
   denyResult,
   DANGEROUS_PATTERNS,
+  escapeRegex,
 } from "../src/safety.js";
 
 const baseFields = {
@@ -1694,5 +1695,30 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       expect(seen.has(entry.pattern)).toBe(false);
       seen.add(entry.pattern);
     }
+  });
+});
+
+describe("escapeRegex", () => {
+  it("returns plain strings unchanged", () => {
+    expect(escapeRegex("hello")).toBe("hello");
+    expect(escapeRegex("JOURNAL")).toBe("JOURNAL");
+  });
+
+  it("escapes all regex-special characters", () => {
+    const specials = ".*+?^${}()|[]\\";
+    const escaped = escapeRegex(specials);
+    expect(escaped).toBe("\\.\\*\\+\\?\\^\\$\\{\\}\\(\\)\\|\\[\\]\\\\");
+  });
+
+  it("escapes dots in filenames like JOURNAL.md", () => {
+    expect(escapeRegex("JOURNAL.md")).toBe("JOURNAL\\.md");
+  });
+
+  it("produces a pattern that matches the literal input in RegExp", () => {
+    const literal = "file[0].ts";
+    const pattern = new RegExp(escapeRegex(literal));
+    expect(pattern.test(literal)).toBe(true);
+    // Should NOT match strings that would match unescaped
+    expect(pattern.test("file00.ts")).toBe(false);
   });
 });
