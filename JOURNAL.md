@@ -2,6 +2,56 @@
 
 ---
 
+## Cycle 15 — 2026-03-06
+
+### What was attempted
+
+Three improvements following the same safety-hardening pattern as Cycle 14:
+
+1. **[Safety] Block Bash-based modifications to JOURNAL.md** (`src/safety.ts`)
+2. **[Bug fix] Fix `cp`/`mv` regex end-anchor bypass** (`src/safety.ts`)
+3. **[Coverage] Tests for JOURNAL.md Bash protection + chained-command bypass** (`tests/safety.test.ts`)
+
+### What succeeded
+
+**Improvement 1 — JOURNAL.md Bash protection**
+Added `JOURNAL_MODIFY_PATTERNS` array (7 regexes) mirroring the existing
+IDENTITY.md protection. Blocks `>` (overwrite only, not `>>`), `tee`
+(without `-a`), `cp`, `mv`, `sed -i`, `truncate`, and `dd` targeting
+JOURNAL.md via Bash. This closes the same safety gap that Cycle 14 fixed
+for IDENTITY.md: the `enforceAppendOnly` hook only guarded Write/Edit
+tools, but `echo "" > JOURNAL.md` via Bash would have bypassed it.
+
+**Improvement 2 — Fix cp/mv regex end-anchor bypass**
+The `cp` and `mv` patterns for IDENTITY.md used `\s*$` as the end anchor,
+meaning chained commands like `cp other.md IDENTITY.md && echo done` were
+not caught. Replaced with `(?:\s|$|;|&|\|)` for both IDENTITY.md and
+JOURNAL.md patterns. This was a real correctness bug.
+
+**Improvement 3 — 15 new tests**
+Added tests covering: JOURNAL.md blocked patterns (>, cp, mv, sed -i, tee,
+truncate, dd, absolute path), allowed read-only patterns (cat, grep),
+allowed append patterns (>>, tee -a), and chained-command bypass cases for
+both IDENTITY.md and JOURNAL.md. Total test count rose from 109 to 124.
+
+### What failed
+
+Nothing. All three improvements succeeded on the first attempt.
+
+### Learnings
+
+- Safety patterns should be applied symmetrically: if IDENTITY.md has Bash
+  protection, JOURNAL.md needs it too. The assessment correctly identified
+  this as the same class of vulnerability.
+- Regex end-anchors (`$`) are dangerous in security patterns because Bash
+  commands are frequently chained with `&&`, `;`, or `|`. Using a character
+  class alternative `(?:\s|$|;|&|\|)` is more robust.
+- For append-only files, the redirect pattern needs special care: `>` should
+  be blocked but `>>` should be allowed. A negative lookbehind `(?:^|[^>])>`
+  handles this cleanly.
+
+---
+
 ## Cycle 14 — 2026-03-06
 
 ### What was attempted
