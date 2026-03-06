@@ -271,6 +271,14 @@ describe("blockDangerousCommands", () => {
     expectDenied(await blockDangerousCommands(makeBashInput("mv other.md IDENTITY.md"), "tool-1", hookOpts));
   });
 
+  it("blocks mv from IDENTITY.md (source)", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("mv IDENTITY.md IDENTITY.md.bak"), "tool-1", hookOpts));
+  });
+
+  it("blocks cp from IDENTITY.md (source)", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("cp IDENTITY.md backup.md"), "tool-1", hookOpts));
+  });
+
   it("blocks sed -i on IDENTITY.md", async () => {
     expectDenied(await blockDangerousCommands(makeBashInput("sed -i 's/foo/bar/' IDENTITY.md"), "tool-1", hookOpts));
   });
@@ -1073,6 +1081,14 @@ describe("buildProtectedFilePatterns", () => {
 
     it("blocks mv", () => {
       expect(matchesAny(patterns, "mv other.md IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks mv when protected file is source", () => {
+      expect(matchesAny(patterns, "mv IDENTITY.md IDENTITY.md.bak")).toBe(true);
+    });
+
+    it("blocks cp when protected file is source", () => {
+      expect(matchesAny(patterns, "cp IDENTITY.md backup.md")).toBe(true);
     });
 
     it("blocks sed -i", () => {
