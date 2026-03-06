@@ -105,7 +105,7 @@ const DANGEROUS_PATTERNS = [
   /\bwget\s+.*--post-(data|file)\b/,
   // Untrusted package installation — adding deps pulls arbitrary code
   /\bpnpm\s+add\b/,
-  /\bnpm\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/,
+  /\bnpm\s+(?:install|i)\s+(?:-\S+\s+)*[a-zA-Z@]/,
   /\byarn\s+add\b/,
 ];
 

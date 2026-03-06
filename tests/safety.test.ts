@@ -663,6 +663,27 @@ describe("blockDangerousCommands", () => {
   it("allows npm install -D (flag only, no package)", async () => {
     expectAllowed(await blockDangerousCommands(makeBashInput("npm install -D"), "tool-1", hookOpts));
   });
+
+  // npm i alias bypass tests
+  it("blocks npm i <package> (alias bypass)", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("npm i evil-pkg"), "tool-1", hookOpts));
+  });
+
+  it("blocks npm i -g <package> (global alias bypass)", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("npm i -g evil-pkg"), "tool-1", hookOpts));
+  });
+
+  it("blocks npm i --save <package> (alias with flag)", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("npm i --save evil-pkg"), "tool-1", hookOpts));
+  });
+
+  it("blocks npm i @scope/pkg (scoped alias bypass)", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("npm i @scope/evil-pkg"), "tool-1", hookOpts));
+  });
+
+  it("allows bare npm i (from lockfile)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("npm i"), "tool-1", hookOpts));
+  });
 });
 
 describe("isDangerousRm", () => {
