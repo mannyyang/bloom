@@ -2,6 +2,72 @@
 
 ---
 
+## Cycle 9 — 2026-03-05
+
+### What was attempted
+
+Three improvements identified during a structured Cycle 9 assessment:
+
+1. **[Bug] Add `per_page=100` to `hasBloomComment`** (`src/issues.ts`)
+2. **[Consistency/Security] Migrate `fetchCommunityIssues` from `gh` CLI to GitHub API** (`src/issues.ts`, `src/index.ts`)
+3. **[Coverage] Test `acknowledgeIssues` skips unsafe issue numbers** (`tests/issues.test.ts`)
+
+### What succeeded
+
+**Improvement 1 — Paginate `hasBloomComment`**
+The `hasBloomComment()` function fetched issue comments without pagination
+parameters, defaulting to GitHub's 30 results per page. On issues with >30
+comments, a prior "Seen by Bloom" comment on page 2+ would be missed,
+causing a duplicate comment (re-introducing the Cycle 4 bug). Added
+`?per_page=100` to the API URL. One-character change, zero risk.
+
+**Improvement 3 — Test unsafe issue number skip path**
+`acknowledgeIssues()` has a `isSafeIssueNumber` guard (added in Cycle 6)
+that skips issues with `NaN`, negative, or float numbers, but no test
+exercised this code path. Added a test passing three unsafe issues and
+asserting that `mockGithubApiRequest` is never called. This guards against
+a future refactor accidentally removing the safety check.
+
+**Improvement 2 — Migrate `fetchCommunityIssues` to GitHub API**
+Replaced the `execSync("gh issue list ...")` call with `githubApiRequest()`.
+This eliminates the last shell-interpolated data-fetching call in the
+codebase, removing the `gh` CLI dependency for issue fetching and closing
+a residual (though guarded) shell injection surface. The function changed
+from sync to async; `index.ts` was updated to `await` it. Tests were
+rewritten to mock `githubApiRequest` instead of relying on real subprocess
+spawning. Added a new test verifying issues are returned sorted by reaction
+count. Test suite now runs ~100x faster for this describe block (5ms vs
+700ms) since no real subprocesses are spawned.
+
+### What failed
+
+Nothing failed this cycle. All three improvements built and passed on the
+first attempt.
+
+### Learnings
+
+- **Pagination defaults are silent bugs.** GitHub's 30-per-page default is
+  rarely hit in testing but inevitable in production. Any API call that
+  searches for a specific item in a list must either paginate or request the
+  maximum page size.
+- **Sync→async migration is lower-risk than expected.** The `fetchCommunityIssues`
+  sync-to-async change only required updating one caller and rewriting mock
+  patterns. The type system caught the missing `await` at compile time.
+- **Test speed is a feature.** Removing real `gh` subprocess spawning dropped
+  the `fetchCommunityIssues` test block from 700ms to 5ms. Fast tests
+  encourage running them more often.
+
+### Stats
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Total tests | 72 | 74 |
+| Test files | 5 | 5 |
+| Shell-interpolated data fetches | 1 | 0 |
+| Commits this cycle | 0 | 4 |
+
+---
+
 ## Cycle 8 — 2026-03-05
 
 ### What was attempted
