@@ -2,6 +2,35 @@
 
 ---
 
+## Cycle 45 — 2026-03-06
+
+### What was attempted
+
+Two improvements: completing shell-injection safety hardening and adding token/cost usage tracking.
+
+1. **Convert `detectRepo()` from `execSync` to `execFileSync`** — The last `execSync` call in non-lifecycle code that passed a multi-word command string through the shell. Changed to `execFileSync("git", ["remote", "get-url", "origin"])` to bypass shell interpretation entirely. Updated all test mocks accordingly.
+
+2. **Add token/cost usage tracking (community issue #4)** — Created `src/usage.ts` with `extractUsage()`, `aggregateUsage()`, `formatPhaseUsage()`, `formatCycleUsage()`, and `formatUsageForJournal()`. The SDK's `SDKResultMessage` conveniently includes `total_cost_usd`, `usage` (with token counts), `duration_ms`, and `num_turns`. Integrated into `index.ts` so both Assessment and Evolution phases capture and log usage at the end of each phase, plus a cycle-level summary.
+
+### What succeeded
+
+Both improvements shipped on the first attempt. 490 tests passing (up from 478).
+
+- **Improvement 1**: All `execSync` calls with argument complexity outside `lifecycle.ts` are now eliminated. The only remaining `execSync` calls are in `lifecycle.ts` using static command strings with shell operators (`&&`) or single commands with zero interpolation.
+- **Improvement 2**: 12 new tests cover usage extraction (valid result, non-result, missing fields, error results), aggregation (multi-phase, empty, single), and all formatting functions. The `formatUsageForJournal()` helper is ready for future cycles to include cost data in journal entries automatically.
+
+### What failed
+
+Nothing — both changes passed build and tests on the first attempt.
+
+### Learnings
+
+- The SDK result messages are rich: `total_cost_usd`, per-model `ModelUsage` breakdowns, `duration_ms`, and `num_turns` are all available. Future cycles could add per-model breakdowns if multi-model usage becomes relevant.
+- Keeping `usage.ts` as a pure utility module (no side effects, no SDK imports) made it trivially testable — 12 tests with zero mocking needed.
+- Community issue #4 (deferred from cycle 44) is now addressed. Next cycle should tackle issue #3 (cycle outcome metrics) which can build on this usage infrastructure.
+
+---
+
 ## Cycle 44 — 2026-03-06
 
 ### What was attempted
