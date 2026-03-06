@@ -32,7 +32,8 @@ export function setGitBotIdentity(): void {
  */
 export function commitCycleCount(cycleCount: number): boolean {
   try {
-    execSync(`git add CYCLE_COUNT && git commit -m "cycle ${cycleCount}"`, { stdio: "inherit", timeout: 30_000 });
+    execFileSync("git", ["add", "CYCLE_COUNT"], { stdio: "inherit", timeout: 30_000 });
+    execFileSync("git", ["commit", "-m", `cycle ${cycleCount}`], { stdio: "inherit", timeout: 30_000 });
     return true;
   } catch {
     return false;

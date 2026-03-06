@@ -60,16 +60,29 @@ describe("lifecycle helpers", () => {
 
   describe("commitCycleCount", () => {
     it("returns true on successful commit", () => {
-      mockedExecSync.mockReturnValue(Buffer.from(""));
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
       expect(commitCycleCount(42)).toBe(true);
-      expect(mockedExecSync).toHaveBeenCalledWith(
-        'git add CYCLE_COUNT && git commit -m "cycle 42"',
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["add", "CYCLE_COUNT"],
+        expect.objectContaining({ timeout: 30_000 }),
+      );
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["commit", "-m", "cycle 42"],
         expect.objectContaining({ timeout: 30_000 }),
       );
     });
 
-    it("returns false when commit fails", () => {
-      mockedExecSync.mockImplementation(() => { throw new Error("nothing to commit"); });
+    it("returns false when git add fails", () => {
+      mockedExecFileSync.mockImplementation(() => { throw new Error("add failed"); });
+      expect(commitCycleCount(42)).toBe(false);
+    });
+
+    it("returns false when git commit fails", () => {
+      mockedExecFileSync
+        .mockReturnValueOnce(Buffer.from(""))
+        .mockImplementationOnce(() => { throw new Error("nothing to commit"); });
       expect(commitCycleCount(42)).toBe(false);
     });
   });
