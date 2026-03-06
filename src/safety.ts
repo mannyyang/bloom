@@ -79,6 +79,8 @@ const JOURNAL_MODIFY_PATTERNS = [
   /\bsed\s+-i\b.*JOURNAL\.md/,
   /\btruncate\s+.*JOURNAL\.md/,
   /\bdd\s+.*of=(?:\S*\/)?JOURNAL\.md/,
+  /\bchmod\s+.*JOURNAL\.md/,
+  /\bchown\s+.*JOURNAL\.md/,
 ];
 
 const IDENTITY_MODIFY_PATTERNS = [
