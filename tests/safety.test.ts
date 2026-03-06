@@ -1048,6 +1048,25 @@ describe("blockDangerousCommands", () => {
     };
     expectAllowed(await blockDangerousCommands(input, "tool-1", hookOpts));
   });
+
+  // Denial reason contract tests — verify reason strings contain useful context
+  it("denial reason includes category for git push --force", async () => {
+    const result = await blockDangerousCommands(makeBashInput("git push origin main --force"), "tool-1", hookOpts);
+    const reason = (result as { hookSpecificOutput: { permissionDecisionReason: string } }).hookSpecificOutput.permissionDecisionReason;
+    expect(reason).toContain("git-history-destruction");
+  });
+
+  it("denial reason includes 'Blocked dangerous command' for isDangerousRm", async () => {
+    const result = await blockDangerousCommands(makeBashInput("rm -rf /"), "tool-1", hookOpts);
+    const reason = (result as { hookSpecificOutput: { permissionDecisionReason: string } }).hookSpecificOutput.permissionDecisionReason;
+    expect(reason).toContain("Blocked dangerous command");
+  });
+
+  it("denial reason includes 'immutable constitution' for IDENTITY.md bash modification", async () => {
+    const result = await blockDangerousCommands(makeBashInput("rm IDENTITY.md"), "tool-1", hookOpts);
+    const reason = (result as { hookSpecificOutput: { permissionDecisionReason: string } }).hookSpecificOutput.permissionDecisionReason;
+    expect(reason).toContain("immutable constitution");
+  });
 });
 
 describe("isDangerousRm", () => {
