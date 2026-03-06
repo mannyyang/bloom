@@ -1,10 +1,23 @@
 import type { HookCallback } from "@anthropic-ai/claude-agent-sdk";
 
+interface ParsedHookInput {
+  toolName: string;
+  filePath: string;
+  command: string;
+}
+
+function parseHookInput(input: unknown): ParsedHookInput {
+  const record = input as Record<string, unknown>;
+  const toolInput = record.tool_input as Record<string, unknown> | undefined;
+  return {
+    toolName: (record.tool_name as string) ?? "",
+    filePath: (toolInput?.file_path as string) ?? "",
+    command: (toolInput?.command as string) ?? "",
+  };
+}
+
 export const protectIdentity: HookCallback = async (input) => {
-  const toolInput = (input as Record<string, unknown>).tool_input as
-    | Record<string, unknown>
-    | undefined;
-  const filePath = (toolInput?.file_path as string) ?? "";
+  const { filePath } = parseHookInput(input);
 
   if (filePath.includes("IDENTITY.md")) {
     return {
@@ -20,10 +33,7 @@ export const protectIdentity: HookCallback = async (input) => {
 };
 
 export const enforceAppendOnly: HookCallback = async (input) => {
-  const record = input as Record<string, unknown>;
-  const toolName = record.tool_name as string | undefined;
-  const toolInput = record.tool_input as Record<string, unknown> | undefined;
-  const filePath = (toolInput?.file_path as string) ?? "";
+  const { toolName, filePath } = parseHookInput(input);
 
   if (filePath.includes("JOURNAL.md") && toolName === "Write") {
     return {
@@ -39,12 +49,8 @@ export const enforceAppendOnly: HookCallback = async (input) => {
 };
 
 export const blockDangerousCommands: HookCallback = async (input) => {
-  const record = input as Record<string, unknown>;
-  const toolName = record.tool_name as string | undefined;
+  const { toolName, command } = parseHookInput(input);
   if (toolName !== "Bash") return {};
-
-  const toolInput = record.tool_input as Record<string, unknown> | undefined;
-  const command = (toolInput?.command as string) ?? "";
 
   const dangerous = [
     /rm\s+-rf\s+[\/~]/,
