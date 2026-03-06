@@ -75,6 +75,11 @@ const DANGEROUS_PATTERNS = [
   /git\s+gc\s+.*--prune=(now|all)\b/,
   /\bchmod\s+.*\.git\//,
   /\bchown\s+.*\.git\//,
+  /\bdd\s+.*of=\/dev\//,
+  /\bmkfs\b/,
+  /\bwipefs\b/,
+  /\bfdisk\b/,
+  /\bparted\b/,
 ];
 
 const JOURNAL_MODIFY_PATTERNS = [

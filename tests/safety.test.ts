@@ -388,6 +388,35 @@ describe("blockDangerousCommands", () => {
   it("allows chmod on regular project files", async () => {
     expectAllowed(await blockDangerousCommands(makeBashInput("chmod 755 dist/index.js"), "tool-1", hookOpts));
   });
+
+  // Block destructive disk/system commands
+  it("blocks dd writing to block device", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("dd if=/dev/zero of=/dev/sda bs=1M"), "tool-1", hookOpts));
+  });
+
+  it("blocks dd writing to /dev/nvme0n1", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("dd if=/dev/urandom of=/dev/nvme0n1"), "tool-1", hookOpts));
+  });
+
+  it("allows dd writing to a regular file", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("dd if=/dev/zero of=./test.img bs=1M count=10"), "tool-1", hookOpts));
+  });
+
+  it("blocks mkfs command", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("mkfs.ext4 /dev/sda1"), "tool-1", hookOpts));
+  });
+
+  it("blocks wipefs command", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("wipefs -a /dev/sda"), "tool-1", hookOpts));
+  });
+
+  it("blocks fdisk command", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("fdisk /dev/sda"), "tool-1", hookOpts));
+  });
+
+  it("blocks parted command", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("parted /dev/sda mklabel gpt"), "tool-1", hookOpts));
+  });
 });
 
 describe("isDangerousRm", () => {
