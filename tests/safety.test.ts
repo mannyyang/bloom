@@ -1259,4 +1259,104 @@ describe("buildProtectedFilePatterns", () => {
       expect(matchesAny(patterns, "echo x > README.md")).toBe(false);
     });
   });
+
+  describe("custom filename (CUSTOM\\.txt) verifies genericity", () => {
+    const patterns = buildProtectedFilePatterns("CUSTOM\\.txt");
+
+    it("blocks > redirect", () => {
+      expect(matchesAny(patterns, "echo x > CUSTOM.txt")).toBe(true);
+    });
+
+    it("blocks >> redirect", () => {
+      expect(matchesAny(patterns, "echo x >> CUSTOM.txt")).toBe(true);
+    });
+
+    it("blocks tee", () => {
+      expect(matchesAny(patterns, "echo x | tee CUSTOM.txt")).toBe(true);
+    });
+
+    it("blocks tee -a (no allowAppend)", () => {
+      expect(matchesAny(patterns, "echo x | tee -a CUSTOM.txt")).toBe(true);
+    });
+
+    it("blocks cp", () => {
+      expect(matchesAny(patterns, "cp foo.txt CUSTOM.txt")).toBe(true);
+    });
+
+    it("blocks mv", () => {
+      expect(matchesAny(patterns, "mv foo.txt CUSTOM.txt")).toBe(true);
+    });
+
+    it("blocks sed -i", () => {
+      expect(matchesAny(patterns, "sed -i 's/a/b/' CUSTOM.txt")).toBe(true);
+    });
+
+    it("blocks truncate", () => {
+      expect(matchesAny(patterns, "truncate -s 0 CUSTOM.txt")).toBe(true);
+    });
+
+    it("blocks dd", () => {
+      expect(matchesAny(patterns, "dd if=/dev/null of=CUSTOM.txt")).toBe(true);
+    });
+
+    it("blocks chmod", () => {
+      expect(matchesAny(patterns, "chmod 644 CUSTOM.txt")).toBe(true);
+    });
+
+    it("blocks chown", () => {
+      expect(matchesAny(patterns, "chown user CUSTOM.txt")).toBe(true);
+    });
+
+    it("blocks rm", () => {
+      expect(matchesAny(patterns, "rm CUSTOM.txt")).toBe(true);
+    });
+
+    it("blocks unlink", () => {
+      expect(matchesAny(patterns, "unlink CUSTOM.txt")).toBe(true);
+    });
+
+    it("blocks ln (symlink)", () => {
+      expect(matchesAny(patterns, "ln -s /tmp/evil CUSTOM.txt")).toBe(true);
+    });
+
+    it("blocks git checkout --", () => {
+      expect(matchesAny(patterns, "git checkout -- CUSTOM.txt")).toBe(true);
+    });
+
+    it("blocks git restore", () => {
+      expect(matchesAny(patterns, "git restore CUSTOM.txt")).toBe(true);
+    });
+
+    it("blocks with path prefix", () => {
+      expect(matchesAny(patterns, "rm /some/path/CUSTOM.txt")).toBe(true);
+    });
+
+    it("does not match similar filenames (CUSTOMXtxt)", () => {
+      expect(matchesAny(patterns, "rm CUSTOMXtxt")).toBe(false);
+    });
+
+    it("does not match unrelated files", () => {
+      expect(matchesAny(patterns, "rm other.txt")).toBe(false);
+    });
+  });
+
+  describe("custom filename with allowAppend", () => {
+    const patterns = buildProtectedFilePatterns("CUSTOM\\.txt", { allowAppend: true });
+
+    it("blocks > overwrite redirect", () => {
+      expect(matchesAny(patterns, "echo x > CUSTOM.txt")).toBe(true);
+    });
+
+    it("allows >> append redirect", () => {
+      expect(matchesAny(patterns, "echo x >> CUSTOM.txt")).toBe(false);
+    });
+
+    it("blocks tee without -a", () => {
+      expect(matchesAny(patterns, "echo x | tee CUSTOM.txt")).toBe(true);
+    });
+
+    it("allows tee -a", () => {
+      expect(matchesAny(patterns, "echo x | tee -a CUSTOM.txt")).toBe(false);
+    });
+  });
 });
