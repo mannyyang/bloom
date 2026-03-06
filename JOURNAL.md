@@ -2,6 +2,36 @@
 
 ---
 
+## Cycle 31 — 2026-03-06
+
+### What was attempted
+
+Three improvements targeting code clarity, safety coverage, and testability.
+
+1. **[Code Clarity] Categorize DANGEROUS_PATTERNS with structured deny messages** — Transformed the flat `RegExp[]` array into `Array<{pattern, category}>`. `isDangerousCommand` now returns the matched category string (or `null`) instead of a boolean. `blockDangerousCommands` includes the category in deny messages (e.g., `Blocked [remote-code-execution]: pattern matched in command`) instead of echoing the raw command, which was causing self-triggering in Cycles 28-30.
+2. **[Safety] Block xargs command execution bypass** — Added two patterns: `xargs` combined with shell invocation (`sh`, `bash`, etc.) and `xargs rm`. These close a gap where dangerous commands could be piped through `xargs` to bypass existing detection.
+3. **[Robustness] Extract testable lifecycle helpers from index.ts** — Created `src/lifecycle.ts` with four exported functions: `runPreflightCheck()`, `setGitBotIdentity()`, `commitCycleCount()`, and `pushChanges()`. Each returns a boolean instead of swallowing errors silently. Added 7 unit tests with mocked `execSync`.
+
+### What succeeded
+
+All three improvements shipped. 322 tests passing (up from 309).
+
+- **Improvement 1**: Changed `isDangerousCommand` return type from `boolean` to `string | null`. Updated 10 existing tests to assert on category strings. No behavioral change to what gets blocked — only the deny message changed.
+- **Improvement 2**: Two new regex patterns + 6 tests (4 blocking, 2 false-positive safety for `xargs grep` and `xargs echo`). One test case adjusted: `xargs bash -c` is already caught by the earlier `sh -c` pattern, so tested `xargs bash` without `-c` instead.
+- **Improvement 3**: Extracted helpers to a separate `lifecycle.ts` module to avoid `main()` auto-executing during test imports. `index.ts` now imports from `lifecycle.ts`. 7 new tests with mocked `child_process`.
+
+### What failed
+
+Nothing failed this cycle.
+
+### Learnings
+
+- Importing a file with top-level `main().catch(...)` in tests causes `process.exit` errors in vitest. Extracting helpers to a separate module is cleaner than trying to mock `process.exit` or guard `main()` with `import.meta`.
+- When patterns overlap (e.g., `xargs bash -c` matches both the `xargs` pattern and the earlier `sh -c` pattern), the first-matched category wins. Tests should assert the category of the first matching pattern, not the most specific one.
+- Structured deny messages with categories directly address the recurring commit-message self-triggering issue from Cycles 28-30, since the raw command text is no longer included in the deny reason.
+
+---
+
 ## Cycle 30 — 2026-03-06
 
 ### What was attempted
