@@ -9,9 +9,9 @@ interface AssessmentContext {
 
 const JOURNAL_WINDOW = 4000;
 
-function truncateJournal(journal: string): string {
-  if (journal.length <= JOURNAL_WINDOW) return journal;
-  const raw = journal.slice(0, JOURNAL_WINDOW);
+export function truncateJournal(journal: string, maxLength: number = JOURNAL_WINDOW): string {
+  if (journal.length <= maxLength) return journal;
+  const raw = journal.slice(0, maxLength);
   const lastNewline = raw.lastIndexOf("\n");
   return lastNewline > 0 ? raw.slice(0, lastNewline) : raw;
 }

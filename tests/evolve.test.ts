@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildAssessmentPrompt, buildEvolutionPrompt } from "../src/evolve.js";
+import { buildAssessmentPrompt, buildEvolutionPrompt, truncateJournal } from "../src/evolve.js";
 
 describe("buildAssessmentPrompt", () => {
   it("includes identity and cycle count", () => {
@@ -105,6 +105,53 @@ describe("buildAssessmentPrompt", () => {
     const journalSection = prompt.slice(start, end);
     // Newest-first: truncated from front, so must end at a line boundary.
     expect(journalSection.endsWith("x".repeat(100))).toBe(true);
+  });
+});
+
+describe("truncateJournal", () => {
+  it("returns empty string unchanged", () => {
+    expect(truncateJournal("")).toBe("");
+  });
+
+  it("returns short string unchanged", () => {
+    expect(truncateJournal("hello\nworld")).toBe("hello\nworld");
+  });
+
+  it("returns string exactly at maxLength unchanged", () => {
+    const s = "a".repeat(100);
+    expect(truncateJournal(s, 100)).toBe(s);
+  });
+
+  it("truncates at last newline when over maxLength", () => {
+    const s = "abcde\nfghij\nklmno";
+    // maxLength=12 => raw="abcde\nfghij\n", lastNewline=11 => "abcde\nfghij"
+    expect(truncateJournal(s, 12)).toBe("abcde\nfghij");
+  });
+
+  it("returns raw slice when no newline found in truncated portion", () => {
+    const s = "a".repeat(200);
+    expect(truncateJournal(s, 100)).toBe("a".repeat(100));
+  });
+
+  it("respects custom maxLength parameter", () => {
+    const s = "line1\nline2\nline3\nline4";
+    // maxLength=11 => raw="line1\nline2", lastNewline=5 => "line1"
+    expect(truncateJournal(s, 11)).toBe("line1");
+  });
+
+  it("uses default JOURNAL_WINDOW (4000) when maxLength not provided", () => {
+    const s = "x\n".repeat(2500); // 5000 chars
+    const result = truncateJournal(s);
+    expect(result.length).toBeLessThanOrEqual(4000);
+    expect(result.length).toBeGreaterThan(0);
+    // Should end at a line boundary (on "x", not "\n")
+    expect(result.endsWith("x")).toBe(true);
+  });
+
+  it("handles single newline at position 0 by returning raw slice", () => {
+    // "\n" + "a"*200 => raw at maxLength 50 = "\n" + "a"*49, lastNewline=0, 0 is not > 0 so fallback
+    const s = "\n" + "a".repeat(200);
+    expect(truncateJournal(s, 50)).toBe("\n" + "a".repeat(49));
   });
 });
 
