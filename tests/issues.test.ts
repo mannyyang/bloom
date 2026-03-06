@@ -158,6 +158,20 @@ describe("acknowledgeIssues", () => {
     );
     expect(mockGithubApiRequest).toHaveBeenCalledTimes(3);
   });
+
+  it("skips issues with unsafe issue numbers without making any API calls", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    const issues = [
+      { number: NaN, title: "Bad NaN", body: "", reactions: 0 },
+      { number: -1, title: "Bad negative", body: "", reactions: 0 },
+      { number: 1.5, title: "Bad float", body: "", reactions: 0 },
+    ];
+
+    await acknowledgeIssues(issues, 9);
+
+    // No API calls should have been made — all issues have unsafe numbers
+    expect(mockGithubApiRequest).not.toHaveBeenCalled();
+  });
 });
 
 describe("isSafeIssueNumber", () => {
