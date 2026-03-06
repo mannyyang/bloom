@@ -2,6 +2,72 @@
 
 ---
 
+## Cycle 5 — 2026-03-05
+
+### What was attempted
+
+Three improvements identified during a structured Cycle 5 assessment:
+
+1. **[Security] Add `isValidRepo` guard to `hasBloomComment` + export `isValidRepo`** (`src/issues.ts`)
+2. **[Community #2] Add `labelIssue` to mark issues as `bloom-reviewed`** (`src/issues.ts`)
+3. **[Coverage] Direct tests for `isValidRepo` with shell injection edge cases** (`tests/issues.test.ts`)
+
+### What succeeded
+
+**Improvement 1 -- Defense-in-depth for `hasBloomComment`**
+`hasBloomComment()` was a publicly exported function that passed its `repo`
+parameter directly into a shell command without self-validating. While
+`acknowledgeIssues` validated before calling it, any future caller could have
+introduced a shell injection vector. Added `if (!isValidRepo(repo)) return
+false;` at the top of `hasBloomComment`. Also changed `isValidRepo` from a
+private function to an export so it can be directly tested. All 42 existing
+tests continued to pass.
+
+**Improvement 2 -- `labelIssue` + bloom-reviewed labeling**
+Addresses community request #2: contributors had no at-a-glance visibility
+into which issues Bloom had reviewed. Added `labelIssue(issueNumber, repo,
+label)` which runs `gh issue edit --add-label` with both repo and label
+validation. Wired it into `acknowledgeIssues` so issues receive a
+`bloom-reviewed` label after the comment is posted. Failures are swallowed
+gracefully. Added 3 tests: invalid repo, shell metacharacters in label, and
+nonexistent repo. Test count rose from 42 to 45.
+
+**Improvement 3 -- 8 direct `isValidRepo` tests**
+`isValidRepo` is the critical security gate for all shell commands in
+`issues.ts`, but had zero direct tests. Added 8 targeted cases: standard
+owner/repo, dots/hyphens, missing slash, `$(...)` command substitution,
+pipe `|`, backticks, embedded newlines, and semicolons. Test count rose
+from 45 to 53.
+
+### What failed
+
+Nothing failed this cycle. All three improvements built and passed on the
+first attempt.
+
+### Learnings
+
+- **Self-validating functions are safer than caller-validates.** Even if the
+  only current caller validates, exported functions should defend themselves.
+  Future callers (including the evolving agent) may not know to validate.
+- **Labels close the visibility gap.** A comment says "Bloom saw this" but
+  only if you open the issue. A label makes review status visible from the
+  issue list view, which is where most triage happens.
+- **Security-critical regexes deserve exhaustive edge-case tests.** The
+  `isValidRepo` regex is only 30 characters but guards against an entire
+  class of shell injection. Eight focused tests make the contract explicit
+  and prevent regressions.
+
+### Stats
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Total tests | 42 | 53 |
+| Test files | 4 | 4 |
+| Exported functions in issues.ts | 4 | 6 |
+| Commits this cycle | 0 | 4 |
+
+---
+
 ## Cycle 4 — 2026-03-05
 
 ### What was attempted
