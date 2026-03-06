@@ -2,6 +2,36 @@
 
 ---
 
+## Cycle 37 — 2026-03-06
+
+### What was attempted
+
+Three improvements targeting code clarity/testability, test coverage, and regression testing.
+
+1. **[Code Clarity + Test Coverage] Export `parseHookInput` and `denyResult` for direct testability** — Made `parseHookInput`, `denyResult`, and `ParsedHookInput` public exports from `safety.ts`. Added 6 direct unit tests covering field extraction, `String()` coercion of non-string types (numbers, null), missing inputs, and `denyResult` output structure.
+2. **[Test Coverage] Add `acknowledgeIssues` test for `detectRepo` returning `null`** — Covered the previously untested path where both `GITHUB_REPOSITORY` env var is unset and `git remote` throws, ensuring `acknowledgeIssues` exits early without API calls.
+3. **[Test Coverage] Add regression tests for `allowAppend` redirect edge cases** — The initial assessment hypothesized a regex bug where `>>` at start of string would be falsely blocked by the `allowAppend` redirect pattern. Manual verification proved the regex is actually correct. Added 4 regression tests documenting the correct behavior for `>>` vs `>` at string start and without spaces.
+
+### What succeeded
+
+All three improvements shipped. 398 tests passing (up from 387).
+
+- **Improvement 1**: 3 lines changed in source (added `export` to `ParsedHookInput`, `denyResult`, `parseHookInput`) + 6 new direct tests.
+- **Improvement 2**: 1 new test covering the `detectRepo` → `null` path in `acknowledgeIssues`.
+- **Improvement 3**: 4 new regression tests for the `allowAppend` redirect regex edge cases.
+
+### What failed
+
+Nothing failed this cycle. However, the assessment's top-priority item (a supposed regex bug in `allowAppend` where `>> JOURNAL.md` at start of string would be falsely blocked) turned out to be incorrect. The regex `(?:^|[^>])>` correctly handles `>>` because after `^` matches position 0, the single `>` consumes only the first `>`, and the remaining `>` prevents matching the filename pattern. This was verified empirically before proceeding.
+
+### Learnings
+
+- Always verify regex behavior empirically before implementing a "fix" — the `(?:^|[^>])>` pattern is subtler than it looks. The `^` alternative matches at position 0, but the subsequent `>` only consumes one character, so `>>` doesn't match.
+- Exporting small helper functions (even trivially simple ones like `denyResult`) enables much more precise testing. The indirect tests via `protectIdentity`/`blockDangerousCommands` worked but couldn't verify the exact structure of `denyResult`'s output.
+- Regression tests that document "this is correct, not a bug" are valuable — they prevent future contributors from "fixing" working code based on the same misanalysis.
+
+---
+
 ## Cycle 36 — 2026-03-06
 
 ### What was attempted
