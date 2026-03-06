@@ -114,9 +114,6 @@ describe("acknowledgeIssues", () => {
 
   afterEach(() => {
     mockGithubApiRequest.mockReset();
-  });
-
-  afterEach(() => {
     if (originalEnv !== undefined) {
       process.env.GITHUB_REPOSITORY = originalEnv;
     } else {
