@@ -38,9 +38,25 @@ export const protectIdentity: HookCallback = async (input) => {
 export const enforceAppendOnly: HookCallback = async (input) => {
   const { toolName, filePath } = parseHookInput(input);
 
-  if (filePath.includes("JOURNAL.md") && toolName === "Write") {
+  if (!filePath.includes("JOURNAL.md")) return {};
+
+  if (toolName === "Write") {
     return denyResult("JOURNAL.md is append-only. Use Edit to append, not Write to overwrite.");
   }
+
+  if (toolName === "Edit") {
+    const record = input as Record<string, unknown>;
+    const toolInput = record.tool_input as Record<string, unknown> | undefined;
+    const oldText = (toolInput?.old_string as string) ?? "";
+    const newText = (toolInput?.new_string as string) ?? "";
+
+    if (oldText.length > 0 && !newText.includes(oldText)) {
+      return denyResult(
+        "JOURNAL.md is append-only. Edit must preserve existing content (new_string must contain old_string).",
+      );
+    }
+  }
+
   return {};
 };
 

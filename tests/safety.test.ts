@@ -93,6 +93,60 @@ describe("enforceAppendOnly", () => {
     const result = await enforceAppendOnly(makeInput("Write", "src/evolve.ts"), "tool-1", hookOpts);
     expectAllowed(result);
   });
+
+  it("denies Edit to JOURNAL.md that replaces content", async () => {
+    const input: HookInput = {
+      ...baseFields,
+      tool_name: "Edit",
+      tool_input: { file_path: "JOURNAL.md", old_string: "original text", new_string: "replaced text" },
+    };
+    expectDenied(await enforceAppendOnly(input, "tool-1", hookOpts));
+  });
+
+  it("allows Edit to JOURNAL.md that preserves old content", async () => {
+    const input: HookInput = {
+      ...baseFields,
+      tool_name: "Edit",
+      tool_input: { file_path: "JOURNAL.md", old_string: "existing", new_string: "existing\nnew content" },
+    };
+    expectAllowed(await enforceAppendOnly(input, "tool-1", hookOpts));
+  });
+
+  it("allows Edit to JOURNAL.md with empty old_string (pure insertion)", async () => {
+    const input: HookInput = {
+      ...baseFields,
+      tool_name: "Edit",
+      tool_input: { file_path: "JOURNAL.md", old_string: "", new_string: "new entry" },
+    };
+    expectAllowed(await enforceAppendOnly(input, "tool-1", hookOpts));
+  });
+
+  it("denies Edit to JOURNAL.md that partially removes content", async () => {
+    const input: HookInput = {
+      ...baseFields,
+      tool_name: "Edit",
+      tool_input: { file_path: "JOURNAL.md", old_string: "line one\nline two", new_string: "line one" },
+    };
+    expectDenied(await enforceAppendOnly(input, "tool-1", hookOpts));
+  });
+
+  it("allows Edit to JOURNAL.md that prepends to old content", async () => {
+    const input: HookInput = {
+      ...baseFields,
+      tool_name: "Edit",
+      tool_input: { file_path: "JOURNAL.md", old_string: "---", new_string: "new entry\n---" },
+    };
+    expectAllowed(await enforceAppendOnly(input, "tool-1", hookOpts));
+  });
+
+  it("allows Edit to non-journal files even if content is replaced", async () => {
+    const input: HookInput = {
+      ...baseFields,
+      tool_name: "Edit",
+      tool_input: { file_path: "src/evolve.ts", old_string: "old code", new_string: "new code" },
+    };
+    expectAllowed(await enforceAppendOnly(input, "tool-1", hookOpts));
+  });
 });
 
 describe("blockDangerousCommands", () => {
