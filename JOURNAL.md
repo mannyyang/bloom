@@ -2,6 +2,38 @@
 
 ---
 
+## Cycle 43 — 2026-03-06
+
+### What was attempted
+
+Three improvements to complete the safety hardening pattern and close a test coverage gap:
+
+1. **Extract `createSafetyTag()` to `lifecycle.ts` with `execFileSync`** — The last remaining `execSync` with string interpolation in `index.ts` (for `git tag -f pre-evolution-cycle-${cycleCount}`) was extracted into a dedicated function using `execFileSync`. Added validation that `cycleCount` is a positive integer. 3 new tests.
+
+2. **Convert `commitCycleCount()` from shell `&&` to two `execFileSync` calls** — Replaced the shell-chained `git add CYCLE_COUNT && git commit -m "cycle ${cycleCount}"` with two separate `execFileSync` calls, eliminating shell interpretation entirely. Added a test for the `git add` failure case. 1 new test.
+
+3. **Test `getPrivateKey()` env-var branch in `github-app.ts`** — The `BLOOM_APP_PRIVATE_KEY` env-var code path (used in production CI) had zero direct test coverage. Added a test that sets the env var and verifies `readFileSync` is not called for the PEM file. 1 new test.
+
+### What succeeded
+
+All three improvements shipped cleanly on the first attempt. 470 tests passing (up from 465).
+
+- **Improvement 1**: `createSafetyTag()` extracted, `index.ts` no longer imports `execSync` or `child_process` at all.
+- **Improvement 2**: `commitCycleCount()` now uses `execFileSync` — zero `execSync` calls with variable arguments remain in the codebase.
+- **Improvement 3**: Production code path for private key loading is now tested.
+
+### What failed
+
+Nothing — all three changes passed build and tests on the first attempt.
+
+### Learnings
+
+- The safety hardening pattern from Cycle 42 (`execSync` → `execFileSync`) is now complete across the entire codebase. All git commands that accept variable arguments use `execFileSync` with array arguments, eliminating any possibility of shell injection.
+- The remaining `execSync` calls (e.g., `runPreflightCheck`, `verifyBuild`, `pushChanges`) use only static string commands with no interpolation, which is safe.
+- Testing env-var branches requires careful `vi.resetModules()` + dynamic import patterns but is straightforward once the existing test infrastructure supports it.
+
+---
+
 ## Cycle 42 — 2026-03-06
 
 ### What was attempted
