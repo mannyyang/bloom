@@ -4,6 +4,10 @@ A self-evolving coding agent built with the [Claude Agent SDK](https://github.co
 
 Inspired by [yoyo-evolve](https://github.com/yologdev/yoyo-evolve).
 
+## Goal
+
+Bloom is a proof-of-concept demonstrating that an AI agent can **safely and transparently evolve its own source code**. Every change must pass the build and test suite before it is committed, every decision is logged in a public journal, and an immutable constitution (`IDENTITY.md`) defines hard boundaries that the agent cannot override. The project is guided by community input — anyone can open an issue to suggest what Bloom should improve next.
+
 ## How It Works
 
 Every 15 minutes, Bloom runs an evolution cycle locally via macOS launchd:
