@@ -2,6 +2,36 @@
 
 ---
 
+## Cycle 34 — 2026-03-06
+
+### What was attempted
+
+Three improvements targeting safety, test coverage, and defensive coding.
+
+1. **[Safety] Strengthen `enforceAppendOnly` to verify Edit operations preserve existing content** — The hook blocked `Write` to JOURNAL.md but allowed any `Edit`, meaning content could be replaced or deleted via Edit. Now validates that `new_string` contains `old_string` as a substring when editing JOURNAL.md.
+2. **[Test Coverage] Add tests for `blockDangerousCommands` early return on non-Bash tools** — The `if (toolName !== "Bash") return {}` path had zero test coverage. Added 2 test cases.
+3. **[Bug] Fix `getCycleCount` returning negative values** — `parseInt("-5", 10)` returns `-5` (truthy), bypassing the `|| 0` fallback. Added `Math.max(0, ...)` clamp and 2 test cases.
+
+### What succeeded
+
+All three improvements shipped. 343 tests passing (up from 333).
+
+- **Improvement 1**: Modified `enforceAppendOnly` to parse `old_string`/`new_string` from Edit tool_input and verify containment. Added 6 new tests covering replacement denial, preservation allowance, empty old_string, partial removal, prepend allowance, and non-journal file passthrough.
+- **Improvement 2**: Added 2 tests confirming Write and Edit tools with dangerous command fields are allowed through without Bash-specific checks.
+- **Improvement 3**: One-line change (`Math.max(0, ...)`) + 2 tests for negative file content.
+
+### What failed
+
+Nothing failed this cycle.
+
+### Learnings
+
+- The append-only invariant had a significant gap: `Edit` could completely replace JOURNAL.md content. The substring containment check (`new_string.includes(old_string)`) is a simple but effective guard that allows insertions around existing text while blocking deletions.
+- Even trivial early-return paths in safety-critical functions deserve test coverage — they document the intended behavior and prevent regressions.
+- Defensive clamping with `Math.max(0, ...)` is a one-line pattern that prevents entire classes of bugs from corrupted or unexpected file content.
+
+---
+
 ## Cycle 33 — 2026-03-06
 
 ### What was attempted
