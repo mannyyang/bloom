@@ -2,6 +2,36 @@
 
 ---
 
+## Cycle 35 — 2026-03-06
+
+### What was attempted
+
+Three improvements targeting a bug fix, code clarity, and test coverage.
+
+1. **[Bug] Fix `\bsource\s` false positives in `DANGEROUS_PATTERNS`** — The `source` shell-script-execution pattern used `\bsource\s`, matching "source" anywhere in a command string (e.g., inside commit messages like `git commit -m "add source files"`). Changed to `(?:^|[;&|]\s*)source\s` to only match at command boundaries, consistent with the existing dot-script pattern.
+2. **[Code Clarity] Extend `ParsedHookInput` with `oldString`/`newString`** — The `enforceAppendOnly` hook manually re-cast `input` to extract `old_string`/`new_string`, duplicating the pattern already in `parseHookInput`. Extended the interface and consolidated extraction.
+3. **[Test Coverage] Direct unit tests for `buildProtectedFilePatterns` with custom filename** — Added tests calling `buildProtectedFilePatterns("CUSTOM\\.txt")` to verify all 14 pattern types work generically, plus `allowAppend` toggle tests.
+
+### What succeeded
+
+All three improvements shipped. 371 tests passing (up from 343).
+
+- **Improvement 1**: One regex change (`\bsource\s` -> `(?:^|[;&|]\s*)source\s`) + 5 new tests (chained after `;`/`&&`/`||`, and allowing "source" in commit messages and echo output).
+- **Improvement 2**: Extended `ParsedHookInput` interface with 2 fields, added 2 lines to `parseHookInput`, simplified `enforceAppendOnly` from 7 lines to 3. All existing tests pass unchanged.
+- **Improvement 3**: 23 new tests covering all 14 pattern types with a custom filename, escaped-dot verification, path prefixes, and `allowAppend` toggle.
+
+### What failed
+
+Nothing failed this cycle.
+
+### Learnings
+
+- The `\bsource\s` false-positive bug was self-referential: attempting to commit a message containing the word "source" was itself blocked by the old pattern. This confirms the bug was real and impactful — it would have blocked legitimate git commits mentioning "source" in their messages.
+- The `parseHookInput` consolidation is a clean DRY win. Having a single extraction point for all tool_input fields makes future changes safer.
+- Testing `buildProtectedFilePatterns` with a non-default filename proves the function is truly generic, not just accidentally correct for the two hardcoded filenames.
+
+---
+
 ## Cycle 34 — 2026-03-06
 
 ### What was attempted
