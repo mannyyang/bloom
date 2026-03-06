@@ -8,7 +8,7 @@ export interface CommunityIssue {
   reactions: number;
 }
 
-function detectRepo(): string | null {
+export function detectRepo(): string | null {
   if (process.env.GITHUB_REPOSITORY) return process.env.GITHUB_REPOSITORY;
   try {
     const url = execSync("git remote get-url origin", { encoding: "utf-8", timeout: 10_000 }).trim();

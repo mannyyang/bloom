@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { execSync } from "child_process";
-import { fetchCommunityIssues, acknowledgeIssues, isValidRepo, isSafeIssueNumber } from "../src/issues.js";
+import { fetchCommunityIssues, acknowledgeIssues, isValidRepo, isSafeIssueNumber, detectRepo } from "../src/issues.js";
 import { githubApiRequest } from "../src/github-app.js";
 
 vi.mock("../src/github-app.js", () => ({
@@ -46,6 +46,61 @@ describe("isValidRepo", () => {
 
   it("rejects semicolon injection", () => {
     expect(isValidRepo("owner/repo; echo pwned")).toBe(false);
+  });
+});
+
+describe("detectRepo (direct)", () => {
+  const originalEnv = process.env.GITHUB_REPOSITORY;
+
+  afterEach(() => {
+    mockExecSync.mockReset();
+    if (originalEnv !== undefined) {
+      process.env.GITHUB_REPOSITORY = originalEnv;
+    } else {
+      delete process.env.GITHUB_REPOSITORY;
+    }
+  });
+
+  it("returns GITHUB_REPOSITORY env var when set", () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    expect(detectRepo()).toBe("owner/repo");
+  });
+
+  it("prefers GITHUB_REPOSITORY over git remote", () => {
+    process.env.GITHUB_REPOSITORY = "env-owner/env-repo";
+    mockExecSync.mockReturnValueOnce("https://github.com/git-owner/git-repo.git\n");
+    expect(detectRepo()).toBe("env-owner/env-repo");
+    expect(mockExecSync).not.toHaveBeenCalled();
+  });
+
+  it("falls back to parsing HTTPS git remote URL", () => {
+    delete process.env.GITHUB_REPOSITORY;
+    mockExecSync.mockReturnValueOnce("https://github.com/owner/repo.git\n");
+    expect(detectRepo()).toBe("owner/repo");
+  });
+
+  it("falls back to parsing SSH git remote URL", () => {
+    delete process.env.GITHUB_REPOSITORY;
+    mockExecSync.mockReturnValueOnce("git@github.com:my-org/my-repo.git\n");
+    expect(detectRepo()).toBe("my-org/my-repo");
+  });
+
+  it("parses HTTPS remote URL without .git suffix", () => {
+    delete process.env.GITHUB_REPOSITORY;
+    mockExecSync.mockReturnValueOnce("https://github.com/owner/repo\n");
+    expect(detectRepo()).toBe("owner/repo");
+  });
+
+  it("returns null for non-GitHub remote", () => {
+    delete process.env.GITHUB_REPOSITORY;
+    mockExecSync.mockReturnValueOnce("https://gitlab.com/owner/repo.git\n");
+    expect(detectRepo()).toBeNull();
+  });
+
+  it("returns null when git remote throws (no git repo)", () => {
+    delete process.env.GITHUB_REPOSITORY;
+    mockExecSync.mockImplementationOnce(() => { throw new Error("not a git repo"); });
+    expect(detectRepo()).toBeNull();
   });
 });
 
