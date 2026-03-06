@@ -587,6 +587,23 @@ describe("blockDangerousCommands", () => {
   it("blocks pnpm add with flags", async () => {
     expectDenied(await blockDangerousCommands(makeBashInput("pnpm add -D some-package"), "tool-1", hookOpts));
   });
+
+  // Chained command and edge-case tests for ln and package install patterns
+  it("blocks ln to JOURNAL.md in chained command", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("echo foo && ln -sf evil JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks ln to IDENTITY.md with path prefix", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("ln -s /tmp/evil /repo/IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks npm install <pkg> in chained command", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("echo setup && npm install evil-pkg"), "tool-1", hookOpts));
+  });
+
+  it("allows npm install with no args followed by build", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("npm install && npm run build"), "tool-1", hookOpts));
+  });
 });
 
 describe("isDangerousRm", () => {
