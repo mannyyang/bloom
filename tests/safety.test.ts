@@ -344,6 +344,48 @@ describe("blockDangerousCommands", () => {
     expect(result).toEqual({});
   });
 
+  it("blocks git reflog delete", async () => {
+    const result = await blockDangerousCommands(
+      makeBashInput("git reflog delete HEAD@{0}"),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(
+      (result as Record<string, unknown>).hookSpecificOutput,
+    ).toHaveProperty("permissionDecision", "deny");
+  });
+
+  it("blocks git gc --prune=now", async () => {
+    const result = await blockDangerousCommands(
+      makeBashInput("git gc --prune=now"),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(
+      (result as Record<string, unknown>).hookSpecificOutput,
+    ).toHaveProperty("permissionDecision", "deny");
+  });
+
+  it("blocks git gc --prune=all", async () => {
+    const result = await blockDangerousCommands(
+      makeBashInput("git gc --prune=all"),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(
+      (result as Record<string, unknown>).hookSpecificOutput,
+    ).toHaveProperty("permissionDecision", "deny");
+  });
+
+  it("allows git gc (safe default prune age)", async () => {
+    const result = await blockDangerousCommands(
+      makeBashInput("git gc"),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(result).toEqual({});
+  });
+
   it("allows safe commands", async () => {
     const result = await blockDangerousCommands(
       makeBashInput("pnpm build && pnpm test"),
