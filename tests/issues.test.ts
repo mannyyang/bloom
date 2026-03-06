@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { fetchCommunityIssues } from "../src/issues.js";
+import { fetchCommunityIssues, acknowledgeIssues } from "../src/issues.js";
 
 describe("fetchCommunityIssues", () => {
   const originalEnv = process.env.GITHUB_REPOSITORY;
@@ -34,5 +34,44 @@ describe("fetchCommunityIssues", () => {
     process.env.GITHUB_REPOSITORY = "foo/`whoami`";
     const result = fetchCommunityIssues();
     expect(result).toEqual([]);
+  });
+});
+
+describe("acknowledgeIssues", () => {
+  const originalEnv = process.env.GITHUB_REPOSITORY;
+
+  afterEach(() => {
+    if (originalEnv !== undefined) {
+      process.env.GITHUB_REPOSITORY = originalEnv;
+    } else {
+      delete process.env.GITHUB_REPOSITORY;
+    }
+  });
+
+  it("does nothing when the issue list is empty", () => {
+    // Should not throw regardless of repo config.
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    expect(() => acknowledgeIssues([], 3)).not.toThrow();
+  });
+
+  it("does nothing when the repo format is invalid", () => {
+    process.env.GITHUB_REPOSITORY = "not-a-valid-repo";
+    const issue = { number: 1, title: "Test", body: "", reactions: 0 };
+    expect(() => acknowledgeIssues([issue], 3)).not.toThrow();
+  });
+
+  it("does nothing when no repo is detectable", () => {
+    delete process.env.GITHUB_REPOSITORY;
+    const issue = { number: 1, title: "Test", body: "", reactions: 0 };
+    // detectRepo() falls back to git remote get-url, which may fail in CI.
+    // Either way, acknowledgeIssues must not throw.
+    expect(() => acknowledgeIssues([issue], 3)).not.toThrow();
+  });
+
+  it("swallows gh command failure gracefully", () => {
+    // The repo format is valid but nonexistent — gh will fail; must not throw.
+    process.env.GITHUB_REPOSITORY = "nonexistent/repo";
+    const issue = { number: 42, title: "Feature request", body: "", reactions: 5 };
+    expect(() => acknowledgeIssues([issue], 3)).not.toThrow();
   });
 });

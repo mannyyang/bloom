@@ -2,7 +2,7 @@ import { query } from "@anthropic-ai/claude-agent-sdk";
 import { readFileSync } from "fs";
 import { execSync } from "child_process";
 import { incrementCycleCount } from "./utils.js";
-import { fetchCommunityIssues } from "./issues.js";
+import { fetchCommunityIssues, acknowledgeIssues } from "./issues.js";
 import { buildAssessmentPrompt, buildEvolutionPrompt } from "./evolve.js";
 import {
   protectIdentity,
@@ -60,6 +60,9 @@ async function main() {
   }
 
   console.log("\nAssessment complete.");
+
+  // Acknowledge all community issues so contributors see their input was seen.
+  acknowledgeIssues(issues, cycleCount);
 
   // Phase 2: Evolution (read-write with safety hooks)
   console.log("\n--- Phase 2: Evolution ---");

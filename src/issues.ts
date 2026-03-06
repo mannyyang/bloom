@@ -52,3 +52,28 @@ export function fetchCommunityIssues(): CommunityIssue[] {
     return [];
   }
 }
+
+/**
+ * Post a "seen by Bloom" comment on each community issue so contributors
+ * know their input was considered during this cycle.  Failures are
+ * swallowed — a missing comment must never block evolution.
+ */
+export function acknowledgeIssues(
+  issues: CommunityIssue[],
+  cycleCount: number,
+): void {
+  if (issues.length === 0) return;
+  const repo = detectRepo();
+  if (!repo || !isValidRepo(repo)) return;
+
+  for (const issue of issues) {
+    try {
+      execSync(
+        `gh issue comment ${issue.number} --repo ${repo} --body "Seen by Bloom in cycle ${cycleCount}. Thank you for your input!"`,
+        { timeout: 10_000 },
+      );
+    } catch {
+      // Best-effort: don't let a failed comment block evolution.
+    }
+  }
+}
