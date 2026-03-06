@@ -74,8 +74,8 @@ const DANGEROUS_PATTERNS = [
 const JOURNAL_MODIFY_PATTERNS = [
   />\s*(?:\S*\/)?JOURNAL\.md/,
   /\btee\s+(?!.*-a)(?:.*\s)?(?:\S*\/)?JOURNAL\.md/,
-  /\bcp\s+(?:.*\s)(?:\S*\/)?JOURNAL\.md/,
-  /\bmv\s+(?:.*\s)(?:\S*\/)?JOURNAL\.md/,
+  /\bcp\s+(?:.*\s)(?:\S*\/)?JOURNAL\.md(?:\s|$|;|&|\|)/,
+  /\bmv\s+(?:.*\s)(?:\S*\/)?JOURNAL\.md(?:\s|$|;|&|\|)/,
   /\bsed\s+-i\b.*JOURNAL\.md/,
   /\btruncate\s+.*JOURNAL\.md/,
   /\bdd\s+.*of=(?:\S*\/)?JOURNAL\.md/,
@@ -84,8 +84,8 @@ const JOURNAL_MODIFY_PATTERNS = [
 const IDENTITY_MODIFY_PATTERNS = [
   /(?:>|>>)\s*(?:\S*\/)?IDENTITY\.md/,
   /\btee\s+(?:.*\s)?(?:\S*\/)?IDENTITY\.md/,
-  /\bcp\s+(?:.*\s)(?:\S*\/)?IDENTITY\.md\s*$/,
-  /\bmv\s+(?:.*\s)(?:\S*\/)?IDENTITY\.md\s*$/,
+  /\bcp\s+(?:.*\s)(?:\S*\/)?IDENTITY\.md(?:\s|$|;|&|\|)/,
+  /\bmv\s+(?:.*\s)(?:\S*\/)?IDENTITY\.md(?:\s|$|;|&|\|)/,
   /\bsed\s+-i\b.*IDENTITY\.md/,
   /\bchmod\s+.*IDENTITY\.md/,
   /\bchown\s+.*IDENTITY\.md/,
