@@ -28,6 +28,13 @@ async function main() {
   process.env.GIT_COMMITTER_NAME = "bloom[bot]";
   process.env.GIT_COMMITTER_EMAIL = "bloom[bot]@users.noreply.github.com";
 
+  // Commit the updated cycle count
+  try {
+    execSync(`git add CYCLE_COUNT && git commit -m "cycle ${cycleCount}"`, { stdio: "inherit", timeout: 30_000 });
+  } catch {
+    // May fail if CYCLE_COUNT is unchanged (e.g. manual re-run)
+  }
+
   // Create safety tag
   try {
     execSync(`git tag -f pre-evolution-cycle-${cycleCount}`, { stdio: "inherit", timeout: 30_000 });
