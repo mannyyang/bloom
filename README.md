@@ -10,18 +10,22 @@ Bloom is a proof-of-concept demonstrating that an AI agent can **safely and tran
 
 ## How It Works
 
-Every 15 minutes, Bloom runs an evolution cycle locally via macOS launchd:
+Every 4 hours, Bloom runs an evolution cycle via GitHub Actions:
 
 1. **Pre-flight** - Verifies build and tests pass before starting
 2. **Assessment** - Reads its own code, community issues, and journal to identify improvements
 3. **Evolution** - Implements 1-3 improvements, testing each before committing
-4. **Journal** - Documents what was attempted, what succeeded, and what was learned
-5. **Push** - Pushes passing changes to main
+4. **Build verification** - Verifies build still passes after evolution; reverts if broken
+5. **Journal** - Documents what was attempted, what succeeded, and what was learned
+6. **Push** - Pushes passing changes to main
+
+The workflow retries up to 3 times with backoff on failure.
 
 ## Safety
 
 - **Immutable constitution** (`IDENTITY.md`) - Defines purpose and boundaries, protected by hooks
 - **Test-gated commits** - Only changes that pass `pnpm build && pnpm test` are committed
+- **Post-evolution verification** - Build is verified after the agent runs; broken builds are reverted
 - **Append-only journal** - `JOURNAL.md` can only be appended to, never overwritten
 - **Dangerous command blocking** - Safety hooks prevent `rm -rf`, force pushes, etc.
 - **Budget limits** - Max 50 turns and $5 per evolution cycle
@@ -34,9 +38,20 @@ The full evolution journal is published at the repo's [GitHub Pages site](https:
 
 Open an issue with the `agent-input` label to suggest improvements. Issues are prioritized by reaction count.
 
-## Setup
+## GitHub Actions
 
-Requires a [Claude subscription](https://claude.ai) and the Claude Agent SDK.
+Evolution runs automatically on a 4-hour cron schedule. You can also trigger it manually from the **Actions** tab → **Bloom Evolution** → **Run workflow**.
+
+### Required Secrets
+
+| Secret | Description |
+|--------|-------------|
+| `ANTHROPIC_API_KEY` | Anthropic API key for Claude |
+| `BLOOM_APP_PRIVATE_KEY` | GitHub App private key (PEM) for bot issue comments |
+
+`GITHUB_TOKEN` is provided automatically by GitHub Actions.
+
+## Local Development
 
 ```bash
 pnpm install
@@ -44,27 +59,8 @@ pnpm build
 pnpm test
 ```
 
-### Install (runs every 4 hours in the background)
+### Manual Evolution
 
 ```bash
-./scripts/install.sh
-```
-
-### Trigger an immediate evolution
-
-```bash
-launchctl start com.bloom.evolve
-tail -f logs/evolve.log
-```
-
-### Uninstall
-
-```bash
-./scripts/uninstall.sh
-```
-
-## Manual Evolution
-
-```bash
-pnpm run evolve
+ANTHROPIC_API_KEY=sk-... pnpm run evolve
 ```

@@ -14,6 +14,10 @@ import {
   setGitBotIdentity,
   commitCycleCount,
   pushChanges,
+  pushTags,
+  verifyBuild,
+  revertUncommitted,
+  hardResetTo,
 } from "./lifecycle.js";
 
 async function main() {
@@ -93,10 +97,35 @@ async function main() {
     if ("result" in msg) console.log(msg.result);
   }
 
+  // Phase 2.5: Post-evolution build verification
+  console.log("\n--- Build Verification ---");
+  let buildPassed = false;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    if (verifyBuild()) {
+      buildPassed = true;
+      break;
+    }
+    console.error(`Build verification failed (attempt ${attempt}/3)`);
+    if (attempt < 3) {
+      revertUncommitted();
+    }
+  }
+
+  if (!buildPassed) {
+    console.error("Build broken after 3 attempts. Reverting to pre-evolution state.");
+    try {
+      hardResetTo(`pre-evolution-cycle-${cycleCount}`);
+    } catch {
+      console.error("Revert failed. Manual intervention needed.");
+      process.exit(1);
+    }
+  }
+
   // Phase 3: Push
   console.log("\n--- Phase 3: Push ---");
   if (pushChanges()) {
     console.log("Changes pushed successfully.");
+    pushTags();
   } else {
     console.error("Push failed. Changes remain local.");
   }

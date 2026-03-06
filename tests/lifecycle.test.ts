@@ -71,7 +71,7 @@ describe("lifecycle helpers", () => {
       expect(pushChanges()).toBe(true);
       expect(mockedExecSync).toHaveBeenCalledWith(
         "git push origin main",
-        expect.objectContaining({ timeout: 30_000 }),
+        expect.objectContaining({ timeout: 60_000 }),
       );
     });
 

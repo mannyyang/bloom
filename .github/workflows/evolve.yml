@@ -1,0 +1,65 @@
+name: Bloom Evolution
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: evolve
+  cancel-in-progress: false
+
+jobs:
+  evolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      BLOOM_APP_PRIVATE_KEY: ${{ secrets.BLOOM_APP_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run evolution (attempt 1)
+        id: attempt1
+        continue-on-error: true
+        run: pnpm run evolve
+        timeout-minutes: 120
+
+      - name: Retry evolution (attempt 2)
+        if: steps.attempt1.outcome == 'failure'
+        id: attempt2
+        continue-on-error: true
+        run: |
+          sleep 30
+          git pull --rebase origin main || true
+          pnpm run evolve
+        timeout-minutes: 120
+
+      - name: Retry evolution (attempt 3)
+        if: steps.attempt2.outcome == 'failure'
+        run: |
+          sleep 60
+          git pull --rebase origin main || true
+          pnpm run evolve
+        timeout-minutes: 120

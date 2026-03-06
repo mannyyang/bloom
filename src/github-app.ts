@@ -6,9 +6,16 @@ import { fileURLToPath } from "url";
 const APP_ID = "3021184";
 const INSTALLATION_ID = "114372557";
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const PEM_PATH = process.env.BLOOM_PEM_PATH
-  ? resolve(process.env.BLOOM_PEM_PATH)
-  : resolve(__dirname, "../bloom-bot-agent.2026-03-05.private-key.pem");
+
+function getPrivateKey(): string {
+  if (process.env.BLOOM_APP_PRIVATE_KEY) {
+    return process.env.BLOOM_APP_PRIVATE_KEY;
+  }
+  const pemPath = process.env.BLOOM_PEM_PATH
+    ? resolve(process.env.BLOOM_PEM_PATH)
+    : resolve(__dirname, "../bloom-bot-agent.2026-03-05.private-key.pem");
+  return readFileSync(pemPath, "utf-8");
+}
 
 function createJwt(): string {
   const now = Math.floor(Date.now() / 1000);
@@ -17,7 +24,7 @@ function createJwt(): string {
     JSON.stringify({ iat: now - 60, exp: now + 600, iss: APP_ID }),
   ).toString("base64url");
 
-  const privateKey = readFileSync(PEM_PATH, "utf-8");
+  const privateKey = getPrivateKey();
   const sign = createSign("RSA-SHA256");
   sign.update(`${header}.${payload}`);
   const signature = sign.sign(privateKey, "base64url");
