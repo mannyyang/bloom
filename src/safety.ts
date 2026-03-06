@@ -69,7 +69,7 @@ const DANGEROUS_PATTERNS = [
   // Git history destruction — force push overwrites remote history
   /git\s+push\s+(-f|--force)/,
   // Git history destruction — hard reset to arbitrary ref loses uncommitted work
-  /git\s+reset\s+--hard\s+(?!HEAD\s*$)/,
+  /git\s+reset\s+--hard\s+(?!HEAD(?:\s*$|\s*[;&|]))/,
   // Remote code execution — piping downloaded content into a shell
   /curl.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh/,
   /wget.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh/,

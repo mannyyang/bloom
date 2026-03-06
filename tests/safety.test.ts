@@ -158,6 +158,22 @@ describe("blockDangerousCommands", () => {
     expectAllowed(await blockDangerousCommands(makeBashInput("git reset --hard"), "tool-1", hookOpts));
   });
 
+  it("allows git reset --hard HEAD in chained command (&&)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("git reset --hard HEAD && git status"), "tool-1", hookOpts));
+  });
+
+  it("allows git reset --hard HEAD in chained command (;)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("git reset --hard HEAD; echo done"), "tool-1", hookOpts));
+  });
+
+  it("allows git reset --hard HEAD in chained command (||)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("git reset --hard HEAD || echo failed"), "tool-1", hookOpts));
+  });
+
+  it("blocks git reset --hard HEAD~1 in chained command", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("git reset --hard HEAD~1 && git push"), "tool-1", hookOpts));
+  });
+
   it("blocks eval commands", async () => {
     expectDenied(await blockDangerousCommands(makeBashInput('eval "rm -rf /"'), "tool-1", hookOpts));
   });
