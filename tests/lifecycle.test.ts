@@ -1,22 +1,30 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { execSync } from "child_process";
+import { execSync, execFileSync } from "child_process";
 
 vi.mock("child_process", () => ({
   execSync: vi.fn(),
+  execFileSync: vi.fn(),
 }));
 
 const mockedExecSync = vi.mocked(execSync);
+const mockedExecFileSync = vi.mocked(execFileSync);
 
 import {
   runPreflightCheck,
   setGitBotIdentity,
   commitCycleCount,
   pushChanges,
+  pushTags,
+  verifyBuild,
+  revertUncommitted,
+  hardResetTo,
+  isValidGitRef,
 } from "../src/lifecycle.js";
 
 describe("lifecycle helpers", () => {
   beforeEach(() => {
     mockedExecSync.mockReset();
+    mockedExecFileSync.mockReset();
   });
 
   afterEach(() => {
@@ -78,6 +86,92 @@ describe("lifecycle helpers", () => {
     it("returns false when push fails", () => {
       mockedExecSync.mockImplementation(() => { throw new Error("push rejected"); });
       expect(pushChanges()).toBe(false);
+    });
+  });
+
+  describe("pushTags", () => {
+    it("returns true on successful tag push", () => {
+      mockedExecSync.mockReturnValue(Buffer.from(""));
+      expect(pushTags()).toBe(true);
+      expect(mockedExecSync).toHaveBeenCalledWith(
+        "git push --tags",
+        expect.objectContaining({ timeout: 60_000 }),
+      );
+    });
+
+    it("returns false when tag push fails", () => {
+      mockedExecSync.mockImplementation(() => { throw new Error("push rejected"); });
+      expect(pushTags()).toBe(false);
+    });
+  });
+
+  describe("verifyBuild", () => {
+    it("returns true when build+test succeeds", () => {
+      mockedExecSync.mockReturnValue(Buffer.from(""));
+      expect(verifyBuild()).toBe(true);
+      expect(mockedExecSync).toHaveBeenCalledWith(
+        "pnpm build && pnpm test",
+        expect.objectContaining({ timeout: 120_000 }),
+      );
+    });
+
+    it("returns false when build+test fails", () => {
+      mockedExecSync.mockImplementation(() => { throw new Error("test failed"); });
+      expect(verifyBuild()).toBe(false);
+    });
+  });
+
+  describe("revertUncommitted", () => {
+    it("runs git checkout . on success", () => {
+      mockedExecSync.mockReturnValue(Buffer.from(""));
+      revertUncommitted();
+      expect(mockedExecSync).toHaveBeenCalledWith(
+        "git checkout .",
+        expect.objectContaining({ timeout: 10_000 }),
+      );
+    });
+
+    it("does not throw when git checkout fails", () => {
+      mockedExecSync.mockImplementation(() => { throw new Error("checkout failed"); });
+      expect(() => revertUncommitted()).not.toThrow();
+    });
+  });
+
+  describe("isValidGitRef", () => {
+    it("accepts valid refs", () => {
+      expect(isValidGitRef("main")).toBe(true);
+      expect(isValidGitRef("pre-evolution-cycle-42")).toBe(true);
+      expect(isValidGitRef("v1.0.0")).toBe(true);
+      expect(isValidGitRef("origin/main")).toBe(true);
+      expect(isValidGitRef("HEAD")).toBe(true);
+    });
+
+    it("rejects refs with shell metacharacters", () => {
+      expect(isValidGitRef("; rm -rf /")).toBe(false);
+      expect(isValidGitRef("ref$(cmd)")).toBe(false);
+      expect(isValidGitRef("ref`cmd`")).toBe(false);
+      expect(isValidGitRef("ref | cat")).toBe(false);
+      expect(isValidGitRef("")).toBe(false);
+    });
+  });
+
+  describe("hardResetTo", () => {
+    it("calls execFileSync with correct args for valid ref", () => {
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+      hardResetTo("pre-evolution-cycle-42");
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["reset", "--hard", "pre-evolution-cycle-42"],
+        expect.objectContaining({ timeout: 10_000 }),
+      );
+    });
+
+    it("throws on invalid ref with shell metacharacters", () => {
+      expect(() => hardResetTo("; rm -rf /")).toThrow("Invalid git ref");
+    });
+
+    it("throws on empty ref", () => {
+      expect(() => hardResetTo("")).toThrow("Invalid git ref");
     });
   });
 });
