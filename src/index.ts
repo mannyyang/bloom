@@ -25,7 +25,7 @@ import {
   formatUsageForJournal,
   PhaseUsage,
 } from "./usage.js";
-import { createOutcome, formatOutcomeForJournal } from "./outcomes.js";
+import { createOutcome, formatOutcomeForJournal, persistOutcome } from "./outcomes.js";
 
 async function main() {
   const cycleCount = incrementCycleCount();
@@ -141,7 +141,8 @@ async function main() {
     console.error("Push failed. Changes remain local.");
   }
 
-  // Log final outcome
+  // Persist and log final outcome
+  persistOutcome(outcome);
   console.log("\n--- Outcome ---");
   console.log(formatOutcomeForJournal(outcome));
 }
