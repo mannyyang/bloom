@@ -56,6 +56,25 @@ describe("lifecycle helpers", () => {
       expect(process.env.GIT_COMMITTER_NAME).toBe("bloom[bot]");
       expect(process.env.GIT_COMMITTER_EMAIL).toBe("bloom[bot]@users.noreply.github.com");
     });
+
+    it("calls execFileSync for git config (no shell interpretation)", () => {
+      setGitBotIdentity();
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["config", "user.name", "bloom[bot]"],
+        expect.objectContaining({ stdio: "ignore" }),
+      );
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["config", "user.email", "bloom[bot]@users.noreply.github.com"],
+        expect.objectContaining({ stdio: "ignore" }),
+      );
+    });
+
+    it("does not throw when git config fails", () => {
+      mockedExecFileSync.mockImplementation(() => { throw new Error("git config failed"); });
+      expect(() => setGitBotIdentity()).not.toThrow();
+    });
   });
 
   describe("commitCycleCount", () => {

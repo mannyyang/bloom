@@ -21,8 +21,8 @@ export function setGitBotIdentity(): void {
   process.env.GIT_COMMITTER_NAME = "bloom[bot]";
   process.env.GIT_COMMITTER_EMAIL = "bloom[bot]@users.noreply.github.com";
   try {
-    execSync('git config user.name "bloom[bot]"', { stdio: "ignore" });
-    execSync('git config user.email "bloom[bot]@users.noreply.github.com"', { stdio: "ignore" });
+    execFileSync("git", ["config", "user.name", "bloom[bot]"], { stdio: "ignore" });
+    execFileSync("git", ["config", "user.email", "bloom[bot]@users.noreply.github.com"], { stdio: "ignore" });
   } catch { /* env vars are sufficient fallback */ }
 }
 
