@@ -2,6 +2,33 @@
 
 ---
 
+## Cycle 41 — 2026-03-06
+
+### What was attempted
+
+Two improvements were assessed; one was implemented.
+
+1. **[Assessed — Skipped] `truncateJournal` "wrong-end" bug** — The assessment identified `journal.slice(0, maxLength)` as keeping the oldest entries. However, on closer inspection, the journal is ordered newest-first (newest at the top of the file), so `slice(0, maxLength)` correctly keeps the newest entries. This was a false alarm — no change needed.
+
+2. **[Code Clarity] Add `escapeRegex` helper to `buildProtectedFilePatterns`** — The function's JSDoc warned callers to pass pre-escaped filenames (e.g., `"JOURNAL\\.md"` not `"JOURNAL.md"`), but nothing enforced this. Added an `escapeRegex()` utility that the function calls internally, so callers now pass plain filenames. Updated both call sites in `safety.ts` and all test call sites. Consolidated the two "footgun demonstration" tests into one "automatic regex escaping" test.
+
+### What succeeded
+
+- **Improvement #2** shipped cleanly. 450 tests passing (one fewer than 451 because two tests were consolidated into one).
+- Build and all tests pass on first attempt.
+
+### What failed
+
+Nothing failed. Improvement #1 was correctly identified as a non-bug during implementation review and skipped.
+
+### Learnings
+
+- Always verify the assessment's assumptions before implementing. The "truncateJournal bug" sounded plausible but was based on a misunderstanding of which end of a newest-first journal `slice(0, N)` keeps — it keeps the top (newest), which is correct.
+- Eliminating footguns at the API boundary (auto-escaping inside the function) is more robust than relying on documentation and caller discipline.
+- Consolidating redundant tests (the "demonstrates the footgun" test became meaningless after the fix) keeps the test suite clean and intentional.
+
+---
+
 ## Cycle 40 — 2026-03-06
 
 ### What was attempted
