@@ -382,6 +382,14 @@ describe("isDangerousRm", () => {
     expect(isDangerousRm("rm -rf ./dist")).toBe(false);
   });
 
+  it("detects rm -rf /* (root glob)", () => {
+    expect(isDangerousRm("rm -rf /*")).toBe(true);
+  });
+
+  it("detects rm -rf ~/* (home glob)", () => {
+    expect(isDangerousRm("rm -rf ~/*")).toBe(true);
+  });
+
   it("returns false for rm -r somefile (no force flag)", () => {
     expect(isDangerousRm("rm -r somefile")).toBe(false);
   });

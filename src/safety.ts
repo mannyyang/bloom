@@ -52,7 +52,7 @@ export function isDangerousRm(command: string): boolean {
   const rest = rmMatch[1];
   const hasRecursive = /(?:^|\s)--recursive(?:\s|$)/.test(rest) || /(?:^|\s)-\w*r/.test(rest);
   const hasForce = /(?:^|\s)--force(?:\s|$)/.test(rest) || /(?:^|\s)-\w*f/.test(rest);
-  const hasDangerousPath = /(?:^|\s)\/(?:\s|$)/.test(rest) || /(?:^|\s)~\/?(?:\s|$)/.test(rest);
+  const hasDangerousPath = /(?:^|\s)\/(?:\s|$|\*)/.test(rest) || /(?:^|\s)~\/?(?:\s|$|\*)/.test(rest);
   return hasRecursive && hasForce && hasDangerousPath;
 }
 
