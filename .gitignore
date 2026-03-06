@@ -4,3 +4,4 @@ dist/
 logs/
 .claude/
 *.pem
+_site/

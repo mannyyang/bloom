@@ -12,7 +12,7 @@ const mockedExecFileSync = vi.mocked(execFileSync);
 import {
   runPreflightCheck,
   setGitBotIdentity,
-  commitCycleCount,
+  commitDb,
   pushChanges,
   pushTags,
   verifyBuild,
@@ -78,13 +78,13 @@ describe("lifecycle helpers", () => {
     });
   });
 
-  describe("commitCycleCount", () => {
+  describe("commitDb", () => {
     it("returns true on successful commit", () => {
       mockedExecFileSync.mockReturnValue(Buffer.from(""));
-      expect(commitCycleCount(42)).toBe(true);
+      expect(commitDb(42)).toBe(true);
       expect(mockedExecFileSync).toHaveBeenCalledWith(
         "git",
-        ["add", "CYCLE_COUNT"],
+        ["add", "bloom.db"],
         expect.objectContaining({ timeout: 30_000 }),
       );
       expect(mockedExecFileSync).toHaveBeenCalledWith(
@@ -96,14 +96,14 @@ describe("lifecycle helpers", () => {
 
     it("returns false when git add fails", () => {
       mockedExecFileSync.mockImplementation(() => { throw new Error("add failed"); });
-      expect(commitCycleCount(42)).toBe(false);
+      expect(commitDb(42)).toBe(false);
     });
 
     it("returns false when git commit fails", () => {
       mockedExecFileSync
         .mockReturnValueOnce(Buffer.from(""))
         .mockImplementationOnce(() => { throw new Error("nothing to commit"); });
-      expect(commitCycleCount(42)).toBe(false);
+      expect(commitDb(42)).toBe(false);
     });
   });
 

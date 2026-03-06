@@ -1,19 +1,10 @@
 import type { CommunityIssue } from "./issues.js";
 
-interface AssessmentContext {
+export interface AssessmentContext {
   identity: string;
-  journal: string;
+  journalSummary: string;
   issues: CommunityIssue[];
   cycleCount: number;
-}
-
-const JOURNAL_WINDOW = 4000;
-
-export function truncateJournal(journal: string, maxLength: number = JOURNAL_WINDOW): string {
-  if (journal.length <= maxLength) return journal;
-  const raw = journal.slice(0, maxLength);
-  const lastNewline = raw.lastIndexOf("\n");
-  return lastNewline > 0 ? raw.slice(0, lastNewline) : raw;
 }
 
 export function buildAssessmentPrompt(ctx: AssessmentContext): string {
@@ -38,7 +29,7 @@ Your constitution:
 ${ctx.identity}
 
 Recent journal entries:
-${truncateJournal(ctx.journal)}
+${ctx.journalSummary}
 
 Read all files in src/ and tests/, then provide a structured assessment:
 - What are the top 1-3 improvements to make this cycle?
@@ -69,14 +60,12 @@ RULES:
 3. If tests PASS: stage and commit with a descriptive message.
 4. If tests FAIL: revert with "git checkout ." and try the next improvement or a different approach.
 5. NEVER modify IDENTITY.md.
-6. JOURNAL.md is ordered newest-first. Insert new entries directly after the "---" line that follows the "# Bloom Evolution Journal" header. Do NOT append to the end.
+6. Do NOT write to JOURNAL.md — journal entries are now stored in SQLite and managed by the orchestrator.
 7. Keep changes small and incremental.
 
-After all improvements, insert a journal entry at the top of JOURNAL.md (after the header and first ---) with:
-- Cycle number and date
-- What was attempted
-- What succeeded and what failed
-- Learnings
-
-Then stage and commit the journal entry.`;
+After all improvements, provide a structured summary in your final response with these sections clearly labeled:
+- ATTEMPTED: What was attempted this cycle
+- SUCCEEDED: What succeeded
+- FAILED: What failed
+- LEARNINGS: Key insights`;
 }

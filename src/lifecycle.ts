@@ -27,12 +27,12 @@ export function setGitBotIdentity(): void {
 }
 
 /**
- * Stage and commit the CYCLE_COUNT file. Returns true on success, false if
+ * Stage and commit the bloom.db file. Returns true on success, false if
  * the commit fails (e.g. nothing to commit).
  */
-export function commitCycleCount(cycleCount: number): boolean {
+export function commitDb(cycleCount: number): boolean {
   try {
-    execFileSync("git", ["add", "CYCLE_COUNT"], { stdio: "inherit", timeout: 30_000 });
+    execFileSync("git", ["add", "bloom.db"], { stdio: "inherit", timeout: 30_000 });
     execFileSync("git", ["commit", "-m", `cycle ${cycleCount}`], { stdio: "inherit", timeout: 30_000 });
     return true;
   } catch {

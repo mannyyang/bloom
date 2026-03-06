@@ -1,17 +1,16 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { readFileSync } from "fs";
-import { incrementCycleCount } from "./utils.js";
+import { initDb, getLatestCycleNumber, insertCycle, insertJournalEntry, insertPhaseUsage, getRecentJournalSummary } from "./db.js";
 import { fetchCommunityIssues, acknowledgeIssues, closeResolvedIssue, ResolvedIssue } from "./issues.js";
 import { buildAssessmentPrompt, buildEvolutionPrompt } from "./evolve.js";
 import {
   protectIdentity,
-  enforceAppendOnly,
   blockDangerousCommands,
 } from "./safety.js";
 import {
   runPreflightCheck,
   setGitBotIdentity,
-  commitCycleCount,
+  commitDb,
   pushChanges,
   pushTags,
   runBuildVerification,
@@ -25,10 +24,11 @@ import {
   formatUsageForJournal,
   PhaseUsage,
 } from "./usage.js";
-import { createOutcome, formatOutcomeForJournal, persistOutcome } from "./outcomes.js";
+import { createOutcome, formatOutcomeForJournal } from "./outcomes.js";
 
 async function main() {
-  const cycleCount = incrementCycleCount();
+  const db = initDb();
+  const cycleCount = getLatestCycleNumber(db) + 1;
   const outcome = createOutcome(cycleCount);
   console.log(`Bloom evolution cycle ${cycleCount}`);
 
@@ -41,14 +41,15 @@ async function main() {
 
   setGitBotIdentity();
 
-  // Commit the updated cycle count
-  commitCycleCount(cycleCount);
+  // Insert cycle row (will be updated at end)
+  insertCycle(db, outcome);
+  commitDb(cycleCount);
 
   // Create safety tag
   createSafetyTag(cycleCount);
 
   const identity = readFileSync("IDENTITY.md", "utf-8");
-  const journal = readFileSync("JOURNAL.md", "utf-8");
+  const journalSummary = getRecentJournalSummary(db);
   const issues = await fetchCommunityIssues();
 
   // Phase 1: Assessment (read-only)
@@ -56,7 +57,7 @@ async function main() {
   let assessment = "";
   const phaseUsages: PhaseUsage[] = [];
   for await (const msg of query({
-    prompt: buildAssessmentPrompt({ identity, journal, issues, cycleCount }),
+    prompt: buildAssessmentPrompt({ identity, journalSummary, issues, cycleCount }),
     options: {
       cwd: process.cwd(),
       model: "claude-opus-4-6",
@@ -70,6 +71,7 @@ async function main() {
     const usage = extractUsage(msg as Record<string, unknown>, "Assessment");
     if (usage) {
       phaseUsages.push(usage);
+      insertPhaseUsage(db, cycleCount, usage);
       console.log(formatPhaseUsage(usage));
     }
   }
@@ -84,23 +86,12 @@ async function main() {
   // Acknowledge all community issues so contributors see their input was seen.
   await acknowledgeIssues(issues, cycleCount);
 
-  // Close resolved community issues (community issue #5).
-  const resolvedIssues: ResolvedIssue[] = [
-    { issueNumber: 3, reason: "Success metrics implemented in cycles 46-47 via `outcomes.ts`." },
-    { issueNumber: 4, reason: "Token/cost tracking implemented in cycle 45 via `usage.ts`." },
-    { issueNumber: 5, reason: "Auto-closing of resolved issues implemented in cycle 48 via `closeResolvedIssue()`." },
-    { issueNumber: 6, reason: "Metrics persistence implemented in cycle 47 via `METRICS.json` and `persistOutcome()`." },
-    { issueNumber: 7, reason: "Test review completed in cycle 48. All 517 tests are necessary — safety tests are extensive by design." },
-  ];
-  for (const ri of resolvedIssues) {
-    await closeResolvedIssue(ri.issueNumber, cycleCount, ri.reason);
-  }
-
   // Phase 2: Evolution (read-write with safety hooks)
   console.log("\n--- Phase 2: Evolution ---");
   const assessmentUsage = aggregateUsage(phaseUsages);
   const usageContext = formatUsageForJournal(assessmentUsage);
   const outcomeContext = formatOutcomeForJournal(outcome);
+  let evolutionResult = "";
   for await (const msg of query({
     prompt: buildEvolutionPrompt(assessment, { usageContext, outcomeContext }),
     options: {
@@ -114,16 +105,19 @@ async function main() {
       hooks: {
         PreToolUse: [
           { matcher: "Write|Edit", hooks: [protectIdentity] },
-          { matcher: "Write|Edit", hooks: [enforceAppendOnly] },
           { matcher: "Bash", hooks: [blockDangerousCommands] },
         ],
       },
     },
   })) {
-    if ("result" in msg) console.log(msg.result);
+    if ("result" in msg) {
+      evolutionResult = msg.result;
+      console.log(msg.result);
+    }
     const usage = extractUsage(msg as Record<string, unknown>, "Evolution");
     if (usage) {
       phaseUsages.push(usage);
+      insertPhaseUsage(db, cycleCount, usage);
       console.log(formatPhaseUsage(usage));
     }
   }
@@ -132,6 +126,14 @@ async function main() {
   const cycleUsage = aggregateUsage(phaseUsages);
   console.log("\n--- Usage Summary ---");
   console.log(formatCycleUsage(cycleUsage));
+
+  // Parse journal sections from evolution result
+  const journalSections = parseEvolutionResult(evolutionResult);
+  for (const [section, content] of Object.entries(journalSections)) {
+    if (content) {
+      insertJournalEntry(db, cycleCount, section, content);
+    }
+  }
 
   // Phase 2.5: Post-evolution build verification
   console.log("\n--- Build Verification ---");
@@ -149,6 +151,7 @@ async function main() {
 
   // Phase 3: Push
   console.log("\n--- Phase 3: Push ---");
+  outcome.pushSucceeded = false;
   if (pushChanges()) {
     console.log("Changes pushed successfully.");
     pushTags();
@@ -157,10 +160,62 @@ async function main() {
     console.error("Push failed. Changes remain local.");
   }
 
-  // Persist and log final outcome
-  persistOutcome(outcome);
+  // Update cycle row with final outcome
+  insertCycle(db, outcome);
+  db.close();
+
+  // Commit updated DB and push
+  commitDb(cycleCount);
+  if (!outcome.pushSucceeded) {
+    // Try push again with updated DB
+    if (pushChanges()) {
+      console.log("DB changes pushed successfully.");
+      pushTags();
+    }
+  }
+
   console.log("\n--- Outcome ---");
   console.log(formatOutcomeForJournal(outcome));
+}
+
+function parseEvolutionResult(result: string): Record<string, string> {
+  const sections: Record<string, string> = {
+    attempted: "",
+    succeeded: "",
+    failed: "",
+    learnings: "",
+  };
+
+  const sectionMap: Record<string, string> = {
+    "ATTEMPTED": "attempted",
+    "SUCCEEDED": "succeeded",
+    "FAILED": "failed",
+    "LEARNINGS": "learnings",
+  };
+
+  let currentSection = "";
+  for (const line of result.split("\n")) {
+    const trimmed = line.trim();
+    // Check for section headers like "ATTEMPTED:" or "**ATTEMPTED**:"
+    for (const [marker, key] of Object.entries(sectionMap)) {
+      if (trimmed.startsWith(`${marker}:`) || trimmed.startsWith(`**${marker}**:`)) {
+        currentSection = key;
+        const rest = trimmed.replace(/^\*?\*?[A-Z]+\*?\*?:\s*/, "");
+        if (rest) sections[currentSection] += rest + "\n";
+        break;
+      }
+    }
+    if (currentSection && !Object.keys(sectionMap).some(m => trimmed.startsWith(`${m}:`) || trimmed.startsWith(`**${m}**:`))) {
+      sections[currentSection] += line + "\n";
+    }
+  }
+
+  // Trim trailing whitespace
+  for (const key of Object.keys(sections)) {
+    sections[key] = sections[key].trim();
+  }
+
+  return sections;
 }
 
 main().catch((err) => {
