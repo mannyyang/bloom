@@ -86,6 +86,8 @@ const DANGEROUS_PATTERNS = [
   /\bfdisk\b/,
   /\bparted\b/,
   /git\s+clean\s+.*(-f|--force)/,
+  /\bcurl\s+.*(-d\b|--data\b|--data-binary\b|--data-raw\b|--data-urlencode\b|--upload-file\b|-F\b|--form\b)/,
+  /\bwget\s+.*--post-(data|file)\b/,
 ];
 
 const JOURNAL_MODIFY_PATTERNS = [
