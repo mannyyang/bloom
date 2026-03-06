@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Mock fs and crypto before importing the module
 vi.mock("fs", () => ({
@@ -38,6 +38,32 @@ describe("github-app", () => {
 
     mockFetch = vi.fn();
     vi.stubGlobal("fetch", mockFetch);
+  });
+
+  afterEach(() => {
+    delete process.env.BLOOM_APP_PRIVATE_KEY;
+  });
+
+  describe("getPrivateKey env-var branch", () => {
+    it("uses BLOOM_APP_PRIVATE_KEY when set instead of reading PEM file", async () => {
+      process.env.BLOOM_APP_PRIVATE_KEY = "env-var-private-key";
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          token: "ghs_env_key",
+          expires_at: new Date(Date.now() + 3600_000).toISOString(),
+        }),
+      });
+
+      const { getInstallationToken } = await loadModule();
+      const token = await getInstallationToken();
+
+      expect(token).toBe("ghs_env_key");
+      // Verify readFileSync was NOT called for the PEM file
+      const { readFileSync } = await import("fs");
+      expect(readFileSync).not.toHaveBeenCalled();
+    });
   });
 
   describe("getInstallationToken", () => {
