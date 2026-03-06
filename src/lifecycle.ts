@@ -85,6 +85,22 @@ export function revertUncommitted(): void {
 }
 
 /**
+ * Create a safety tag for the given cycle. Uses execFileSync to avoid shell
+ * injection. Returns true on success, false on failure (tag creation is optional).
+ */
+export function createSafetyTag(cycleCount: number): boolean {
+  if (!Number.isInteger(cycleCount) || cycleCount < 1) {
+    return false;
+  }
+  try {
+    execFileSync("git", ["tag", "-f", `pre-evolution-cycle-${cycleCount}`], { stdio: "inherit", timeout: 30_000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Validate that a string is a safe git ref (no shell metacharacters).
  */
 export function isValidGitRef(ref: string): boolean {

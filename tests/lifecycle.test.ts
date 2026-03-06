@@ -19,6 +19,7 @@ import {
   revertUncommitted,
   hardResetTo,
   isValidGitRef,
+  createSafetyTag,
 } from "../src/lifecycle.js";
 
 describe("lifecycle helpers", () => {
@@ -134,6 +135,30 @@ describe("lifecycle helpers", () => {
     it("does not throw when git checkout fails", () => {
       mockedExecSync.mockImplementation(() => { throw new Error("checkout failed"); });
       expect(() => revertUncommitted()).not.toThrow();
+    });
+  });
+
+  describe("createSafetyTag", () => {
+    it("creates a tag using execFileSync for a valid cycle count", () => {
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+      expect(createSafetyTag(42)).toBe(true);
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["tag", "-f", "pre-evolution-cycle-42"],
+        expect.objectContaining({ timeout: 30_000 }),
+      );
+    });
+
+    it("returns false when git tag fails", () => {
+      mockedExecFileSync.mockImplementation(() => { throw new Error("tag failed"); });
+      expect(createSafetyTag(42)).toBe(false);
+    });
+
+    it("returns false for non-positive integers", () => {
+      expect(createSafetyTag(0)).toBe(false);
+      expect(createSafetyTag(-1)).toBe(false);
+      expect(createSafetyTag(1.5)).toBe(false);
+      expect(mockedExecFileSync).not.toHaveBeenCalled();
     });
   });
 

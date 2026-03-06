@@ -1,6 +1,5 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { readFileSync } from "fs";
-import { execSync } from "child_process";
 import { incrementCycleCount } from "./utils.js";
 import { fetchCommunityIssues, acknowledgeIssues } from "./issues.js";
 import { buildAssessmentPrompt, buildEvolutionPrompt } from "./evolve.js";
@@ -18,6 +17,7 @@ import {
   verifyBuild,
   revertUncommitted,
   hardResetTo,
+  createSafetyTag,
 } from "./lifecycle.js";
 
 async function main() {
@@ -36,11 +36,7 @@ async function main() {
   commitCycleCount(cycleCount);
 
   // Create safety tag
-  try {
-    execSync(`git tag -f pre-evolution-cycle-${cycleCount}`, { stdio: "inherit", timeout: 30_000 });
-  } catch {
-    // Tag creation is optional
-  }
+  createSafetyTag(cycleCount);
 
   const identity = readFileSync("IDENTITY.md", "utf-8");
   const journal = readFileSync("JOURNAL.md", "utf-8");
