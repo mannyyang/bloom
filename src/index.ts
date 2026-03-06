@@ -22,6 +22,12 @@ async function main() {
     process.exit(1);
   }
 
+  // Set bot identity for all git operations during evolution
+  process.env.GIT_AUTHOR_NAME = "bloom[bot]";
+  process.env.GIT_AUTHOR_EMAIL = "bloom[bot]@users.noreply.github.com";
+  process.env.GIT_COMMITTER_NAME = "bloom[bot]";
+  process.env.GIT_COMMITTER_EMAIL = "bloom[bot]@users.noreply.github.com";
+
   // Create safety tag
   try {
     execSync(`git tag -f pre-evolution-cycle-${cycleCount}`, { stdio: "inherit" });
