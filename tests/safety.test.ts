@@ -194,6 +194,18 @@ describe("blockDangerousCommands", () => {
     expectDenied(await blockDangerousCommands(makeBashInput("npm exec some-package"), "tool-1", hookOpts));
   });
 
+  it("blocks pnpm exec (arbitrary package execution)", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("pnpm exec some-package"), "tool-1", hookOpts));
+  });
+
+  it("blocks pnpm dlx (download-and-execute bypass)", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("pnpm dlx malicious-package"), "tool-1", hookOpts));
+  });
+
+  it("blocks yarn dlx (download-and-execute bypass)", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("yarn dlx malicious-package"), "tool-1", hookOpts));
+  });
+
   it("allows when command is empty string", async () => {
     expectAllowed(await blockDangerousCommands(makeBashInput(""), "tool-1", hookOpts));
   });

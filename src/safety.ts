@@ -77,9 +77,12 @@ const DANGEROUS_PATTERNS = [
   /\beval\s/,
   /(?:[\w./]*\/)?bash\s+-c\b/,
   /(?:[\w./]*\/)?sh\s+-c\b/,
-  // Untrusted package execution — npx/npm exec run arbitrary packages
+  // Untrusted package execution — npx/npm exec/pnpm exec/pnpm dlx/yarn dlx run arbitrary packages
   /\bnpx\s/,
   /\bnpm\s+exec\b/,
+  /\bpnpm\s+exec\b/,
+  /\bpnpm\s+dlx\s/,
+  /\byarn\s+dlx\s/,
   // Git ref destruction — force-delete branches, delete reflog, prune objects
   /git\s+branch\s+(-D|--delete\s+--force)\b/,
   /git\s+reflog\s+delete\b/,
