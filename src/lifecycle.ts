@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { execSync, execFileSync } from "child_process";
 
 /**
  * Run preflight build+test check. Returns true if passed, false if failed.
@@ -85,8 +85,19 @@ export function revertUncommitted(): void {
 }
 
 /**
+ * Validate that a string is a safe git ref (no shell metacharacters).
+ */
+export function isValidGitRef(ref: string): boolean {
+  return /^[a-zA-Z0-9._\-/]+$/.test(ref);
+}
+
+/**
  * Hard reset to a specific ref (e.g. a tag).
+ * Uses execFileSync to avoid shell injection and validates the ref format.
  */
 export function hardResetTo(ref: string): void {
-  execSync(`git reset --hard ${ref}`, { stdio: "inherit", timeout: 10_000 });
+  if (!isValidGitRef(ref)) {
+    throw new Error(`Invalid git ref: ${ref}`);
+  }
+  execFileSync("git", ["reset", "--hard", ref], { stdio: "inherit", timeout: 10_000 });
 }
