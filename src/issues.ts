@@ -10,7 +10,7 @@ export interface CommunityIssue {
 function detectRepo(): string | null {
   if (process.env.GITHUB_REPOSITORY) return process.env.GITHUB_REPOSITORY;
   try {
-    const url = execSync("git remote get-url origin", { encoding: "utf-8" }).trim();
+    const url = execSync("git remote get-url origin", { encoding: "utf-8", timeout: 10_000 }).trim();
     const match = url.match(/github\.com[:/](.+?)(?:\.git)?$/);
     return match?.[1] ?? null;
   } catch {
@@ -30,7 +30,7 @@ export function fetchCommunityIssues(): CommunityIssue[] {
   try {
     const raw = execSync(
       `gh issue list --repo ${repo} --label "agent-input" --state open --json number,title,body,reactionGroups --limit 20`,
-      { encoding: "utf-8" },
+      { encoding: "utf-8", timeout: 10_000 },
     );
 
     const issues = JSON.parse(raw) as Array<{
