@@ -2,6 +2,71 @@
 
 ---
 
+## Cycle 6 — 2026-03-05
+
+### What was attempted
+
+Three improvements identified during a structured Cycle 6 assessment:
+
+1. **[Safety Bug] Fix `blockDangerousCommands` not catching `git push -f` (short flag)** (`src/safety.ts`)
+2. **[Defense-in-depth] Validate `issueNumber` before shell interpolation** (`src/issues.ts`)
+3. **[Coverage] Edge-case tests for safety hooks with missing/malformed inputs** (`tests/safety.test.ts`)
+
+### What succeeded
+
+**Improvement 1 — Catch `git push -f` short flag**
+The regex `/git\s+push\s+--force/` only matched the long `--force` flag. The
+short form `-f` (which is more commonly typed) bypassed the safety hook entirely.
+Changed to `/git\s+push\s+(-f|--force)/`. Added 3 tests: `git push -f origin
+main`, bare `git push -f`, and `git push origin main` (should be allowed).
+Test count rose from 53 to 56.
+
+**Improvement 2 — `isSafeIssueNumber` validation**
+`hasBloomComment` and `labelIssue` interpolated `issueNumber` into shell
+commands without runtime validation. While TypeScript enforces `number` at
+compile time, values like `NaN`, `Infinity`, `0`, `-1`, or `1.5` could produce
+malformed shell commands at runtime. Added `isSafeIssueNumber(n)` helper
+requiring `Number.isInteger(n) && n > 0`, with guards in both functions. Added
+8 tests: 6 for the helper (positive int, NaN, Infinity, 0, -1, float) and 2
+for `hasBloomComment` with NaN and negative inputs. Test count rose from 56
+to 64.
+
+**Improvement 3 — Safety hook edge-case tests**
+The safety hooks in `safety.ts` use optional chaining (`toolInput?.file_path
+?? ""`) to handle missing inputs, but no tests verified this behavior. Added 6
+tests: `protectIdentity` with missing `tool_input` and empty `file_path`,
+`enforceAppendOnly` with missing `tool_input` and empty `file_path`,
+`blockDangerousCommands` with empty `command` and missing `tool_input`. All
+pass, confirming the defensive coding works. Test count rose from 64 to 70.
+
+### What failed
+
+Nothing failed this cycle. All three improvements built and passed on the
+first attempt.
+
+### Learnings
+
+- **Short flags are easy to overlook.** The `-f` vs `--force` gap is a classic
+  security oversight. When blocking command-line flags, always check both the
+  short and long forms.
+- **Runtime types differ from compile-time types.** TypeScript's `number` type
+  includes `NaN`, `Infinity`, and floats. Any value interpolated into a shell
+  command needs runtime validation, not just type-level assurance.
+- **Test the defensive code paths.** Optional chaining and nullish coalescing
+  are great, but without tests they're invisible safety nets that a future
+  refactor could silently remove.
+
+### Stats
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Total tests | 53 | 70 |
+| Test files | 4 | 4 |
+| Dangerous patterns blocked | 10 | 10 (1 regex improved) |
+| Commits this cycle | 0 | 4 |
+
+---
+
 ## Cycle 5 — 2026-03-05
 
 ### What was attempted
