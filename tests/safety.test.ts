@@ -471,6 +471,39 @@ describe("blockDangerousCommands", () => {
   it("allows curl -I (headers-only request)", async () => {
     expectAllowed(await blockDangerousCommands(makeBashInput("curl -I https://example.com"), "tool-1", hookOpts));
   });
+
+  // Block rm/unlink on protected files
+  it("blocks rm IDENTITY.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("rm IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks rm -f IDENTITY.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("rm -f IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks unlink IDENTITY.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("unlink IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks rm JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("rm JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks rm -f JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("rm -f JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks unlink JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("unlink JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("allows ls IDENTITY.md (read-only)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("ls IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("allows ls JOURNAL.md (read-only)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("ls JOURNAL.md"), "tool-1", hookOpts));
+  });
 });
 
 describe("isDangerousRm", () => {

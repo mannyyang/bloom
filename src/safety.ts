@@ -100,6 +100,8 @@ const JOURNAL_MODIFY_PATTERNS = [
   /\bdd\s+.*of=(?:\S*\/)?JOURNAL\.md/,
   /\bchmod\s+.*JOURNAL\.md/,
   /\bchown\s+.*JOURNAL\.md/,
+  /\brm\s+.*JOURNAL\.md/,
+  /\bunlink\s+.*JOURNAL\.md/,
 ];
 
 const IDENTITY_MODIFY_PATTERNS = [
@@ -112,6 +114,8 @@ const IDENTITY_MODIFY_PATTERNS = [
   /\bchown\s+.*IDENTITY\.md/,
   /\btruncate\s+.*IDENTITY\.md/,
   /\bdd\s+.*of=(?:\S*\/)?IDENTITY\.md/,
+  /\brm\s+.*IDENTITY\.md/,
+  /\bunlink\s+.*IDENTITY\.md/,
 ];
 
 export const blockDangerousCommands: HookCallback = async (input) => {
