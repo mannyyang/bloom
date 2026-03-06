@@ -109,7 +109,7 @@ const DANGEROUS_PATTERNS = [
   /\byarn\s+add\b/,
 ];
 
-function buildProtectedFilePatterns(filename: string, opts?: { allowAppend?: boolean }): RegExp[] {
+export function buildProtectedFilePatterns(filename: string, opts?: { allowAppend?: boolean }): RegExp[] {
   const patterns: RegExp[] = [
     // Redirect: for append-allowed files, only block overwrite (>); otherwise block both (> and >>)
     opts?.allowAppend

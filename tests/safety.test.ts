@@ -6,6 +6,7 @@ import {
   blockDangerousCommands,
   isDangerousRm,
   isDangerousCommand,
+  buildProtectedFilePatterns,
 } from "../src/safety.js";
 
 const baseFields = {
@@ -790,5 +791,115 @@ describe("isDangerousCommand", () => {
 
   it("detects bare git filter-branch", () => {
     expect(isDangerousCommand("git filter-branch")).toBe(true);
+  });
+});
+
+describe("buildProtectedFilePatterns", () => {
+  function matchesAny(patterns: RegExp[], command: string): boolean {
+    return patterns.some((p) => p.test(command));
+  }
+
+  describe("full protection (IDENTITY.md-style)", () => {
+    const patterns = buildProtectedFilePatterns("IDENTITY\\.md");
+
+    it("blocks > redirect", () => {
+      expect(matchesAny(patterns, 'echo x > IDENTITY.md')).toBe(true);
+    });
+
+    it("blocks >> redirect", () => {
+      expect(matchesAny(patterns, 'echo x >> IDENTITY.md')).toBe(true);
+    });
+
+    it("blocks tee", () => {
+      expect(matchesAny(patterns, "echo x | tee IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks tee -a (no append exception)", () => {
+      expect(matchesAny(patterns, "echo x | tee -a IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks cp", () => {
+      expect(matchesAny(patterns, "cp other.md IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks mv", () => {
+      expect(matchesAny(patterns, "mv other.md IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks sed -i", () => {
+      expect(matchesAny(patterns, "sed -i 's/a/b/' IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks truncate", () => {
+      expect(matchesAny(patterns, "truncate -s 0 IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks dd", () => {
+      expect(matchesAny(patterns, "dd if=/dev/null of=IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks chmod", () => {
+      expect(matchesAny(patterns, "chmod 000 IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks chown", () => {
+      expect(matchesAny(patterns, "chown root IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks rm", () => {
+      expect(matchesAny(patterns, "rm IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks unlink", () => {
+      expect(matchesAny(patterns, "unlink IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks git checkout --", () => {
+      expect(matchesAny(patterns, "git checkout -- IDENTITY.md")).toBe(true);
+    });
+
+    it("blocks git restore", () => {
+      expect(matchesAny(patterns, "git restore IDENTITY.md")).toBe(true);
+    });
+
+    it("does not match unrelated files", () => {
+      expect(matchesAny(patterns, "echo x > README.md")).toBe(false);
+    });
+  });
+
+  describe("append-allowed protection (JOURNAL.md-style)", () => {
+    const patterns = buildProtectedFilePatterns("JOURNAL\\.md", { allowAppend: true });
+
+    it("blocks > overwrite redirect", () => {
+      expect(matchesAny(patterns, 'echo x > JOURNAL.md')).toBe(true);
+    });
+
+    it("allows >> append redirect", () => {
+      expect(matchesAny(patterns, 'echo x >> JOURNAL.md')).toBe(false);
+    });
+
+    it("blocks tee without -a", () => {
+      expect(matchesAny(patterns, "echo x | tee JOURNAL.md")).toBe(true);
+    });
+
+    it("allows tee -a (append mode)", () => {
+      expect(matchesAny(patterns, "echo x | tee -a JOURNAL.md")).toBe(false);
+    });
+
+    it("blocks cp", () => {
+      expect(matchesAny(patterns, "cp other.md JOURNAL.md")).toBe(true);
+    });
+
+    it("blocks sed -i", () => {
+      expect(matchesAny(patterns, "sed -i 's/a/b/' JOURNAL.md")).toBe(true);
+    });
+
+    it("blocks rm", () => {
+      expect(matchesAny(patterns, "rm JOURNAL.md")).toBe(true);
+    });
+
+    it("does not match unrelated files", () => {
+      expect(matchesAny(patterns, "echo x > README.md")).toBe(false);
+    });
   });
 });
