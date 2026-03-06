@@ -49,7 +49,7 @@ export const blockDangerousCommands: HookCallback = async (input) => {
   const dangerous = [
     /rm\s+-rf\s+[\/~]/,
     /git\s+push\s+(-f|--force)/,
-    /git\s+reset\s+--hard(?!\s+HEAD)/,
+    /git\s+reset\s+--hard(?!\s+HEAD\s*$)/,
     /curl.*\|\s*sh/,
     /wget.*\|\s*sh/,
     /\beval\s/,

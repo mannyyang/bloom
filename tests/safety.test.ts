@@ -198,6 +198,39 @@ describe("blockDangerousCommands", () => {
     ).toHaveProperty("permissionDecision", "deny");
   });
 
+  it("blocks git reset --hard HEAD~1", async () => {
+    const result = await blockDangerousCommands(
+      makeBashInput("git reset --hard HEAD~1"),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(
+      (result as Record<string, unknown>).hookSpecificOutput,
+    ).toHaveProperty("permissionDecision", "deny");
+  });
+
+  it("blocks git reset --hard HEAD^", async () => {
+    const result = await blockDangerousCommands(
+      makeBashInput("git reset --hard HEAD^"),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(
+      (result as Record<string, unknown>).hookSpecificOutput,
+    ).toHaveProperty("permissionDecision", "deny");
+  });
+
+  it("blocks git reset --hard HEAD~5", async () => {
+    const result = await blockDangerousCommands(
+      makeBashInput("git reset --hard HEAD~5"),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(
+      (result as Record<string, unknown>).hookSpecificOutput,
+    ).toHaveProperty("permissionDecision", "deny");
+  });
+
   it("allows git reset --hard HEAD", async () => {
     const result = await blockDangerousCommands(
       makeBashInput("git reset --hard HEAD"),
