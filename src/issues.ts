@@ -29,29 +29,30 @@ export function isValidRepo(repo: string): boolean {
   return /^[\w.\-]+\/[\w.\-]+$/.test(repo);
 }
 
-export function fetchCommunityIssues(): CommunityIssue[] {
+export async function fetchCommunityIssues(): Promise<CommunityIssue[]> {
   const repo = detectRepo();
   if (!repo || !isValidRepo(repo)) return [];
 
   try {
-    const raw = execSync(
-      `gh issue list --repo ${repo} --label "agent-input" --state open --json number,title,body,reactionGroups --limit 20`,
-      { encoding: "utf-8", timeout: 10_000 },
+    const res = await githubApiRequest(
+      "GET",
+      `/repos/${repo}/issues?labels=agent-input&state=open&per_page=20`,
     );
+    if (!res.ok) return [];
 
-    const issues = JSON.parse(raw) as Array<{
+    const issues = (await res.json()) as Array<{
       number: number;
       title: string;
       body: string;
-      reactionGroups: Array<{ content: string; users: { totalCount: number } }>;
+      reactions: { total_count: number };
     }>;
 
     return issues
       .map((i) => ({
         number: i.number,
         title: i.title,
-        body: i.body,
-        reactions: i.reactionGroups.reduce((sum, g) => sum + g.users.totalCount, 0),
+        body: i.body ?? "",
+        reactions: i.reactions?.total_count ?? 0,
       }))
       .sort((a, b) => b.reactions - a.reactions);
   } catch {

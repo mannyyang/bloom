@@ -44,7 +44,7 @@ async function main() {
 
   const identity = readFileSync("IDENTITY.md", "utf-8");
   const journal = readFileSync("JOURNAL.md", "utf-8");
-  const issues = fetchCommunityIssues();
+  const issues = await fetchCommunityIssues();
 
   // Phase 1: Assessment (read-only)
   console.log("\n--- Phase 1: Assessment ---");

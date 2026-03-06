@@ -46,6 +46,7 @@ describe("fetchCommunityIssues", () => {
   const originalEnv = process.env.GITHUB_REPOSITORY;
 
   afterEach(() => {
+    mockGithubApiRequest.mockReset();
     if (originalEnv !== undefined) {
       process.env.GITHUB_REPOSITORY = originalEnv;
     } else {
@@ -53,28 +54,51 @@ describe("fetchCommunityIssues", () => {
     }
   });
 
-  it("returns empty array when repo format is invalid", () => {
+  it("returns empty array when repo format is invalid", async () => {
     process.env.GITHUB_REPOSITORY = "not-a-valid-repo";
-    const result = fetchCommunityIssues();
+    const result = await fetchCommunityIssues();
     expect(result).toEqual([]);
   });
 
-  it("returns empty array when gh command fails", () => {
-    process.env.GITHUB_REPOSITORY = "nonexistent/repo";
-    const result = fetchCommunityIssues();
+  it("returns empty array when API call fails", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: false } as Response);
+    const result = await fetchCommunityIssues();
     expect(result).toEqual([]);
   });
 
-  it("returns empty array for malicious repo containing shell metacharacters", () => {
+  it("returns empty array for malicious repo containing shell metacharacters", async () => {
     process.env.GITHUB_REPOSITORY = "foo/bar; rm -rf ~";
-    const result = fetchCommunityIssues();
+    const result = await fetchCommunityIssues();
     expect(result).toEqual([]);
   });
 
-  it("returns empty array for repo with backtick injection attempt", () => {
+  it("returns empty array for repo with backtick injection attempt", async () => {
     process.env.GITHUB_REPOSITORY = "foo/`whoami`";
-    const result = fetchCommunityIssues();
+    const result = await fetchCommunityIssues();
     expect(result).toEqual([]);
+  });
+
+  it("returns issues sorted by reaction count descending", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [
+        { number: 1, title: "Low", body: "b1", reactions: { total_count: 2 } },
+        { number: 2, title: "High", body: "b2", reactions: { total_count: 10 } },
+      ],
+    } as unknown as Response);
+
+    const result = await fetchCommunityIssues();
+    expect(result).toEqual([
+      { number: 2, title: "High", body: "b2", reactions: 10 },
+      { number: 1, title: "Low", body: "b1", reactions: 2 },
+    ]);
+
+    expect(mockGithubApiRequest).toHaveBeenCalledWith(
+      "GET",
+      "/repos/owner/repo/issues?labels=agent-input&state=open&per_page=20",
+    );
   });
 });
 
