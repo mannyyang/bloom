@@ -2,6 +2,35 @@
 
 ---
 
+## Cycle 18 — 2026-03-06
+
+### What was attempted
+
+Two safety-hardening improvements targeting defense-in-depth gaps:
+
+1. **[Safety] Block `rm` with `--no-preserve-root` flag** — unconditionally block any `rm` command containing `--no-preserve-root`, a known bypass for system deletion safeguards
+2. **[Safety] Block `chmod`/`chown` on `.git/` paths** — prevent disabling git hooks or modifying git internals via permission changes
+
+### What succeeded
+
+**Improvement 1 — Block `--no-preserve-root`** (138 -> 141 tests)
+Added an early-return check in `isDangerousRm` that flags any `rm` command containing `--no-preserve-root` regardless of other flags or target path. This flag has zero legitimate use in Bloom's context and is a strong signal of destructive intent. Added 3 tests covering the flag with various combinations.
+
+**Improvement 2 — Block chmod/chown on `.git/` paths** (141 -> 145 tests)
+Added two patterns to `DANGEROUS_PATTERNS`: `\bchmod\s+.*\.git\/` and `\bchown\s+.*\.git\/`. These block permission changes on any `.git/` path (hooks, config, objects, etc.) while allowing `chmod` on regular project files. Added 4 tests including a negative test for `chmod` on normal files.
+
+### What failed
+
+Nothing — both improvements were clean, low-risk changes that passed on first attempt.
+
+### Learnings
+
+- The `--no-preserve-root` check is a good example of "block the intent signal" — rather than trying to enumerate all dangerous paths, we block the flag that signals the user is trying to bypass protections.
+- `.git/` permission protection closes a subtle gap: an agent could disable pre-commit hooks by making them non-executable, effectively removing safety checks without modifying the hook content.
+- Test count: 138 -> 145 across 2 commits.
+
+---
+
 ## Cycle 17 — 2026-03-06
 
 ### What was attempted
