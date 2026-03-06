@@ -97,15 +97,7 @@ export async function acknowledgeIssues(
     try {
       if (!isSafeIssueNumber(issue.number)) continue;
 
-      if (await hasBloomComment(issue.number, repo)) {
-        // Already seen in a prior cycle — close the issue so it doesn't
-        // accumulate indefinitely. Contributors had one full cycle to react.
-        await githubApiRequest("PATCH", `/repos/${repo}/issues/${issue.number}`, {
-          state: "closed",
-          state_reason: "completed",
-        }).catch(() => {});
-        continue;
-      }
+      if (await hasBloomComment(issue.number, repo)) continue;
 
       await githubApiRequest("POST", `/repos/${repo}/issues/${issue.number}/comments`, {
         body: `Seen by Bloom in cycle ${cycleCount}. Thank you for your input!`,

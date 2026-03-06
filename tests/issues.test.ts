@@ -282,28 +282,20 @@ describe("acknowledgeIssues", () => {
     expect(mockGithubApiRequest).not.toHaveBeenCalled();
   });
 
-  it("closes an issue that already has a Bloom comment from a prior cycle", async () => {
+  it("skips issues that already have a Bloom comment from a prior cycle", async () => {
     process.env.GITHUB_REPOSITORY = "owner/repo";
     const issue = { number: 7, title: "Old issue", body: "", reactions: 0 };
 
-    // First call: GET comments — returns a prior "Seen by Bloom" comment
+    // GET comments — returns a prior "Seen by Bloom" comment
     mockGithubApiRequest.mockResolvedValueOnce({
       ok: true,
       json: async () => [{ body: "Seen by Bloom in cycle 5. Thank you for your input!" }],
     } as unknown as Response);
-    // Second call: PATCH to close the issue
-    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
 
     await acknowledgeIssues([issue], 6);
 
-    // Verify the PATCH call to close the issue
-    expect(mockGithubApiRequest).toHaveBeenCalledWith(
-      "PATCH",
-      "/repos/owner/repo/issues/7",
-      { state: "closed", state_reason: "completed" },
-    );
-    // Should NOT have posted a new comment (only 2 calls: GET comments + PATCH close)
-    expect(mockGithubApiRequest).toHaveBeenCalledTimes(2);
+    // Should only have checked comments, no further API calls
+    expect(mockGithubApiRequest).toHaveBeenCalledTimes(1);
   });
 
   it("posts a comment and label for a new issue without prior Bloom comment", async () => {
