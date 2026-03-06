@@ -264,6 +264,68 @@ describe("blockDangerousCommands", () => {
   it("allows git add IDENTITY.md (staging, not modifying)", async () => {
     expectAllowed(await blockDangerousCommands(makeBashInput("git add IDENTITY.md"), "tool-1", hookOpts));
   });
+
+  // Chained-command bypass tests for IDENTITY.md
+  it("blocks cp to IDENTITY.md in chained command", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("cp other.md IDENTITY.md && echo done"), "tool-1", hookOpts));
+  });
+
+  it("blocks mv to IDENTITY.md in chained command", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("mv other.md IDENTITY.md; echo done"), "tool-1", hookOpts));
+  });
+
+  // Bash-based JOURNAL.md modification protection
+  it("blocks echo overwrite redirect to JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput('echo "" > JOURNAL.md'), "tool-1", hookOpts));
+  });
+
+  it("blocks cp to JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("cp other.md JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks mv to JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("mv other.md JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks sed -i on JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("sed -i 's/foo/bar/' JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks tee (without -a) to JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("echo x | tee JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks truncate on JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("truncate -s 0 JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks dd writing to JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("dd if=/dev/null of=JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks redirect to absolute path JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("echo x > /repo/JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("allows cat JOURNAL.md (read-only)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("cat JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("allows grep on JOURNAL.md (read-only)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("grep something JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("allows tee -a to JOURNAL.md (append mode)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("echo x | tee -a JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("allows echo >> JOURNAL.md (append redirect)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput('echo "entry" >> JOURNAL.md'), "tool-1", hookOpts));
+  });
+
+  it("blocks cp to JOURNAL.md in chained command", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("cp other.md JOURNAL.md && echo done"), "tool-1", hookOpts));
+  });
 });
 
 describe("isDangerousRm", () => {

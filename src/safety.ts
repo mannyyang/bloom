@@ -72,7 +72,7 @@ const DANGEROUS_PATTERNS = [
 ];
 
 const JOURNAL_MODIFY_PATTERNS = [
-  />\s*(?:\S*\/)?JOURNAL\.md/,
+  /(?:^|[^>])>\s*(?:\S*\/)?JOURNAL\.md/,
   /\btee\s+(?!.*-a)(?:.*\s)?(?:\S*\/)?JOURNAL\.md/,
   /\bcp\s+(?:.*\s)(?:\S*\/)?JOURNAL\.md(?:\s|$|;|&|\|)/,
   /\bmv\s+(?:.*\s)(?:\S*\/)?JOURNAL\.md(?:\s|$|;|&|\|)/,
