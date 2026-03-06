@@ -504,6 +504,31 @@ describe("blockDangerousCommands", () => {
   it("allows ls JOURNAL.md (read-only)", async () => {
     expectAllowed(await blockDangerousCommands(makeBashInput("ls JOURNAL.md"), "tool-1", hookOpts));
   });
+
+  // Block git checkout/restore on protected files
+  it("blocks git checkout -- IDENTITY.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("git checkout -- IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks git checkout HEAD -- IDENTITY.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("git checkout HEAD -- IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks git restore IDENTITY.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("git restore IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks git checkout -- JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("git checkout -- JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks git restore JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("git restore JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks git restore --source=HEAD~1 IDENTITY.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("git restore --source=HEAD~1 IDENTITY.md"), "tool-1", hookOpts));
+  });
 });
 
 describe("isDangerousRm", () => {
