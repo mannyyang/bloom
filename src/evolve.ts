@@ -7,6 +7,13 @@ interface AssessmentContext {
   dayCount: number;
 }
 
+const JOURNAL_WINDOW = 2000;
+
+function truncateJournal(journal: string): string {
+  const raw = journal.slice(-JOURNAL_WINDOW);
+  return raw.includes("\n") ? raw.slice(raw.indexOf("\n") + 1) : raw;
+}
+
 export function buildAssessmentPrompt(ctx: AssessmentContext): string {
   const issueList =
     ctx.issues.length > 0
@@ -29,7 +36,7 @@ Your constitution:
 ${ctx.identity}
 
 Recent journal entries:
-${ctx.journal.slice(-2000)}
+${truncateJournal(ctx.journal)}
 
 Read all files in src/ and tests/, then provide a structured assessment:
 - What are the top 1-3 improvements to make this cycle?

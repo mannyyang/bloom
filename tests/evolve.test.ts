@@ -36,6 +36,26 @@ describe("buildAssessmentPrompt", () => {
     });
     expect(prompt).toContain("No community issues");
   });
+
+  it("truncates a long journal at a line boundary", () => {
+    // Build a journal longer than 2000 chars with clear line structure.
+    const line = "x".repeat(100) + "\n";
+    const longJournal = line.repeat(25); // 2525 chars total
+    const prompt = buildAssessmentPrompt({
+      identity: "test",
+      journal: longJournal,
+      issues: [],
+      dayCount: 1,
+    });
+    // Extract the journal section from the prompt.
+    const marker = "Recent journal entries:\n";
+    const start = prompt.indexOf(marker) + marker.length;
+    const end = prompt.indexOf("\n\nRead all files");
+    const journalSection = prompt.slice(start, end);
+    // The section must not start mid-line (i.e. no leading partial 'x' block
+    // before the first newline that would indicate a mid-word cut).
+    expect(journalSection.startsWith("x".repeat(100))).toBe(true);
+  });
 });
 
 describe("buildEvolutionPrompt", () => {
