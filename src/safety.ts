@@ -93,39 +93,34 @@ const DANGEROUS_PATTERNS = [
   /\byarn\s+add\b/,
 ];
 
-const JOURNAL_MODIFY_PATTERNS = [
-  /(?:^|[^>])>\s*(?:\S*\/)?JOURNAL\.md/,
-  /\btee\s+(?!.*-a)(?:.*\s)?(?:\S*\/)?JOURNAL\.md/,
-  /\bcp\s+(?:.*\s)(?:\S*\/)?JOURNAL\.md(?:\s|$|;|&|\|)/,
-  /\bmv\s+(?:.*\s)(?:\S*\/)?JOURNAL\.md(?:\s|$|;|&|\|)/,
-  /\bsed\s+-i\b.*JOURNAL\.md/,
-  /\btruncate\s+.*JOURNAL\.md/,
-  /\bdd\s+.*of=(?:\S*\/)?JOURNAL\.md/,
-  /\bchmod\s+.*JOURNAL\.md/,
-  /\bchown\s+.*JOURNAL\.md/,
-  /\brm\s+.*JOURNAL\.md/,
-  /\bunlink\s+.*JOURNAL\.md/,
-  /(?:^|[;&|]\s*|\s)ln\s+.*JOURNAL\.md/,
-  /git\s+checkout\s+.*--\s+.*JOURNAL\.md/,
-  /git\s+restore\s+.*JOURNAL\.md/,
-];
+function buildProtectedFilePatterns(filename: string, opts?: { allowAppend?: boolean }): RegExp[] {
+  const patterns: RegExp[] = [
+    // Redirect: for append-allowed files, only block overwrite (>); otherwise block both (> and >>)
+    opts?.allowAppend
+      ? new RegExp(`(?:^|[^>])>\\s*(?:\\S*\\/)?${filename}`)
+      : new RegExp(`(?:>|>>)\\s*(?:\\S*\\/)?${filename}`),
+    // tee: for append-allowed files, allow tee -a; otherwise block all tee
+    opts?.allowAppend
+      ? new RegExp(`\\btee\\s+(?!.*-a)(?:.*\\s)?(?:\\S*\\/)?${filename}`)
+      : new RegExp(`\\btee\\s+(?:.*\\s)?(?:\\S*\\/)?${filename}`),
+    new RegExp(`\\bcp\\s+(?:.*\\s)(?:\\S*\\/)?${filename}(?:\\s|$|;|&|\\|)`),
+    new RegExp(`\\bmv\\s+(?:.*\\s)(?:\\S*\\/)?${filename}(?:\\s|$|;|&|\\|)`),
+    new RegExp(`\\bsed\\s+-i\\b.*${filename}`),
+    new RegExp(`\\btruncate\\s+.*${filename}`),
+    new RegExp(`\\bdd\\s+.*of=(?:\\S*\\/)?${filename}`),
+    new RegExp(`\\bchmod\\s+.*${filename}`),
+    new RegExp(`\\bchown\\s+.*${filename}`),
+    new RegExp(`\\brm\\s+.*${filename}`),
+    new RegExp(`\\bunlink\\s+.*${filename}`),
+    new RegExp(`(?:^|[;&|]\\s*|\\s)ln\\s+.*${filename}`),
+    new RegExp(`git\\s+checkout\\s+.*--\\s+.*${filename}`),
+    new RegExp(`git\\s+restore\\s+.*${filename}`),
+  ];
+  return patterns;
+}
 
-const IDENTITY_MODIFY_PATTERNS = [
-  /(?:>|>>)\s*(?:\S*\/)?IDENTITY\.md/,
-  /\btee\s+(?:.*\s)?(?:\S*\/)?IDENTITY\.md/,
-  /\bcp\s+(?:.*\s)(?:\S*\/)?IDENTITY\.md(?:\s|$|;|&|\|)/,
-  /\bmv\s+(?:.*\s)(?:\S*\/)?IDENTITY\.md(?:\s|$|;|&|\|)/,
-  /\bsed\s+-i\b.*IDENTITY\.md/,
-  /\bchmod\s+.*IDENTITY\.md/,
-  /\bchown\s+.*IDENTITY\.md/,
-  /\btruncate\s+.*IDENTITY\.md/,
-  /\bdd\s+.*of=(?:\S*\/)?IDENTITY\.md/,
-  /\brm\s+.*IDENTITY\.md/,
-  /\bunlink\s+.*IDENTITY\.md/,
-  /(?:^|[;&|]\s*|\s)ln\s+.*IDENTITY\.md/,
-  /git\s+checkout\s+.*--\s+.*IDENTITY\.md/,
-  /git\s+restore\s+.*IDENTITY\.md/,
-];
+const JOURNAL_MODIFY_PATTERNS = buildProtectedFilePatterns("JOURNAL\\.md", { allowAppend: true });
+const IDENTITY_MODIFY_PATTERNS = buildProtectedFilePatterns("IDENTITY\\.md");
 
 export const blockDangerousCommands: HookCallback = async (input) => {
   const { toolName, command } = parseHookInput(input);
