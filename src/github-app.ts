@@ -42,6 +42,7 @@ export async function getInstallationToken(): Promise<string> {
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
       },
+      signal: AbortSignal.timeout(30_000),
     },
   );
 
@@ -72,5 +73,6 @@ export async function githubApiRequest(
       ...(body ? { "Content-Type": "application/json" } : {}),
     },
     ...(body ? { body: JSON.stringify(body) } : {}),
+    signal: AbortSignal.timeout(30_000),
   });
 }

@@ -144,6 +144,22 @@ describe("github-app", () => {
       expect(mockFetch).toHaveBeenCalledTimes(2);
     });
 
+    it("passes an abort signal with timeout to fetch", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          token: "ghs_timeout",
+          expires_at: new Date(Date.now() + 3600_000).toISOString(),
+        }),
+      });
+
+      const { getInstallationToken } = await loadModule();
+      await getInstallationToken();
+
+      const callOpts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect(callOpts.signal).toBeInstanceOf(AbortSignal);
+    });
+
     it("throws when the API returns a non-ok response", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
@@ -205,6 +221,15 @@ describe("github-app", () => {
         title: "Test",
         body: "Hello",
       });
+    });
+
+    it("passes an abort signal with timeout to fetch", async () => {
+      const { githubApiRequest } = await setupWithToken();
+      await githubApiRequest("GET", "/repos/owner/repo");
+
+      // Second fetch call is the API request
+      const [, opts] = mockFetch.mock.calls[1] as [string, RequestInit];
+      expect(opts.signal).toBeInstanceOf(AbortSignal);
     });
 
     it("includes GitHub API version header", async () => {
