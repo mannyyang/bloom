@@ -164,7 +164,7 @@ describe("buildEvolutionPrompt", () => {
   });
 
   it("includes usage context when provided", () => {
-    const prompt = buildEvolutionPrompt("assessment text", "Cost: $0.50");
+    const prompt = buildEvolutionPrompt("assessment text", { usageContext: "Cost: $0.50" });
     expect(prompt).toContain("Resource usage so far this cycle:");
     expect(prompt).toContain("Cost: $0.50");
   });
@@ -177,5 +177,25 @@ describe("buildEvolutionPrompt", () => {
   it("omits usage section when context is undefined", () => {
     const prompt = buildEvolutionPrompt("assessment text", undefined);
     expect(prompt).not.toContain("Resource usage");
+  });
+
+  it("includes outcome context when provided", () => {
+    const prompt = buildEvolutionPrompt("assessment text", { outcomeContext: "Preflight: passed" });
+    expect(prompt).toContain("Cycle outcome metrics so far:");
+    expect(prompt).toContain("Preflight: passed");
+  });
+
+  it("omits outcome section when not provided", () => {
+    const prompt = buildEvolutionPrompt("assessment text", { usageContext: "Cost: $0.50" });
+    expect(prompt).not.toContain("outcome metrics");
+  });
+
+  it("includes both usage and outcome context together", () => {
+    const prompt = buildEvolutionPrompt("assessment text", {
+      usageContext: "Cost: $0.50",
+      outcomeContext: "Preflight: passed",
+    });
+    expect(prompt).toContain("Resource usage so far this cycle:");
+    expect(prompt).toContain("Cycle outcome metrics so far:");
   });
 });

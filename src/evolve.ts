@@ -45,14 +45,23 @@ Read all files in src/ and tests/, then provide a structured assessment:
 - For each: what to change, why, and expected difficulty.`;
 }
 
-export function buildEvolutionPrompt(assessment: string, usageContext?: string): string {
-  const usageSection = usageContext
-    ? `\n\nResource usage so far this cycle:\n${usageContext}\n`
+interface EvolutionContext {
+  usageContext?: string;
+  outcomeContext?: string;
+}
+
+export function buildEvolutionPrompt(assessment: string, context?: EvolutionContext): string {
+  const usageSection = context?.usageContext
+    ? `\n\nResource usage so far this cycle:\n${context.usageContext}\n`
+    : "";
+
+  const outcomeSection = context?.outcomeContext
+    ? `\n\nCycle outcome metrics so far:\n${context.outcomeContext}\n`
     : "";
 
   return `Based on this assessment, implement the improvements.
 
-${assessment}${usageSection}
+${assessment}${usageSection}${outcomeSection}
 
 RULES:
 1. Make ONE change at a time.

@@ -86,7 +86,7 @@ async function main() {
   const assessmentUsage = aggregateUsage(phaseUsages);
   const usageContext = formatUsageForJournal(assessmentUsage);
   for await (const msg of query({
-    prompt: buildEvolutionPrompt(assessment, usageContext),
+    prompt: buildEvolutionPrompt(assessment, { usageContext }),
     options: {
       cwd: process.cwd(),
       model: "claude-opus-4-6",
