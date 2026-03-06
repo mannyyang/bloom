@@ -25,9 +25,11 @@ import {
   formatUsageForJournal,
   PhaseUsage,
 } from "./usage.js";
+import { createOutcome, formatOutcomeForJournal } from "./outcomes.js";
 
 async function main() {
   const cycleCount = incrementCycleCount();
+  const outcome = createOutcome(cycleCount);
   console.log(`Bloom evolution cycle ${cycleCount}`);
 
   // Pre-flight check
@@ -35,6 +37,7 @@ async function main() {
     console.error("Pre-flight check failed. Aborting evolution.");
     process.exit(1);
   }
+  outcome.preflightPassed = true;
 
   setGitBotIdentity();
 
@@ -85,8 +88,9 @@ async function main() {
   console.log("\n--- Phase 2: Evolution ---");
   const assessmentUsage = aggregateUsage(phaseUsages);
   const usageContext = formatUsageForJournal(assessmentUsage);
+  const outcomeContext = formatOutcomeForJournal(outcome);
   for await (const msg of query({
-    prompt: buildEvolutionPrompt(assessment, { usageContext }),
+    prompt: buildEvolutionPrompt(assessment, { usageContext, outcomeContext }),
     options: {
       cwd: process.cwd(),
       model: "claude-opus-4-6",
@@ -121,6 +125,7 @@ async function main() {
   console.log("\n--- Build Verification ---");
   try {
     runBuildVerification(cycleCount);
+    outcome.buildVerificationPassed = true;
   } catch {
     console.error("Revert failed. Manual intervention needed.");
     process.exit(1);
@@ -131,9 +136,14 @@ async function main() {
   if (pushChanges()) {
     console.log("Changes pushed successfully.");
     pushTags();
+    outcome.pushSucceeded = true;
   } else {
     console.error("Push failed. Changes remain local.");
   }
+
+  // Log final outcome
+  console.log("\n--- Outcome ---");
+  console.log(formatOutcomeForJournal(outcome));
 }
 
 main().catch((err) => {
