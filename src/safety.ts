@@ -62,7 +62,7 @@ export function isDangerousRm(command: string): boolean {
 
 const DANGEROUS_PATTERNS = [
   /git\s+push\s+(-f|--force)/,
-  /git\s+reset\s+--hard(?!\s+HEAD\s*$)/,
+  /git\s+reset\s+--hard\s+(?!HEAD\s*$)/,
   /curl.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh/,
   /wget.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh/,
   /\beval\s/,

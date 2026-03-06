@@ -154,6 +154,10 @@ describe("blockDangerousCommands", () => {
     expectAllowed(await blockDangerousCommands(makeBashInput("git reset --hard HEAD"), "tool-1", hookOpts));
   });
 
+  it("allows bare git reset --hard (defaults to HEAD)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("git reset --hard"), "tool-1", hookOpts));
+  });
+
   it("blocks eval commands", async () => {
     expectDenied(await blockDangerousCommands(makeBashInput('eval "rm -rf /"'), "tool-1", hookOpts));
   });
