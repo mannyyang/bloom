@@ -604,6 +604,23 @@ describe("blockDangerousCommands", () => {
   it("allows npm install with no args followed by build", async () => {
     expectAllowed(await blockDangerousCommands(makeBashInput("npm install && npm run build"), "tool-1", hookOpts));
   });
+
+  // npm install with flags (should be allowed — no package name)
+  it("allows npm install with flag only", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("npm install --legacy-peer-deps"), "tool-1", hookOpts));
+  });
+
+  it("allows npm install with save-dev flag", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("npm install --save-dev"), "tool-1", hookOpts));
+  });
+
+  it("blocks npm install with scoped package", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("npm install @scope/evil-pkg"), "tool-1", hookOpts));
+  });
+
+  it("allows npm install -g (flag, accepted trade-off)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("npm install -g evil-pkg"), "tool-1", hookOpts));
+  });
 });
 
 describe("isDangerousRm", () => {
