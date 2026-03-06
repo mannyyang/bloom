@@ -56,6 +56,33 @@ export function isDangerousRm(command: string): boolean {
   return hasRecursive && hasForce && hasDangerousPath;
 }
 
+const DANGEROUS_PATTERNS = [
+  /git\s+push\s+(-f|--force)/,
+  /git\s+reset\s+--hard(?!\s+HEAD\s*$)/,
+  /curl.*\|\s*sh/,
+  /wget.*\|\s*sh/,
+  /\beval\s/,
+  /\bbash\s+-c\b/,
+  /\bsh\s+-c\b/,
+  /\bnpx\s/,
+  /\bnpm\s+exec\b/,
+  /git\s+branch\s+(-D|--delete\s+--force)\b/,
+  /git\s+reflog\s+delete\b/,
+  /git\s+gc\s+.*--prune=(now|all)\b/,
+];
+
+const IDENTITY_MODIFY_PATTERNS = [
+  /(?:>|>>)\s*(?:\S*\/)?IDENTITY\.md/,
+  /\btee\s+(?:.*\s)?(?:\S*\/)?IDENTITY\.md/,
+  /\bcp\s+(?:.*\s)(?:\S*\/)?IDENTITY\.md\s*$/,
+  /\bmv\s+(?:.*\s)(?:\S*\/)?IDENTITY\.md\s*$/,
+  /\bsed\s+-i\b.*IDENTITY\.md/,
+  /\bchmod\s+.*IDENTITY\.md/,
+  /\bchown\s+.*IDENTITY\.md/,
+  /\btruncate\s+.*IDENTITY\.md/,
+  /\bdd\s+.*of=(?:\S*\/)?IDENTITY\.md/,
+];
+
 export const blockDangerousCommands: HookCallback = async (input) => {
   const { toolName, command } = parseHookInput(input);
   if (toolName !== "Bash") return {};
@@ -64,25 +91,17 @@ export const blockDangerousCommands: HookCallback = async (input) => {
     return denyResult(`Blocked dangerous command: ${command}`);
   }
 
-  const dangerous = [
-    /git\s+push\s+(-f|--force)/,
-    /git\s+reset\s+--hard(?!\s+HEAD\s*$)/,
-    /curl.*\|\s*sh/,
-    /wget.*\|\s*sh/,
-    /\beval\s/,
-    /\bbash\s+-c\b/,
-    /\bsh\s+-c\b/,
-    /\bnpx\s/,
-    /\bnpm\s+exec\b/,
-    /git\s+branch\s+(-D|--delete\s+--force)\b/,
-    /git\s+reflog\s+delete\b/,
-    /git\s+gc\s+.*--prune=(now|all)\b/,
-  ];
-
-  for (const pattern of dangerous) {
+  for (const pattern of DANGEROUS_PATTERNS) {
     if (pattern.test(command)) {
       return denyResult(`Blocked dangerous command: ${command}`);
     }
   }
+
+  for (const pattern of IDENTITY_MODIFY_PATTERNS) {
+    if (pattern.test(command)) {
+      return denyResult("IDENTITY.md is the immutable constitution and cannot be modified via Bash.");
+    }
+  }
+
   return {};
 };
