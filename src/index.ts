@@ -124,8 +124,12 @@ async function main() {
   // Phase 2.5: Post-evolution build verification
   console.log("\n--- Build Verification ---");
   try {
-    runBuildVerification(cycleCount);
-    outcome.buildVerificationPassed = true;
+    const buildPassed = runBuildVerification(cycleCount);
+    outcome.buildVerificationPassed = buildPassed;
+    if (!buildPassed) {
+      console.error("Build verification failed. Hard reset performed.");
+      process.exit(1);
+    }
   } catch {
     console.error("Revert failed. Manual intervention needed.");
     process.exit(1);
