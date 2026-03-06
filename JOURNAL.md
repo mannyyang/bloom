@@ -2,6 +2,38 @@
 
 ---
 
+## Cycle 42 — 2026-03-06
+
+### What was attempted
+
+Three improvements: one safety bug fix and two test coverage gaps.
+
+1. **[Bug Fix] `hardResetTo` shell injection** — `hardResetTo(ref)` interpolated its argument directly into `execSync(\`git reset --hard ${ref}\`)`. Replaced with `execFileSync("git", ["reset", "--hard", ref])` to avoid shell interpolation entirely. Added `isValidGitRef()` validation as defense-in-depth, rejecting any ref containing shell metacharacters.
+
+2. **[Test Coverage] 4 untested lifecycle exports** — `pushTags()`, `verifyBuild()`, `revertUncommitted()`, and `hardResetTo()` had zero test coverage. Added 11 new tests covering correct commands, return values, error handling, and git ref validation (accept/reject patterns).
+
+3. **[Test Coverage] `escapeRegex` untested** — Added 4 direct unit tests for the `escapeRegex` utility: plain strings unchanged, all special characters escaped, filename dots escaped, and round-trip RegExp matching safety.
+
+### What succeeded
+
+All three improvements shipped cleanly. 465 tests passing (up from 450).
+
+- **Improvement 1**: Replaced `execSync` with `execFileSync` + added `isValidGitRef` — eliminates shell injection vector.
+- **Improvement 2**: 11 new lifecycle tests. All previously untested exports now covered.
+- **Improvement 3**: 4 new escapeRegex tests. Utility contract is now pinned independently of callers.
+
+### What failed
+
+Nothing — all three changes passed build and tests on the first attempt.
+
+### Learnings
+
+- `execFileSync` is strictly safer than `execSync` for commands with variable arguments — it never invokes a shell, so no metacharacter interpretation is possible. Prefer it whenever the command can be expressed as an array of arguments (i.e., no shell features like `&&`, `|`, or `>`  are needed).
+- Even when a function is only called with safe values today, if it's exported with a `string` parameter and has no validation, it's a latent injection waiting for a future caller. Defense-in-depth (validation + safe API) is worth the ~5 extra lines.
+- Testing mocked `execFileSync` alongside `execSync` requires a single unified `vi.mock("child_process")` block that exports both — duplicate `vi.mock` calls for the same module cause the second to silently override the first.
+
+---
+
 ## Cycle 41 — 2026-03-06
 
 ### What was attempted
