@@ -9,6 +9,7 @@ import {
   buildProtectedFilePatterns,
   parseHookInput,
   denyResult,
+  DANGEROUS_PATTERNS,
 } from "../src/safety.js";
 
 const baseFields = {
@@ -1620,5 +1621,28 @@ describe("denyResult (direct)", () => {
         permissionDecisionReason: "test reason",
       },
     });
+  });
+});
+
+describe("DANGEROUS_PATTERNS structural integrity", () => {
+  it("every entry has a non-empty category string", () => {
+    for (const entry of DANGEROUS_PATTERNS) {
+      expect(entry.category).toBeTruthy();
+      expect(typeof entry.category).toBe("string");
+    }
+  });
+
+  it("every pattern is a valid RegExp", () => {
+    for (const entry of DANGEROUS_PATTERNS) {
+      expect(entry.pattern).toBeInstanceOf(RegExp);
+    }
+  });
+
+  it("no two entries share the same pattern object reference", () => {
+    const seen = new Set<RegExp>();
+    for (const entry of DANGEROUS_PATTERNS) {
+      expect(seen.has(entry.pattern)).toBe(false);
+      seen.add(entry.pattern);
+    }
   });
 });

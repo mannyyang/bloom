@@ -85,7 +85,7 @@ interface DangerousPattern {
   category: string;
 }
 
-const DANGEROUS_PATTERNS: DangerousPattern[] = [
+export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Git history destruction — force push overwrites remote history
   { pattern: /git\s+push\s+(-f|--force)/, category: "git-history-destruction" },
   // Git history destruction — hard reset to arbitrary ref loses uncommitted work
