@@ -79,6 +79,11 @@ const DANGEROUS_PATTERNS = [
   // Arbitrary code execution — eval, shell -c run uncontrolled strings
   /\beval\s/,
   /(?:[\w./]*\/)?(?:ba|z|da|k)?sh\s+-c\b/,
+  // Inline interpreter code execution — functionally equivalent to sh -c
+  /\b(?:python3?|python3\.\d+)\s+-c\b/,
+  /\bnode\s+(?:-e|--eval)\b/,
+  /\bperl\s+(?:-e|-E)\b/,
+  /\bruby\s+-e\b/,
   // Shell script execution — source and dot-script (`. `) execute arbitrary files
   /\bsource\s/,
   /(?:^|[;&|]\s*)\.\s+\S/,
