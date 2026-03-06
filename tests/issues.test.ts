@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { fetchCommunityIssues, acknowledgeIssues } from "../src/issues.js";
+import { fetchCommunityIssues, acknowledgeIssues, hasBloomComment } from "../src/issues.js";
 
 describe("fetchCommunityIssues", () => {
   const originalEnv = process.env.GITHUB_REPOSITORY;
@@ -73,5 +73,19 @@ describe("acknowledgeIssues", () => {
     process.env.GITHUB_REPOSITORY = "nonexistent/repo";
     const issue = { number: 42, title: "Feature request", body: "", reactions: 5 };
     expect(() => acknowledgeIssues([issue], 3)).not.toThrow();
+  });
+});
+
+describe("hasBloomComment", () => {
+  it("returns false when gh command fails (nonexistent repo)", () => {
+    // gh will fail for a nonexistent repo; should return false, not throw.
+    const result = hasBloomComment(1, "nonexistent/repo");
+    expect(result).toBe(false);
+  });
+
+  it("returns false for invalid repo format", () => {
+    // Even if called with bad input, should not throw.
+    const result = hasBloomComment(1, "not-valid");
+    expect(result).toBe(false);
   });
 });

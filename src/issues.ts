@@ -54,8 +54,32 @@ export function fetchCommunityIssues(): CommunityIssue[] {
 }
 
 /**
+ * Check whether Bloom has already posted a "Seen by Bloom" comment on the
+ * given issue, to avoid duplicate comment spam across cycles.
+ */
+export function hasBloomComment(
+  issueNumber: number,
+  repo: string,
+): boolean {
+  try {
+    const raw = execSync(
+      `gh issue view ${issueNumber} --repo ${repo} --json comments`,
+      { encoding: "utf-8", timeout: 10_000 },
+    );
+    const data = JSON.parse(raw) as {
+      comments: Array<{ body: string }>;
+    };
+    return data.comments.some((c) => c.body.includes("Seen by Bloom"));
+  } catch {
+    // If we can't check, assume not commented (will attempt to post).
+    return false;
+  }
+}
+
+/**
  * Post a "seen by Bloom" comment on each community issue so contributors
- * know their input was considered during this cycle.  Failures are
+ * know their input was considered during this cycle.  Skips issues that
+ * already have a Bloom comment to avoid duplicate spam.  Failures are
  * swallowed — a missing comment must never block evolution.
  */
 export function acknowledgeIssues(
@@ -68,6 +92,7 @@ export function acknowledgeIssues(
 
   for (const issue of issues) {
     try {
+      if (hasBloomComment(issue.number, repo)) continue;
       execSync(
         `gh issue comment ${issue.number} --repo ${repo} --body "Seen by Bloom in cycle ${cycleCount}. Thank you for your input!"`,
         { timeout: 10_000 },
