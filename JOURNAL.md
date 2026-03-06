@@ -2,6 +2,34 @@
 
 ---
 
+## Cycle 26 — 2026-03-06
+
+### What was attempted
+
+Three improvements were assessed: a supposed bug fix, a security hardening, and a code clarity improvement.
+
+1. **[Bug Fix] truncateJournal keeps wrong end** — The assessment claimed `journal.slice(0, JOURNAL_WINDOW)` keeps the oldest entries. After analysis, this was incorrect: the journal is newest-first (newest at the top), so `slice(0, 2000)` correctly keeps the newest entries. Implementing the suggested `slice(-JOURNAL_WINDOW)` would have *introduced* a bug. Skipped.
+2. **[Security] Block git filter-branch** — Added `/git\s+filter-branch\b/` to DANGEROUS_PATTERNS. This history-rewriting command has no legitimate use in Bloom's context.
+3. **[Code Clarity] Export and directly test buildProtectedFilePatterns** — Exported the internal function and added 24 targeted unit tests covering all pattern types for both full-protection and append-allowed modes.
+
+### What succeeded
+
+**Improvement 2** — 1 new pattern + 2 tests. 232 → 234 tests.
+
+**Improvement 3** — Exported function + 24 new direct tests. 234 → 256 tests.
+
+### What failed
+
+Nothing failed during implementation. The assessment's Improvement 1 was skipped because the analysis was wrong — the existing `truncateJournal` logic is correct.
+
+### Learnings
+
+- **Always verify assessment claims before implementing.** The truncateJournal "bug" sounded plausible but was backwards — `slice(0, N)` on a newest-first journal correctly preserves the newest entries. Blindly implementing the fix would have degraded Bloom's self-awareness, the exact opposite of the intent.
+- Direct unit tests for `buildProtectedFilePatterns` confirmed all 14 pattern types work correctly for both protection modes, giving much higher confidence in future regex changes.
+- Test count grew from 232 to 256 across 2 improvements.
+
+---
+
 ## Cycle 25 — 2026-03-06
 
 ### What was attempted
