@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 import { fetchCommunityIssues, acknowledgeIssues, isValidRepo, isSafeIssueNumber, detectRepo } from "../src/issues.js";
 import { githubApiRequest } from "../src/github-app.js";
 
@@ -8,10 +8,10 @@ vi.mock("../src/github-app.js", () => ({
 }));
 
 vi.mock("child_process", () => ({
-  execSync: vi.fn(),
+  execFileSync: vi.fn(),
 }));
 
-const mockExecSync = vi.mocked(execSync);
+const mockExecFileSync = vi.mocked(execFileSync);
 
 const mockGithubApiRequest = vi.mocked(githubApiRequest);
 
@@ -53,7 +53,7 @@ describe("detectRepo (direct)", () => {
   const originalEnv = process.env.GITHUB_REPOSITORY;
 
   afterEach(() => {
-    mockExecSync.mockReset();
+    mockExecFileSync.mockReset();
     if (originalEnv !== undefined) {
       process.env.GITHUB_REPOSITORY = originalEnv;
     } else {
@@ -68,38 +68,38 @@ describe("detectRepo (direct)", () => {
 
   it("prefers GITHUB_REPOSITORY over git remote", () => {
     process.env.GITHUB_REPOSITORY = "env-owner/env-repo";
-    mockExecSync.mockReturnValueOnce("https://github.com/git-owner/git-repo.git\n");
+    mockExecFileSync.mockReturnValueOnce("https://github.com/git-owner/git-repo.git\n");
     expect(detectRepo()).toBe("env-owner/env-repo");
-    expect(mockExecSync).not.toHaveBeenCalled();
+    expect(mockExecFileSync).not.toHaveBeenCalled();
   });
 
   it("falls back to parsing HTTPS git remote URL", () => {
     delete process.env.GITHUB_REPOSITORY;
-    mockExecSync.mockReturnValueOnce("https://github.com/owner/repo.git\n");
+    mockExecFileSync.mockReturnValueOnce("https://github.com/owner/repo.git\n");
     expect(detectRepo()).toBe("owner/repo");
   });
 
   it("falls back to parsing SSH git remote URL", () => {
     delete process.env.GITHUB_REPOSITORY;
-    mockExecSync.mockReturnValueOnce("git@github.com:my-org/my-repo.git\n");
+    mockExecFileSync.mockReturnValueOnce("git@github.com:my-org/my-repo.git\n");
     expect(detectRepo()).toBe("my-org/my-repo");
   });
 
   it("parses HTTPS remote URL without .git suffix", () => {
     delete process.env.GITHUB_REPOSITORY;
-    mockExecSync.mockReturnValueOnce("https://github.com/owner/repo\n");
+    mockExecFileSync.mockReturnValueOnce("https://github.com/owner/repo\n");
     expect(detectRepo()).toBe("owner/repo");
   });
 
   it("returns null for non-GitHub remote", () => {
     delete process.env.GITHUB_REPOSITORY;
-    mockExecSync.mockReturnValueOnce("https://gitlab.com/owner/repo.git\n");
+    mockExecFileSync.mockReturnValueOnce("https://gitlab.com/owner/repo.git\n");
     expect(detectRepo()).toBeNull();
   });
 
   it("returns null when git remote throws (no git repo)", () => {
     delete process.env.GITHUB_REPOSITORY;
-    mockExecSync.mockImplementationOnce(() => { throw new Error("not a git repo"); });
+    mockExecFileSync.mockImplementationOnce(() => { throw new Error("not a git repo"); });
     expect(detectRepo()).toBeNull();
   });
 });
@@ -109,7 +109,7 @@ describe("fetchCommunityIssues", () => {
 
   afterEach(() => {
     mockGithubApiRequest.mockReset();
-    mockExecSync.mockReset();
+    mockExecFileSync.mockReset();
     if (originalEnv !== undefined) {
       process.env.GITHUB_REPOSITORY = originalEnv;
     } else {
@@ -177,7 +177,7 @@ describe("fetchCommunityIssues — detectRepo git remote fallback", () => {
 
   afterEach(() => {
     mockGithubApiRequest.mockReset();
-    mockExecSync.mockReset();
+    mockExecFileSync.mockReset();
     if (originalEnv !== undefined) {
       process.env.GITHUB_REPOSITORY = originalEnv;
     } else {
@@ -187,7 +187,7 @@ describe("fetchCommunityIssues — detectRepo git remote fallback", () => {
 
   it("parses HTTPS remote URL", async () => {
     delete process.env.GITHUB_REPOSITORY;
-    mockExecSync.mockReturnValueOnce("https://github.com/owner/repo.git\n");
+    mockExecFileSync.mockReturnValueOnce("https://github.com/owner/repo.git\n");
     mockGithubApiRequest.mockResolvedValueOnce({
       ok: true,
       json: async () => [{ number: 1, title: "T", body: "", reactions: { total_count: 0 } }],
@@ -203,7 +203,7 @@ describe("fetchCommunityIssues — detectRepo git remote fallback", () => {
 
   it("parses SSH remote URL", async () => {
     delete process.env.GITHUB_REPOSITORY;
-    mockExecSync.mockReturnValueOnce("git@github.com:my-org/my-repo.git\n");
+    mockExecFileSync.mockReturnValueOnce("git@github.com:my-org/my-repo.git\n");
     mockGithubApiRequest.mockResolvedValueOnce({
       ok: true,
       json: async () => [],
@@ -219,7 +219,7 @@ describe("fetchCommunityIssues — detectRepo git remote fallback", () => {
 
   it("parses HTTPS remote URL without .git suffix", async () => {
     delete process.env.GITHUB_REPOSITORY;
-    mockExecSync.mockReturnValueOnce("https://github.com/owner/repo\n");
+    mockExecFileSync.mockReturnValueOnce("https://github.com/owner/repo\n");
     mockGithubApiRequest.mockResolvedValueOnce({
       ok: true,
       json: async () => [],
@@ -234,7 +234,7 @@ describe("fetchCommunityIssues — detectRepo git remote fallback", () => {
 
   it("returns empty array for non-GitHub remote", async () => {
     delete process.env.GITHUB_REPOSITORY;
-    mockExecSync.mockReturnValueOnce("https://gitlab.com/owner/repo.git\n");
+    mockExecFileSync.mockReturnValueOnce("https://gitlab.com/owner/repo.git\n");
 
     const result = await fetchCommunityIssues();
     expect(result).toEqual([]);
@@ -243,7 +243,7 @@ describe("fetchCommunityIssues — detectRepo git remote fallback", () => {
 
   it("returns empty array when execSync throws (no git remote)", async () => {
     delete process.env.GITHUB_REPOSITORY;
-    mockExecSync.mockImplementationOnce(() => { throw new Error("not a git repo"); });
+    mockExecFileSync.mockImplementationOnce(() => { throw new Error("not a git repo"); });
 
     const result = await fetchCommunityIssues();
     expect(result).toEqual([]);
@@ -276,7 +276,7 @@ describe("acknowledgeIssues", () => {
 
   it("does nothing when detectRepo returns null (no env, git remote fails)", async () => {
     delete process.env.GITHUB_REPOSITORY;
-    mockExecSync.mockImplementationOnce(() => { throw new Error("not a git repo"); });
+    mockExecFileSync.mockImplementationOnce(() => { throw new Error("not a git repo"); });
     const issue = { number: 1, title: "Test", body: "", reactions: 0 };
     await expect(acknowledgeIssues([issue], 5)).resolves.toBeUndefined();
     expect(mockGithubApiRequest).not.toHaveBeenCalled();

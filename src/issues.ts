@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { execFileSync } from "child_process";
 import { githubApiRequest } from "./github-app.js";
 
 export interface CommunityIssue {
@@ -11,7 +11,7 @@ export interface CommunityIssue {
 export function detectRepo(): string | null {
   if (process.env.GITHUB_REPOSITORY) return process.env.GITHUB_REPOSITORY;
   try {
-    const url = execSync("git remote get-url origin", { encoding: "utf-8", timeout: 10_000 }).trim();
+    const url = execFileSync("git", ["remote", "get-url", "origin"], { encoding: "utf-8", timeout: 10_000 }).trim();
     const match = url.match(/github\.com[:/](.+?)(?:\.git)?$/);
     return match?.[1] ?? null;
   } catch {
