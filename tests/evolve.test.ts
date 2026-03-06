@@ -67,6 +67,27 @@ describe("buildAssessmentPrompt", () => {
     expect(journalSection).toBe("x".repeat(2000));
   });
 
+  it("truncates a journal of many short lines at a line boundary", () => {
+    // Many 2-char lines ("a\n") totaling > 2000 chars
+    const shortLine = "a\n";
+    const longJournal = shortLine.repeat(1200); // 2400 chars
+    const prompt = buildAssessmentPrompt({
+      identity: "test",
+      journal: longJournal,
+      issues: [],
+      cycleCount: 1,
+    });
+    const marker = "Recent journal entries:\n";
+    const start = prompt.indexOf(marker) + marker.length;
+    const end = prompt.indexOf("\n\nRead all files");
+    const journalSection = prompt.slice(start, end);
+    // Should be truncated at a newline boundary, so length is even (each line = "a\n" = 2 chars)
+    // Last char of the kept section should be "a" (the newline was the boundary)
+    expect(journalSection.length).toBeLessThanOrEqual(2000);
+    expect(journalSection.length).toBeGreaterThan(0);
+    expect(journalSection.endsWith("a")).toBe(true);
+  });
+
   it("truncates a long journal at a line boundary", () => {
     // Build a journal longer than 2000 chars with clear line structure.
     const line = "x".repeat(100) + "\n";
