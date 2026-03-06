@@ -112,6 +112,23 @@ const DANGEROUS_PATTERNS = [
   /\byarn\s+add\b/,
 ];
 
+/**
+ * Build an array of RegExp patterns that detect dangerous shell commands
+ * targeting a specific protected file.
+ *
+ * @param filename - A **regex-escaped** filename string (e.g., `"JOURNAL\\.md"`,
+ *   not `"JOURNAL.md"`). The value is interpolated directly into `new RegExp(...)`,
+ *   so an unescaped `.` would match any character, causing false positives.
+ * @param opts.allowAppend - If true, permits append operations (`>>` and `tee -a`)
+ *   while still blocking overwrites. Used for JOURNAL.md which is append-only.
+ * @returns Array of RegExp patterns covering redirects, cp, mv, sed -i, truncate,
+ *   dd, chmod, chown, rm, unlink, ln, git checkout --, and git restore.
+ *
+ * @example
+ * ```ts
+ * const patterns = buildProtectedFilePatterns("JOURNAL\\.md", { allowAppend: true });
+ * ```
+ */
 export function buildProtectedFilePatterns(filename: string, opts?: { allowAppend?: boolean }): RegExp[] {
   const patterns: RegExp[] = [
     // Redirect: for append-allowed files, only block overwrite (>); otherwise block both (> and >>)

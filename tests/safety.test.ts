@@ -845,6 +845,20 @@ describe("buildProtectedFilePatterns", () => {
     return patterns.some((p) => p.test(command));
   }
 
+  describe("regex-escaped filename contract", () => {
+    it("unescaped dot matches unintended filenames (demonstrates the footgun)", () => {
+      // Without escaping, "." matches any character — JOURNALXMD would match
+      const badPatterns = buildProtectedFilePatterns("JOURNAL.md");
+      expect(matchesAny(badPatterns, "rm JOURNALxmd")).toBe(true); // false positive!
+    });
+
+    it("escaped dot only matches literal dot", () => {
+      const goodPatterns = buildProtectedFilePatterns("JOURNAL\\.md");
+      expect(matchesAny(goodPatterns, "rm JOURNALxmd")).toBe(false); // correctly rejected
+      expect(matchesAny(goodPatterns, "rm JOURNAL.md")).toBe(true);
+    });
+  });
+
   describe("full protection (IDENTITY.md-style)", () => {
     const patterns = buildProtectedFilePatterns("IDENTITY\\.md");
 
