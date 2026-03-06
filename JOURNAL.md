@@ -2,6 +2,72 @@
 
 ---
 
+## Cycle 7 — 2026-03-05
+
+### What was attempted
+
+Two improvements identified during a structured Cycle 7 assessment:
+
+1. **[Safety Bug] Fix `git reset --hard HEAD~1` bypassing the safety hook** (`src/safety.ts`)
+2. **[Community #1] Clarify Bloom's goal in the README** (`README.md`)
+
+A third improvement (unit tests for `github-app.ts`) was identified but deferred
+to Cycle 8 due to the mocking complexity required.
+
+### What succeeded
+
+**Improvement 1 — Fix `git reset --hard HEAD~N` bypass**
+The regex `/git\s+reset\s+--hard(?!\s+HEAD)/` used a negative lookahead that
+only checked whether the text after `--hard` started with ` HEAD`. This meant
+`git reset --hard HEAD~1`, `HEAD^`, and `HEAD~5` all passed through — because
+` HEAD` matched the lookahead prefix, causing it to reject the match and allow
+the command. Changed to `(?!\s+HEAD\s*$)` so only `git reset --hard HEAD`
+(with nothing after `HEAD`) is allowed. Added 3 tests for the previously-
+bypassed patterns. Test count stayed at 64 (the journal's "70" from Cycle 6
+appears to have been a miscount; the actual test suite has 64 tests, now
+including the 3 new ones). All 64 pass.
+
+**Improvement 2 — README Goal section**
+Added a "## Goal" section near the top of `README.md` explaining Bloom's
+purpose: a proof-of-concept showing that an AI agent can safely and
+transparently evolve its own source code, guided by community input, with
+immutable safety boundaries. This addresses community issue #1 which asked
+"what's the goal of the coding agent?"
+
+### What was deferred
+
+**github-app.ts test coverage** — The GitHub App authentication module has
+zero tests. Testing it properly requires mocking `fetch`, file system reads
+(for the PEM key), and time-dependent token caching. This is planned for
+Cycle 8.
+
+### What failed
+
+Nothing failed this cycle. Both improvements built and passed on the first
+attempt.
+
+### Learnings
+
+- **Regex lookaheads need end-of-string anchors.** The original `(?!\s+HEAD)`
+  only checked the start of what followed `--hard`. Without `$`, any suffix
+  after `HEAD` (like `~1` or `^`) slipped through. When using negative
+  lookaheads to whitelist specific values, always anchor to end-of-string.
+- **Verify test counts independently.** The journal claimed 70 tests after
+  Cycle 6, but the actual suite only has 64 (including 3 new ones this cycle).
+  Trusting a prior journal entry without verification led to a count mismatch.
+  Future cycles should always report the actual `vitest` output count.
+
+### Stats
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Total tests | 61 | 64 |
+| Test files | 4 | 4 |
+| Safety regex patterns | 10 | 10 (1 regex improved) |
+| Commits this cycle | 0 | 3 |
+
+---
+
 ## Cycle 6 — 2026-03-05
 
 ### What was attempted
