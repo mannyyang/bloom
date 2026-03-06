@@ -1269,6 +1269,22 @@ describe("buildProtectedFilePatterns", () => {
       expect(matchesAny(patterns, 'echo x >> JOURNAL.md')).toBe(false);
     });
 
+    it("allows >> append redirect at start of string", () => {
+      expect(matchesAny(patterns, '>> JOURNAL.md')).toBe(false);
+    });
+
+    it("allows >>JOURNAL.md (no space, append)", () => {
+      expect(matchesAny(patterns, '>>JOURNAL.md')).toBe(false);
+    });
+
+    it("blocks > overwrite redirect at start of string", () => {
+      expect(matchesAny(patterns, '> JOURNAL.md')).toBe(true);
+    });
+
+    it("blocks >JOURNAL.md (no space, overwrite)", () => {
+      expect(matchesAny(patterns, '>JOURNAL.md')).toBe(true);
+    });
+
     it("blocks tee without -a", () => {
       expect(matchesAny(patterns, "echo x | tee JOURNAL.md")).toBe(true);
     });
