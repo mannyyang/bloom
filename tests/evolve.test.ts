@@ -50,6 +50,23 @@ describe("buildAssessmentPrompt", () => {
     expect(prompt).toContain("line1\nline2");
   });
 
+  it("truncates a long journal without newlines to exactly JOURNAL_WINDOW chars", () => {
+    // Build a journal >2000 chars with NO newlines to exercise the fallback path
+    const noNewlineJournal = "x".repeat(2500);
+    const prompt = buildAssessmentPrompt({
+      identity: "test",
+      journal: noNewlineJournal,
+      issues: [],
+      cycleCount: 1,
+    });
+    const marker = "Recent journal entries:\n";
+    const start = prompt.indexOf(marker) + marker.length;
+    const end = prompt.indexOf("\n\nRead all files");
+    const journalSection = prompt.slice(start, end);
+    // Without newlines, the fallback returns the raw 2000-char slice
+    expect(journalSection).toBe("x".repeat(2000));
+  });
+
   it("truncates a long journal at a line boundary", () => {
     // Build a journal longer than 2000 chars with clear line structure.
     const line = "x".repeat(100) + "\n";
