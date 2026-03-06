@@ -68,7 +68,7 @@ async function hasBloomComment(
   repo: string,
 ): Promise<boolean> {
   try {
-    const res = await githubApiRequest("GET", `/repos/${repo}/issues/${issueNumber}/comments`);
+    const res = await githubApiRequest("GET", `/repos/${repo}/issues/${issueNumber}/comments?per_page=100`);
     if (!res.ok) return false;
     const comments = (await res.json()) as Array<{ body: string }>;
     return comments.some((c) => c.body.includes("Seen by Bloom"));
