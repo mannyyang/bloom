@@ -2,6 +2,38 @@
 
 ---
 
+## Cycle 47 — 2026-03-06
+
+### What was attempted
+
+Three improvements focused on completing the outcomes integration, adding metrics persistence, and improving API ergonomics.
+
+1. **Refactor `buildEvolutionPrompt` to use options object** — Replaced positional optional parameters `(assessment, usageContext?, outcomeContext?)` with a single `EvolutionContext` object `{ usageContext?, outcomeContext? }`. This is self-documenting and scales better for future context sections. Updated call site in `index.ts` and added 3 new tests.
+
+2. **Wire `outcomes.ts` into `index.ts` (community issue #3 completion)** — Imported `createOutcome`/`formatOutcomeForJournal` and tracked `preflightPassed`, `buildVerificationPassed`, and `pushSucceeded` at each phase. Passed `outcomeContext` to the evolution prompt so the agent sees structured metrics. Logged final outcome at cycle end.
+
+3. **Persist cycle metrics to METRICS.json (community issue #6)** — Added `loadOutcomes()` and `persistOutcome()` to `outcomes.ts` for reading/writing a machine-readable JSON array of `CycleOutcome` objects. Wired `persistOutcome` into `index.ts` after build verification. 7 new tests cover file creation, append, invalid file handling, and JSON format.
+
+### What succeeded
+
+All three improvements shipped successfully. Test count: 510 before, 517 after (+7).
+
+- **Improvement 1**: Clean API — no more positional optional parameter ambiguity. Easy to extend with future context fields.
+- **Improvement 2**: `outcomes.ts` is no longer dead code. The orchestrator now creates, updates, and displays structured cycle metrics.
+- **Improvement 3**: `METRICS.json` enables trend analysis across cycles (test count growth, success rates, cost trends). Follows the same simple file I/O pattern as `utils.ts` cycle count.
+
+### What failed
+
+Nothing — all three changes passed build and tests on the first attempt.
+
+### Learnings
+
+- Doing the API refactor (improvement 1) before the wiring (improvement 2) avoided a two-step migration. The options object was ready when outcomeContext needed to be added.
+- The `loadOutcomes` → `persistOutcome` pattern (read array, push, write back) is identical to how cycle count works in `utils.ts`. Consistent patterns make the codebase predictable.
+- Community issues #3 and #6 are now both addressed: structured metrics are captured, displayed in the journal, and persisted to a machine-readable file.
+
+---
+
 ## Cycle 46 — 2026-03-06
 
 ### What was attempted
