@@ -17,6 +17,13 @@ import {
   runBuildVerification,
   createSafetyTag,
 } from "./lifecycle.js";
+import {
+  extractUsage,
+  aggregateUsage,
+  formatPhaseUsage,
+  formatCycleUsage,
+  PhaseUsage,
+} from "./usage.js";
 
 async function main() {
   const cycleCount = incrementCycleCount();
@@ -43,6 +50,7 @@ async function main() {
   // Phase 1: Assessment (read-only)
   console.log("\n--- Phase 1: Assessment ---");
   let assessment = "";
+  const phaseUsages: PhaseUsage[] = [];
   for await (const msg of query({
     prompt: buildAssessmentPrompt({ identity, journal, issues, cycleCount }),
     options: {
@@ -55,6 +63,11 @@ async function main() {
     },
   })) {
     if ("result" in msg) assessment = msg.result;
+    const usage = extractUsage(msg as Record<string, unknown>, "Assessment");
+    if (usage) {
+      phaseUsages.push(usage);
+      console.log(formatPhaseUsage(usage));
+    }
   }
 
   if (!assessment) {
@@ -89,7 +102,17 @@ async function main() {
     },
   })) {
     if ("result" in msg) console.log(msg.result);
+    const usage = extractUsage(msg as Record<string, unknown>, "Evolution");
+    if (usage) {
+      phaseUsages.push(usage);
+      console.log(formatPhaseUsage(usage));
+    }
   }
+
+  // Log cycle usage summary
+  const cycleUsage = aggregateUsage(phaseUsages);
+  console.log("\n--- Usage Summary ---");
+  console.log(formatCycleUsage(cycleUsage));
 
   // Phase 2.5: Post-evolution build verification
   console.log("\n--- Build Verification ---");
