@@ -9,31 +9,27 @@ import {
   enforceAppendOnly,
   blockDangerousCommands,
 } from "./safety.js";
+import {
+  runPreflightCheck,
+  setGitBotIdentity,
+  commitCycleCount,
+  pushChanges,
+} from "./lifecycle.js";
 
 async function main() {
   const cycleCount = incrementCycleCount();
   console.log(`Bloom evolution cycle ${cycleCount}`);
 
   // Pre-flight check
-  try {
-    execSync("pnpm build && pnpm test", { stdio: "inherit", timeout: 120_000 });
-  } catch {
+  if (!runPreflightCheck()) {
     console.error("Pre-flight check failed. Aborting evolution.");
     process.exit(1);
   }
 
-  // Set bot identity for all git operations during evolution
-  process.env.GIT_AUTHOR_NAME = "bloom[bot]";
-  process.env.GIT_AUTHOR_EMAIL = "bloom[bot]@users.noreply.github.com";
-  process.env.GIT_COMMITTER_NAME = "bloom[bot]";
-  process.env.GIT_COMMITTER_EMAIL = "bloom[bot]@users.noreply.github.com";
+  setGitBotIdentity();
 
   // Commit the updated cycle count
-  try {
-    execSync(`git add CYCLE_COUNT && git commit -m "cycle ${cycleCount}"`, { stdio: "inherit", timeout: 30_000 });
-  } catch {
-    // May fail if CYCLE_COUNT is unchanged (e.g. manual re-run)
-  }
+  commitCycleCount(cycleCount);
 
   // Create safety tag
   try {
@@ -98,10 +94,9 @@ async function main() {
 
   // Phase 3: Push
   console.log("\n--- Phase 3: Push ---");
-  try {
-    execSync("git push origin main", { stdio: "inherit", timeout: 30_000 });
+  if (pushChanges()) {
     console.log("Changes pushed successfully.");
-  } catch {
+  } else {
     console.error("Push failed. Changes remain local.");
   }
 }
