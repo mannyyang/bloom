@@ -1312,6 +1312,18 @@ describe("buildProtectedFilePatterns", () => {
       expect(matchesAny(patterns, "echo x | tee -a JOURNAL.md")).toBe(false);
     });
 
+    it("allows tee -ia (combined flags with append)", () => {
+      expect(matchesAny(patterns, "echo x | tee -ia JOURNAL.md")).toBe(false);
+    });
+
+    it("allows tee -ai (combined flags with append)", () => {
+      expect(matchesAny(patterns, "echo x | tee -ai JOURNAL.md")).toBe(false);
+    });
+
+    it("allows tee --append (long form)", () => {
+      expect(matchesAny(patterns, "echo x | tee --append JOURNAL.md")).toBe(false);
+    });
+
     it("blocks cp", () => {
       expect(matchesAny(patterns, "cp other.md JOURNAL.md")).toBe(true);
     });
