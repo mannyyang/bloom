@@ -219,6 +219,51 @@ describe("blockDangerousCommands", () => {
   it("ignores non-Bash tools", async () => {
     expectAllowed(await blockDangerousCommands(makeInput("Write", "src/index.ts"), "tool-1", hookOpts));
   });
+
+  // Bash-based IDENTITY.md modification protection
+  it("blocks echo redirect to IDENTITY.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput('echo "pwned" > IDENTITY.md'), "tool-1", hookOpts));
+  });
+
+  it("blocks append redirect to IDENTITY.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput('echo "extra" >> IDENTITY.md'), "tool-1", hookOpts));
+  });
+
+  it("blocks cp to IDENTITY.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("cp other.md IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks mv to IDENTITY.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("mv other.md IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks sed -i on IDENTITY.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("sed -i 's/foo/bar/' IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks tee to IDENTITY.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("echo x | tee IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks chmod on IDENTITY.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("chmod 777 IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks redirect to absolute path IDENTITY.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("echo x > /repo/IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("allows cat IDENTITY.md (read-only)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("cat IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("allows grep on IDENTITY.md (read-only)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("grep something IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("allows git add IDENTITY.md (staging, not modifying)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("git add IDENTITY.md"), "tool-1", hookOpts));
+  });
 });
 
 describe("isDangerousRm", () => {
