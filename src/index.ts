@@ -16,7 +16,7 @@ async function main() {
 
   // Pre-flight check
   try {
-    execSync("pnpm build && pnpm test", { stdio: "inherit" });
+    execSync("pnpm build && pnpm test", { stdio: "inherit", timeout: 120_000 });
   } catch {
     console.error("Pre-flight check failed. Aborting evolution.");
     process.exit(1);
@@ -30,7 +30,7 @@ async function main() {
 
   // Create safety tag
   try {
-    execSync(`git tag -f pre-evolution-cycle-${cycleCount}`, { stdio: "inherit" });
+    execSync(`git tag -f pre-evolution-cycle-${cycleCount}`, { stdio: "inherit", timeout: 30_000 });
   } catch {
     // Tag creation is optional
   }
@@ -87,7 +87,7 @@ async function main() {
   // Phase 3: Push
   console.log("\n--- Phase 3: Push ---");
   try {
-    execSync("git push origin main", { stdio: "inherit" });
+    execSync("git push origin main", { stdio: "inherit", timeout: 30_000 });
     console.log("Changes pushed successfully.");
   } catch {
     console.error("Push failed. Changes remain local.");
