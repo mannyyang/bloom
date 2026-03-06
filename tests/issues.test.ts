@@ -1,5 +1,39 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { fetchCommunityIssues, acknowledgeIssues, hasBloomComment, labelIssue } from "../src/issues.js";
+import { fetchCommunityIssues, acknowledgeIssues, hasBloomComment, labelIssue, isValidRepo } from "../src/issues.js";
+
+describe("isValidRepo", () => {
+  it("accepts a standard owner/repo format", () => {
+    expect(isValidRepo("owner/repo")).toBe(true);
+  });
+
+  it("accepts repos with dots and hyphens", () => {
+    expect(isValidRepo("my-org/my.repo-name")).toBe(true);
+  });
+
+  it("rejects repo without slash", () => {
+    expect(isValidRepo("just-a-name")).toBe(false);
+  });
+
+  it("rejects shell command substitution $(...)", () => {
+    expect(isValidRepo("$(whoami)/repo")).toBe(false);
+  });
+
+  it("rejects pipe characters", () => {
+    expect(isValidRepo("owner/repo | cat /etc/passwd")).toBe(false);
+  });
+
+  it("rejects backtick injection", () => {
+    expect(isValidRepo("owner/`id`")).toBe(false);
+  });
+
+  it("rejects embedded newlines", () => {
+    expect(isValidRepo("owner/repo\nrm -rf /")).toBe(false);
+  });
+
+  it("rejects semicolon injection", () => {
+    expect(isValidRepo("owner/repo; echo pwned")).toBe(false);
+  });
+});
 
 describe("fetchCommunityIssues", () => {
   const originalEnv = process.env.GITHUB_REPOSITORY;
