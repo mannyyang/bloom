@@ -1,6 +1,11 @@
 import { execFileSync } from "child_process";
 import { githubApiRequest } from "./github-app.js";
 
+export interface ResolvedIssue {
+  issueNumber: number;
+  reason: string;
+}
+
 export interface CommunityIssue {
   number: number;
   title: string;
@@ -110,5 +115,35 @@ export async function acknowledgeIssues(
     } catch {
       // Best-effort: don't let a failed comment block evolution.
     }
+  }
+}
+
+/**
+ * Close a resolved issue with a comment explaining the resolution.
+ * Best-effort — failures are swallowed to never block evolution.
+ */
+export async function closeResolvedIssue(
+  issueNumber: number,
+  cycleCount: number,
+  reason: string,
+): Promise<boolean> {
+  const repo = detectRepo();
+  if (!repo || !isValidRepo(repo)) return false;
+  if (!isSafeIssueNumber(issueNumber)) return false;
+
+  try {
+    // Post closing comment
+    await githubApiRequest("POST", `/repos/${repo}/issues/${issueNumber}/comments`, {
+      body: `Resolved by Bloom in cycle ${cycleCount}.\n\n${reason}`,
+    });
+
+    // Close the issue
+    await githubApiRequest("PATCH", `/repos/${repo}/issues/${issueNumber}`, {
+      state: "closed",
+    });
+
+    return true;
+  } catch {
+    return false;
   }
 }

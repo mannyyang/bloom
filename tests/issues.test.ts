@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { execFileSync } from "child_process";
-import { fetchCommunityIssues, acknowledgeIssues, isValidRepo, isSafeIssueNumber, detectRepo } from "../src/issues.js";
+import { fetchCommunityIssues, acknowledgeIssues, closeResolvedIssue, isValidRepo, isSafeIssueNumber, detectRepo } from "../src/issues.js";
 import { githubApiRequest } from "../src/github-app.js";
 
 vi.mock("../src/github-app.js", () => ({
@@ -442,5 +442,69 @@ describe("isSafeIssueNumber", () => {
 
   it("rejects floats", () => {
     expect(isSafeIssueNumber(1.5)).toBe(false);
+  });
+});
+
+describe("closeResolvedIssue", () => {
+  const originalEnv = process.env.GITHUB_REPOSITORY;
+
+  afterEach(() => {
+    mockGithubApiRequest.mockReset();
+    if (originalEnv !== undefined) {
+      process.env.GITHUB_REPOSITORY = originalEnv;
+    } else {
+      delete process.env.GITHUB_REPOSITORY;
+    }
+  });
+
+  it("posts a closing comment and closes the issue", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    // POST comment
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+    // PATCH close
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+
+    const result = await closeResolvedIssue(3, 48, "Fixed in cycle 48.");
+    expect(result).toBe(true);
+
+    expect(mockGithubApiRequest).toHaveBeenCalledWith(
+      "POST",
+      "/repos/owner/repo/issues/3/comments",
+      { body: "Resolved by Bloom in cycle 48.\n\nFixed in cycle 48." },
+    );
+    expect(mockGithubApiRequest).toHaveBeenCalledWith(
+      "PATCH",
+      "/repos/owner/repo/issues/3",
+      { state: "closed" },
+    );
+  });
+
+  it("returns false when repo is invalid", async () => {
+    process.env.GITHUB_REPOSITORY = "not-a-valid-repo";
+    const result = await closeResolvedIssue(3, 48, "reason");
+    expect(result).toBe(false);
+    expect(mockGithubApiRequest).not.toHaveBeenCalled();
+  });
+
+  it("returns false for unsafe issue numbers", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    const result = await closeResolvedIssue(-1, 48, "reason");
+    expect(result).toBe(false);
+    expect(mockGithubApiRequest).not.toHaveBeenCalled();
+  });
+
+  it("returns false when API throws", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest.mockRejectedValueOnce(new Error("network error"));
+    const result = await closeResolvedIssue(5, 48, "reason");
+    expect(result).toBe(false);
+  });
+
+  it("returns false when detectRepo returns null", async () => {
+    delete process.env.GITHUB_REPOSITORY;
+    mockExecFileSync.mockImplementationOnce(() => { throw new Error("no git"); });
+    const result = await closeResolvedIssue(3, 48, "reason");
+    expect(result).toBe(false);
+    expect(mockGithubApiRequest).not.toHaveBeenCalled();
   });
 });

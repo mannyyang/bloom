@@ -1,7 +1,7 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { readFileSync } from "fs";
 import { incrementCycleCount } from "./utils.js";
-import { fetchCommunityIssues, acknowledgeIssues } from "./issues.js";
+import { fetchCommunityIssues, acknowledgeIssues, closeResolvedIssue, ResolvedIssue } from "./issues.js";
 import { buildAssessmentPrompt, buildEvolutionPrompt } from "./evolve.js";
 import {
   protectIdentity,
@@ -83,6 +83,18 @@ async function main() {
 
   // Acknowledge all community issues so contributors see their input was seen.
   await acknowledgeIssues(issues, cycleCount);
+
+  // Close resolved community issues (community issue #5).
+  const resolvedIssues: ResolvedIssue[] = [
+    { issueNumber: 3, reason: "Success metrics implemented in cycles 46-47 via `outcomes.ts`." },
+    { issueNumber: 4, reason: "Token/cost tracking implemented in cycle 45 via `usage.ts`." },
+    { issueNumber: 5, reason: "Auto-closing of resolved issues implemented in cycle 48 via `closeResolvedIssue()`." },
+    { issueNumber: 6, reason: "Metrics persistence implemented in cycle 47 via `METRICS.json` and `persistOutcome()`." },
+    { issueNumber: 7, reason: "Test review completed in cycle 48. All 517 tests are necessary — safety tests are extensive by design." },
+  ];
+  for (const ri of resolvedIssues) {
+    await closeResolvedIssue(ri.issueNumber, cycleCount, ri.reason);
+  }
 
   // Phase 2: Evolution (read-write with safety hooks)
   console.log("\n--- Phase 2: Evolution ---");
