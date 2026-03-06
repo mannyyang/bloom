@@ -783,4 +783,12 @@ describe("isDangerousCommand", () => {
   it("returns false for git push without force", () => {
     expect(isDangerousCommand("git push origin main")).toBe(false);
   });
+
+  it("detects git filter-branch", () => {
+    expect(isDangerousCommand("git filter-branch --tree-filter 'rm -f secret.txt' HEAD")).toBe(true);
+  });
+
+  it("detects bare git filter-branch", () => {
+    expect(isDangerousCommand("git filter-branch")).toBe(true);
+  });
 });

@@ -98,6 +98,8 @@ const DANGEROUS_PATTERNS = [
   /\bparted\b/,
   // Git working tree destruction — force-clean untracked files
   /git\s+clean\s+.*(-f|--force)/,
+  // Git history rewriting — filter-branch rewrites/removes files from history
+  /git\s+filter-branch\b/,
   // Data exfiltration — curl/wget sending data to external servers
   /\bcurl\s+.*(-d\b|--data\b|--data-binary\b|--data-raw\b|--data-urlencode\b|--upload-file\b|-F\b|--form\b)/,
   /\bwget\s+.*--post-(data|file)\b/,
