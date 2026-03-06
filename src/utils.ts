@@ -4,7 +4,7 @@ const DEFAULT_PATH = "CYCLE_COUNT";
 
 export function getCycleCount(filePath: string = DEFAULT_PATH): number {
   try {
-    return parseInt(readFileSync(filePath, "utf-8").trim(), 10) || 0;
+    return Math.max(0, parseInt(readFileSync(filePath, "utf-8").trim(), 10) || 0);
   } catch {
     return 0;
   }

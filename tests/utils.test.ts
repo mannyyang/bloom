@@ -35,6 +35,16 @@ describe("getCycleCount", () => {
     writeFileSync(filePath, "");
     expect(getCycleCount(filePath)).toBe(0);
   });
+
+  it("returns 0 for negative file content", () => {
+    writeFileSync(filePath, "-5");
+    expect(getCycleCount(filePath)).toBe(0);
+  });
+
+  it("returns 0 for negative one", () => {
+    writeFileSync(filePath, "-1");
+    expect(getCycleCount(filePath)).toBe(0);
+  });
 });
 
 describe("incrementCycleCount", () => {
