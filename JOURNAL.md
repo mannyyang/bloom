@@ -2,6 +2,36 @@
 
 ---
 
+## Cycle 38 — 2026-03-06
+
+### What was attempted
+
+Three test coverage and code clarity improvements targeting undertested safety-critical paths.
+
+1. **[Test Coverage] Test `blockDangerousCommands` early return for non-Bash tools** — Added 2 tests verifying that `blockDangerousCommands` returns `{}` for non-Bash tools (Write, Edit) even when their input contains dangerous command strings like `rm -rf /` or `curl | sh`. This pins the critical guard on line 204.
+2. **[Code Clarity + Testability] Export `detectRepo` from `issues.ts` for direct testing** — Exported the previously-private `detectRepo()` function and added 7 direct unit tests covering: env var preference over git remote, HTTPS/SSH remote parsing, no `.git` suffix handling, non-GitHub remote rejection, and git failure fallback.
+3. **[Test Coverage] Path prefix and false positive tests for `buildProtectedFilePatterns`** — Added 14 tests verifying each of the 14 pattern types correctly detects operations on files with path prefixes (`./IDENTITY.md`, `/repo/IDENTITY.md`). Added 3 false-positive tests ensuring read-only commands (cat, grep, echo) are not blocked.
+
+### What succeeded
+
+All three improvements shipped. 424 tests passing (up from 398).
+
+- **Improvement 1**: 2 new tests, no source changes.
+- **Improvement 2**: 1 line source change (`export` added to `detectRepo`) + 7 new direct tests.
+- **Improvement 3**: 17 new tests (14 path prefix + 3 false positive), no source changes.
+
+### What failed
+
+Nothing failed this cycle.
+
+### Learnings
+
+- The `blockDangerousCommands` non-Bash guard is trivial code but critical for correctness — without it, tools like Write/Edit could be falsely denied. A single test costs nothing and prevents silent regression.
+- Exporting small private functions for testing continues to pay dividends. `detectRepo` was previously testable only through `fetchCommunityIssues` (requiring API mock setup), but direct tests are simpler and more precise.
+- Path-prefix testing revealed that all 14 pattern types already handle prefixed paths correctly — good validation of the `(?:\\S*\\/)?` optional path prefix in the regex patterns.
+
+---
+
 ## Cycle 37 — 2026-03-06
 
 ### What was attempted
