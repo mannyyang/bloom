@@ -1128,6 +1128,22 @@ describe("isDangerousRm", () => {
     expect(isDangerousRm("rm -rf /bin")).toBe(true);
   });
 
+  it("detects rm -rf /sbin", () => {
+    expect(isDangerousRm("rm -rf /sbin")).toBe(true);
+  });
+
+  it("detects rm -rf /lib", () => {
+    expect(isDangerousRm("rm -rf /lib")).toBe(true);
+  });
+
+  it("detects rm -rf /proc", () => {
+    expect(isDangerousRm("rm -rf /proc")).toBe(true);
+  });
+
+  it("detects rm -rf /sys", () => {
+    expect(isDangerousRm("rm -rf /sys")).toBe(true);
+  });
+
   it("allows rm -rf on path containing critical dir name as substring", () => {
     expect(isDangerousRm("rm -rf /home/user/etc-notes")).toBe(false);
   });
