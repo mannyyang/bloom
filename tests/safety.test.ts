@@ -140,6 +140,61 @@ describe("blockDangerousCommands", () => {
     expect(result).toEqual({});
   });
 
+  it("blocks eval commands", async () => {
+    const result = await blockDangerousCommands(
+      makeBashInput('eval "rm -rf /"'),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(
+      (result as Record<string, unknown>).hookSpecificOutput,
+    ).toHaveProperty("permissionDecision", "deny");
+  });
+
+  it("blocks bash -c subshell bypass", async () => {
+    const result = await blockDangerousCommands(
+      makeBashInput('bash -c "malicious command"'),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(
+      (result as Record<string, unknown>).hookSpecificOutput,
+    ).toHaveProperty("permissionDecision", "deny");
+  });
+
+  it("blocks sh -c subshell bypass", async () => {
+    const result = await blockDangerousCommands(
+      makeBashInput('sh -c "malicious command"'),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(
+      (result as Record<string, unknown>).hookSpecificOutput,
+    ).toHaveProperty("permissionDecision", "deny");
+  });
+
+  it("blocks npx with untrusted packages", async () => {
+    const result = await blockDangerousCommands(
+      makeBashInput("npx some-untrusted-package"),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(
+      (result as Record<string, unknown>).hookSpecificOutput,
+    ).toHaveProperty("permissionDecision", "deny");
+  });
+
+  it("blocks npm exec", async () => {
+    const result = await blockDangerousCommands(
+      makeBashInput("npm exec some-package"),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(
+      (result as Record<string, unknown>).hookSpecificOutput,
+    ).toHaveProperty("permissionDecision", "deny");
+  });
+
   it("allows safe commands", async () => {
     const result = await blockDangerousCommands(
       makeBashInput("pnpm build && pnpm test"),
