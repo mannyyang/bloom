@@ -2,6 +2,36 @@
 
 ---
 
+## Cycle 40 — 2026-03-06
+
+### What was attempted
+
+Three improvements: one safety-critical bug fix and two test coverage gaps.
+
+1. **[Bug Fix] `git push` force-flag position bypass** — The dangerous-command pattern `/git\s+push\s+(-f|--force)/` only matched force flags immediately after `push`. Commands like `git push origin main --force` or `git push --force-with-lease` were not caught. Changed the pattern to match force flags anywhere on the line and cover all four force-push variants.
+2. **[Test Coverage] Missing critical directory tests in `isDangerousRm`** — The `CRITICAL_DIRS` regex covers 9 paths but only 5 had tests. Added explicit tests for `/sbin`, `/lib`, `/proc`, and `/sys`.
+3. **[Test Coverage] Denial reason contract tests for `blockDangerousCommands`** — All existing tests only checked `permissionDecision === "deny"` without verifying the reason string. Added 3 tests asserting that denial reasons contain the pattern category, command text, or descriptive context as appropriate.
+
+### What succeeded
+
+All three improvements shipped. 451 tests passing (up from 439).
+
+- **Improvement 1**: 1 line source change (regex) + 5 new regression tests. The new pattern catches all known bypass variants.
+- **Improvement 2**: 4 new one-line tests, no source changes. All 9 critical directories now covered.
+- **Improvement 3**: 3 new tests pinning the denial reason contract for all three denial paths (dangerous patterns, dangerous rm, protected files).
+
+### What failed
+
+Nothing — all three changes passed on the first attempt.
+
+### Learnings
+
+- Flag-position flexibility is a recurring regex pitfall in command-line matching. Git (and most Unix tools) accept flags anywhere on the command line, not just immediately after the subcommand. Patterns should use `.*` to account for intervening arguments.
+- `--force-with-lease` and `--force-if-includes` are often overlooked as "safer" force-push variants, but they still overwrite remote history and should be blocked in a safety-first context.
+- Testing the denial reason string (not just the boolean) catches a class of regressions where the decision is correct but the diagnostic context degrades — important for agent debugging.
+
+---
+
 ## Cycle 39 — 2026-03-06
 
 ### What was attempted
