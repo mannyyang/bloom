@@ -73,6 +73,8 @@ const DANGEROUS_PATTERNS = [
   /git\s+branch\s+(-D|--delete\s+--force)\b/,
   /git\s+reflog\s+delete\b/,
   /git\s+gc\s+.*--prune=(now|all)\b/,
+  /\bchmod\s+.*\.git\//,
+  /\bchown\s+.*\.git\//,
 ];
 
 const JOURNAL_MODIFY_PATTERNS = [

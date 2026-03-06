@@ -371,6 +371,23 @@ describe("blockDangerousCommands", () => {
   it("allows wget without pipe (safe download)", async () => {
     expectAllowed(await blockDangerousCommands(makeBashInput("wget https://example.com/file.tar.gz"), "tool-1", hookOpts));
   });
+
+  // Block chmod/chown on .git/ paths (safety infrastructure protection)
+  it("blocks chmod on .git/hooks/pre-commit", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("chmod 000 .git/hooks/pre-commit"), "tool-1", hookOpts));
+  });
+
+  it("blocks chown on .git/hooks/ directory", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("chown root .git/hooks/"), "tool-1", hookOpts));
+  });
+
+  it("blocks chmod +x on .git/hooks script", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("chmod +x .git/hooks/post-commit"), "tool-1", hookOpts));
+  });
+
+  it("allows chmod on regular project files", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("chmod 755 dist/index.js"), "tool-1", hookOpts));
+  });
 });
 
 describe("isDangerousRm", () => {
