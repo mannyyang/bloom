@@ -1003,6 +1003,30 @@ describe("isDangerousCommand", () => {
   it("detects bare git filter-branch with category", () => {
     expect(isDangerousCommand("git filter-branch")).toBe("git-history-rewriting");
   });
+
+  it("detects xargs piped to shell", () => {
+    expect(isDangerousCommand('echo "cmd" | xargs sh')).toBe("xargs-command-execution");
+  });
+
+  it("detects xargs with bash (no -c flag)", () => {
+    expect(isDangerousCommand("cat cmds.txt | xargs bash")).toBe("xargs-command-execution");
+  });
+
+  it("detects xargs rm", () => {
+    expect(isDangerousCommand('find . | xargs rm -rf')).toBe("xargs-command-execution");
+  });
+
+  it("detects xargs with full path to shell", () => {
+    expect(isDangerousCommand('xargs /bin/sh')).toBe("xargs-command-execution");
+  });
+
+  it("allows xargs with safe commands like grep", () => {
+    expect(isDangerousCommand("find . -name '*.ts' | xargs grep TODO")).toBeNull();
+  });
+
+  it("allows xargs echo", () => {
+    expect(isDangerousCommand("echo foo | xargs echo")).toBeNull();
+  });
 });
 
 describe("buildProtectedFilePatterns", () => {

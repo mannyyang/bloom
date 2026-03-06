@@ -120,6 +120,9 @@ const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Data exfiltration — curl/wget sending data to external servers
   { pattern: /\bcurl\s+.*(-d\b|--data\b|--data-binary\b|--data-raw\b|--data-urlencode\b|--upload-file\b|-F\b|--form\b|--json\b)/, category: "data-exfiltration" },
   { pattern: /\bwget\s+.*--post-(data|file)\b/, category: "data-exfiltration" },
+  // xargs command execution bypass — xargs can invoke dangerous commands from stdin
+  { pattern: /\bxargs\s+.*(?:[\w./]*\/)?(?:ba|z|da|k)?sh\b/, category: "xargs-command-execution" },
+  { pattern: /\bxargs\s+.*\brm\s/, category: "xargs-command-execution" },
   // Untrusted package installation — adding deps pulls arbitrary code
   { pattern: /\bpnpm\s+add\b/, category: "untrusted-package-installation" },
   { pattern: /\bnpm\s+(?:install|i)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
