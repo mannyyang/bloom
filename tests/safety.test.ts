@@ -417,4 +417,16 @@ describe("isDangerousRm", () => {
   it("returns false for rm somefile (no flags)", () => {
     expect(isDangerousRm("rm somefile")).toBe(false);
   });
+
+  it("detects rm --no-preserve-root / (bypass flag)", () => {
+    expect(isDangerousRm("rm -rf --no-preserve-root /")).toBe(true);
+  });
+
+  it("detects rm --no-preserve-root on any path", () => {
+    expect(isDangerousRm("rm -rf --no-preserve-root /some/path")).toBe(true);
+  });
+
+  it("detects rm --no-preserve-root without other flags", () => {
+    expect(isDangerousRm("rm --no-preserve-root /")).toBe(true);
+  });
 });

@@ -50,6 +50,10 @@ export function isDangerousRm(command: string): boolean {
   const rmMatch = command.match(/\brm\s+(.*)/);
   if (!rmMatch) return false;
   const rest = rmMatch[1];
+
+  // Block --no-preserve-root unconditionally — it has no legitimate use in Bloom
+  if (/--no-preserve-root/.test(rest)) return true;
+
   const hasRecursive = /(?:^|\s)--recursive(?:\s|$)/.test(rest) || /(?:^|\s)-\w*r/.test(rest);
   const hasForce = /(?:^|\s)--force(?:\s|$)/.test(rest) || /(?:^|\s)-\w*f/.test(rest);
   const hasDangerousPath = /(?:^|\s)\/(?:\s|$|\*)/.test(rest) || /(?:^|\s)~\/?(?:\s|$|\*)/.test(rest);
