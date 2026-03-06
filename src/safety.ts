@@ -6,6 +6,16 @@ interface ParsedHookInput {
   command: string;
 }
 
+function denyResult(reason: string) {
+  return {
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: reason,
+    },
+  };
+}
+
 function parseHookInput(input: unknown): ParsedHookInput {
   const record = input as Record<string, unknown>;
   const toolInput = record.tool_input as Record<string, unknown> | undefined;
@@ -20,14 +30,7 @@ export const protectIdentity: HookCallback = async (input) => {
   const { filePath } = parseHookInput(input);
 
   if (filePath.includes("IDENTITY.md")) {
-    return {
-      hookSpecificOutput: {
-        hookEventName: "PreToolUse",
-        permissionDecision: "deny",
-        permissionDecisionReason:
-          "IDENTITY.md is the immutable constitution and cannot be modified.",
-      },
-    };
+    return denyResult("IDENTITY.md is the immutable constitution and cannot be modified.");
   }
   return {};
 };
@@ -36,14 +39,7 @@ export const enforceAppendOnly: HookCallback = async (input) => {
   const { toolName, filePath } = parseHookInput(input);
 
   if (filePath.includes("JOURNAL.md") && toolName === "Write") {
-    return {
-      hookSpecificOutput: {
-        hookEventName: "PreToolUse",
-        permissionDecision: "deny",
-        permissionDecisionReason:
-          "JOURNAL.md is append-only. Use Edit to append, not Write to overwrite.",
-      },
-    };
+    return denyResult("JOURNAL.md is append-only. Use Edit to append, not Write to overwrite.");
   }
   return {};
 };
@@ -65,13 +61,7 @@ export const blockDangerousCommands: HookCallback = async (input) => {
   if (toolName !== "Bash") return {};
 
   if (isDangerousRm(command)) {
-    return {
-      hookSpecificOutput: {
-        hookEventName: "PreToolUse",
-        permissionDecision: "deny",
-        permissionDecisionReason: `Blocked dangerous command: ${command}`,
-      },
-    };
+    return denyResult(`Blocked dangerous command: ${command}`);
   }
 
   const dangerous = [
@@ -91,13 +81,7 @@ export const blockDangerousCommands: HookCallback = async (input) => {
 
   for (const pattern of dangerous) {
     if (pattern.test(command)) {
-      return {
-        hookSpecificOutput: {
-          hookEventName: "PreToolUse",
-          permissionDecision: "deny",
-          permissionDecisionReason: `Blocked dangerous command: ${command}`,
-        },
-      };
+      return denyResult(`Blocked dangerous command: ${command}`);
     }
   }
   return {};
