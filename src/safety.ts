@@ -136,6 +136,15 @@ function buildProtectedFilePatterns(filename: string, opts?: { allowAppend?: boo
 const JOURNAL_MODIFY_PATTERNS = buildProtectedFilePatterns("JOURNAL\\.md", { allowAppend: true });
 const IDENTITY_MODIFY_PATTERNS = buildProtectedFilePatterns("IDENTITY\\.md");
 
+export function isDangerousCommand(command: string): boolean {
+  for (const pattern of DANGEROUS_PATTERNS) {
+    if (pattern.test(command)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export const blockDangerousCommands: HookCallback = async (input) => {
   const { toolName, command } = parseHookInput(input);
   if (toolName !== "Bash") return {};
@@ -144,10 +153,8 @@ export const blockDangerousCommands: HookCallback = async (input) => {
     return denyResult(`Blocked dangerous command: ${command}`);
   }
 
-  for (const pattern of DANGEROUS_PATTERNS) {
-    if (pattern.test(command)) {
-      return denyResult(`Blocked dangerous command: ${command}`);
-    }
+  if (isDangerousCommand(command)) {
+    return denyResult(`Blocked dangerous command: ${command}`);
   }
 
   for (const pattern of IDENTITY_MODIFY_PATTERNS) {
