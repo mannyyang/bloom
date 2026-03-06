@@ -71,6 +71,16 @@ const DANGEROUS_PATTERNS = [
   /git\s+gc\s+.*--prune=(now|all)\b/,
 ];
 
+const JOURNAL_MODIFY_PATTERNS = [
+  />\s*(?:\S*\/)?JOURNAL\.md/,
+  /\btee\s+(?!.*-a)(?:.*\s)?(?:\S*\/)?JOURNAL\.md/,
+  /\bcp\s+(?:.*\s)(?:\S*\/)?JOURNAL\.md/,
+  /\bmv\s+(?:.*\s)(?:\S*\/)?JOURNAL\.md/,
+  /\bsed\s+-i\b.*JOURNAL\.md/,
+  /\btruncate\s+.*JOURNAL\.md/,
+  /\bdd\s+.*of=(?:\S*\/)?JOURNAL\.md/,
+];
+
 const IDENTITY_MODIFY_PATTERNS = [
   /(?:>|>>)\s*(?:\S*\/)?IDENTITY\.md/,
   /\btee\s+(?:.*\s)?(?:\S*\/)?IDENTITY\.md/,
@@ -100,6 +110,12 @@ export const blockDangerousCommands: HookCallback = async (input) => {
   for (const pattern of IDENTITY_MODIFY_PATTERNS) {
     if (pattern.test(command)) {
       return denyResult("IDENTITY.md is the immutable constitution and cannot be modified via Bash.");
+    }
+  }
+
+  for (const pattern of JOURNAL_MODIFY_PATTERNS) {
+    if (pattern.test(command)) {
+      return denyResult("JOURNAL.md is append-only and cannot be overwritten via Bash.");
     }
   }
 
