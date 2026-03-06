@@ -71,11 +71,11 @@ const DANGEROUS_PATTERNS = [
   // Git history destruction — hard reset to arbitrary ref loses uncommitted work
   /git\s+reset\s+--hard\s+(?!HEAD(?:\s*$|\s*[;&|]))/,
   // Remote code execution — piping downloaded content into a shell
-  /curl.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh/,
-  /wget.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh/,
+  /\bcurl\b.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh/,
+  /\bwget\b.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh/,
   // Remote code execution — piping downloaded content into script interpreters
-  /curl.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby)\b/,
-  /wget.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby)\b/,
+  /\bcurl\b.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby)\b/,
+  /\bwget\b.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby)\b/,
   // Arbitrary code execution — eval, shell -c run uncontrolled strings
   /\beval\s/,
   /(?:[\w./]*\/)?(?:ba|z|da|k)?sh\s+-c\b/,

@@ -455,6 +455,14 @@ describe("blockDangerousCommands", () => {
     expectAllowed(await blockDangerousCommands(makeBashInput("wget https://example.com/file.tar.gz"), "tool-1", hookOpts));
   });
 
+  it("allows command containing 'curl' as substring (e.g. libcurl-tool)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("libcurl-tool https://example.com | sh"), "tool-1", hookOpts));
+  });
+
+  it("allows command containing 'wget' as substring (e.g. mywget)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("mywget https://example.com | sh"), "tool-1", hookOpts));
+  });
+
   // Block chmod/chown on .git/ paths (safety infrastructure protection)
   it("blocks chmod on .git/hooks/pre-commit", async () => {
     expectDenied(await blockDangerousCommands(makeBashInput("chmod 000 .git/hooks/pre-commit"), "tool-1", hookOpts));
