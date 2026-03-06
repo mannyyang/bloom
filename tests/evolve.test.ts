@@ -37,6 +37,19 @@ describe("buildAssessmentPrompt", () => {
     expect(prompt).toContain("No community issues");
   });
 
+  it("returns a short journal unchanged (no trimming of final line)", () => {
+    // A journal shorter than JOURNAL_WINDOW that does NOT end with \n.
+    const shortJournal = "line1\nline2";
+    const prompt = buildAssessmentPrompt({
+      identity: "test",
+      journal: shortJournal,
+      issues: [],
+      cycleCount: 1,
+    });
+    // The full journal must appear in the prompt — "line2" must not be dropped.
+    expect(prompt).toContain("line1\nline2");
+  });
+
   it("truncates a long journal at a line boundary", () => {
     // Build a journal longer than 2000 chars with clear line structure.
     const line = "x".repeat(100) + "\n";
