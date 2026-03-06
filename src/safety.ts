@@ -4,6 +4,8 @@ interface ParsedHookInput {
   toolName: string;
   filePath: string;
   command: string;
+  oldString: string;
+  newString: string;
 }
 
 function denyResult(reason: string) {
@@ -23,6 +25,8 @@ function parseHookInput(input: unknown): ParsedHookInput {
     toolName: (record.tool_name as string) ?? "",
     filePath: (toolInput?.file_path as string) ?? "",
     command: (toolInput?.command as string) ?? "",
+    oldString: (toolInput?.old_string as string) ?? "",
+    newString: (toolInput?.new_string as string) ?? "",
   };
 }
 
@@ -36,7 +40,7 @@ export const protectIdentity: HookCallback = async (input) => {
 };
 
 export const enforceAppendOnly: HookCallback = async (input) => {
-  const { toolName, filePath } = parseHookInput(input);
+  const { toolName, filePath, oldString, newString } = parseHookInput(input);
 
   if (!filePath.includes("JOURNAL.md")) return {};
 
@@ -45,12 +49,7 @@ export const enforceAppendOnly: HookCallback = async (input) => {
   }
 
   if (toolName === "Edit") {
-    const record = input as Record<string, unknown>;
-    const toolInput = record.tool_input as Record<string, unknown> | undefined;
-    const oldText = (toolInput?.old_string as string) ?? "";
-    const newText = (toolInput?.new_string as string) ?? "";
-
-    if (oldText.length > 0 && !newText.includes(oldText)) {
+    if (oldString.length > 0 && !newString.includes(oldString)) {
       return denyResult(
         "JOURNAL.md is append-only. Edit must preserve existing content (new_string must contain old_string).",
       );
