@@ -22,11 +22,11 @@ function parseHookInput(input: unknown): ParsedHookInput {
   const record = input as Record<string, unknown>;
   const toolInput = record.tool_input as Record<string, unknown> | undefined;
   return {
-    toolName: (record.tool_name as string) ?? "",
-    filePath: (toolInput?.file_path as string) ?? "",
-    command: (toolInput?.command as string) ?? "",
-    oldString: (toolInput?.old_string as string) ?? "",
-    newString: (toolInput?.new_string as string) ?? "",
+    toolName: String(record.tool_name ?? ""),
+    filePath: String(toolInput?.file_path ?? ""),
+    command: String(toolInput?.command ?? ""),
+    oldString: String(toolInput?.old_string ?? ""),
+    newString: String(toolInput?.new_string ?? ""),
   };
 }
 

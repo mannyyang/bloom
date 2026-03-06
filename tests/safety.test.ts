@@ -149,6 +149,38 @@ describe("enforceAppendOnly", () => {
   });
 });
 
+describe("parseHookInput edge cases (malformed inputs)", () => {
+  it("handles tool_input as null without throwing", async () => {
+    const input = { ...baseFields, tool_name: "Write", tool_input: null } as unknown as HookInput;
+    expectAllowed(await protectIdentity(input, "tool-1", hookOpts));
+  });
+
+  it("handles tool_input as a string without throwing", async () => {
+    const input = { ...baseFields, tool_name: "Write", tool_input: "unexpected" } as unknown as HookInput;
+    expectAllowed(await protectIdentity(input, "tool-1", hookOpts));
+  });
+
+  it("handles tool_input with command as a number without throwing", async () => {
+    const input = { ...baseFields, tool_name: "Bash", tool_input: { command: 123 } } as unknown as HookInput;
+    expectAllowed(await blockDangerousCommands(input, "tool-1", hookOpts));
+  });
+
+  it("handles tool_input as an empty object without throwing", async () => {
+    const input = { ...baseFields, tool_name: "Edit", tool_input: {} } as unknown as HookInput;
+    expectAllowed(await enforceAppendOnly(input, "tool-1", hookOpts));
+  });
+
+  it("handles completely missing tool_input and tool_name without throwing", async () => {
+    const input = { ...baseFields } as unknown as HookInput;
+    expectAllowed(await protectIdentity(input, "tool-1", hookOpts));
+  });
+
+  it("handles tool_input with file_path as null without throwing", async () => {
+    const input = { ...baseFields, tool_name: "Write", tool_input: { file_path: null } } as unknown as HookInput;
+    expectAllowed(await protectIdentity(input, "tool-1", hookOpts));
+  });
+});
+
 describe("blockDangerousCommands", () => {
   it("allows non-Bash tools without checking command", async () => {
     const input: HookInput = {
