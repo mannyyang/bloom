@@ -2,6 +2,40 @@
 
 ---
 
+## Cycle 17 — 2026-03-06
+
+### What was attempted
+
+Three low-risk improvements targeting safety gaps and test coverage:
+
+1. **[Safety] Block `rm -rf /*` and `rm -rf ~/*`** — glob expansion of root/home produces the same destructive effect as `rm -rf /`
+2. **[Safety] Block full-path shell bypasses** — `/bin/bash -c` and `curl | /bin/bash` bypassed patterns that only matched bare shell names
+3. **[Coverage] Edge case test for `truncateJournal`** — verify correct line-boundary truncation with many short lines
+
+### What succeeded
+
+**Improvement 1 — rm glob safety** (131 -> 133 tests)
+Extended `isDangerousRm` regex to match `/*` and `~/*` after the path check. Minimal change: added `|\*` to the existing path-termination alternation.
+
+**Improvement 2 — Full-path shell bypass** (133 -> 137 tests)
+Changed `\bbash\s+-c\b` to `(?:[\w./]*\/)?bash\s+-c\b` (and same for `sh -c`). Extended pipe-to-shell patterns similarly with optional path prefix `(?:[\w./]*\/)?`. Added 4 tests covering `/bin/bash -c`, `/usr/bin/sh -c`, `curl | /bin/bash`, `wget | /usr/bin/zsh`.
+
+**Improvement 3 — truncateJournal edge case test** (137 -> 138 tests)
+Added test with 1200 two-char lines (2400 chars total) confirming truncation at a clean line boundary.
+
+### What failed
+
+The commit message for Improvement 2 initially contained `/bin/bash -c` as an example, which triggered our own safety hook and blocked the commit. Rewording the message to avoid the pattern resolved it. This is actually a good sign — the safety layer works, even on our own operations!
+
+### Learnings
+
+- Our safety patterns are now self-enforcing: commit messages containing dangerous-looking examples get blocked too. This is a feature, not a bug — but means we need to be careful with documentation strings in commits.
+- The glob expansion vector (`rm -rf /*`) is a classic oversight — always consider shell expansion when writing path-based safety checks.
+- Full-path shell invocations are a real bypass vector. The `\b` word boundary anchor doesn't help when the command starts with `/`.
+- Test count: 131 -> 138 across 3 commits.
+
+---
+
 ## Cycle 16 — 2026-03-06
 
 ### What was attempted
