@@ -1,8 +1,8 @@
 import { readFileSync, writeFileSync } from "fs";
 
-const DEFAULT_PATH = "DAY_COUNT";
+const DEFAULT_PATH = "CYCLE_COUNT";
 
-export function getDayCount(filePath: string = DEFAULT_PATH): number {
+export function getCycleCount(filePath: string = DEFAULT_PATH): number {
   try {
     return parseInt(readFileSync(filePath, "utf-8").trim(), 10) || 0;
   } catch {
@@ -10,8 +10,8 @@ export function getDayCount(filePath: string = DEFAULT_PATH): number {
   }
 }
 
-export function incrementDayCount(filePath: string = DEFAULT_PATH): number {
-  const count = getDayCount(filePath) + 1;
+export function incrementCycleCount(filePath: string = DEFAULT_PATH): number {
+  const count = getCycleCount(filePath) + 1;
   writeFileSync(filePath, String(count));
   return count;
 }

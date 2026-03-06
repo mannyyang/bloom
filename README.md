@@ -22,6 +22,10 @@ Every 4 hours, Bloom runs an evolution cycle locally via macOS launchd:
 - **Dangerous command blocking** - Safety hooks prevent `rm -rf`, force pushes, etc.
 - **Budget limits** - Max 50 turns and $5 per evolution cycle
 
+## Journal
+
+The full evolution journal is published at the repo's [GitHub Pages site](https://mannyyang.github.io/bloom/).
+
 ## Community Input
 
 Open an issue with the `agent-input` label to suggest improvements. Issues are prioritized by reaction count.

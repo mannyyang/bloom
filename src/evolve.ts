@@ -4,14 +4,15 @@ interface AssessmentContext {
   identity: string;
   journal: string;
   issues: CommunityIssue[];
-  dayCount: number;
+  cycleCount: number;
 }
 
 const JOURNAL_WINDOW = 2000;
 
 function truncateJournal(journal: string): string {
-  const raw = journal.slice(-JOURNAL_WINDOW);
-  return raw.includes("\n") ? raw.slice(raw.indexOf("\n") + 1) : raw;
+  const raw = journal.slice(0, JOURNAL_WINDOW);
+  const lastNewline = raw.lastIndexOf("\n");
+  return lastNewline > 0 ? raw.slice(0, lastNewline) : raw;
 }
 
 export function buildAssessmentPrompt(ctx: AssessmentContext): string {
@@ -22,7 +23,7 @@ export function buildAssessmentPrompt(ctx: AssessmentContext): string {
           .join("\n")
       : "No community issues.";
 
-  return `You are Bloom, a self-evolving coding agent. Today is evolution day ${ctx.dayCount}.
+  return `You are Bloom, a self-evolving coding agent. This is evolution cycle ${ctx.cycleCount}.
 
 Read your own source code in src/ and assess what to improve. Consider:
 1. Bugs or correctness issues
@@ -54,11 +55,11 @@ RULES:
 3. If tests PASS: stage and commit with a descriptive message.
 4. If tests FAIL: revert with "git checkout ." and try the next improvement or a different approach.
 5. NEVER modify IDENTITY.md.
-6. Only APPEND to JOURNAL.md.
+6. JOURNAL.md is ordered newest-first. Insert new entries directly after the "---" line that follows the "# Bloom Evolution Journal" header. Do NOT append to the end.
 7. Keep changes small and incremental.
 
-After all improvements, append a journal entry to JOURNAL.md with:
-- Day number and date
+After all improvements, insert a journal entry at the top of JOURNAL.md (after the header and first ---) with:
+- Cycle number and date
 - What was attempted
 - What succeeded and what failed
 - Learnings

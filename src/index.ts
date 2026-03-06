@@ -1,7 +1,7 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { readFileSync } from "fs";
 import { execSync } from "child_process";
-import { incrementDayCount } from "./utils.js";
+import { incrementCycleCount } from "./utils.js";
 import { fetchCommunityIssues } from "./issues.js";
 import { buildAssessmentPrompt, buildEvolutionPrompt } from "./evolve.js";
 import {
@@ -11,8 +11,8 @@ import {
 } from "./safety.js";
 
 async function main() {
-  const dayCount = incrementDayCount();
-  console.log(`Bloom evolution day ${dayCount}`);
+  const cycleCount = incrementCycleCount();
+  console.log(`Bloom evolution cycle ${cycleCount}`);
 
   // Pre-flight check
   try {
@@ -24,7 +24,7 @@ async function main() {
 
   // Create safety tag
   try {
-    execSync(`git tag -f pre-evolution-day-${dayCount}`, { stdio: "inherit" });
+    execSync(`git tag -f pre-evolution-cycle-${cycleCount}`, { stdio: "inherit" });
   } catch {
     // Tag creation is optional
   }
@@ -37,7 +37,7 @@ async function main() {
   console.log("\n--- Phase 1: Assessment ---");
   let assessment = "";
   for await (const msg of query({
-    prompt: buildAssessmentPrompt({ identity, journal, issues, dayCount }),
+    prompt: buildAssessmentPrompt({ identity, journal, issues, cycleCount }),
     options: {
       cwd: process.cwd(),
       allowedTools: ["Read", "Glob", "Grep", "Bash"],

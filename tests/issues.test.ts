@@ -12,8 +12,8 @@ describe("fetchCommunityIssues", () => {
     }
   });
 
-  it("returns empty array when no GITHUB_REPOSITORY env", () => {
-    delete process.env.GITHUB_REPOSITORY;
+  it("returns empty array when repo format is invalid", () => {
+    process.env.GITHUB_REPOSITORY = "not-a-valid-repo";
     const result = fetchCommunityIssues();
     expect(result).toEqual([]);
   });

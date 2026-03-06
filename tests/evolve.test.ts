@@ -2,14 +2,14 @@ import { describe, it, expect } from "vitest";
 import { buildAssessmentPrompt, buildEvolutionPrompt } from "../src/evolve.js";
 
 describe("buildAssessmentPrompt", () => {
-  it("includes identity and day count", () => {
+  it("includes identity and cycle count", () => {
     const prompt = buildAssessmentPrompt({
       identity: "I am Bloom",
       journal: "# Journal",
       issues: [],
-      dayCount: 5,
+      cycleCount: 5,
     });
-    expect(prompt).toContain("evolution day 5");
+    expect(prompt).toContain("evolution cycle 5");
     expect(prompt).toContain("I am Bloom");
   });
 
@@ -21,7 +21,7 @@ describe("buildAssessmentPrompt", () => {
         { number: 1, title: "Add feature X", body: "", reactions: 10 },
         { number: 2, title: "Fix bug Y", body: "", reactions: 5 },
       ],
-      dayCount: 1,
+      cycleCount: 1,
     });
     expect(prompt).toContain("#1: Add feature X (10 reactions)");
     expect(prompt).toContain("#2: Fix bug Y (5 reactions)");
@@ -32,7 +32,7 @@ describe("buildAssessmentPrompt", () => {
       identity: "test",
       journal: "",
       issues: [],
-      dayCount: 1,
+      cycleCount: 1,
     });
     expect(prompt).toContain("No community issues");
   });
@@ -45,16 +45,15 @@ describe("buildAssessmentPrompt", () => {
       identity: "test",
       journal: longJournal,
       issues: [],
-      dayCount: 1,
+      cycleCount: 1,
     });
     // Extract the journal section from the prompt.
     const marker = "Recent journal entries:\n";
     const start = prompt.indexOf(marker) + marker.length;
     const end = prompt.indexOf("\n\nRead all files");
     const journalSection = prompt.slice(start, end);
-    // The section must not start mid-line (i.e. no leading partial 'x' block
-    // before the first newline that would indicate a mid-word cut).
-    expect(journalSection.startsWith("x".repeat(100))).toBe(true);
+    // Newest-first: truncated from front, so must end at a line boundary.
+    expect(journalSection.endsWith("x".repeat(100))).toBe(true);
   });
 });
 
