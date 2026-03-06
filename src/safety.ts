@@ -73,6 +73,9 @@ const DANGEROUS_PATTERNS = [
   // Remote code execution — piping downloaded content into a shell
   /curl.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh/,
   /wget.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh/,
+  // Remote code execution — piping downloaded content into script interpreters
+  /curl.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby)\b/,
+  /wget.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby)\b/,
   // Arbitrary code execution — eval, bash -c, sh -c run uncontrolled strings
   /\beval\s/,
   /(?:[\w./]*\/)?bash\s+-c\b/,
