@@ -618,8 +618,20 @@ describe("blockDangerousCommands", () => {
     expectDenied(await blockDangerousCommands(makeBashInput("npm install @scope/evil-pkg"), "tool-1", hookOpts));
   });
 
-  it("allows npm install -g (flag, accepted trade-off)", async () => {
-    expectAllowed(await blockDangerousCommands(makeBashInput("npm install -g evil-pkg"), "tool-1", hookOpts));
+  it("blocks npm install -g <package> (global install bypass)", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("npm install -g evil-pkg"), "tool-1", hookOpts));
+  });
+
+  it("blocks npm install --save <package>", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("npm install --save evil-pkg"), "tool-1", hookOpts));
+  });
+
+  it("allows npm install with multiple flags only (no package)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("npm install --save-dev --legacy-peer-deps"), "tool-1", hookOpts));
+  });
+
+  it("allows npm install -D (flag only, no package)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("npm install -D"), "tool-1", hookOpts));
   });
 });
 

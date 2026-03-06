@@ -89,7 +89,7 @@ const DANGEROUS_PATTERNS = [
   /\bcurl\s+.*(-d\b|--data\b|--data-binary\b|--data-raw\b|--data-urlencode\b|--upload-file\b|-F\b|--form\b)/,
   /\bwget\s+.*--post-(data|file)\b/,
   /\bpnpm\s+add\b/,
-  /\bnpm\s+install\s+(?![&|;>\s-])\S/,
+  /\bnpm\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/,
   /\byarn\s+add\b/,
 ];
 
