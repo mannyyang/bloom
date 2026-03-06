@@ -48,7 +48,7 @@ export const enforceAppendOnly: HookCallback = async (input) => {
   return {};
 };
 
-function isDangerousRm(command: string): boolean {
+export function isDangerousRm(command: string): boolean {
   // Match `rm` followed by flags that include both -r (or --recursive) and -f (or --force)
   // targeting / or ~ . Handles: rm -rf /, rm -r -f /, rm -f -r /, rm -fr /, rm --recursive --force /, etc.
   const rmMatch = command.match(/\brm\s+(.*)/);
@@ -56,7 +56,7 @@ function isDangerousRm(command: string): boolean {
   const rest = rmMatch[1];
   const hasRecursive = /(?:^|\s)--recursive(?:\s|$)/.test(rest) || /(?:^|\s)-\w*r/.test(rest);
   const hasForce = /(?:^|\s)--force(?:\s|$)/.test(rest) || /(?:^|\s)-\w*f/.test(rest);
-  const hasDangerousPath = /(?:^|\s)[\/~]/.test(rest);
+  const hasDangerousPath = /(?:^|\s)\/(?:\s|$)/.test(rest) || /(?:^|\s)~\/?(?:\s|$)/.test(rest);
   return hasRecursive && hasForce && hasDangerousPath;
 }
 

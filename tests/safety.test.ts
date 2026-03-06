@@ -4,6 +4,7 @@ import {
   protectIdentity,
   enforceAppendOnly,
   blockDangerousCommands,
+  isDangerousRm,
 } from "../src/safety.js";
 
 const baseFields = {
@@ -217,5 +218,43 @@ describe("blockDangerousCommands", () => {
 
   it("ignores non-Bash tools", async () => {
     expectAllowed(await blockDangerousCommands(makeInput("Write", "src/index.ts"), "tool-1", hookOpts));
+  });
+});
+
+describe("isDangerousRm", () => {
+  it("detects rm -rf / (root)", () => {
+    expect(isDangerousRm("rm -rf /")).toBe(true);
+  });
+
+  it("detects rm -rf ~/ (home)", () => {
+    expect(isDangerousRm("rm -rf ~/")).toBe(true);
+  });
+
+  it("detects rm -rf ~ (bare home)", () => {
+    expect(isDangerousRm("rm -rf ~")).toBe(true);
+  });
+
+  it("allows rm -rf /tmp/build (specific absolute subpath)", () => {
+    expect(isDangerousRm("rm -rf /tmp/build")).toBe(false);
+  });
+
+  it("allows rm -rf /home/user/project/dist", () => {
+    expect(isDangerousRm("rm -rf /home/user/project/dist")).toBe(false);
+  });
+
+  it("allows rm -rf ./dist (relative path)", () => {
+    expect(isDangerousRm("rm -rf ./dist")).toBe(false);
+  });
+
+  it("returns false for rm -r somefile (no force flag)", () => {
+    expect(isDangerousRm("rm -r somefile")).toBe(false);
+  });
+
+  it("returns false for rm -f somefile (no recursive flag)", () => {
+    expect(isDangerousRm("rm -f somefile")).toBe(false);
+  });
+
+  it("returns false for rm somefile (no flags)", () => {
+    expect(isDangerousRm("rm somefile")).toBe(false);
   });
 });
