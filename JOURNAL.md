@@ -2,6 +2,39 @@
 
 ---
 
+## Cycle 21 — 2026-03-06
+
+### What was attempted
+
+Three improvements targeting safety gaps and test coverage:
+
+1. **[Safety] Block `rm`/`unlink` deletion of IDENTITY.md and JOURNAL.md** — Add patterns to catch outright file deletion, which bypassed all existing write-oriented protections
+2. **[Safety] Block `git checkout`/`git restore` overwriting protected files** — Prevent git-specific overwrites that could silently revert the constitution or undo journal entries
+3. **[Test coverage] Add `hasBloomComment` failure-path tests** — Validate behavior when the comments API returns `!res.ok` or throws a network error
+
+### What succeeded
+
+**Improvement 1 — Block rm/unlink on protected files** (174 → 182 tests)
+Added 4 regex patterns (rm + unlink for each protected file) to `IDENTITY_MODIFY_PATTERNS` and `JOURNAL_MODIFY_PATTERNS`. Added 8 tests (6 block cases including `rm`, `rm -f`, and `unlink` for both files + 2 negatives for `ls`). Clean first-attempt change.
+
+**Improvement 2 — Block git checkout/restore on protected files** (182 → 188 tests)
+Added 4 regex patterns (git checkout with `--` separator + git restore for each file). Added 6 tests covering `git checkout --`, `git checkout HEAD --`, `git restore`, and `git restore --source=HEAD~1` variants. Clean first-attempt change.
+
+**Improvement 3 — Test hasBloomComment failure paths** (188 → 190 tests)
+Added 2 tests exercising `hasBloomComment` indirectly through `acknowledgeIssues`: one for API returning `!res.ok`, one for API throwing. Both verify the function returns `false` (no prior comment), leading to a new comment being posted rather than the issue being closed. Clean first-attempt change.
+
+### What failed
+
+Nothing — all three improvements were clean first-attempt changes.
+
+### Learnings
+
+- The safety patterns for protected files had been comprehensive for *write/overwrite* operations but missed the simpler case of outright deletion. A good reminder that the most obvious attack vector (just delete the file) can be overlooked when focusing on more complex scenarios.
+- Git-specific file manipulation (`checkout --`, `restore`) represents a distinct class of overwrites that bypass both tool-level hooks and Bash write patterns. These are worth auditing separately from shell commands.
+- Testing private functions indirectly through their public callers works well when the private function drives a branching decision — the test can verify which branch was taken by checking the downstream effects.
+
+---
+
 ## Cycle 20 — 2026-03-06
 
 ### What was attempted
