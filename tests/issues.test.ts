@@ -1,10 +1,17 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
+import { execSync } from "child_process";
 import { fetchCommunityIssues, acknowledgeIssues, isValidRepo, isSafeIssueNumber } from "../src/issues.js";
 import { githubApiRequest } from "../src/github-app.js";
 
 vi.mock("../src/github-app.js", () => ({
   githubApiRequest: vi.fn(),
 }));
+
+vi.mock("child_process", () => ({
+  execSync: vi.fn(),
+}));
+
+const mockExecSync = vi.mocked(execSync);
 
 const mockGithubApiRequest = vi.mocked(githubApiRequest);
 
@@ -47,6 +54,7 @@ describe("fetchCommunityIssues", () => {
 
   afterEach(() => {
     mockGithubApiRequest.mockReset();
+    mockExecSync.mockReset();
     if (originalEnv !== undefined) {
       process.env.GITHUB_REPOSITORY = originalEnv;
     } else {
@@ -106,6 +114,85 @@ describe("fetchCommunityIssues", () => {
     mockGithubApiRequest.mockRejectedValueOnce(new Error("network failure"));
     const result = await fetchCommunityIssues();
     expect(result).toEqual([]);
+  });
+});
+
+describe("fetchCommunityIssues — detectRepo git remote fallback", () => {
+  const originalEnv = process.env.GITHUB_REPOSITORY;
+
+  afterEach(() => {
+    mockGithubApiRequest.mockReset();
+    mockExecSync.mockReset();
+    if (originalEnv !== undefined) {
+      process.env.GITHUB_REPOSITORY = originalEnv;
+    } else {
+      delete process.env.GITHUB_REPOSITORY;
+    }
+  });
+
+  it("parses HTTPS remote URL", async () => {
+    delete process.env.GITHUB_REPOSITORY;
+    mockExecSync.mockReturnValueOnce("https://github.com/owner/repo.git\n");
+    mockGithubApiRequest.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ number: 1, title: "T", body: "", reactions: { total_count: 0 } }],
+    } as unknown as Response);
+
+    const result = await fetchCommunityIssues();
+    expect(result).toHaveLength(1);
+    expect(mockGithubApiRequest).toHaveBeenCalledWith(
+      "GET",
+      "/repos/owner/repo/issues?labels=agent-input&state=open&per_page=20",
+    );
+  });
+
+  it("parses SSH remote URL", async () => {
+    delete process.env.GITHUB_REPOSITORY;
+    mockExecSync.mockReturnValueOnce("git@github.com:my-org/my-repo.git\n");
+    mockGithubApiRequest.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    } as unknown as Response);
+
+    const result = await fetchCommunityIssues();
+    expect(result).toEqual([]);
+    expect(mockGithubApiRequest).toHaveBeenCalledWith(
+      "GET",
+      "/repos/my-org/my-repo/issues?labels=agent-input&state=open&per_page=20",
+    );
+  });
+
+  it("parses HTTPS remote URL without .git suffix", async () => {
+    delete process.env.GITHUB_REPOSITORY;
+    mockExecSync.mockReturnValueOnce("https://github.com/owner/repo\n");
+    mockGithubApiRequest.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    } as unknown as Response);
+
+    await fetchCommunityIssues();
+    expect(mockGithubApiRequest).toHaveBeenCalledWith(
+      "GET",
+      "/repos/owner/repo/issues?labels=agent-input&state=open&per_page=20",
+    );
+  });
+
+  it("returns empty array for non-GitHub remote", async () => {
+    delete process.env.GITHUB_REPOSITORY;
+    mockExecSync.mockReturnValueOnce("https://gitlab.com/owner/repo.git\n");
+
+    const result = await fetchCommunityIssues();
+    expect(result).toEqual([]);
+    expect(mockGithubApiRequest).not.toHaveBeenCalled();
+  });
+
+  it("returns empty array when execSync throws (no git remote)", async () => {
+    delete process.env.GITHUB_REPOSITORY;
+    mockExecSync.mockImplementationOnce(() => { throw new Error("not a git repo"); });
+
+    const result = await fetchCommunityIssues();
+    expect(result).toEqual([]);
+    expect(mockGithubApiRequest).not.toHaveBeenCalled();
   });
 });
 
