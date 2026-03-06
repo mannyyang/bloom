@@ -84,6 +84,36 @@ describe("github-app", () => {
       expect(mockFetch).toHaveBeenCalledOnce();
     });
 
+    it("fetches a new token when the cached token has expired", async () => {
+      // First call: return a token that expires in the past
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          token: "ghs_expired",
+          // expires_at in the past — the 60s safety margin in the code makes this already expired
+          expires_at: new Date(Date.now() - 60_000).toISOString(),
+        }),
+      });
+      // Second call: return a fresh token
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          token: "ghs_refreshed",
+          expires_at: new Date(Date.now() + 3600_000).toISOString(),
+        }),
+      });
+
+      const { getInstallationToken } = await loadModule();
+      const first = await getInstallationToken();
+      expect(first).toBe("ghs_expired");
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+
+      // Second call should detect the expired cache and fetch again
+      const second = await getInstallationToken();
+      expect(second).toBe("ghs_refreshed");
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
     it("throws when the API returns a non-ok response", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
