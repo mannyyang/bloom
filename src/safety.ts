@@ -48,12 +48,33 @@ export const enforceAppendOnly: HookCallback = async (input) => {
   return {};
 };
 
+function isDangerousRm(command: string): boolean {
+  // Match `rm` followed by flags that include both -r (or --recursive) and -f (or --force)
+  // targeting / or ~ . Handles: rm -rf /, rm -r -f /, rm -f -r /, rm -fr /, rm --recursive --force /, etc.
+  const rmMatch = command.match(/\brm\s+(.*)/);
+  if (!rmMatch) return false;
+  const rest = rmMatch[1];
+  const hasRecursive = /(?:^|\s)--recursive(?:\s|$)/.test(rest) || /(?:^|\s)-\w*r/.test(rest);
+  const hasForce = /(?:^|\s)--force(?:\s|$)/.test(rest) || /(?:^|\s)-\w*f/.test(rest);
+  const hasDangerousPath = /(?:^|\s)[\/~]/.test(rest);
+  return hasRecursive && hasForce && hasDangerousPath;
+}
+
 export const blockDangerousCommands: HookCallback = async (input) => {
   const { toolName, command } = parseHookInput(input);
   if (toolName !== "Bash") return {};
 
+  if (isDangerousRm(command)) {
+    return {
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "deny",
+        permissionDecisionReason: `Blocked dangerous command: ${command}`,
+      },
+    };
+  }
+
   const dangerous = [
-    /rm\s+-rf\s+[\/~]/,
     /git\s+push\s+(-f|--force)/,
     /git\s+reset\s+--hard(?!\s+HEAD\s*$)/,
     /curl.*\|\s*sh/,

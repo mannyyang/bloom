@@ -134,6 +134,50 @@ describe("blockDangerousCommands", () => {
     ).toHaveProperty("permissionDecision", "deny");
   });
 
+  it("blocks rm -r -f /", async () => {
+    const result = await blockDangerousCommands(
+      makeBashInput("rm -r -f /"),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(
+      (result as Record<string, unknown>).hookSpecificOutput,
+    ).toHaveProperty("permissionDecision", "deny");
+  });
+
+  it("blocks rm -f -r /", async () => {
+    const result = await blockDangerousCommands(
+      makeBashInput("rm -f -r /"),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(
+      (result as Record<string, unknown>).hookSpecificOutput,
+    ).toHaveProperty("permissionDecision", "deny");
+  });
+
+  it("blocks rm --recursive --force /", async () => {
+    const result = await blockDangerousCommands(
+      makeBashInput("rm --recursive --force /"),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(
+      (result as Record<string, unknown>).hookSpecificOutput,
+    ).toHaveProperty("permissionDecision", "deny");
+  });
+
+  it("blocks rm -fr ~/", async () => {
+    const result = await blockDangerousCommands(
+      makeBashInput("rm -fr ~/"),
+      "tool-1",
+      { signal: new AbortController().signal },
+    );
+    expect(
+      (result as Record<string, unknown>).hookSpecificOutput,
+    ).toHaveProperty("permissionDecision", "deny");
+  });
+
   it("blocks git push --force", async () => {
     const result = await blockDangerousCommands(
       makeBashInput("git push --force origin main"),
