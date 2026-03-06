@@ -45,7 +45,7 @@ export function commitCycleCount(cycleCount: number): boolean {
  */
 export function pushChanges(): boolean {
   try {
-    execSync("git push origin main", { stdio: "inherit", timeout: 60_000 });
+    execFileSync("git", ["push", "origin", "main"], { stdio: "inherit", timeout: 60_000 });
     return true;
   } catch {
     return false;
@@ -57,7 +57,7 @@ export function pushChanges(): boolean {
  */
 export function pushTags(): boolean {
   try {
-    execSync("git push --tags", { stdio: "inherit", timeout: 60_000 });
+    execFileSync("git", ["push", "--tags"], { stdio: "inherit", timeout: 60_000 });
     return true;
   } catch {
     return false;
@@ -81,7 +81,7 @@ export function verifyBuild(): boolean {
  */
 export function revertUncommitted(): void {
   try {
-    execSync("git checkout .", { stdio: "inherit", timeout: 10_000 });
+    execFileSync("git", ["checkout", "."], { stdio: "inherit", timeout: 10_000 });
   } catch { /* ignore */ }
 }
 

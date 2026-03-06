@@ -109,32 +109,34 @@ describe("lifecycle helpers", () => {
 
   describe("pushChanges", () => {
     it("returns true on successful push", () => {
-      mockedExecSync.mockReturnValue(Buffer.from(""));
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
       expect(pushChanges()).toBe(true);
-      expect(mockedExecSync).toHaveBeenCalledWith(
-        "git push origin main",
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["push", "origin", "main"],
         expect.objectContaining({ timeout: 60_000 }),
       );
     });
 
     it("returns false when push fails", () => {
-      mockedExecSync.mockImplementation(() => { throw new Error("push rejected"); });
+      mockedExecFileSync.mockImplementation(() => { throw new Error("push rejected"); });
       expect(pushChanges()).toBe(false);
     });
   });
 
   describe("pushTags", () => {
     it("returns true on successful tag push", () => {
-      mockedExecSync.mockReturnValue(Buffer.from(""));
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
       expect(pushTags()).toBe(true);
-      expect(mockedExecSync).toHaveBeenCalledWith(
-        "git push --tags",
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["push", "--tags"],
         expect.objectContaining({ timeout: 60_000 }),
       );
     });
 
     it("returns false when tag push fails", () => {
-      mockedExecSync.mockImplementation(() => { throw new Error("push rejected"); });
+      mockedExecFileSync.mockImplementation(() => { throw new Error("push rejected"); });
       expect(pushTags()).toBe(false);
     });
   });
@@ -156,17 +158,18 @@ describe("lifecycle helpers", () => {
   });
 
   describe("revertUncommitted", () => {
-    it("runs git checkout . on success", () => {
-      mockedExecSync.mockReturnValue(Buffer.from(""));
+    it("runs git checkout . using execFileSync", () => {
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
       revertUncommitted();
-      expect(mockedExecSync).toHaveBeenCalledWith(
-        "git checkout .",
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["checkout", "."],
         expect.objectContaining({ timeout: 10_000 }),
       );
     });
 
     it("does not throw when git checkout fails", () => {
-      mockedExecSync.mockImplementation(() => { throw new Error("checkout failed"); });
+      mockedExecFileSync.mockImplementation(() => { throw new Error("checkout failed"); });
       expect(() => revertUncommitted()).not.toThrow();
     });
   });
@@ -244,24 +247,22 @@ describe("lifecycle helpers", () => {
     it("retries and returns true when build passes on second attempt", () => {
       mockedExecSync
         .mockImplementationOnce(() => { throw new Error("build failed"); }) // attempt 1: verifyBuild fails
-        .mockReturnValueOnce(Buffer.from(""))  // attempt 1: revertUncommitted (git checkout .)
         .mockReturnValueOnce(Buffer.from("")); // attempt 2: verifyBuild passes
+      mockedExecFileSync.mockReturnValue(Buffer.from("")); // revertUncommitted uses execFileSync
       expect(runBuildVerification(42)).toBe(true);
     });
 
     it("reverts between attempts but not after last attempt", () => {
-      const calls: string[] = [];
-      mockedExecSync.mockImplementation((cmd: unknown) => {
-        const cmdStr = String(cmd);
-        calls.push(cmdStr);
-        if (cmdStr.includes("pnpm")) throw new Error("build failed");
-        return Buffer.from("");
+      mockedExecSync.mockImplementation(() => {
+        throw new Error("build failed");
       });
       mockedExecFileSync.mockReturnValue(Buffer.from(""));
       // All 3 builds fail → hard reset
       expect(runBuildVerification(42, 3)).toBe(false);
-      // Should have: build, revert, build, revert, build (no revert after last)
-      const revertCount = calls.filter(c => c.includes("checkout")).length;
+      // revertUncommitted now uses execFileSync; count checkout calls in execFileSync
+      const revertCount = mockedExecFileSync.mock.calls.filter(
+        (args) => args[0] === "git" && Array.isArray(args[1]) && (args[1] as string[])[0] === "checkout"
+      ).length;
       expect(revertCount).toBe(2);
     });
 
