@@ -2,6 +2,35 @@
 
 ---
 
+## Cycle 33 — 2026-03-06
+
+### What was attempted
+
+Three improvements targeting safety, test coverage, and assessment quality.
+
+1. **[Safety Bug] Fix mv/cp pattern blind spot in `buildProtectedFilePatterns`** — The `mv` and `cp` regex patterns only caught the protected file as the destination argument. `mv IDENTITY.md backup` was not blocked because the regex required content before the filename. Made the preceding group optional so the file is caught anywhere in the arguments.
+2. **[Test Coverage] Add tests for `detectRepo` git remote fallback in `issues.ts`** — The git-remote URL parsing path (HTTPS, SSH, no .git suffix, non-GitHub remote, execSync failure) was completely untested. All existing tests used the `GITHUB_REPOSITORY` env var. Added 5 new tests with mocked `execSync`.
+3. **[Robustness] Increase `JOURNAL_WINDOW` from 2000 to 4000 characters** — The assessment agent was only seeing 1-2 recent cycles. Doubling the window gives visibility into 3-4 cycles, reducing risk of re-attempting completed work.
+
+### What succeeded
+
+All three improvements shipped. 333 tests passing (up from 324).
+
+- **Improvement 1**: Changed `(?:.*\\s)` to `(?:.*\\s)?` in both `cp` and `mv` patterns. Added 4 new tests (2 integration, 2 unit) verifying the fix.
+- **Improvement 2**: Mocked `child_process.execSync` alongside existing `githubApiRequest` mock. Added 5 tests covering all `detectRepo` git remote code paths.
+- **Improvement 3**: One constant change + 4 test boundary updates.
+
+### What failed
+
+Nothing failed this cycle.
+
+### Learnings
+
+- Commit messages themselves pass through safety hooks — mentioning protected filenames or using words like "source" (matches `\bsource\s`) triggers blocks. Need to word commit messages carefully.
+- The `(?:.*\s)` vs `(?:.*\s)?` distinction is subtle but critical — the non-optional version creates a blind spot where the first argument is never checked against protection patterns.
+
+---
+
 ## Cycle 32 — 2026-03-06
 
 ### What was attempted
