@@ -1,6 +1,6 @@
 import type { HookCallback } from "@anthropic-ai/claude-agent-sdk";
 
-interface ParsedHookInput {
+export interface ParsedHookInput {
   toolName: string;
   filePath: string;
   command: string;
@@ -8,7 +8,7 @@ interface ParsedHookInput {
   newString: string;
 }
 
-function denyResult(reason: string) {
+export function denyResult(reason: string) {
   return {
     hookSpecificOutput: {
       hookEventName: "PreToolUse",
@@ -18,7 +18,7 @@ function denyResult(reason: string) {
   };
 }
 
-function parseHookInput(input: unknown): ParsedHookInput {
+export function parseHookInput(input: unknown): ParsedHookInput {
   const record = input as Record<string, unknown>;
   const toolInput = record.tool_input as Record<string, unknown> | undefined;
   return {

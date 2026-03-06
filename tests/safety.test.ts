@@ -7,6 +7,8 @@ import {
   isDangerousRm,
   isDangerousCommand,
   buildProtectedFilePatterns,
+  parseHookInput,
+  denyResult,
 } from "../src/safety.js";
 
 const baseFields = {
@@ -1389,6 +1391,74 @@ describe("buildProtectedFilePatterns", () => {
 
     it("allows tee -a", () => {
       expect(matchesAny(patterns, "echo x | tee -a CUSTOM.txt")).toBe(false);
+    });
+  });
+});
+
+describe("parseHookInput (direct)", () => {
+  it("extracts all fields from a well-formed input", () => {
+    const result = parseHookInput({
+      tool_name: "Edit",
+      tool_input: {
+        file_path: "/tmp/test.ts",
+        command: "echo hi",
+        old_string: "old",
+        new_string: "new",
+      },
+    });
+    expect(result).toEqual({
+      toolName: "Edit",
+      filePath: "/tmp/test.ts",
+      command: "echo hi",
+      oldString: "old",
+      newString: "new",
+    });
+  });
+
+  it("returns empty strings when tool_input is undefined", () => {
+    const result = parseHookInput({ tool_name: "Bash" });
+    expect(result).toEqual({
+      toolName: "Bash",
+      filePath: "",
+      command: "",
+      oldString: "",
+      newString: "",
+    });
+  });
+
+  it("coerces numeric fields to strings via String()", () => {
+    const result = parseHookInput({
+      tool_name: "Bash",
+      tool_input: { command: 42, file_path: 123 },
+    });
+    expect(result.command).toBe("42");
+    expect(result.filePath).toBe("123");
+  });
+
+  it("coerces null fields to empty strings", () => {
+    const result = parseHookInput({
+      tool_name: "Write",
+      tool_input: { file_path: null, old_string: null },
+    });
+    expect(result.filePath).toBe("");
+    expect(result.oldString).toBe("");
+  });
+
+  it("returns empty toolName when tool_name is missing", () => {
+    const result = parseHookInput({});
+    expect(result.toolName).toBe("");
+  });
+});
+
+describe("denyResult (direct)", () => {
+  it("returns a deny decision with the given reason", () => {
+    const result = denyResult("test reason");
+    expect(result).toEqual({
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "deny",
+        permissionDecisionReason: "test reason",
+      },
     });
   });
 });
