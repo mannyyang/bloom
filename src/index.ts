@@ -53,6 +53,7 @@ async function main() {
     prompt: buildAssessmentPrompt({ identity, journal, issues, cycleCount }),
     options: {
       cwd: process.cwd(),
+      model: "claude-opus-4-6",
       allowedTools: ["Read", "Glob", "Grep", "Bash"],
       permissionMode: "dontAsk",
       maxTurns: 20,
@@ -77,6 +78,7 @@ async function main() {
     prompt: buildEvolutionPrompt(assessment),
     options: {
       cwd: process.cwd(),
+      model: "claude-opus-4-6",
       allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
       permissionMode: "acceptEdits",
       systemPrompt: identity,
