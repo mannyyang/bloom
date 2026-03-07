@@ -6,10 +6,10 @@ export interface BuildResult {
 }
 
 /**
- * Run preflight build+test check. Returns pass/fail status and captured output
- * (used to extract test counts).
+ * Run `pnpm build && pnpm test` and return pass/fail status with captured output.
+ * Shared implementation for both preflight and post-evolution verification.
  */
-export function runPreflightCheck(): BuildResult {
+function runBuildAndTest(): BuildResult {
   try {
     const output = execSync("pnpm build && pnpm test", { encoding: "utf-8", timeout: 120_000 });
     return { passed: true, output };
@@ -17,6 +17,14 @@ export function runPreflightCheck(): BuildResult {
     const output = (err as { stdout?: string })?.stdout ?? "";
     return { passed: false, output };
   }
+}
+
+/**
+ * Run preflight build+test check. Returns pass/fail status and captured output
+ * (used to extract test counts).
+ */
+export function runPreflightCheck(): BuildResult {
+  return runBuildAndTest();
 }
 
 /**
@@ -76,13 +84,7 @@ export function pushTags(): boolean {
  * Returns pass/fail status and captured output (used to extract test counts).
  */
 export function verifyBuild(): BuildResult {
-  try {
-    const output = execSync("pnpm build && pnpm test", { encoding: "utf-8", timeout: 120_000 });
-    return { passed: true, output };
-  } catch (err: unknown) {
-    const output = (err as { stdout?: string })?.stdout ?? "";
-    return { passed: false, output };
-  }
+  return runBuildAndTest();
 }
 
 /**
