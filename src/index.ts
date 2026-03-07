@@ -160,16 +160,11 @@ async function main() {
 
     // Phase 2.5: Post-evolution build verification
     console.log("\n--- Build Verification ---");
-    try {
-      const buildResult = runBuildVerification(cycleCount);
-      outcome.buildVerificationPassed = buildResult.passed;
-      outcome.testCountAfter = parseTestCount(buildResult.output);
-      if (!buildResult.passed) {
-        throw new Error("Build verification failed. Hard reset performed.");
-      }
-    } catch (buildErr) {
-      // Re-throw to be caught by outer try/finally so outcome is persisted
-      throw buildErr;
+    const buildResult = runBuildVerification(cycleCount);
+    outcome.buildVerificationPassed = buildResult.passed;
+    outcome.testCountAfter = parseTestCount(buildResult.output);
+    if (!buildResult.passed) {
+      throw new Error("Build verification failed. Hard reset performed.");
     }
 
     // Phase 3: Push
