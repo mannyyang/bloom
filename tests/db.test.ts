@@ -15,6 +15,7 @@ import {
   formatCycleStats,
 } from "../src/db.js";
 import type Database from "better-sqlite3";
+import { makeOutcome } from "./helpers.js";
 
 describe("db", () => {
   let db: Database.Database;
@@ -42,27 +43,19 @@ describe("db", () => {
     });
 
     it("returns the highest cycle number", () => {
-      insertCycle(db, {
-        cycleNumber: 5, preflightPassed: true, improvementsAttempted: 0,
-        improvementsSucceeded: 0, buildVerificationPassed: false,
-        pushSucceeded: false, testCountBefore: null, testCountAfter: null,
-      });
-      insertCycle(db, {
-        cycleNumber: 10, preflightPassed: true, improvementsAttempted: 0,
-        improvementsSucceeded: 0, buildVerificationPassed: false,
-        pushSucceeded: false, testCountBefore: null, testCountAfter: null,
-      });
+      insertCycle(db, makeOutcome({ cycleNumber: 5 }));
+      insertCycle(db, makeOutcome({ cycleNumber: 10 }));
       expect(getLatestCycleNumber(db)).toBe(10);
     });
   });
 
   describe("insertCycle + insertJournalEntry", () => {
     it("inserts and retrieves journal entries", () => {
-      insertCycle(db, {
-        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 2,
-        improvementsSucceeded: 1, buildVerificationPassed: true,
-        pushSucceeded: true, testCountBefore: 100, testCountAfter: 105,
-      });
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 2, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+        testCountBefore: 100, testCountAfter: 105,
+      }));
       insertJournalEntry(db, 1, "attempted", "Tried two things");
       insertJournalEntry(db, 1, "succeeded", "One worked");
       insertJournalEntry(db, 1, "failed", "One didn't");
@@ -75,16 +68,16 @@ describe("db", () => {
     });
 
     it("respects the limit parameter", () => {
-      insertCycle(db, {
-        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 1,
-        improvementsSucceeded: 1, buildVerificationPassed: true,
-        pushSucceeded: true, testCountBefore: 10, testCountAfter: 12,
-      });
-      insertCycle(db, {
-        cycleNumber: 2, preflightPassed: true, improvementsAttempted: 1,
-        improvementsSucceeded: 1, buildVerificationPassed: true,
-        pushSucceeded: true, testCountBefore: 12, testCountAfter: 15,
-      });
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+        testCountBefore: 10, testCountAfter: 12,
+      }));
+      insertCycle(db, makeOutcome({
+        cycleNumber: 2, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+        testCountBefore: 12, testCountAfter: 15,
+      }));
       insertJournalEntry(db, 1, "attempted", "Cycle 1 attempt");
       insertJournalEntry(db, 1, "succeeded", "Cycle 1 success");
       insertJournalEntry(db, 2, "attempted", "Cycle 2 attempt");
@@ -103,21 +96,19 @@ describe("db", () => {
 
   describe("updateCycleOutcome", () => {
     it("updates metrics without overwriting started_at", () => {
-      insertCycle(db, {
-        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 0,
-        improvementsSucceeded: 0, buildVerificationPassed: false,
-        pushSucceeded: false, testCountBefore: 100, testCountAfter: null,
-      });
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, testCountBefore: 100,
+      }));
 
       // Record the original started_at
       const before = db.prepare("SELECT started_at FROM cycles WHERE cycle_number = 1").get() as { started_at: string };
 
       // Update with final outcome
-      updateCycleOutcome(db, {
-        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 3,
-        improvementsSucceeded: 2, buildVerificationPassed: true,
-        pushSucceeded: true, testCountBefore: 100, testCountAfter: 110,
-      });
+      updateCycleOutcome(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 3, improvementsSucceeded: 2,
+        buildVerificationPassed: true, pushSucceeded: true,
+        testCountBefore: 100, testCountAfter: 110,
+      }));
 
       const after = db.prepare("SELECT * FROM cycles WHERE cycle_number = 1").get() as Record<string, unknown>;
       expect(after.started_at).toBe(before.started_at);
@@ -129,17 +120,13 @@ describe("db", () => {
     });
 
     it("sets completed_at timestamp on update", () => {
-      insertCycle(db, {
-        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 0,
-        improvementsSucceeded: 0, buildVerificationPassed: false,
-        pushSucceeded: false, testCountBefore: null, testCountAfter: null,
-      });
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
 
-      updateCycleOutcome(db, {
-        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 1,
-        improvementsSucceeded: 1, buildVerificationPassed: true,
-        pushSucceeded: true, testCountBefore: 100, testCountAfter: 105,
-      });
+      updateCycleOutcome(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+        testCountBefore: 100, testCountAfter: 105,
+      }));
 
       const row = db.prepare("SELECT completed_at FROM cycles WHERE cycle_number = 1").get() as { completed_at: string | null };
       expect(row.completed_at).toBeTruthy();
@@ -148,11 +135,10 @@ describe("db", () => {
     });
 
     it("does nothing for non-existent cycle", () => {
-      updateCycleOutcome(db, {
-        cycleNumber: 999, preflightPassed: true, improvementsAttempted: 1,
-        improvementsSucceeded: 1, buildVerificationPassed: true,
-        pushSucceeded: true, testCountBefore: null, testCountAfter: null,
-      });
+      updateCycleOutcome(db, makeOutcome({
+        cycleNumber: 999, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
 
       const row = db.prepare("SELECT * FROM cycles WHERE cycle_number = 999").get();
       expect(row).toBeUndefined();
@@ -161,16 +147,14 @@ describe("db", () => {
 
   describe("exportJournalJson", () => {
     it("exports entries grouped by cycle, newest first", () => {
-      insertCycle(db, {
-        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 1,
-        improvementsSucceeded: 1, buildVerificationPassed: true,
-        pushSucceeded: true, testCountBefore: null, testCountAfter: null,
-      });
-      insertCycle(db, {
-        cycleNumber: 2, preflightPassed: true, improvementsAttempted: 2,
-        improvementsSucceeded: 2, buildVerificationPassed: true,
-        pushSucceeded: true, testCountBefore: null, testCountAfter: null,
-      });
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
+      insertCycle(db, makeOutcome({
+        cycleNumber: 2, improvementsAttempted: 2, improvementsSucceeded: 2,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
       insertJournalEntry(db, 1, "attempted", "Cycle 1 work");
       insertJournalEntry(db, 2, "attempted", "Cycle 2 work");
 
@@ -188,11 +172,10 @@ describe("db", () => {
     });
 
     it("returns markdown summary of recent cycles", () => {
-      insertCycle(db, {
-        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 1,
-        improvementsSucceeded: 1, buildVerificationPassed: true,
-        pushSucceeded: true, testCountBefore: null, testCountAfter: null,
-      });
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
       insertJournalEntry(db, 1, "attempted", "Did something");
       insertJournalEntry(db, 1, "succeeded", "It worked");
 
@@ -205,11 +188,7 @@ describe("db", () => {
 
   describe("insertPhaseUsage", () => {
     it("inserts usage data", () => {
-      insertCycle(db, {
-        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 0,
-        improvementsSucceeded: 0, buildVerificationPassed: false,
-        pushSucceeded: false, testCountBefore: null, testCountAfter: null,
-      });
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
       insertPhaseUsage(db, 1, {
         phase: "Assessment",
         totalCostUsd: 1.5,
@@ -228,11 +207,7 @@ describe("db", () => {
 
   describe("insertIssueAction + hasIssueAction", () => {
     it("inserts issue action", () => {
-      insertCycle(db, {
-        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 0,
-        improvementsSucceeded: 0, buildVerificationPassed: false,
-        pushSucceeded: false, testCountBefore: null, testCountAfter: null,
-      });
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
       insertIssueAction(db, 1, 42, "acknowledged");
 
       const rows = db.prepare("SELECT * FROM issue_actions WHERE cycle_number = 1").all();
@@ -244,32 +219,20 @@ describe("db", () => {
     });
 
     it("returns true when action exists", () => {
-      insertCycle(db, {
-        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 0,
-        improvementsSucceeded: 0, buildVerificationPassed: false,
-        pushSucceeded: false, testCountBefore: null, testCountAfter: null,
-      });
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
       insertIssueAction(db, 1, 42, "acknowledged");
       expect(hasIssueAction(db, 42, "acknowledged")).toBe(true);
     });
 
     it("distinguishes between different actions", () => {
-      insertCycle(db, {
-        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 0,
-        improvementsSucceeded: 0, buildVerificationPassed: false,
-        pushSucceeded: false, testCountBefore: null, testCountAfter: null,
-      });
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
       insertIssueAction(db, 1, 42, "acknowledged");
       expect(hasIssueAction(db, 42, "acknowledged")).toBe(true);
       expect(hasIssueAction(db, 42, "closed")).toBe(false);
     });
 
     it("is idempotent — duplicate inserts are silently ignored", () => {
-      insertCycle(db, {
-        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 0,
-        improvementsSucceeded: 0, buildVerificationPassed: false,
-        pushSucceeded: false, testCountBefore: null, testCountAfter: null,
-      });
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
       insertIssueAction(db, 1, 42, "acknowledged");
       insertIssueAction(db, 1, 42, "acknowledged"); // duplicate
 
@@ -278,11 +241,7 @@ describe("db", () => {
     });
 
     it("distinguishes between different issue numbers", () => {
-      insertCycle(db, {
-        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 0,
-        improvementsSucceeded: 0, buildVerificationPassed: false,
-        pushSucceeded: false, testCountBefore: null, testCountAfter: null,
-      });
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
       insertIssueAction(db, 1, 42, "closed");
       expect(hasIssueAction(db, 42, "closed")).toBe(true);
       expect(hasIssueAction(db, 99, "closed")).toBe(false);
@@ -304,21 +263,20 @@ describe("db", () => {
 
     it("computes correct success rate", () => {
       // 2 successful, 1 failed = 67%
-      insertCycle(db, {
-        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 2,
-        improvementsSucceeded: 2, buildVerificationPassed: true,
-        pushSucceeded: true, testCountBefore: 100, testCountAfter: 105,
-      });
-      insertCycle(db, {
-        cycleNumber: 2, preflightPassed: true, improvementsAttempted: 1,
-        improvementsSucceeded: 0, buildVerificationPassed: false,
-        pushSucceeded: false, testCountBefore: 105, testCountAfter: null,
-      });
-      insertCycle(db, {
-        cycleNumber: 3, preflightPassed: true, improvementsAttempted: 3,
-        improvementsSucceeded: 3, buildVerificationPassed: true,
-        pushSucceeded: true, testCountBefore: 105, testCountAfter: 115,
-      });
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 2, improvementsSucceeded: 2,
+        buildVerificationPassed: true, pushSucceeded: true,
+        testCountBefore: 100, testCountAfter: 105,
+      }));
+      insertCycle(db, makeOutcome({
+        cycleNumber: 2, improvementsAttempted: 1,
+        testCountBefore: 105,
+      }));
+      insertCycle(db, makeOutcome({
+        cycleNumber: 3, improvementsAttempted: 3, improvementsSucceeded: 3,
+        buildVerificationPassed: true, pushSucceeded: true,
+        testCountBefore: 105, testCountAfter: 115,
+      }));
 
       const stats = getCycleStats(db);
       expect(stats.totalCycles).toBe(3);
@@ -328,16 +286,16 @@ describe("db", () => {
     });
 
     it("computes test count trend from oldest to newest", () => {
-      insertCycle(db, {
-        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 1,
-        improvementsSucceeded: 1, buildVerificationPassed: true,
-        pushSucceeded: true, testCountBefore: 100, testCountAfter: 110,
-      });
-      insertCycle(db, {
-        cycleNumber: 2, preflightPassed: true, improvementsAttempted: 1,
-        improvementsSucceeded: 1, buildVerificationPassed: true,
-        pushSucceeded: true, testCountBefore: 110, testCountAfter: 130,
-      });
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+        testCountBefore: 100, testCountAfter: 110,
+      }));
+      insertCycle(db, makeOutcome({
+        cycleNumber: 2, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+        testCountBefore: 110, testCountAfter: 130,
+      }));
 
       const stats = getCycleStats(db);
       // newest after (130) - oldest before (100) = 30
@@ -345,11 +303,10 @@ describe("db", () => {
     });
 
     it("computes avgDurationMinutes when completed_at is set", () => {
-      insertCycle(db, {
-        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 1,
-        improvementsSucceeded: 1, buildVerificationPassed: true,
-        pushSucceeded: true, testCountBefore: null, testCountAfter: null,
-      });
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
       // Manually set started_at and completed_at for a known duration (10 minutes)
       db.prepare("UPDATE cycles SET started_at = ?, completed_at = ? WHERE cycle_number = 1").run(
         "2026-01-01T00:00:00.000Z",
@@ -361,11 +318,10 @@ describe("db", () => {
     });
 
     it("returns null avgDurationMinutes when no completed_at exists", () => {
-      insertCycle(db, {
-        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 1,
-        improvementsSucceeded: 1, buildVerificationPassed: true,
-        pushSucceeded: true, testCountBefore: null, testCountAfter: null,
-      });
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
       // No updateCycleOutcome called, so completed_at is null
 
       const stats = getCycleStats(db);
@@ -374,11 +330,10 @@ describe("db", () => {
 
     it("respects limit parameter", () => {
       for (let i = 1; i <= 10; i++) {
-        insertCycle(db, {
-          cycleNumber: i, preflightPassed: true, improvementsAttempted: 1,
-          improvementsSucceeded: 1, buildVerificationPassed: true,
-          pushSucceeded: true, testCountBefore: null, testCountAfter: null,
-        });
+        insertCycle(db, makeOutcome({
+          cycleNumber: i, improvementsAttempted: 1, improvementsSucceeded: 1,
+          buildVerificationPassed: true, pushSucceeded: true,
+        }));
       }
 
       const stats = getCycleStats(db, 3);
@@ -386,16 +341,14 @@ describe("db", () => {
     });
 
     it("aggregates cost from phase_usage", () => {
-      insertCycle(db, {
-        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 1,
-        improvementsSucceeded: 1, buildVerificationPassed: true,
-        pushSucceeded: true, testCountBefore: null, testCountAfter: null,
-      });
-      insertCycle(db, {
-        cycleNumber: 2, preflightPassed: true, improvementsAttempted: 1,
-        improvementsSucceeded: 1, buildVerificationPassed: true,
-        pushSucceeded: true, testCountBefore: null, testCountAfter: null,
-      });
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
+      insertCycle(db, makeOutcome({
+        cycleNumber: 2, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
       insertPhaseUsage(db, 1, {
         phase: "Assessment", totalCostUsd: 0.50, inputTokens: 1000,
         outputTokens: 500, cacheReadInputTokens: 0, cacheCreationInputTokens: 0,
@@ -418,11 +371,10 @@ describe("db", () => {
     });
 
     it("returns zero cost when no phase_usage rows exist", () => {
-      insertCycle(db, {
-        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 1,
-        improvementsSucceeded: 1, buildVerificationPassed: true,
-        pushSucceeded: true, testCountBefore: null, testCountAfter: null,
-      });
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
 
       const stats = getCycleStats(db);
       expect(stats.totalCostUsd).toBe(0);

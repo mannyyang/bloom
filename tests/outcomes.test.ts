@@ -3,8 +3,8 @@ import {
   parseTestCount,
   createOutcome,
   formatOutcomeForJournal,
-  CycleOutcome,
 } from "../src/outcomes.js";
+import { makeOutcome } from "./helpers.js";
 
 describe("parseTestCount", () => {
   it("parses vitest output with passed count", () => {
@@ -53,16 +53,11 @@ describe("createOutcome", () => {
 
 describe("formatOutcomeForJournal", () => {
   it("formats a fully successful outcome", () => {
-    const outcome: CycleOutcome = {
-      cycleNumber: 46,
-      preflightPassed: true,
-      improvementsAttempted: 3,
-      improvementsSucceeded: 3,
-      buildVerificationPassed: true,
-      pushSucceeded: true,
-      testCountBefore: 490,
-      testCountAfter: 505,
-    };
+    const outcome = makeOutcome({
+      cycleNumber: 46, improvementsAttempted: 3, improvementsSucceeded: 3,
+      buildVerificationPassed: true, pushSucceeded: true,
+      testCountBefore: 490, testCountAfter: 505,
+    });
     const result = formatOutcomeForJournal(outcome);
     expect(result).toContain("### Outcome Metrics");
     expect(result).toContain("**Preflight**: passed");
@@ -73,16 +68,10 @@ describe("formatOutcomeForJournal", () => {
   });
 
   it("formats a partially failed outcome", () => {
-    const outcome: CycleOutcome = {
-      cycleNumber: 46,
-      preflightPassed: true,
-      improvementsAttempted: 3,
-      improvementsSucceeded: 1,
-      buildVerificationPassed: false,
-      pushSucceeded: false,
-      testCountBefore: 490,
-      testCountAfter: 490,
-    };
+    const outcome = makeOutcome({
+      cycleNumber: 46, improvementsAttempted: 3, improvementsSucceeded: 1,
+      testCountBefore: 490, testCountAfter: 490,
+    });
     const result = formatOutcomeForJournal(outcome);
     expect(result).toContain("**Improvements**: 1/3 succeeded");
     expect(result).toContain("**Build verification**: failed");
@@ -91,61 +80,39 @@ describe("formatOutcomeForJournal", () => {
   });
 
   it("formats outcome with negative test delta", () => {
-    const outcome: CycleOutcome = {
-      cycleNumber: 10,
-      preflightPassed: true,
-      improvementsAttempted: 1,
-      improvementsSucceeded: 0,
-      buildVerificationPassed: true,
-      pushSucceeded: true,
-      testCountBefore: 100,
-      testCountAfter: 95,
-    };
+    const outcome = makeOutcome({
+      cycleNumber: 10, improvementsAttempted: 1,
+      buildVerificationPassed: true, pushSucceeded: true,
+      testCountBefore: 100, testCountAfter: 95,
+    });
     const result = formatOutcomeForJournal(outcome);
     expect(result).toContain("(-5)");
   });
 
   it("handles null testCountBefore", () => {
-    const outcome: CycleOutcome = {
-      cycleNumber: 1,
-      preflightPassed: true,
-      improvementsAttempted: 1,
-      improvementsSucceeded: 1,
-      buildVerificationPassed: true,
-      pushSucceeded: true,
-      testCountBefore: null,
-      testCountAfter: 50,
-    };
+    const outcome = makeOutcome({
+      improvementsAttempted: 1, improvementsSucceeded: 1,
+      buildVerificationPassed: true, pushSucceeded: true,
+      testCountBefore: null, testCountAfter: 50,
+    });
     const result = formatOutcomeForJournal(outcome);
     expect(result).toContain("50 after (before count unavailable)");
   });
 
   it("handles null testCountAfter", () => {
-    const outcome: CycleOutcome = {
-      cycleNumber: 1,
-      preflightPassed: true,
-      improvementsAttempted: 1,
-      improvementsSucceeded: 1,
-      buildVerificationPassed: true,
-      pushSucceeded: true,
-      testCountBefore: 50,
-      testCountAfter: null,
-    };
+    const outcome = makeOutcome({
+      improvementsAttempted: 1, improvementsSucceeded: 1,
+      buildVerificationPassed: true, pushSucceeded: true,
+      testCountBefore: 50, testCountAfter: null,
+    });
     const result = formatOutcomeForJournal(outcome);
     expect(result).toContain("50 before (after count unavailable)");
   });
 
   it("handles both test counts null", () => {
-    const outcome: CycleOutcome = {
-      cycleNumber: 1,
+    const outcome = makeOutcome({
       preflightPassed: false,
-      improvementsAttempted: 0,
-      improvementsSucceeded: 0,
-      buildVerificationPassed: false,
-      pushSucceeded: false,
-      testCountBefore: null,
-      testCountAfter: null,
-    };
+    });
     const result = formatOutcomeForJournal(outcome);
     expect(result).not.toContain("**Tests**");
   });
@@ -156,4 +123,3 @@ describe("formatOutcomeForJournal", () => {
     expect(result.startsWith("### Outcome Metrics")).toBe(true);
   });
 });
-
