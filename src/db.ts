@@ -242,6 +242,8 @@ export interface CycleStats {
   testCountTrend: number | null;
   recentFailures: number;
   avgDurationMinutes: number | null;
+  totalCostUsd: number;
+  avgCostPerCycle: number;
 }
 
 /**
@@ -269,7 +271,7 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
   }[];
 
   if (rows.length === 0) {
-    return { totalCycles: 0, successRate: 0, avgImprovements: 0, testCountTrend: null, recentFailures: 0, avgDurationMinutes: null };
+    return { totalCycles: 0, successRate: 0, avgImprovements: 0, testCountTrend: null, recentFailures: 0, avgDurationMinutes: null, totalCostUsd: 0, avgCostPerCycle: 0 };
   }
 
   const totalCycles = rows.length;
@@ -304,7 +306,19 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
     avgDurationMinutes = Math.round((totalMs / withTimes.length / 60000) * 10) / 10;
   }
 
-  return { totalCycles, successRate, avgImprovements, testCountTrend, recentFailures, avgDurationMinutes };
+  // Aggregate cost from phase_usage for the cycles in scope
+  const cycleNumbers = rows.length > 0
+    ? db.prepare(`SELECT cycle_number FROM cycles ORDER BY cycle_number DESC LIMIT ?`).all(limit) as { cycle_number: number }[]
+    : [];
+  const costRow = cycleNumbers.length > 0
+    ? db.prepare(
+        `SELECT COALESCE(SUM(cost_usd), 0) as total_cost FROM phase_usage WHERE cycle_number IN (${cycleNumbers.map(r => r.cycle_number).join(",")})`
+      ).get() as { total_cost: number }
+    : { total_cost: 0 };
+  const totalCostUsd = Math.round(costRow.total_cost * 100) / 100;
+  const avgCostPerCycle = totalCycles > 0 ? Math.round((totalCostUsd / totalCycles) * 100) / 100 : 0;
+
+  return { totalCycles, successRate, avgImprovements, testCountTrend, recentFailures, avgDurationMinutes, totalCostUsd, avgCostPerCycle };
 }
 
 /**
@@ -323,6 +337,10 @@ export function formatCycleStats(stats: CycleStats): string {
   }
   if (stats.avgDurationMinutes !== null) {
     lines.push(`- **Avg cycle duration**: ${stats.avgDurationMinutes} min`);
+  }
+  if (stats.totalCostUsd > 0) {
+    lines.push(`- **Total cost**: $${stats.totalCostUsd.toFixed(2)}`);
+    lines.push(`- **Avg cost/cycle**: $${stats.avgCostPerCycle.toFixed(2)}`);
   }
   lines.push(`- **Recent failures** (last 5): ${stats.recentFailures}`);
   return lines.join("\n");

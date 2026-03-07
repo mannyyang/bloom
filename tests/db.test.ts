@@ -272,6 +272,8 @@ describe("db", () => {
       expect(stats.testCountTrend).toBeNull();
       expect(stats.recentFailures).toBe(0);
       expect(stats.avgDurationMinutes).toBeNull();
+      expect(stats.totalCostUsd).toBe(0);
+      expect(stats.avgCostPerCycle).toBe(0);
     });
 
     it("computes correct success rate", () => {
@@ -356,6 +358,50 @@ describe("db", () => {
       const stats = getCycleStats(db, 3);
       expect(stats.totalCycles).toBe(3);
     });
+
+    it("aggregates cost from phase_usage", () => {
+      insertCycle(db, {
+        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 1,
+        improvementsSucceeded: 1, buildVerificationPassed: true,
+        pushSucceeded: true, testCountBefore: null, testCountAfter: null,
+      });
+      insertCycle(db, {
+        cycleNumber: 2, preflightPassed: true, improvementsAttempted: 1,
+        improvementsSucceeded: 1, buildVerificationPassed: true,
+        pushSucceeded: true, testCountBefore: null, testCountAfter: null,
+      });
+      insertPhaseUsage(db, 1, {
+        phase: "Assessment", totalCostUsd: 0.50, inputTokens: 1000,
+        outputTokens: 500, cacheReadInputTokens: 0, cacheCreationInputTokens: 0,
+        durationMs: 5000, numTurns: 3,
+      });
+      insertPhaseUsage(db, 1, {
+        phase: "Evolution", totalCostUsd: 1.25, inputTokens: 2000,
+        outputTokens: 1000, cacheReadInputTokens: 0, cacheCreationInputTokens: 0,
+        durationMs: 10000, numTurns: 5,
+      });
+      insertPhaseUsage(db, 2, {
+        phase: "Assessment", totalCostUsd: 0.75, inputTokens: 1500,
+        outputTokens: 700, cacheReadInputTokens: 0, cacheCreationInputTokens: 0,
+        durationMs: 6000, numTurns: 4,
+      });
+
+      const stats = getCycleStats(db);
+      expect(stats.totalCostUsd).toBe(2.5);
+      expect(stats.avgCostPerCycle).toBe(1.25);
+    });
+
+    it("returns zero cost when no phase_usage rows exist", () => {
+      insertCycle(db, {
+        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 1,
+        improvementsSucceeded: 1, buildVerificationPassed: true,
+        pushSucceeded: true, testCountBefore: null, testCountAfter: null,
+      });
+
+      const stats = getCycleStats(db);
+      expect(stats.totalCostUsd).toBe(0);
+      expect(stats.avgCostPerCycle).toBe(0);
+    });
   });
 
   describe("formatCycleStats", () => {
@@ -363,6 +409,7 @@ describe("db", () => {
       const result = formatCycleStats({
         totalCycles: 0, successRate: 0, avgImprovements: 0,
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
+        totalCostUsd: 0, avgCostPerCycle: 0,
       });
       expect(result).toBe("No previous cycle data available.");
     });
@@ -371,12 +418,15 @@ describe("db", () => {
       const result = formatCycleStats({
         totalCycles: 10, successRate: 80, avgImprovements: 1.5,
         testCountTrend: 42, recentFailures: 1, avgDurationMinutes: 8.5,
+        totalCostUsd: 15.50, avgCostPerCycle: 1.55,
       });
       expect(result).toContain("10");
       expect(result).toContain("80%");
       expect(result).toContain("1.5");
       expect(result).toContain("+42");
       expect(result).toContain("8.5 min");
+      expect(result).toContain("$15.50");
+      expect(result).toContain("$1.55");
       expect(result).toContain("1");
     });
 
@@ -384,8 +434,10 @@ describe("db", () => {
       const result = formatCycleStats({
         totalCycles: 5, successRate: 100, avgImprovements: 2,
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
+        totalCostUsd: 0, avgCostPerCycle: 0,
       });
       expect(result).not.toContain("duration");
+      expect(result).not.toContain("cost");
     });
   });
 });
