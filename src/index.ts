@@ -2,7 +2,7 @@ import { query } from "@anthropic-ai/claude-agent-sdk";
 import { readFileSync } from "fs";
 import { initDb, getLatestCycleNumber, insertCycle, insertJournalEntry, insertPhaseUsage, getRecentJournalSummary } from "./db.js";
 import { fetchCommunityIssues, acknowledgeIssues } from "./issues.js";
-import { buildAssessmentPrompt, buildEvolutionPrompt } from "./evolve.js";
+import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements } from "./evolve.js";
 import {
   protectIdentity,
   blockDangerousCommands,
@@ -176,46 +176,6 @@ async function main() {
 
   console.log("\n--- Outcome ---");
   console.log(formatOutcomeForJournal(outcome));
-}
-
-function parseEvolutionResult(result: string): Record<string, string> {
-  const sections: Record<string, string> = {
-    attempted: "",
-    succeeded: "",
-    failed: "",
-    learnings: "",
-  };
-
-  const sectionMap: Record<string, string> = {
-    "ATTEMPTED": "attempted",
-    "SUCCEEDED": "succeeded",
-    "FAILED": "failed",
-    "LEARNINGS": "learnings",
-  };
-
-  let currentSection = "";
-  for (const line of result.split("\n")) {
-    const trimmed = line.trim();
-    // Check for section headers like "ATTEMPTED:" or "**ATTEMPTED**:"
-    for (const [marker, key] of Object.entries(sectionMap)) {
-      if (trimmed.startsWith(`${marker}:`) || trimmed.startsWith(`**${marker}**:`)) {
-        currentSection = key;
-        const rest = trimmed.replace(/^\*?\*?[A-Z]+\*?\*?:\s*/, "");
-        if (rest) sections[currentSection] += rest + "\n";
-        break;
-      }
-    }
-    if (currentSection && !Object.keys(sectionMap).some(m => trimmed.startsWith(`${m}:`) || trimmed.startsWith(`**${m}**:`))) {
-      sections[currentSection] += line + "\n";
-    }
-  }
-
-  // Trim trailing whitespace
-  for (const key of Object.keys(sections)) {
-    sections[key] = sections[key].trim();
-  }
-
-  return sections;
 }
 
 main().catch((err) => {

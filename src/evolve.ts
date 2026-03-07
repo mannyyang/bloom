@@ -41,6 +41,68 @@ interface EvolutionContext {
   outcomeContext?: string;
 }
 
+/**
+ * Parse the structured summary from an evolution result.
+ * Extracts ATTEMPTED, SUCCEEDED, FAILED, and LEARNINGS sections.
+ */
+export function parseEvolutionResult(result: string): Record<string, string> {
+  const sections: Record<string, string> = {
+    attempted: "",
+    succeeded: "",
+    failed: "",
+    learnings: "",
+  };
+
+  const sectionMap: Record<string, string> = {
+    "ATTEMPTED": "attempted",
+    "SUCCEEDED": "succeeded",
+    "FAILED": "failed",
+    "LEARNINGS": "learnings",
+  };
+
+  let currentSection = "";
+  for (const line of result.split("\n")) {
+    const trimmed = line.trim();
+    // Check for section headers like "ATTEMPTED:" or "**ATTEMPTED**:"
+    let matched = false;
+    for (const [marker, key] of Object.entries(sectionMap)) {
+      if (trimmed.startsWith(`${marker}:`) || trimmed.startsWith(`**${marker}**:`)) {
+        currentSection = key;
+        const rest = trimmed.replace(/^\*?\*?[A-Z]+\*?\*?:\s*/, "");
+        if (rest) sections[currentSection] += rest + "\n";
+        matched = true;
+        break;
+      }
+    }
+    if (currentSection && !matched) {
+      sections[currentSection] += line + "\n";
+    }
+  }
+
+  // Trim trailing whitespace
+  for (const key of Object.keys(sections)) {
+    sections[key] = sections[key].trim();
+  }
+
+  return sections;
+}
+
+/**
+ * Count the number of improvement items in a section text.
+ * Counts lines starting with "- " or numbered items like "1. ", "2. ".
+ */
+export function countImprovements(text: string): number {
+  if (!text) return 0;
+  let count = 0;
+  for (const line of text.split("\n")) {
+    const trimmed = line.trim();
+    if (trimmed.match(/^-\s+/) || trimmed.match(/^\d+\.\s+/)) {
+      count++;
+    }
+  }
+  return count;
+}
+
 export function buildEvolutionPrompt(assessment: string, context?: EvolutionContext): string {
   const usageSection = context?.usageContext
     ? `\n\nResource usage so far this cycle:\n${context.usageContext}\n`
