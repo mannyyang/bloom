@@ -153,9 +153,10 @@ RULES:
 6. Do NOT write to JOURNAL.md — journal entries are now stored in SQLite and managed by the orchestrator.
 7. Keep changes small and incremental.
 
-After all improvements, provide a structured summary in your final response with these sections clearly labeled:
-- ATTEMPTED: What was attempted this cycle
-- SUCCEEDED: What succeeded
-- FAILED: What failed
-- LEARNINGS: Key insights`;
+After all improvements, end your response with a structured summary using EXACTLY this format (no markdown headers, no bold, just the marker followed by a colon):
+
+ATTEMPTED: <what was attempted>
+SUCCEEDED: <what succeeded>
+FAILED: <what failed>
+LEARNINGS: <key insights>`;
 }
