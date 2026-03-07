@@ -107,6 +107,26 @@ describe("lifecycle helpers", () => {
       );
     });
 
+    it("includes label in commit message when provided", () => {
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+      expect(commitDb(42, "start")).toBe(true);
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["commit", "-m", "cycle 42: start"],
+        expect.objectContaining({ timeout: 30_000 }),
+      );
+    });
+
+    it("uses plain cycle message when label is omitted", () => {
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+      expect(commitDb(42)).toBe(true);
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["commit", "-m", "cycle 42"],
+        expect.objectContaining({ timeout: 30_000 }),
+      );
+    });
+
     it("returns false when git add fails", () => {
       mockedExecFileSync.mockImplementation(() => { throw new Error("add failed"); });
       expect(commitDb(42)).toBe(false);

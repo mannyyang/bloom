@@ -47,7 +47,7 @@ async function main() {
 
   // Insert cycle row (will be updated at end)
   insertCycle(db, outcome);
-  commitDb(cycleCount);
+  commitDb(cycleCount, "start");
 
   // Create safety tag
   createSafetyTag(cycleCount);
@@ -189,7 +189,7 @@ async function main() {
   }
 
   // Always commit and push DB so failure metrics are not lost
-  commitDb(cycleCount);
+  commitDb(cycleCount, "outcome");
   if (pushChanges()) {
     console.log("DB changes pushed successfully.");
   } else {
