@@ -73,6 +73,32 @@ describe("db", () => {
       expect(entries[0].section).toBe("attempted");
       expect(entries[0].content).toBe("Tried two things");
     });
+
+    it("respects the limit parameter", () => {
+      insertCycle(db, {
+        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 1,
+        improvementsSucceeded: 1, buildVerificationPassed: true,
+        pushSucceeded: true, testCountBefore: 10, testCountAfter: 12,
+      });
+      insertCycle(db, {
+        cycleNumber: 2, preflightPassed: true, improvementsAttempted: 1,
+        improvementsSucceeded: 1, buildVerificationPassed: true,
+        pushSucceeded: true, testCountBefore: 12, testCountAfter: 15,
+      });
+      insertJournalEntry(db, 1, "attempted", "Cycle 1 attempt");
+      insertJournalEntry(db, 1, "succeeded", "Cycle 1 success");
+      insertJournalEntry(db, 2, "attempted", "Cycle 2 attempt");
+      insertJournalEntry(db, 2, "succeeded", "Cycle 2 success");
+
+      const limited = getJournalEntries(db, 2);
+      expect(limited).toHaveLength(2);
+      // ORDER BY cycle_number DESC, so cycle 2 entries come first
+      expect(limited[0].cycleNumber).toBe(2);
+
+      // Without limit, all 4 entries are returned
+      const all = getJournalEntries(db);
+      expect(all).toHaveLength(4);
+    });
   });
 
   describe("updateCycleOutcome", () => {
