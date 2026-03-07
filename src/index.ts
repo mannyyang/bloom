@@ -52,6 +52,8 @@ async function main() {
   // Create safety tag
   createSafetyTag(cycleCount);
 
+  let evolutionError: Error | null = null;
+
   try {
     const identity = readFileSync("IDENTITY.md", "utf-8");
     const journalSummary = getRecentJournalSummary(db);
@@ -177,14 +179,16 @@ async function main() {
     } else {
       console.error("Push failed. Changes remain local.");
     }
+  } catch (err) {
+    evolutionError = err as Error;
+    console.error("Evolution error:", evolutionError.message);
   } finally {
     // Always persist outcome and close DB, even on errors
     updateCycleOutcome(db, outcome);
     db.close();
   }
 
-  // Commit updated DB and always push (the DB commit happens after the code push,
-  // so it always needs its own push regardless of whether code push succeeded)
+  // Always commit and push DB so failure metrics are not lost
   commitDb(cycleCount);
   if (pushChanges()) {
     console.log("DB changes pushed successfully.");
@@ -195,6 +199,11 @@ async function main() {
 
   console.log("\n--- Outcome ---");
   console.log(formatOutcomeForJournal(outcome));
+
+  // Exit with error code if the cycle failed, after DB has been committed/pushed
+  if (evolutionError) {
+    process.exit(1);
+  }
 }
 
 main().catch((err) => {
