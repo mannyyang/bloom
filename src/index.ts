@@ -1,6 +1,6 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { readFileSync } from "fs";
-import { initDb, getLatestCycleNumber, insertCycle, updateCycleOutcome, insertJournalEntry, insertPhaseUsage, getRecentJournalSummary } from "./db.js";
+import { initDb, getLatestCycleNumber, insertCycle, updateCycleOutcome, insertJournalEntry, insertPhaseUsage, getRecentJournalSummary, getCycleStats, formatCycleStats } from "./db.js";
 import { fetchCommunityIssues, acknowledgeIssues, closeResolvedIssue, hasCommitForIssue } from "./issues.js";
 import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements, extractResolvedIssueNumbers } from "./evolve.js";
 import {
@@ -56,13 +56,15 @@ async function main() {
     const identity = readFileSync("IDENTITY.md", "utf-8");
     const journalSummary = getRecentJournalSummary(db);
     const issues = await fetchCommunityIssues();
+    const cycleStats = getCycleStats(db);
+    const cycleStatsText = formatCycleStats(cycleStats);
 
     // Phase 1: Assessment (read-only)
     console.log("\n--- Phase 1: Assessment ---");
     let assessment = "";
     const phaseUsages: PhaseUsage[] = [];
     for await (const msg of query({
-      prompt: buildAssessmentPrompt({ identity, journalSummary, issues, cycleCount }),
+      prompt: buildAssessmentPrompt({ identity, journalSummary, issues, cycleCount, cycleStatsText }),
       options: {
         cwd: process.cwd(),
         model: "claude-opus-4-6",

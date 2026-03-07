@@ -11,6 +11,8 @@ import {
   getJournalEntries,
   exportJournalJson,
   getRecentJournalSummary,
+  getCycleStats,
+  formatCycleStats,
 } from "../src/db.js";
 import type Database from "better-sqlite3";
 
@@ -226,6 +228,94 @@ describe("db", () => {
       insertIssueAction(db, 1, 42, "closed");
       expect(hasIssueAction(db, 42, "closed")).toBe(true);
       expect(hasIssueAction(db, 99, "closed")).toBe(false);
+    });
+  });
+
+  describe("getCycleStats", () => {
+    it("returns zeros when no cycles exist", () => {
+      const stats = getCycleStats(db);
+      expect(stats.totalCycles).toBe(0);
+      expect(stats.successRate).toBe(0);
+      expect(stats.avgImprovements).toBe(0);
+      expect(stats.testCountTrend).toBeNull();
+      expect(stats.recentFailures).toBe(0);
+    });
+
+    it("computes correct success rate", () => {
+      // 2 successful, 1 failed = 67%
+      insertCycle(db, {
+        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 2,
+        improvementsSucceeded: 2, buildVerificationPassed: true,
+        pushSucceeded: true, testCountBefore: 100, testCountAfter: 105,
+      });
+      insertCycle(db, {
+        cycleNumber: 2, preflightPassed: true, improvementsAttempted: 1,
+        improvementsSucceeded: 0, buildVerificationPassed: false,
+        pushSucceeded: false, testCountBefore: 105, testCountAfter: null,
+      });
+      insertCycle(db, {
+        cycleNumber: 3, preflightPassed: true, improvementsAttempted: 3,
+        improvementsSucceeded: 3, buildVerificationPassed: true,
+        pushSucceeded: true, testCountBefore: 105, testCountAfter: 115,
+      });
+
+      const stats = getCycleStats(db);
+      expect(stats.totalCycles).toBe(3);
+      expect(stats.successRate).toBe(67);
+      expect(stats.avgImprovements).toBe(1.7); // (2+0+3)/3 = 1.666... rounds to 1.7
+      expect(stats.recentFailures).toBe(1);
+    });
+
+    it("computes test count trend from oldest to newest", () => {
+      insertCycle(db, {
+        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 1,
+        improvementsSucceeded: 1, buildVerificationPassed: true,
+        pushSucceeded: true, testCountBefore: 100, testCountAfter: 110,
+      });
+      insertCycle(db, {
+        cycleNumber: 2, preflightPassed: true, improvementsAttempted: 1,
+        improvementsSucceeded: 1, buildVerificationPassed: true,
+        pushSucceeded: true, testCountBefore: 110, testCountAfter: 130,
+      });
+
+      const stats = getCycleStats(db);
+      // newest after (130) - oldest before (100) = 30
+      expect(stats.testCountTrend).toBe(30);
+    });
+
+    it("respects limit parameter", () => {
+      for (let i = 1; i <= 10; i++) {
+        insertCycle(db, {
+          cycleNumber: i, preflightPassed: true, improvementsAttempted: 1,
+          improvementsSucceeded: 1, buildVerificationPassed: true,
+          pushSucceeded: true, testCountBefore: null, testCountAfter: null,
+        });
+      }
+
+      const stats = getCycleStats(db, 3);
+      expect(stats.totalCycles).toBe(3);
+    });
+  });
+
+  describe("formatCycleStats", () => {
+    it("returns message when no data", () => {
+      const result = formatCycleStats({
+        totalCycles: 0, successRate: 0, avgImprovements: 0,
+        testCountTrend: null, recentFailures: 0,
+      });
+      expect(result).toBe("No previous cycle data available.");
+    });
+
+    it("includes all metrics when data exists", () => {
+      const result = formatCycleStats({
+        totalCycles: 10, successRate: 80, avgImprovements: 1.5,
+        testCountTrend: 42, recentFailures: 1,
+      });
+      expect(result).toContain("10");
+      expect(result).toContain("80%");
+      expect(result).toContain("1.5");
+      expect(result).toContain("+42");
+      expect(result).toContain("1");
     });
   });
 });

@@ -5,6 +5,7 @@ export interface AssessmentContext {
   journalSummary: string;
   issues: CommunityIssue[];
   cycleCount: number;
+  cycleStatsText?: string;
 }
 
 export function buildAssessmentPrompt(ctx: AssessmentContext): string {
@@ -30,7 +31,7 @@ ${ctx.identity}
 
 Recent journal entries:
 ${ctx.journalSummary}
-
+${ctx.cycleStatsText ? `\nYour track record:\n${ctx.cycleStatsText}\n` : ""}
 Read all files in src/ and tests/, then provide a structured assessment:
 - What are the top 1-3 improvements to make this cycle?
 - For each: what to change, why, and expected difficulty.`;

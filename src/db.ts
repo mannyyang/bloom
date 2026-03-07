@@ -223,6 +223,82 @@ export function exportJournalJson(db: Database.Database): JournalExportEntry[] {
   return entries.sort((a, b) => b.cycleNumber - a.cycleNumber);
 }
 
+export interface CycleStats {
+  totalCycles: number;
+  successRate: number;
+  avgImprovements: number;
+  testCountTrend: number | null;
+  recentFailures: number;
+}
+
+/**
+ * Compute aggregate success metrics over the last N cycles.
+ * Answers the question: "How are you measuring success?" (community issue #3).
+ */
+export function getCycleStats(db: Database.Database, limit: number = 20): CycleStats {
+  const rows = db.prepare(`
+    SELECT
+      preflight_passed, improvements_attempted, improvements_succeeded,
+      build_verification_passed, push_succeeded,
+      test_count_before, test_count_after
+    FROM cycles ORDER BY cycle_number DESC LIMIT ?
+  `).all(limit) as {
+    preflight_passed: number;
+    improvements_attempted: number;
+    improvements_succeeded: number;
+    build_verification_passed: number;
+    push_succeeded: number;
+    test_count_before: number | null;
+    test_count_after: number | null;
+  }[];
+
+  if (rows.length === 0) {
+    return { totalCycles: 0, successRate: 0, avgImprovements: 0, testCountTrend: null, recentFailures: 0 };
+  }
+
+  const totalCycles = rows.length;
+  const successfulCycles = rows.filter(r => r.build_verification_passed === 1 && r.push_succeeded === 1).length;
+  const successRate = Math.round((successfulCycles / totalCycles) * 100);
+
+  const totalImprovements = rows.reduce((sum, r) => sum + r.improvements_succeeded, 0);
+  const avgImprovements = Math.round((totalImprovements / totalCycles) * 10) / 10;
+
+  // Test count trend: difference between newest and oldest cycle that have both counts
+  const withCounts = rows.filter(r => r.test_count_before !== null && r.test_count_after !== null);
+  let testCountTrend: number | null = null;
+  if (withCounts.length >= 2) {
+    const newest = withCounts[0];
+    const oldest = withCounts[withCounts.length - 1];
+    testCountTrend = (newest.test_count_after ?? 0) - (oldest.test_count_before ?? 0);
+  } else if (withCounts.length === 1) {
+    testCountTrend = (withCounts[0].test_count_after ?? 0) - (withCounts[0].test_count_before ?? 0);
+  }
+
+  // Count recent failures (last 5 cycles)
+  const recent = rows.slice(0, 5);
+  const recentFailures = recent.filter(r => r.build_verification_passed !== 1 || r.push_succeeded !== 1).length;
+
+  return { totalCycles, successRate, avgImprovements, testCountTrend, recentFailures };
+}
+
+/**
+ * Format cycle stats as a human-readable string for inclusion in prompts.
+ */
+export function formatCycleStats(stats: CycleStats): string {
+  if (stats.totalCycles === 0) return "No previous cycle data available.";
+  const lines = [
+    `- **Cycles tracked**: ${stats.totalCycles}`,
+    `- **Success rate**: ${stats.successRate}% (build passed + pushed)`,
+    `- **Avg improvements/cycle**: ${stats.avgImprovements}`,
+  ];
+  if (stats.testCountTrend !== null) {
+    const sign = stats.testCountTrend >= 0 ? "+" : "";
+    lines.push(`- **Test count trend**: ${sign}${stats.testCountTrend}`);
+  }
+  lines.push(`- **Recent failures** (last 5): ${stats.recentFailures}`);
+  return lines.join("\n");
+}
+
 export function getRecentJournalSummary(db: Database.Database, maxChars: number = 4000): string {
   const entries = exportJournalJson(db).slice(0, 10);
   const lines: string[] = [];
