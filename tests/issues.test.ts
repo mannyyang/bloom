@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { execFileSync } from "child_process";
-import { fetchCommunityIssues, acknowledgeIssues, closeResolvedIssue, isValidRepo, isSafeIssueNumber, detectRepo } from "../src/issues.js";
+import { fetchCommunityIssues, acknowledgeIssues, closeResolvedIssue, hasCommitForIssue, isValidRepo, isSafeIssueNumber, detectRepo } from "../src/issues.js";
 import { githubApiRequest } from "../src/github-app.js";
 
 vi.mock("../src/github-app.js", () => ({
@@ -442,6 +442,31 @@ describe("isSafeIssueNumber", () => {
 
   it("rejects floats", () => {
     expect(isSafeIssueNumber(1.5)).toBe(false);
+  });
+});
+
+describe("hasCommitForIssue", () => {
+  afterEach(() => {
+    mockExecFileSync.mockReset();
+  });
+
+  it("returns true when git log finds matching commits", () => {
+    mockExecFileSync.mockReturnValueOnce("abc1234 feat: fix issue #3\n");
+    expect(hasCommitForIssue(3)).toBe(true);
+    expect(mockExecFileSync).toHaveBeenCalledWith(
+      "git", ["log", "--oneline", "--all", "--grep=#3\\b", "--extended-regexp"],
+      { encoding: "utf-8", timeout: 10_000 },
+    );
+  });
+
+  it("returns false when git log finds no matching commits", () => {
+    mockExecFileSync.mockReturnValueOnce("");
+    expect(hasCommitForIssue(99)).toBe(false);
+  });
+
+  it("returns false when git log throws", () => {
+    mockExecFileSync.mockImplementationOnce(() => { throw new Error("not a git repo"); });
+    expect(hasCommitForIssue(3)).toBe(false);
   });
 });
 

@@ -1,8 +1,8 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { readFileSync } from "fs";
 import { initDb, getLatestCycleNumber, insertCycle, insertJournalEntry, insertPhaseUsage, getRecentJournalSummary } from "./db.js";
-import { fetchCommunityIssues, acknowledgeIssues } from "./issues.js";
-import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements } from "./evolve.js";
+import { fetchCommunityIssues, acknowledgeIssues, closeResolvedIssue, hasCommitForIssue } from "./issues.js";
+import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements, extractResolvedIssueNumbers } from "./evolve.js";
 import {
   protectIdentity,
   protectJournal,
@@ -142,8 +142,18 @@ async function main() {
   outcome.improvementsAttempted = countImprovements(journalSections.attempted);
   outcome.improvementsSucceeded = countImprovements(journalSections.succeeded);
 
-  // Note: resolved issues are now closed dynamically by the evolution agent
-  // using closeResolvedIssue() with db-backed idempotency (no more hardcoded list).
+  // Close issues mentioned in the succeeded section that have associated commits
+  const openIssueNumbers = issues.map(i => i.number);
+  const resolvedNumbers = extractResolvedIssueNumbers(journalSections.succeeded, openIssueNumbers);
+  for (const issueNum of resolvedNumbers) {
+    if (hasCommitForIssue(issueNum)) {
+      const issue = issues.find(i => i.number === issueNum);
+      await closeResolvedIssue(issueNum, cycleCount, `Addressed: ${issue?.title ?? `issue #${issueNum}`}`, db);
+      console.log(`Closed resolved issue #${issueNum}`);
+    } else {
+      console.log(`Skipping issue #${issueNum} — no commits found referencing it`);
+    }
+  }
 
   // Phase 2.5: Post-evolution build verification
   console.log("\n--- Build Verification ---");

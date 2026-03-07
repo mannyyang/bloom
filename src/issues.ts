@@ -132,6 +132,22 @@ export async function acknowledgeIssues(
 }
 
 /**
+ * Check whether any commit in the repo references the given issue number.
+ * Searches git log for patterns like #N, issue #N, etc.
+ */
+export function hasCommitForIssue(issueNumber: number): boolean {
+  try {
+    const output = execFileSync(
+      "git", ["log", "--oneline", "--all", `--grep=#${issueNumber}\\b`, "--extended-regexp"],
+      { encoding: "utf-8", timeout: 10_000 },
+    ).trim();
+    return output.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Close a resolved issue with a comment explaining the resolution.
  * Best-effort — failures are swallowed to never block evolution.
  */
