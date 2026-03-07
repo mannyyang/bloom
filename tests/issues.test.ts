@@ -454,12 +454,21 @@ describe("hasCommitForIssue", () => {
     mockExecFileSync.mockReturnValueOnce("abc1234 feat: fix issue #3\n");
     expect(hasCommitForIssue(3)).toBe(true);
     expect(mockExecFileSync).toHaveBeenCalledWith(
-      "git", ["log", "--oneline", "--all", "--grep=#3\\b", "--extended-regexp"],
+      "git", ["log", "--oneline", "--all", "--grep=#3[^0-9]", "--extended-regexp"],
       { encoding: "utf-8", timeout: 10_000 },
     );
   });
 
+  it("returns true when issue number is at end of line", () => {
+    // First grep (non-digit after) returns nothing
+    mockExecFileSync.mockReturnValueOnce("");
+    // Second grep (end of line) finds a match
+    mockExecFileSync.mockReturnValueOnce("abc1234 addresses #3\n");
+    expect(hasCommitForIssue(3)).toBe(true);
+  });
+
   it("returns false when git log finds no matching commits", () => {
+    mockExecFileSync.mockReturnValueOnce("");
     mockExecFileSync.mockReturnValueOnce("");
     expect(hasCommitForIssue(99)).toBe(false);
   });

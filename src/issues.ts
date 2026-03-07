@@ -138,10 +138,16 @@ export async function acknowledgeIssues(
 export function hasCommitForIssue(issueNumber: number): boolean {
   try {
     const output = execFileSync(
-      "git", ["log", "--oneline", "--all", `--grep=#${issueNumber}\\b`, "--extended-regexp"],
+      "git", ["log", "--oneline", "--all", `--grep=#${issueNumber}[^0-9]`, "--extended-regexp"],
       { encoding: "utf-8", timeout: 10_000 },
     ).trim();
-    return output.length > 0;
+    if (output.length > 0) return true;
+    // Also match #N at end of line
+    const output2 = execFileSync(
+      "git", ["log", "--oneline", "--all", `--grep=#${issueNumber}$`, "--extended-regexp"],
+      { encoding: "utf-8", timeout: 10_000 },
+    ).trim();
+    return output2.length > 0;
   } catch {
     return false;
   }
