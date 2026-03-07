@@ -184,6 +184,44 @@ describe("db", () => {
       expect(summary).toContain("Did something");
       expect(summary).toContain("It worked");
     });
+
+    it("truncates output when exceeding maxChars budget", () => {
+      // Insert 3 cycles with journal entries
+      for (let i = 1; i <= 3; i++) {
+        insertCycle(db, makeOutcome({ cycleNumber: i }));
+        insertJournalEntry(db, i, "attempted", `Cycle ${i} attempt content`);
+        insertJournalEntry(db, i, "succeeded", `Cycle ${i} success content`);
+        insertJournalEntry(db, i, "failed", "");
+        insertJournalEntry(db, i, "learnings", `Cycle ${i} learnings`);
+      }
+
+      // With a large budget, all 3 cycles should appear
+      const fullSummary = getRecentJournalSummary(db, 100000);
+      expect(fullSummary).toContain("Cycle 3");
+      expect(fullSummary).toContain("Cycle 2");
+      expect(fullSummary).toContain("Cycle 1");
+
+      // Get the length of a single cycle's section to pick a tight budget
+      const singleCycleSummary = getRecentJournalSummary(db, 1);
+      // With maxChars=1, only the first entry should appear (always allowed even if over budget)
+      expect(singleCycleSummary).toContain("Cycle 3"); // newest first
+      expect(singleCycleSummary).not.toContain("Cycle 2");
+      expect(singleCycleSummary).not.toContain("Cycle 1");
+    });
+
+    it("always includes at least one cycle even if it exceeds maxChars", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertJournalEntry(db, 1, "attempted", "A".repeat(500));
+      insertJournalEntry(db, 1, "succeeded", "");
+      insertJournalEntry(db, 1, "failed", "");
+      insertJournalEntry(db, 1, "learnings", "");
+
+      // Even with maxChars=10, the first cycle is always included
+      const summary = getRecentJournalSummary(db, 10);
+      expect(summary).toContain("Cycle 1");
+      expect(summary).toContain("A".repeat(500));
+      expect(summary.length).toBeGreaterThan(10);
+    });
   });
 
   describe("insertPhaseUsage", () => {
