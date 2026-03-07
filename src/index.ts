@@ -5,6 +5,7 @@ import { fetchCommunityIssues, acknowledgeIssues } from "./issues.js";
 import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements } from "./evolve.js";
 import {
   protectIdentity,
+  protectJournal,
   blockDangerousCommands,
 } from "./safety.js";
 import {
@@ -106,7 +107,7 @@ async function main() {
       maxBudgetUsd: 5.0,
       hooks: {
         PreToolUse: [
-          { matcher: "Write|Edit", hooks: [protectIdentity] },
+          { matcher: "Write|Edit", hooks: [protectIdentity, protectJournal] },
           { matcher: "Bash", hooks: [blockDangerousCommands] },
         ],
       },

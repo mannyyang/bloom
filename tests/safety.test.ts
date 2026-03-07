@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import type { HookInput } from "@anthropic-ai/claude-agent-sdk";
 import {
   protectIdentity,
+  protectJournal,
   blockDangerousCommands,
   isDangerousRm,
   isDangerousCommand,
@@ -98,6 +99,33 @@ describe("parseHookInput edge cases (malformed inputs)", () => {
   it("handles tool_input with file_path as null without throwing", async () => {
     const input = { ...baseFields, tool_name: "Write", tool_input: { file_path: null } } as unknown as HookInput;
     expectAllowed(await protectIdentity(input, "tool-1", hookOpts));
+  });
+});
+
+describe("protectJournal", () => {
+  it("denies Write to JOURNAL.md", async () => {
+    const result = await protectJournal(makeInput("Write", "JOURNAL.md"), "tool-1", hookOpts);
+    expectDenied(result);
+  });
+
+  it("denies Edit to JOURNAL.md", async () => {
+    const result = await protectJournal(makeInput("Edit", "/path/to/JOURNAL.md"), "tool-1", hookOpts);
+    expectDenied(result);
+  });
+
+  it("allows Write to other files", async () => {
+    expectAllowed(await protectJournal(makeInput("Write", "src/index.ts"), "tool-1", hookOpts));
+  });
+
+  it("allows when file_path is missing", async () => {
+    const input: HookInput = { ...baseFields, tool_name: "Write", tool_input: {} };
+    expectAllowed(await protectJournal(input, "tool-1", hookOpts));
+  });
+
+  it("denial reason mentions append-only", async () => {
+    const result = await protectJournal(makeInput("Write", "JOURNAL.md"), "tool-1", hookOpts);
+    const reason = (result as { hookSpecificOutput: { permissionDecisionReason: string } }).hookSpecificOutput.permissionDecisionReason;
+    expect(reason).toContain("append-only");
   });
 });
 
@@ -881,6 +909,73 @@ describe("blockDangerousCommands", () => {
     const result = await blockDangerousCommands(makeBashInput("rm IDENTITY.md"), "tool-1", hookOpts);
     const reason = (result as { hookSpecificOutput: { permissionDecisionReason: string } }).hookSpecificOutput.permissionDecisionReason;
     expect(reason).toContain("immutable constitution");
+  });
+
+  // Bash-based JOURNAL.md modification protection (append-only)
+  it("blocks overwrite redirect to JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput('echo "pwned" > JOURNAL.md'), "tool-1", hookOpts));
+  });
+
+  it("allows append redirect to JOURNAL.md", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput('echo "entry" >> JOURNAL.md'), "tool-1", hookOpts));
+  });
+
+  it("blocks rm JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("rm JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks rm -f JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("rm -f JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks unlink JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("unlink JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks cp to JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("cp other.md JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks mv to JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("mv other.md JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks sed -i on JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("sed -i 's/foo/bar/' JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks truncate on JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("truncate -s 0 JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks tee (overwrite) to JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("echo x | tee JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("allows tee -a (append) to JOURNAL.md", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("echo x | tee -a JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks git checkout -- JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("git checkout -- JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("blocks git restore JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("git restore JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("allows cat JOURNAL.md (read-only)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("cat JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("allows grep on JOURNAL.md (read-only)", async () => {
+    expectAllowed(await blockDangerousCommands(makeBashInput("grep something JOURNAL.md"), "tool-1", hookOpts));
+  });
+
+  it("denial reason mentions append-only for JOURNAL.md bash modification", async () => {
+    const result = await blockDangerousCommands(makeBashInput("rm JOURNAL.md"), "tool-1", hookOpts);
+    const reason = (result as { hookSpecificOutput: { permissionDecisionReason: string } }).hookSpecificOutput.permissionDecisionReason;
+    expect(reason).toContain("append-only");
   });
 });
 
