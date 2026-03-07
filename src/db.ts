@@ -78,6 +78,33 @@ export function insertCycle(db: Database.Database, outcome: CycleOutcome): void 
   );
 }
 
+/**
+ * Update an existing cycle row with final outcome metrics.
+ * Preserves the original `started_at` timestamp.
+ */
+export function updateCycleOutcome(db: Database.Database, outcome: CycleOutcome): void {
+  db.prepare(`
+    UPDATE cycles SET
+      preflight_passed = ?,
+      improvements_attempted = ?,
+      improvements_succeeded = ?,
+      build_verification_passed = ?,
+      push_succeeded = ?,
+      test_count_before = ?,
+      test_count_after = ?
+    WHERE cycle_number = ?
+  `).run(
+    outcome.preflightPassed ? 1 : 0,
+    outcome.improvementsAttempted,
+    outcome.improvementsSucceeded,
+    outcome.buildVerificationPassed ? 1 : 0,
+    outcome.pushSucceeded ? 1 : 0,
+    outcome.testCountBefore,
+    outcome.testCountAfter,
+    outcome.cycleNumber,
+  );
+}
+
 export function insertJournalEntry(
   db: Database.Database,
   cycleNumber: number,

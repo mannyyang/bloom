@@ -3,6 +3,7 @@ import {
   initDb,
   getLatestCycleNumber,
   insertCycle,
+  updateCycleOutcome,
   insertJournalEntry,
   insertPhaseUsage,
   insertIssueAction,
@@ -69,6 +70,45 @@ describe("db", () => {
       expect(entries).toHaveLength(4);
       expect(entries[0].section).toBe("attempted");
       expect(entries[0].content).toBe("Tried two things");
+    });
+  });
+
+  describe("updateCycleOutcome", () => {
+    it("updates metrics without overwriting started_at", () => {
+      insertCycle(db, {
+        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 0,
+        improvementsSucceeded: 0, buildVerificationPassed: false,
+        pushSucceeded: false, testCountBefore: 100, testCountAfter: null,
+      });
+
+      // Record the original started_at
+      const before = db.prepare("SELECT started_at FROM cycles WHERE cycle_number = 1").get() as { started_at: string };
+
+      // Update with final outcome
+      updateCycleOutcome(db, {
+        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 3,
+        improvementsSucceeded: 2, buildVerificationPassed: true,
+        pushSucceeded: true, testCountBefore: 100, testCountAfter: 110,
+      });
+
+      const after = db.prepare("SELECT * FROM cycles WHERE cycle_number = 1").get() as Record<string, unknown>;
+      expect(after.started_at).toBe(before.started_at);
+      expect(after.improvements_attempted).toBe(3);
+      expect(after.improvements_succeeded).toBe(2);
+      expect(after.build_verification_passed).toBe(1);
+      expect(after.push_succeeded).toBe(1);
+      expect(after.test_count_after).toBe(110);
+    });
+
+    it("does nothing for non-existent cycle", () => {
+      updateCycleOutcome(db, {
+        cycleNumber: 999, preflightPassed: true, improvementsAttempted: 1,
+        improvementsSucceeded: 1, buildVerificationPassed: true,
+        pushSucceeded: true, testCountBefore: null, testCountAfter: null,
+      });
+
+      const row = db.prepare("SELECT * FROM cycles WHERE cycle_number = 999").get();
+      expect(row).toBeUndefined();
     });
   });
 

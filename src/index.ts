@@ -1,6 +1,6 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { readFileSync } from "fs";
-import { initDb, getLatestCycleNumber, insertCycle, insertJournalEntry, insertPhaseUsage, getRecentJournalSummary } from "./db.js";
+import { initDb, getLatestCycleNumber, insertCycle, updateCycleOutcome, insertJournalEntry, insertPhaseUsage, getRecentJournalSummary } from "./db.js";
 import { fetchCommunityIssues, acknowledgeIssues, closeResolvedIssue, hasCommitForIssue } from "./issues.js";
 import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements, extractResolvedIssueNumbers } from "./evolve.js";
 import {
@@ -181,8 +181,8 @@ async function main() {
     console.error("Push failed. Changes remain local.");
   }
 
-  // Update cycle row with final outcome
-  insertCycle(db, outcome);
+  // Update cycle row with final outcome (preserves started_at)
+  updateCycleOutcome(db, outcome);
   db.close();
 
   // Commit updated DB and push
