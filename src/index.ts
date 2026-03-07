@@ -1,7 +1,7 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { readFileSync } from "fs";
 import { initDb, getLatestCycleNumber, insertCycle, insertJournalEntry, insertPhaseUsage, getRecentJournalSummary } from "./db.js";
-import { fetchCommunityIssues, acknowledgeIssues, closeResolvedIssue, ResolvedIssue } from "./issues.js";
+import { fetchCommunityIssues, acknowledgeIssues } from "./issues.js";
 import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements } from "./evolve.js";
 import {
   protectIdentity,
@@ -86,7 +86,7 @@ async function main() {
   console.log("\nAssessment complete.");
 
   // Acknowledge all community issues so contributors see their input was seen.
-  await acknowledgeIssues(issues, cycleCount);
+  await acknowledgeIssues(issues, cycleCount, db);
 
   // Phase 2: Evolution (read-write with safety hooks)
   console.log("\n--- Phase 2: Evolution ---");
@@ -141,13 +141,8 @@ async function main() {
   outcome.improvementsAttempted = countImprovements(journalSections.attempted);
   outcome.improvementsSucceeded = countImprovements(journalSections.succeeded);
 
-  // Close issues that have been resolved (community issue #5)
-  const resolvedIssues: ResolvedIssue[] = [
-    { issueNumber: 5, reason: "closeResolvedIssue is now wired into the main orchestrator flow." },
-  ];
-  for (const resolved of resolvedIssues) {
-    await closeResolvedIssue(resolved.issueNumber, cycleCount, resolved.reason);
-  }
+  // Note: resolved issues are now closed dynamically by the evolution agent
+  // using closeResolvedIssue() with db-backed idempotency (no more hardcoded list).
 
   // Phase 2.5: Post-evolution build verification
   console.log("\n--- Build Verification ---");

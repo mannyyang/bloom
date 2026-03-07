@@ -1,5 +1,7 @@
 import { execFileSync } from "child_process";
+import type Database from "better-sqlite3";
 import { githubApiRequest } from "./github-app.js";
+import { insertIssueAction, hasIssueAction } from "./db.js";
 
 export interface ResolvedIssue {
   issueNumber: number;
@@ -93,6 +95,7 @@ async function hasBloomComment(
 export async function acknowledgeIssues(
   issues: CommunityIssue[],
   cycleCount: number,
+  db?: Database.Database,
 ): Promise<void> {
   if (issues.length === 0) return;
   const repo = detectRepo();
@@ -102,7 +105,14 @@ export async function acknowledgeIssues(
     try {
       if (!isSafeIssueNumber(issue.number)) continue;
 
-      if (await hasBloomComment(issue.number, repo)) continue;
+      // Skip if already acknowledged locally
+      if (db && hasIssueAction(db, issue.number, "acknowledged")) continue;
+
+      if (await hasBloomComment(issue.number, repo)) {
+        // Record locally even if we found it via API, to avoid future API calls
+        if (db) insertIssueAction(db, cycleCount, issue.number, "acknowledged");
+        continue;
+      }
 
       await githubApiRequest("POST", `/repos/${repo}/issues/${issue.number}/comments`, {
         body: `Seen by Bloom in cycle ${cycleCount}. Thank you for your input!`,
@@ -112,6 +122,9 @@ export async function acknowledgeIssues(
       await githubApiRequest("POST", `/repos/${repo}/issues/${issue.number}/labels`, {
         labels: ["bloom-reviewed"],
       }).catch(() => {});
+
+      // Record the acknowledgement
+      if (db) insertIssueAction(db, cycleCount, issue.number, "acknowledged");
     } catch {
       // Best-effort: don't let a failed comment block evolution.
     }
@@ -126,10 +139,14 @@ export async function closeResolvedIssue(
   issueNumber: number,
   cycleCount: number,
   reason: string,
+  db?: Database.Database,
 ): Promise<boolean> {
   const repo = detectRepo();
   if (!repo || !isValidRepo(repo)) return false;
   if (!isSafeIssueNumber(issueNumber)) return false;
+
+  // Skip if already closed locally
+  if (db && hasIssueAction(db, issueNumber, "closed")) return true;
 
   try {
     // Post closing comment
@@ -141,6 +158,9 @@ export async function closeResolvedIssue(
     await githubApiRequest("PATCH", `/repos/${repo}/issues/${issueNumber}`, {
       state: "closed",
     });
+
+    // Record the close action
+    if (db) insertIssueAction(db, cycleCount, issueNumber, "closed");
 
     return true;
   } catch {

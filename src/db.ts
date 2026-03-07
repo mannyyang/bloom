@@ -123,6 +123,21 @@ export function insertIssueAction(
   ).run(cycleNumber, issueNumber, action);
 }
 
+/**
+ * Check whether a specific action has already been recorded for an issue.
+ * Useful for making acknowledge/close operations idempotent across cycles.
+ */
+export function hasIssueAction(
+  db: Database.Database,
+  issueNumber: number,
+  action: string,
+): boolean {
+  const row = db.prepare(
+    "SELECT 1 FROM issue_actions WHERE issue_number = ? AND action = ? LIMIT 1",
+  ).get(issueNumber, action);
+  return row !== undefined;
+}
+
 export interface JournalRow {
   cycleNumber: number;
   startedAt: string;

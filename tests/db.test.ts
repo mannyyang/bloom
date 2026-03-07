@@ -6,6 +6,7 @@ import {
   insertJournalEntry,
   insertPhaseUsage,
   insertIssueAction,
+  hasIssueAction,
   getJournalEntries,
   exportJournalJson,
   getRecentJournalSummary,
@@ -138,7 +139,7 @@ describe("db", () => {
     });
   });
 
-  describe("insertIssueAction", () => {
+  describe("insertIssueAction + hasIssueAction", () => {
     it("inserts issue action", () => {
       insertCycle(db, {
         cycleNumber: 1, preflightPassed: true, improvementsAttempted: 0,
@@ -149,6 +150,42 @@ describe("db", () => {
 
       const rows = db.prepare("SELECT * FROM issue_actions WHERE cycle_number = 1").all();
       expect(rows).toHaveLength(1);
+    });
+
+    it("returns false when no action exists", () => {
+      expect(hasIssueAction(db, 42, "acknowledged")).toBe(false);
+    });
+
+    it("returns true when action exists", () => {
+      insertCycle(db, {
+        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 0,
+        improvementsSucceeded: 0, buildVerificationPassed: false,
+        pushSucceeded: false, testCountBefore: null, testCountAfter: null,
+      });
+      insertIssueAction(db, 1, 42, "acknowledged");
+      expect(hasIssueAction(db, 42, "acknowledged")).toBe(true);
+    });
+
+    it("distinguishes between different actions", () => {
+      insertCycle(db, {
+        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 0,
+        improvementsSucceeded: 0, buildVerificationPassed: false,
+        pushSucceeded: false, testCountBefore: null, testCountAfter: null,
+      });
+      insertIssueAction(db, 1, 42, "acknowledged");
+      expect(hasIssueAction(db, 42, "acknowledged")).toBe(true);
+      expect(hasIssueAction(db, 42, "closed")).toBe(false);
+    });
+
+    it("distinguishes between different issue numbers", () => {
+      insertCycle(db, {
+        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 0,
+        improvementsSucceeded: 0, buildVerificationPassed: false,
+        pushSucceeded: false, testCountBefore: null, testCountAfter: null,
+      });
+      insertIssueAction(db, 1, 42, "closed");
+      expect(hasIssueAction(db, 42, "closed")).toBe(true);
+      expect(hasIssueAction(db, 99, "closed")).toBe(false);
     });
   });
 });
