@@ -188,15 +188,15 @@ async function main() {
     db.close();
   }
 
-  // Commit updated DB and push
+  // Commit updated DB and always push (the DB commit happens after the code push,
+  // so it always needs its own push regardless of whether code push succeeded)
   commitDb(cycleCount);
-  if (!outcome.pushSucceeded) {
-    // Try push again with updated DB
-    if (pushChanges()) {
-      console.log("DB changes pushed successfully.");
-      pushTags();
-    }
+  if (pushChanges()) {
+    console.log("DB changes pushed successfully.");
+  } else {
+    console.error("DB push failed. Journal data remains local.");
   }
+  pushTags();
 
   console.log("\n--- Outcome ---");
   console.log(formatOutcomeForJournal(outcome));
