@@ -143,6 +143,20 @@ LEARNINGS: Learned a lot`;
     expect(result.succeeded).toContain("Bold success");
   });
 
+  it("parses bold markers with colon inside like **ATTEMPTED:**", () => {
+    const input = `**ATTEMPTED:** Three improvements
+1. First thing
+**SUCCEEDED:** All worked
+**FAILED:** Nothing
+**LEARNINGS:** Key insight`;
+    const result = parseEvolutionResult(input);
+    expect(result.attempted).toContain("Three improvements");
+    expect(result.attempted).toContain("1. First thing");
+    expect(result.succeeded).toContain("All worked");
+    expect(result.failed).toContain("Nothing");
+    expect(result.learnings).toContain("Key insight");
+  });
+
   it("returns empty strings for missing sections", () => {
     const result = parseEvolutionResult("Just some random text");
     expect(result.attempted).toBe("");

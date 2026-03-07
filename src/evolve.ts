@@ -71,13 +71,14 @@ export function parseEvolutionResult(result: string): Record<string, string> {
       const patterns = [
         `${marker}:`,           // ATTEMPTED:
         `**${marker}**:`,       // **ATTEMPTED**:
+        `**${marker}:**`,       // **ATTEMPTED:**
         `## ${marker}`,         // ## ATTEMPTED
         `## **${marker}**`,     // ## **ATTEMPTED**
         `- ${marker}:`,         // - ATTEMPTED:
       ];
       if (patterns.some(p => trimmed.startsWith(p))) {
         currentSection = key;
-        const rest = trimmed.replace(/^(?:##\s+|-\s+)?\*?\*?[A-Z]+\*?\*?:?\s*/, "");
+        const rest = trimmed.replace(/^(?:##\s+|-\s+)?\*{0,2}[A-Z]+:?\*{0,2}:?\s*/, "");
         if (rest) sections[currentSection] += rest + "\n";
         matched = true;
         break;
