@@ -135,6 +135,10 @@ async function main() {
     }
   }
 
+  // Populate improvement counts from parsed sections
+  outcome.improvementsAttempted = countImprovements(journalSections.attempted);
+  outcome.improvementsSucceeded = countImprovements(journalSections.succeeded);
+
   // Phase 2.5: Post-evolution build verification
   console.log("\n--- Build Verification ---");
   try {
