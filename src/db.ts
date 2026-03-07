@@ -54,12 +54,6 @@ export function initDb(path: string = DEFAULT_DB_PATH): Database.Database {
       ON issue_actions(issue_number, action);
   `);
 
-  // Migration: add completed_at column for existing databases
-  const cols = db.prepare("PRAGMA table_info(cycles)").all() as { name: string }[];
-  if (!cols.some(c => c.name === "completed_at")) {
-    db.exec("ALTER TABLE cycles ADD COLUMN completed_at TEXT");
-  }
-
   return db;
 }
 
