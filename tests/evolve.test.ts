@@ -37,6 +37,28 @@ describe("buildAssessmentPrompt", () => {
     expect(prompt).toContain("No community issues");
   });
 
+  it("includes cycleStatsText in prompt when provided", () => {
+    const prompt = buildAssessmentPrompt({
+      identity: "test",
+      journalSummary: "",
+      issues: [],
+      cycleCount: 10,
+      cycleStatsText: "Total cycles: 9 | Success rate: 78%",
+    });
+    expect(prompt).toContain("track record");
+    expect(prompt).toContain("Total cycles: 9 | Success rate: 78%");
+  });
+
+  it("omits track record section when cycleStatsText is absent", () => {
+    const prompt = buildAssessmentPrompt({
+      identity: "test",
+      journalSummary: "",
+      issues: [],
+      cycleCount: 10,
+    });
+    expect(prompt).not.toContain("track record");
+  });
+
   it("includes journal summary in prompt", () => {
     const prompt = buildAssessmentPrompt({
       identity: "test",
