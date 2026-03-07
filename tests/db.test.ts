@@ -102,6 +102,25 @@ describe("db", () => {
       expect(after.test_count_after).toBe(110);
     });
 
+    it("sets completed_at timestamp on update", () => {
+      insertCycle(db, {
+        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 0,
+        improvementsSucceeded: 0, buildVerificationPassed: false,
+        pushSucceeded: false, testCountBefore: null, testCountAfter: null,
+      });
+
+      updateCycleOutcome(db, {
+        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 1,
+        improvementsSucceeded: 1, buildVerificationPassed: true,
+        pushSucceeded: true, testCountBefore: 100, testCountAfter: 105,
+      });
+
+      const row = db.prepare("SELECT completed_at FROM cycles WHERE cycle_number = 1").get() as { completed_at: string | null };
+      expect(row.completed_at).toBeTruthy();
+      // Should be a valid ISO timestamp
+      expect(new Date(row.completed_at!).getTime()).toBeGreaterThan(0);
+    });
+
     it("does nothing for non-existent cycle", () => {
       updateCycleOutcome(db, {
         cycleNumber: 999, preflightPassed: true, improvementsAttempted: 1,
@@ -239,6 +258,7 @@ describe("db", () => {
       expect(stats.avgImprovements).toBe(0);
       expect(stats.testCountTrend).toBeNull();
       expect(stats.recentFailures).toBe(0);
+      expect(stats.avgDurationMinutes).toBeNull();
     });
 
     it("computes correct success rate", () => {
@@ -283,6 +303,34 @@ describe("db", () => {
       expect(stats.testCountTrend).toBe(30);
     });
 
+    it("computes avgDurationMinutes when completed_at is set", () => {
+      insertCycle(db, {
+        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 1,
+        improvementsSucceeded: 1, buildVerificationPassed: true,
+        pushSucceeded: true, testCountBefore: null, testCountAfter: null,
+      });
+      // Manually set started_at and completed_at for a known duration (10 minutes)
+      db.prepare("UPDATE cycles SET started_at = ?, completed_at = ? WHERE cycle_number = 1").run(
+        "2026-01-01T00:00:00.000Z",
+        "2026-01-01T00:10:00.000Z",
+      );
+
+      const stats = getCycleStats(db);
+      expect(stats.avgDurationMinutes).toBe(10);
+    });
+
+    it("returns null avgDurationMinutes when no completed_at exists", () => {
+      insertCycle(db, {
+        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 1,
+        improvementsSucceeded: 1, buildVerificationPassed: true,
+        pushSucceeded: true, testCountBefore: null, testCountAfter: null,
+      });
+      // No updateCycleOutcome called, so completed_at is null
+
+      const stats = getCycleStats(db);
+      expect(stats.avgDurationMinutes).toBeNull();
+    });
+
     it("respects limit parameter", () => {
       for (let i = 1; i <= 10; i++) {
         insertCycle(db, {
@@ -301,7 +349,7 @@ describe("db", () => {
     it("returns message when no data", () => {
       const result = formatCycleStats({
         totalCycles: 0, successRate: 0, avgImprovements: 0,
-        testCountTrend: null, recentFailures: 0,
+        testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
       });
       expect(result).toBe("No previous cycle data available.");
     });
@@ -309,13 +357,22 @@ describe("db", () => {
     it("includes all metrics when data exists", () => {
       const result = formatCycleStats({
         totalCycles: 10, successRate: 80, avgImprovements: 1.5,
-        testCountTrend: 42, recentFailures: 1,
+        testCountTrend: 42, recentFailures: 1, avgDurationMinutes: 8.5,
       });
       expect(result).toContain("10");
       expect(result).toContain("80%");
       expect(result).toContain("1.5");
       expect(result).toContain("+42");
+      expect(result).toContain("8.5 min");
       expect(result).toContain("1");
+    });
+
+    it("omits duration when null", () => {
+      const result = formatCycleStats({
+        totalCycles: 5, successRate: 100, avgImprovements: 2,
+        testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
+      });
+      expect(result).not.toContain("duration");
     });
   });
 });

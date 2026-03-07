@@ -19,7 +19,8 @@ export function initDb(path: string = DEFAULT_DB_PATH): Database.Database {
       build_verification_passed INTEGER NOT NULL DEFAULT 0,
       push_succeeded           INTEGER NOT NULL DEFAULT 0,
       test_count_before        INTEGER,
-      test_count_after         INTEGER
+      test_count_after         INTEGER,
+      completed_at             TEXT
     );
 
     CREATE TABLE IF NOT EXISTS journal_entries (
@@ -49,6 +50,12 @@ export function initDb(path: string = DEFAULT_DB_PATH): Database.Database {
       action       TEXT NOT NULL
     );
   `);
+
+  // Migration: add completed_at column for existing databases
+  const cols = db.prepare("PRAGMA table_info(cycles)").all() as { name: string }[];
+  if (!cols.some(c => c.name === "completed_at")) {
+    db.exec("ALTER TABLE cycles ADD COLUMN completed_at TEXT");
+  }
 
   return db;
 }
@@ -91,7 +98,8 @@ export function updateCycleOutcome(db: Database.Database, outcome: CycleOutcome)
       build_verification_passed = ?,
       push_succeeded = ?,
       test_count_before = ?,
-      test_count_after = ?
+      test_count_after = ?,
+      completed_at = ?
     WHERE cycle_number = ?
   `).run(
     outcome.preflightPassed ? 1 : 0,
@@ -101,6 +109,7 @@ export function updateCycleOutcome(db: Database.Database, outcome: CycleOutcome)
     outcome.pushSucceeded ? 1 : 0,
     outcome.testCountBefore,
     outcome.testCountAfter,
+    new Date().toISOString(),
     outcome.cycleNumber,
   );
 }
@@ -229,6 +238,7 @@ export interface CycleStats {
   avgImprovements: number;
   testCountTrend: number | null;
   recentFailures: number;
+  avgDurationMinutes: number | null;
 }
 
 /**
@@ -240,7 +250,8 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
     SELECT
       preflight_passed, improvements_attempted, improvements_succeeded,
       build_verification_passed, push_succeeded,
-      test_count_before, test_count_after
+      test_count_before, test_count_after,
+      started_at, completed_at
     FROM cycles ORDER BY cycle_number DESC LIMIT ?
   `).all(limit) as {
     preflight_passed: number;
@@ -250,10 +261,12 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
     push_succeeded: number;
     test_count_before: number | null;
     test_count_after: number | null;
+    started_at: string;
+    completed_at: string | null;
   }[];
 
   if (rows.length === 0) {
-    return { totalCycles: 0, successRate: 0, avgImprovements: 0, testCountTrend: null, recentFailures: 0 };
+    return { totalCycles: 0, successRate: 0, avgImprovements: 0, testCountTrend: null, recentFailures: 0, avgDurationMinutes: null };
   }
 
   const totalCycles = rows.length;
@@ -278,7 +291,17 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
   const recent = rows.slice(0, 5);
   const recentFailures = recent.filter(r => r.build_verification_passed !== 1 || r.push_succeeded !== 1).length;
 
-  return { totalCycles, successRate, avgImprovements, testCountTrend, recentFailures };
+  // Average cycle duration from started_at to completed_at
+  const withTimes = rows.filter(r => r.started_at && r.completed_at);
+  let avgDurationMinutes: number | null = null;
+  if (withTimes.length > 0) {
+    const totalMs = withTimes.reduce((sum, r) => {
+      return sum + (new Date(r.completed_at!).getTime() - new Date(r.started_at).getTime());
+    }, 0);
+    avgDurationMinutes = Math.round((totalMs / withTimes.length / 60000) * 10) / 10;
+  }
+
+  return { totalCycles, successRate, avgImprovements, testCountTrend, recentFailures, avgDurationMinutes };
 }
 
 /**
@@ -294,6 +317,9 @@ export function formatCycleStats(stats: CycleStats): string {
   if (stats.testCountTrend !== null) {
     const sign = stats.testCountTrend >= 0 ? "+" : "";
     lines.push(`- **Test count trend**: ${sign}${stats.testCountTrend}`);
+  }
+  if (stats.avgDurationMinutes !== null) {
+    lines.push(`- **Avg cycle duration**: ${stats.avgDurationMinutes} min`);
   }
   lines.push(`- **Recent failures** (last 5): ${stats.recentFailures}`);
   return lines.join("\n");
