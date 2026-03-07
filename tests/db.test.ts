@@ -238,6 +238,19 @@ describe("db", () => {
       expect(hasIssueAction(db, 42, "closed")).toBe(false);
     });
 
+    it("is idempotent — duplicate inserts are silently ignored", () => {
+      insertCycle(db, {
+        cycleNumber: 1, preflightPassed: true, improvementsAttempted: 0,
+        improvementsSucceeded: 0, buildVerificationPassed: false,
+        pushSucceeded: false, testCountBefore: null, testCountAfter: null,
+      });
+      insertIssueAction(db, 1, 42, "acknowledged");
+      insertIssueAction(db, 1, 42, "acknowledged"); // duplicate
+
+      const rows = db.prepare("SELECT * FROM issue_actions WHERE issue_number = 42 AND action = 'acknowledged'").all();
+      expect(rows).toHaveLength(1);
+    });
+
     it("distinguishes between different issue numbers", () => {
       insertCycle(db, {
         cycleNumber: 1, preflightPassed: true, improvementsAttempted: 0,

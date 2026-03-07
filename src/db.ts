@@ -49,6 +49,9 @@ export function initDb(path: string = DEFAULT_DB_PATH): Database.Database {
       issue_number INTEGER NOT NULL,
       action       TEXT NOT NULL
     );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_issue_actions_unique
+      ON issue_actions(issue_number, action);
   `);
 
   // Migration: add completed_at column for existing databases
@@ -155,7 +158,7 @@ export function insertIssueAction(
   action: string,
 ): void {
   db.prepare(
-    "INSERT INTO issue_actions (cycle_number, issue_number, action) VALUES (?, ?, ?)",
+    "INSERT OR IGNORE INTO issue_actions (cycle_number, issue_number, action) VALUES (?, ?, ?)",
   ).run(cycleNumber, issueNumber, action);
 }
 
