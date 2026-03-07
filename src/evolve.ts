@@ -64,12 +64,20 @@ export function parseEvolutionResult(result: string): Record<string, string> {
   let currentSection = "";
   for (const line of result.split("\n")) {
     const trimmed = line.trim();
-    // Check for section headers like "ATTEMPTED:" or "**ATTEMPTED**:"
+    // Check for section headers in various formats:
+    // "ATTEMPTED:", "**ATTEMPTED**:", "## ATTEMPTED", "## **ATTEMPTED**", "- ATTEMPTED:"
     let matched = false;
     for (const [marker, key] of Object.entries(sectionMap)) {
-      if (trimmed.startsWith(`${marker}:`) || trimmed.startsWith(`**${marker}**:`)) {
+      const patterns = [
+        `${marker}:`,           // ATTEMPTED:
+        `**${marker}**:`,       // **ATTEMPTED**:
+        `## ${marker}`,         // ## ATTEMPTED
+        `## **${marker}**`,     // ## **ATTEMPTED**
+        `- ${marker}:`,         // - ATTEMPTED:
+      ];
+      if (patterns.some(p => trimmed.startsWith(p))) {
         currentSection = key;
-        const rest = trimmed.replace(/^\*?\*?[A-Z]+\*?\*?:\s*/, "");
+        const rest = trimmed.replace(/^(?:##\s+|-\s+)?\*?\*?[A-Z]+\*?\*?:?\s*/, "");
         if (rest) sections[currentSection] += rest + "\n";
         matched = true;
         break;

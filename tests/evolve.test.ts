@@ -167,6 +167,34 @@ ATTEMPTED: The actual content`;
     const result = parseEvolutionResult(input);
     expect(result.attempted).toBe("The actual content");
   });
+
+  it("parses markdown header format like ## ATTEMPTED", () => {
+    const input = `## ATTEMPTED
+1. Added new feature
+2. Fixed a bug
+## SUCCEEDED
+Both worked
+## FAILED
+Nothing failed
+## LEARNINGS
+Learned things`;
+    const result = parseEvolutionResult(input);
+    expect(result.attempted).toContain("1. Added new feature");
+    expect(result.attempted).toContain("2. Fixed a bug");
+    expect(result.succeeded).toContain("Both worked");
+    expect(result.failed).toContain("Nothing failed");
+    expect(result.learnings).toContain("Learned things");
+  });
+
+  it("parses markdown header with bold like ## **ATTEMPTED**", () => {
+    const input = `## **ATTEMPTED**
+Tried something
+## **SUCCEEDED**
+It worked`;
+    const result = parseEvolutionResult(input);
+    expect(result.attempted).toContain("Tried something");
+    expect(result.succeeded).toContain("It worked");
+  });
 });
 
 describe("countImprovements", () => {
