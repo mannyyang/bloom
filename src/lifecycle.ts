@@ -1,14 +1,21 @@
 import { execSync, execFileSync } from "child_process";
 
+export interface BuildResult {
+  passed: boolean;
+  output: string;
+}
+
 /**
- * Run preflight build+test check. Returns true if passed, false if failed.
+ * Run preflight build+test check. Returns pass/fail status and captured output
+ * (used to extract test counts).
  */
-export function runPreflightCheck(): boolean {
+export function runPreflightCheck(): BuildResult {
   try {
-    execSync("pnpm build && pnpm test", { stdio: "inherit", timeout: 120_000 });
-    return true;
-  } catch {
-    return false;
+    const output = execSync("pnpm build && pnpm test", { encoding: "utf-8", timeout: 120_000 });
+    return { passed: true, output };
+  } catch (err: unknown) {
+    const output = (err as { stdout?: string })?.stdout ?? "";
+    return { passed: false, output };
   }
 }
 
@@ -66,13 +73,15 @@ export function pushTags(): boolean {
 
 /**
  * Verify build passes. Used for post-evolution verification.
+ * Returns pass/fail status and captured output (used to extract test counts).
  */
-export function verifyBuild(): boolean {
+export function verifyBuild(): BuildResult {
   try {
-    execSync("pnpm build && pnpm test", { stdio: "inherit", timeout: 120_000 });
-    return true;
-  } catch {
-    return false;
+    const output = execSync("pnpm build && pnpm test", { encoding: "utf-8", timeout: 120_000 });
+    return { passed: true, output };
+  } catch (err: unknown) {
+    const output = (err as { stdout?: string })?.stdout ?? "";
+    return { passed: false, output };
   }
 }
 
@@ -105,16 +114,19 @@ export function createSafetyTag(cycleCount: number): boolean {
  * Post-evolution build verification with retry logic.
  * Attempts up to `maxAttempts` builds, reverting uncommitted changes between
  * attempts. If all attempts fail, performs a hard reset to the safety tag.
- * Returns true if a build eventually passed, false if hard-reset was needed.
+ * Returns BuildResult — passed=true if a build eventually passed, passed=false
+ * if hard-reset was needed. Output contains the last build's captured output.
  * Throws if the hard-reset itself fails (manual intervention required).
  */
 export function runBuildVerification(
   cycleCount: number,
   maxAttempts: number = 3,
-): boolean {
+): BuildResult {
+  let lastResult: BuildResult = { passed: false, output: "" };
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    if (verifyBuild()) {
-      return true;
+    lastResult = verifyBuild();
+    if (lastResult.passed) {
+      return lastResult;
     }
     console.error(`Build verification failed (attempt ${attempt}/${maxAttempts})`);
     if (attempt < maxAttempts) {
@@ -124,7 +136,7 @@ export function runBuildVerification(
 
   console.error("Build broken after all attempts. Reverting to pre-evolution state.");
   hardResetTo(`pre-evolution-cycle-${cycleCount}`);
-  return false;
+  return lastResult;
 }
 
 /**

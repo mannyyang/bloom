@@ -21,6 +21,7 @@ import {
   isValidGitRef,
   createSafetyTag,
   runBuildVerification,
+  type BuildResult,
 } from "../src/lifecycle.js";
 
 describe("lifecycle helpers", () => {
@@ -34,18 +35,30 @@ describe("lifecycle helpers", () => {
   });
 
   describe("runPreflightCheck", () => {
-    it("returns true when build+test succeeds", () => {
-      mockedExecSync.mockReturnValue(Buffer.from(""));
-      expect(runPreflightCheck()).toBe(true);
+    it("returns passed=true with captured output when build+test succeeds", () => {
+      mockedExecSync.mockReturnValue("Tests  490 passed\n");
+      const result = runPreflightCheck();
+      expect(result.passed).toBe(true);
+      expect(result.output).toBe("Tests  490 passed\n");
       expect(mockedExecSync).toHaveBeenCalledWith(
         "pnpm build && pnpm test",
-        expect.objectContaining({ timeout: 120_000 }),
+        expect.objectContaining({ encoding: "utf-8", timeout: 120_000 }),
       );
     });
 
-    it("returns false when build+test fails", () => {
+    it("returns passed=false when build+test fails", () => {
       mockedExecSync.mockImplementation(() => { throw new Error("build failed"); });
-      expect(runPreflightCheck()).toBe(false);
+      const result = runPreflightCheck();
+      expect(result.passed).toBe(false);
+    });
+
+    it("captures stdout from error object on failure", () => {
+      const err = new Error("build failed") as Error & { stdout: string };
+      err.stdout = "Tests  100 passed\nsome failure";
+      mockedExecSync.mockImplementation(() => { throw err; });
+      const result = runPreflightCheck();
+      expect(result.passed).toBe(false);
+      expect(result.output).toBe("Tests  100 passed\nsome failure");
     });
   });
 
@@ -142,18 +155,21 @@ describe("lifecycle helpers", () => {
   });
 
   describe("verifyBuild", () => {
-    it("returns true when build+test succeeds", () => {
-      mockedExecSync.mockReturnValue(Buffer.from(""));
-      expect(verifyBuild()).toBe(true);
+    it("returns passed=true with captured output when build+test succeeds", () => {
+      mockedExecSync.mockReturnValue("Tests  522 passed\n");
+      const result = verifyBuild();
+      expect(result.passed).toBe(true);
+      expect(result.output).toBe("Tests  522 passed\n");
       expect(mockedExecSync).toHaveBeenCalledWith(
         "pnpm build && pnpm test",
-        expect.objectContaining({ timeout: 120_000 }),
+        expect.objectContaining({ encoding: "utf-8", timeout: 120_000 }),
       );
     });
 
-    it("returns false when build+test fails", () => {
+    it("returns passed=false when build+test fails", () => {
       mockedExecSync.mockImplementation(() => { throw new Error("test failed"); });
-      expect(verifyBuild()).toBe(false);
+      const result = verifyBuild();
+      expect(result.passed).toBe(false);
     });
   });
 
@@ -237,19 +253,23 @@ describe("lifecycle helpers", () => {
   });
 
   describe("runBuildVerification", () => {
-    it("returns true when build passes on first attempt", () => {
-      mockedExecSync.mockReturnValue(Buffer.from(""));
-      expect(runBuildVerification(42)).toBe(true);
+    it("returns passed=true when build passes on first attempt", () => {
+      mockedExecSync.mockReturnValue("Tests  522 passed\n");
+      const result = runBuildVerification(42);
+      expect(result.passed).toBe(true);
+      expect(result.output).toBe("Tests  522 passed\n");
       // verifyBuild called once, revertUncommitted not called
       expect(mockedExecSync).toHaveBeenCalledTimes(1);
     });
 
-    it("retries and returns true when build passes on second attempt", () => {
+    it("retries and returns passed=true when build passes on second attempt", () => {
       mockedExecSync
         .mockImplementationOnce(() => { throw new Error("build failed"); }) // attempt 1: verifyBuild fails
-        .mockReturnValueOnce(Buffer.from("")); // attempt 2: verifyBuild passes
+        .mockReturnValueOnce("Tests  522 passed\n"); // attempt 2: verifyBuild passes
       mockedExecFileSync.mockReturnValue(Buffer.from("")); // revertUncommitted uses execFileSync
-      expect(runBuildVerification(42)).toBe(true);
+      const result = runBuildVerification(42);
+      expect(result.passed).toBe(true);
+      expect(result.output).toBe("Tests  522 passed\n");
     });
 
     it("reverts between attempts but not after last attempt", () => {
@@ -258,7 +278,8 @@ describe("lifecycle helpers", () => {
       });
       mockedExecFileSync.mockReturnValue(Buffer.from(""));
       // All 3 builds fail → hard reset
-      expect(runBuildVerification(42, 3)).toBe(false);
+      const result = runBuildVerification(42, 3);
+      expect(result.passed).toBe(false);
       // revertUncommitted now uses execFileSync; count checkout calls in execFileSync
       const revertCount = mockedExecFileSync.mock.calls.filter(
         (args) => args[0] === "git" && Array.isArray(args[1]) && (args[1] as string[])[0] === "checkout"
@@ -266,13 +287,14 @@ describe("lifecycle helpers", () => {
       expect(revertCount).toBe(2);
     });
 
-    it("hard resets and returns false when all attempts fail", () => {
+    it("hard resets and returns passed=false when all attempts fail", () => {
       mockedExecSync.mockImplementation((cmd: unknown) => {
         if (String(cmd).includes("pnpm")) throw new Error("build failed");
         return Buffer.from("");
       });
       mockedExecFileSync.mockReturnValue(Buffer.from(""));
-      expect(runBuildVerification(42, 3)).toBe(false);
+      const result = runBuildVerification(42, 3);
+      expect(result.passed).toBe(false);
       expect(mockedExecFileSync).toHaveBeenCalledWith(
         "git",
         ["reset", "--hard", "pre-evolution-cycle-42"],

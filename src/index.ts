@@ -24,7 +24,7 @@ import {
   formatUsageForJournal,
   PhaseUsage,
 } from "./usage.js";
-import { createOutcome, formatOutcomeForJournal } from "./outcomes.js";
+import { createOutcome, formatOutcomeForJournal, parseTestCount } from "./outcomes.js";
 
 async function main() {
   const db = initDb();
@@ -33,11 +33,13 @@ async function main() {
   console.log(`Bloom evolution cycle ${cycleCount}`);
 
   // Pre-flight check
-  if (!runPreflightCheck()) {
+  const preflight = runPreflightCheck();
+  if (!preflight.passed) {
     console.error("Pre-flight check failed. Aborting evolution.");
     process.exit(1);
   }
   outcome.preflightPassed = true;
+  outcome.testCountBefore = parseTestCount(preflight.output);
 
   setGitBotIdentity();
 
@@ -150,9 +152,10 @@ async function main() {
   // Phase 2.5: Post-evolution build verification
   console.log("\n--- Build Verification ---");
   try {
-    const buildPassed = runBuildVerification(cycleCount);
-    outcome.buildVerificationPassed = buildPassed;
-    if (!buildPassed) {
+    const buildResult = runBuildVerification(cycleCount);
+    outcome.buildVerificationPassed = buildResult.passed;
+    outcome.testCountAfter = parseTestCount(buildResult.output);
+    if (!buildResult.passed) {
       console.error("Build verification failed. Hard reset performed.");
       process.exit(1);
     }
