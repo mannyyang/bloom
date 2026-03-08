@@ -110,7 +110,7 @@ export function countImprovements(text: string): number {
   let count = 0;
   for (const line of text.split("\n")) {
     const trimmed = line.trim();
-    if (trimmed.match(/^-\s+/) || trimmed.match(/^\d+\.\s+/)) {
+    if (trimmed.match(/^(?:-|\d+\.)\s+/)) {
       count++;
     }
   }
