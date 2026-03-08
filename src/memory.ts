@@ -1,0 +1,169 @@
+import type Database from "better-sqlite3";
+import {
+  insertLearning,
+  getRelevantLearnings,
+  decayLearningRelevance,
+  insertStrategicContext,
+  getLatestStrategicContext,
+  type Learning,
+} from "./db.js";
+
+// --- Learning Categories ---
+export const LEARNING_CATEGORIES = [
+  "pattern",
+  "anti-pattern",
+  "domain",
+  "tool-usage",
+] as const;
+
+export type LearningCategory = (typeof LEARNING_CATEGORIES)[number];
+
+// --- Extraction from evolution results ---
+
+export interface ExtractedLearnings {
+  learnings: Array<{ category: LearningCategory; content: string }>;
+}
+
+/**
+ * Parse the LEARNINGS section from evolution results into categorized learnings.
+ * Looks for category prefixes like [pattern], [anti-pattern], etc.
+ * Falls back to "domain" if no category prefix is found.
+ */
+export function extractLearnings(learningsText: string): ExtractedLearnings {
+  if (!learningsText.trim()) return { learnings: [] };
+
+  const result: ExtractedLearnings = { learnings: [] };
+  for (const line of learningsText.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || !trimmed.match(/^[-*\d]/)) continue;
+
+    // Strip leading "- " or "* " or "1. " etc.
+    const content = trimmed.replace(/^[-*]\s+/, "").replace(/^\d+\.\s+/, "");
+    if (!content) continue;
+
+    // Check for [category] prefix
+    const categoryMatch = content.match(/^\[([\w-]+)\]\s*(.*)/);
+    let category: LearningCategory = "domain";
+    let cleanContent = content;
+
+    if (categoryMatch) {
+      const candidate = categoryMatch[1] as string;
+      if (
+        (LEARNING_CATEGORIES as readonly string[]).includes(candidate)
+      ) {
+        category = candidate as LearningCategory;
+        cleanContent = categoryMatch[2];
+      }
+    }
+
+    if (cleanContent.trim()) {
+      result.learnings.push({ category, content: cleanContent.trim() });
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Store extracted learnings in the database.
+ * Applies relevance decay to existing learnings so newer ones rank higher.
+ */
+export function storeLearnings(
+  db: Database.Database,
+  cycleNumber: number,
+  extracted: ExtractedLearnings,
+): void {
+  if (extracted.learnings.length === 0) return;
+  decayLearningRelevance(db);
+  for (const { category, content } of extracted.learnings) {
+    insertLearning(db, cycleNumber, category, content);
+  }
+}
+
+// --- Strategic Context ---
+
+/**
+ * Parse STRATEGIC_CONTEXT from evolution result text.
+ */
+export function parseStrategicContext(result: string): string | null {
+  // Try single-line formats first
+  for (const line of result.split("\n")) {
+    const trimmed = line.trim();
+    const patterns = [
+      "STRATEGIC_CONTEXT:",
+      "**STRATEGIC_CONTEXT**:",
+      "**STRATEGIC_CONTEXT:**",
+    ];
+    for (const pattern of patterns) {
+      if (trimmed.startsWith(pattern)) {
+        const content = trimmed.slice(pattern.length).trim();
+        if (content) return content;
+      }
+    }
+  }
+
+  // Try multiline: capture everything after STRATEGIC_CONTEXT header
+  const match = result.match(
+    /(?:^|\n)\s*(?:\*{0,2})STRATEGIC_CONTEXT(?:\*{0,2}):?\s*\n([\s\S]*?)(?:\n\s*(?:[A-Z_]{3,}:|$))/,
+  );
+  return match?.[1]?.trim() || null;
+}
+
+/**
+ * Store strategic context for a cycle.
+ */
+export function storeStrategicContext(
+  db: Database.Database,
+  cycleNumber: number,
+  context: string,
+): void {
+  insertStrategicContext(db, cycleNumber, context);
+}
+
+// --- Formatting for Prompt Injection ---
+
+/**
+ * Format memory (learnings + strategic context) for inclusion in the assessment prompt.
+ * Budget-aware: truncates to fit within maxChars.
+ */
+export function formatMemoryForPrompt(
+  db: Database.Database,
+  maxChars: number = 2000,
+): string {
+  const sections: string[] = [];
+  let totalLen = 0;
+
+  // Strategic context first (most important)
+  const strategic = getLatestStrategicContext(db);
+  if (strategic) {
+    const section = `## Strategic Context\n${strategic}\n`;
+    sections.push(section);
+    totalLen += section.length;
+  }
+
+  // Then learnings by category, ranked by relevance
+  const learnings = getRelevantLearnings(db, 30);
+  if (learnings.length > 0) {
+    const grouped = new Map<string, Learning[]>();
+    for (const l of learnings) {
+      const list = grouped.get(l.category) ?? [];
+      list.push(l);
+      grouped.set(l.category, list);
+    }
+
+    let learningSection = "## Key Learnings\n";
+    for (const [category, items] of grouped) {
+      const header = `### ${category}\n`;
+      if (totalLen + learningSection.length + header.length > maxChars) break;
+      learningSection += header;
+      for (const item of items) {
+        const line = `- ${item.content}\n`;
+        if (totalLen + learningSection.length + line.length > maxChars) break;
+        learningSection += line;
+      }
+    }
+    sections.push(learningSection);
+  }
+
+  return sections.join("\n");
+}

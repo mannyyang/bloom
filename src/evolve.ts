@@ -6,6 +6,8 @@ export interface AssessmentContext {
   issues: CommunityIssue[];
   cycleCount: number;
   cycleStatsText?: string;
+  memoryContext?: string;
+  planningContext?: string;
 }
 
 export function buildAssessmentPrompt(ctx: AssessmentContext): string {
@@ -31,7 +33,7 @@ ${ctx.identity}
 
 Recent journal entries:
 ${ctx.journalSummary}
-${ctx.cycleStatsText ? `\nYour track record:\n${ctx.cycleStatsText}\n` : ""}
+${ctx.cycleStatsText ? `\nYour track record:\n${ctx.cycleStatsText}\n` : ""}${ctx.memoryContext ? `\nYour accumulated knowledge:\n${ctx.memoryContext}\n` : ""}${ctx.planningContext ? `\n${ctx.planningContext}\n` : ""}
 Read all files in src/ and tests/, then provide a structured assessment:
 - What are the top 1-3 improvements to make this cycle?
 - For each: what to change, why, and expected difficulty.`;
@@ -52,6 +54,7 @@ export function parseEvolutionResult(result: string): Record<string, string> {
     succeeded: "",
     failed: "",
     learnings: "",
+    strategic_context: "",
   };
 
   const sectionMap: Record<string, string> = {
@@ -59,6 +62,7 @@ export function parseEvolutionResult(result: string): Record<string, string> {
     "SUCCEEDED": "succeeded",
     "FAILED": "failed",
     "LEARNINGS": "learnings",
+    "STRATEGIC_CONTEXT": "strategic_context",
   };
 
   let currentSection = "";
@@ -158,5 +162,6 @@ After all improvements, end your response with a structured summary using EXACTL
 ATTEMPTED: <what was attempted>
 SUCCEEDED: <what succeeded>
 FAILED: <what failed>
-LEARNINGS: <key insights>`;
+LEARNINGS: <key insights — optionally prefix each with [pattern], [anti-pattern], [domain], or [tool-usage]>
+STRATEGIC_CONTEXT: <2-4 sentences about your current focus areas, trajectory, and ongoing goals>`;
 }
