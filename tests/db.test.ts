@@ -340,6 +340,18 @@ describe("db", () => {
       expect(stats.testCountTrend).toBe(30);
     });
 
+    it("computes test count trend from a single cycle with both counts", () => {
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+        testCountBefore: 50, testCountAfter: 58,
+      }));
+
+      const stats = getCycleStats(db);
+      // Single cycle: after (58) - before (50) = 8
+      expect(stats.testCountTrend).toBe(8);
+    });
+
     it("computes avgDurationMinutes when completed_at is set", () => {
       insertCycle(db, makeOutcome({
         cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
