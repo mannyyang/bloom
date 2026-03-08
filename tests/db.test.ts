@@ -164,6 +164,22 @@ describe("db", () => {
       expect(exported[1].cycleNumber).toBe(1);
       expect(exported[0].attempted).toBe("Cycle 2 work");
     });
+
+    it("defaults missing sections to empty strings", () => {
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
+      // Only insert "attempted" — no succeeded, failed, or learnings
+      insertJournalEntry(db, 1, "attempted", "Some work");
+
+      const exported = exportJournalJson(db);
+      expect(exported).toHaveLength(1);
+      expect(exported[0].attempted).toBe("Some work");
+      expect(exported[0].succeeded).toBe("");
+      expect(exported[0].failed).toBe("");
+      expect(exported[0].learnings).toBe("");
+    });
   });
 
   describe("getRecentJournalSummary", () => {
