@@ -19,6 +19,8 @@ export interface CycleUsage {
   totalCostUsd: number;
   totalInputTokens: number;
   totalOutputTokens: number;
+  totalCacheReadTokens: number;
+  totalCacheCreationTokens: number;
 }
 
 /**
@@ -55,6 +57,8 @@ export function aggregateUsage(phases: PhaseUsage[]): CycleUsage {
     totalCostUsd: phases.reduce((sum, p) => sum + p.totalCostUsd, 0),
     totalInputTokens: phases.reduce((sum, p) => sum + p.inputTokens, 0),
     totalOutputTokens: phases.reduce((sum, p) => sum + p.outputTokens, 0),
+    totalCacheReadTokens: phases.reduce((sum, p) => sum + p.cacheReadInputTokens, 0),
+    totalCacheCreationTokens: phases.reduce((sum, p) => sum + p.cacheCreationInputTokens, 0),
   };
 }
 
@@ -77,7 +81,10 @@ export function formatCycleUsage(cu: CycleUsage): string {
   const totalCost = cu.totalCostUsd.toFixed(4);
   const totalIn = cu.totalInputTokens.toLocaleString();
   const totalOut = cu.totalOutputTokens.toLocaleString();
-  lines.push(`[Total] Cost: $${totalCost} | Tokens: ${totalIn} in / ${totalOut} out`);
+  const cachePart = (cu.totalCacheReadTokens > 0 || cu.totalCacheCreationTokens > 0)
+    ? ` | Cache: ${cu.totalCacheReadTokens.toLocaleString()} read / ${cu.totalCacheCreationTokens.toLocaleString()} created`
+    : "";
+  lines.push(`[Total] Cost: $${totalCost} | Tokens: ${totalIn} in / ${totalOut} out${cachePart}`);
   return lines.join("\n");
 }
 
@@ -92,8 +99,11 @@ export function formatUsageForJournal(cu: CycleUsage): string {
       `- **${p.phase}**: $${cost} — ${p.inputTokens.toLocaleString()} input tokens, ${p.outputTokens.toLocaleString()} output tokens, ${p.numTurns} turns`,
     );
   }
+  const cacheSuffix = (cu.totalCacheReadTokens > 0 || cu.totalCacheCreationTokens > 0)
+    ? ` (cache: ${cu.totalCacheReadTokens.toLocaleString()} read, ${cu.totalCacheCreationTokens.toLocaleString()} created)`
+    : "";
   lines.push(
-    `- **Total**: $${cu.totalCostUsd.toFixed(4)} — ${cu.totalInputTokens.toLocaleString()} input + ${cu.totalOutputTokens.toLocaleString()} output tokens`,
+    `- **Total**: $${cu.totalCostUsd.toFixed(4)} — ${cu.totalInputTokens.toLocaleString()} input + ${cu.totalOutputTokens.toLocaleString()} output tokens${cacheSuffix}`,
   );
   return lines.join("\n");
 }
