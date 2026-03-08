@@ -429,7 +429,8 @@ export function getRecentJournalSummary(db: Database.Database, maxChars: number 
   let totalLen = 0;
 
   for (const entry of entries) {
-    const section = `## Cycle ${entry.cycleNumber} — ${entry.date}\n\n### What was attempted\n${entry.attempted}\n\n### What succeeded\n${entry.succeeded}\n\n### What failed\n${entry.failed}\n\n### Learnings\n${entry.learnings}\n\n---\n`;
+    const strategicSection = entry.strategic_context ? `\n### Strategic Context\n${entry.strategic_context}\n` : "";
+    const section = `## Cycle ${entry.cycleNumber} — ${entry.date}\n\n### What was attempted\n${entry.attempted}\n\n### What succeeded\n${entry.succeeded}\n\n### What failed\n${entry.failed}\n\n### Learnings\n${entry.learnings}\n${strategicSection}\n---\n`;
     if (totalLen + section.length > maxChars && lines.length > 0) break;
     lines.push(section);
     totalLen += section.length;

@@ -271,6 +271,30 @@ describe("db", () => {
       expect(result).not.toContain("Cycle 1");
     });
 
+    it("includes strategic_context in summary when present", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertJournalEntry(db, 1, "attempted", "Improved tests");
+      insertJournalEntry(db, 1, "succeeded", "Tests pass");
+      insertJournalEntry(db, 1, "failed", "");
+      insertJournalEntry(db, 1, "learnings", "Testing is good");
+      insertJournalEntry(db, 1, "strategic_context", "Focusing on test coverage and reliability.");
+
+      const summary = getRecentJournalSummary(db);
+      expect(summary).toContain("### Strategic Context");
+      expect(summary).toContain("Focusing on test coverage and reliability.");
+    });
+
+    it("omits strategic context section when empty", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertJournalEntry(db, 1, "attempted", "Some work");
+      insertJournalEntry(db, 1, "succeeded", "");
+      insertJournalEntry(db, 1, "failed", "");
+      insertJournalEntry(db, 1, "learnings", "");
+
+      const summary = getRecentJournalSummary(db);
+      expect(summary).not.toContain("Strategic Context");
+    });
+
     it("always includes at least one cycle even if it exceeds maxChars", () => {
       insertCycle(db, makeOutcome({ cycleNumber: 1 }));
       insertJournalEntry(db, 1, "attempted", "A".repeat(500));
