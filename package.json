@@ -6,11 +6,13 @@
     "build": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "evolve": "tsx src/index.ts"
+    "evolve": "tsx src/index.ts",
+    "news": "tsx src/news/index.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "latest",
-    "better-sqlite3": "^12.6.2"
+    "better-sqlite3": "^12.6.2",
+    "rss-parser": "^3.13.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

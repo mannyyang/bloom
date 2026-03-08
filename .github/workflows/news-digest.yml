@@ -1,0 +1,51 @@
+name: AI News Digest
+
+on:
+  schedule:
+    # Run daily at 7am UTC (midnight PT)
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: news-digest
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate digest
+        run: pnpm run news
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NEWS_EMAIL_TO: ${{ secrets.NEWS_EMAIL_TO }}
+          NEWS_EMAIL_FROM: ${{ secrets.NEWS_EMAIL_FROM }}
+          NEWS_EMAIL_PROVIDER: ${{ secrets.NEWS_EMAIL_PROVIDER }}
+          NEWS_EMAIL_API_KEY: ${{ secrets.NEWS_EMAIL_API_KEY }}
+
+      - name: Commit digest
+        run: |
+          git config user.name "Bloom"
+          git config user.email "bloom@users.noreply.github.com"
+          git add digests/
+          git diff --cached --quiet || git commit -m "chore: add AI news digest for $(date +%Y-%m-%d)"
+          git push

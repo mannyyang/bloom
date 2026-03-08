@@ -5,3 +5,4 @@ logs/
 .claude/
 *.pem
 _site/
+digests/
