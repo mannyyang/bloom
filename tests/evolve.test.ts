@@ -231,6 +231,18 @@ It worked`;
     expect(result.attempted).toContain("Tried something");
     expect(result.succeeded).toContain("It worked");
   });
+
+  it("parses dash-prefix format like - ATTEMPTED:", () => {
+    const input = `- ATTEMPTED: Dash prefix attempt
+- SUCCEEDED: Dash prefix success
+- FAILED: Nothing
+- LEARNINGS: Dash works`;
+    const result = parseEvolutionResult(input);
+    expect(result.attempted).toContain("Dash prefix attempt");
+    expect(result.succeeded).toContain("Dash prefix success");
+    expect(result.failed).toContain("Nothing");
+    expect(result.learnings).toContain("Dash works");
+  });
 });
 
 describe("countImprovements", () => {
