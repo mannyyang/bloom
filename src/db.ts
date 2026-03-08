@@ -217,6 +217,7 @@ export interface JournalExportEntry {
   succeeded: string;
   failed: string;
   learnings: string;
+  strategic_context: string;
 }
 
 export function exportJournalJson(db: Database.Database): JournalExportEntry[] {
@@ -242,6 +243,7 @@ export function exportJournalJson(db: Database.Database): JournalExportEntry[] {
       succeeded: data.sections.get("succeeded") ?? "",
       failed: data.sections.get("failed") ?? "",
       learnings: data.sections.get("learnings") ?? "",
+      strategic_context: data.sections.get("strategic_context") ?? "",
     });
   }
 
