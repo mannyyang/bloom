@@ -26,6 +26,8 @@ import {
   PhaseUsage,
 } from "./usage.js";
 import { createOutcome, formatOutcomeForJournal, parseTestCount } from "./outcomes.js";
+import { extractLearnings, storeLearnings, parseStrategicContext, storeStrategicContext, formatMemoryForPrompt } from "./memory.js";
+import { ensureProject, getProjectItems, pickNextItem, updateItemStatus, formatPlanningContext, type ProjectConfig, type ProjectItem } from "./planning.js";
 
 async function main() {
   const db = initDb();
@@ -61,12 +63,33 @@ async function main() {
     const cycleStats = getCycleStats(db);
     const cycleStatsText = formatCycleStats(cycleStats);
 
+    // Memory context (best-effort)
+    const memoryContext = formatMemoryForPrompt(db, 2000);
+
+    // Planning context (best-effort)
+    let planningContext = "";
+    let projectConfig: ProjectConfig | null = null;
+    let currentItem: ProjectItem | null = null;
+    try {
+      projectConfig = await ensureProject();
+      if (projectConfig) {
+        const projectItems = await getProjectItems(projectConfig);
+        currentItem = pickNextItem(projectItems);
+        if (currentItem) {
+          await updateItemStatus(projectConfig, currentItem.id, "In Progress");
+        }
+        planningContext = formatPlanningContext(projectItems, currentItem);
+      }
+    } catch {
+      // Best-effort: don't let planning failures block evolution
+    }
+
     // Phase 1: Assessment (read-only)
     console.log("\n--- Phase 1: Assessment ---");
     let assessment = "";
     const phaseUsages: PhaseUsage[] = [];
     for await (const msg of query({
-      prompt: buildAssessmentPrompt({ identity, journalSummary, issues, cycleCount, cycleStatsText }),
+      prompt: buildAssessmentPrompt({ identity, journalSummary, issues, cycleCount, cycleStatsText, memoryContext, planningContext }),
       options: {
         cwd: process.cwd(),
         model: "claude-opus-4-6",
@@ -143,6 +166,24 @@ async function main() {
       }
     }
 
+    // Extract and store learnings (best-effort)
+    try {
+      const extracted = extractLearnings(journalSections.learnings);
+      storeLearnings(db, cycleCount, extracted);
+    } catch {
+      console.error("Failed to store learnings (non-fatal)");
+    }
+
+    // Extract and store strategic context (best-effort)
+    try {
+      const strategicCtx = journalSections.strategic_context || parseStrategicContext(evolutionResult);
+      if (strategicCtx) {
+        storeStrategicContext(db, cycleCount, strategicCtx);
+      }
+    } catch {
+      console.error("Failed to store strategic context (non-fatal)");
+    }
+
     // Populate improvement counts from parsed sections
     outcome.improvementsAttempted = countImprovements(journalSections.attempted);
     outcome.improvementsSucceeded = countImprovements(journalSections.succeeded);
@@ -167,6 +208,20 @@ async function main() {
     outcome.testCountAfter = parseTestCount(buildResult.output);
     if (!buildResult.passed) {
       throw new Error("Build verification failed. Hard reset performed.");
+    }
+
+    // Update planning status (best-effort)
+    try {
+      if (projectConfig && currentItem) {
+        const succeeded = countImprovements(journalSections.succeeded) > 0;
+        if (succeeded) {
+          await updateItemStatus(projectConfig, currentItem.id, "Done");
+        } else {
+          await updateItemStatus(projectConfig, currentItem.id, "Up Next");
+        }
+      }
+    } catch {
+      // Best-effort
     }
 
     // Phase 3: Push

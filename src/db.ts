@@ -52,6 +52,25 @@ export function initDb(path: string = DEFAULT_DB_PATH): Database.Database {
 
     CREATE UNIQUE INDEX IF NOT EXISTS idx_issue_actions_unique
       ON issue_actions(issue_number, action);
+
+    CREATE TABLE IF NOT EXISTS learnings (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      cycle_number INTEGER NOT NULL REFERENCES cycles(cycle_number),
+      category     TEXT NOT NULL,
+      content      TEXT NOT NULL,
+      relevance    REAL NOT NULL DEFAULT 1.0,
+      created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_learnings_category ON learnings(category);
+    CREATE INDEX IF NOT EXISTS idx_learnings_relevance ON learnings(relevance DESC);
+
+    CREATE TABLE IF NOT EXISTS strategic_context (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      cycle_number INTEGER NOT NULL REFERENCES cycles(cycle_number),
+      summary      TEXT NOT NULL,
+      created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
 
   return db;
@@ -334,6 +353,72 @@ export function formatCycleStats(stats: CycleStats): string {
   }
   lines.push(`- **Recent failures** (last 5): ${stats.recentFailures}`);
   return lines.join("\n");
+}
+
+// --- Learnings ---
+
+export interface Learning {
+  id: number;
+  cycleNumber: number;
+  category: string;
+  content: string;
+  relevance: number;
+}
+
+export function insertLearning(
+  db: Database.Database,
+  cycleNumber: number,
+  category: string,
+  content: string,
+): void {
+  db.prepare(
+    "INSERT INTO learnings (cycle_number, category, content) VALUES (?, ?, ?)",
+  ).run(cycleNumber, category, content);
+}
+
+export function getRelevantLearnings(
+  db: Database.Database,
+  maxItems: number = 20,
+  category?: string,
+): Learning[] {
+  if (category) {
+    return db.prepare(
+      `SELECT id, cycle_number as cycleNumber, category, content, relevance
+       FROM learnings WHERE category = ? ORDER BY relevance DESC, id DESC LIMIT ?`,
+    ).all(category, maxItems) as Learning[];
+  }
+  return db.prepare(
+    `SELECT id, cycle_number as cycleNumber, category, content, relevance
+     FROM learnings ORDER BY relevance DESC, id DESC LIMIT ?`,
+  ).all(maxItems) as Learning[];
+}
+
+export function decayLearningRelevance(
+  db: Database.Database,
+  decayFactor: number = 0.95,
+): void {
+  db.prepare("UPDATE learnings SET relevance = relevance * ?").run(decayFactor);
+}
+
+// --- Strategic Context ---
+
+export function insertStrategicContext(
+  db: Database.Database,
+  cycleNumber: number,
+  summary: string,
+): void {
+  db.prepare(
+    "INSERT INTO strategic_context (cycle_number, summary) VALUES (?, ?)",
+  ).run(cycleNumber, summary);
+}
+
+export function getLatestStrategicContext(
+  db: Database.Database,
+): string | null {
+  const row = db.prepare(
+    "SELECT summary FROM strategic_context ORDER BY id DESC LIMIT 1",
+  ).get() as { summary: string } | undefined;
+  return row?.summary ?? null;
 }
 
 export function getRecentJournalSummary(db: Database.Database, maxChars: number = 4000): string {
