@@ -301,11 +301,10 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
   }
 
   // Aggregate cost from phase_usage for the cycles in scope
-  const costRow = rows.length > 0
-    ? db.prepare(
-        `SELECT COALESCE(SUM(cost_usd), 0) as total_cost FROM phase_usage WHERE cycle_number IN (SELECT cycle_number FROM cycles ORDER BY cycle_number DESC LIMIT ?)`
-      ).get(limit) as { total_cost: number }
-    : { total_cost: 0 };
+  // rows.length > 0 is guaranteed here (early return above handles empty case)
+  const costRow = db.prepare(
+    `SELECT COALESCE(SUM(cost_usd), 0) as total_cost FROM phase_usage WHERE cycle_number IN (SELECT cycle_number FROM cycles ORDER BY cycle_number DESC LIMIT ?)`
+  ).get(limit) as { total_cost: number };
   const totalCostUsd = Math.round(costRow.total_cost * 100) / 100;
   const avgCostPerCycle = totalCycles > 0 ? Math.round((totalCostUsd / totalCycles) * 100) / 100 : 0;
 
