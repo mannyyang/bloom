@@ -165,6 +165,28 @@ describe("formatMemoryForPrompt", () => {
     expect(result.length).toBeLessThanOrEqual(400); // some tolerance for the last item
   });
 
+  it("truncates mid-category when budget exhausted between items", () => {
+    // Insert learnings across two categories
+    for (let i = 0; i < 5; i++) {
+      insertLearning(db, 1, "pattern", `Pattern learning ${i}`);
+    }
+    for (let i = 0; i < 5; i++) {
+      insertLearning(db, 1, "domain", `Domain learning ${i}`);
+    }
+
+    // Use a budget that fits the header + some pattern learnings but not all + domain
+    const fullResult = formatMemoryForPrompt(db, 100000);
+    const tightBudget = Math.floor(fullResult.length * 0.4);
+    const truncated = formatMemoryForPrompt(db, tightBudget);
+
+    // Should contain the section header
+    expect(truncated).toContain("## Key Learnings");
+    // Should contain at least one learning from the first category
+    expect(truncated).toMatch(/learning \d/);
+    // Should be shorter than the full result (some items truncated)
+    expect(truncated.length).toBeLessThan(fullResult.length);
+  });
+
   it("includes both strategic context and learnings", () => {
     insertStrategicContext(db, 1, "Building test infrastructure.");
     insertLearning(db, 1, "pattern", "Small incremental changes work best");
