@@ -26,7 +26,7 @@ import {
   PhaseUsage,
 } from "./usage.js";
 import { createOutcome, formatOutcomeForJournal, parseTestCount } from "./outcomes.js";
-import { extractLearnings, storeLearnings, parseStrategicContext, storeStrategicContext, formatMemoryForPrompt } from "./memory.js";
+import { extractLearnings, storeLearnings, storeStrategicContext, formatMemoryForPrompt } from "./memory.js";
 import { ensureProject, getProjectItems, pickNextItem, updateItemStatus, formatPlanningContext, type ProjectConfig, type ProjectItem } from "./planning.js";
 
 async function main() {
@@ -176,7 +176,7 @@ async function main() {
 
     // Extract and store strategic context (best-effort)
     try {
-      const strategicCtx = journalSections.strategic_context || parseStrategicContext(evolutionResult);
+      const strategicCtx = journalSections.strategic_context;
       if (strategicCtx) {
         storeStrategicContext(db, cycleCount, strategicCtx);
       }
