@@ -156,6 +156,7 @@ RULES:
 5. NEVER modify IDENTITY.md.
 6. Do NOT write to JOURNAL.md — journal entries are now stored in SQLite and managed by the orchestrator.
 7. Keep changes small and incremental.
+8. After completing code changes, update README.md and any other public-facing documentation to accurately reflect the current state of the agent — its features, architecture, and capabilities. Do not leave docs stale.
 
 After all improvements, end your response with a structured summary using EXACTLY this format (no markdown headers, no bold, just the marker followed by a colon):
 
