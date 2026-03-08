@@ -134,6 +134,28 @@ describe("aggregateUsage", () => {
     expect(result.totalInputTokens).toBe(5000);
     expect(result.totalOutputTokens).toBe(2000);
   });
+
+  it("aggregates cache token fields correctly", () => {
+    const result = aggregateUsage([phase1, phase2]);
+    expect(result.totalCacheReadTokens).toBe(3500); // 500 + 3000
+    expect(result.totalCacheCreationTokens).toBe(1200); // 200 + 1000
+  });
+
+  it("returns zero cache tokens for phases with no cache usage", () => {
+    const noCache: PhaseUsage = {
+      phase: "Test",
+      totalCostUsd: 0.5,
+      inputTokens: 100,
+      outputTokens: 50,
+      cacheReadInputTokens: 0,
+      cacheCreationInputTokens: 0,
+      durationMs: 1000,
+      numTurns: 1,
+    };
+    const result = aggregateUsage([noCache]);
+    expect(result.totalCacheReadTokens).toBe(0);
+    expect(result.totalCacheCreationTokens).toBe(0);
+  });
 });
 
 describe("formatPhaseUsage", () => {
@@ -192,6 +214,45 @@ describe("formatCycleUsage", () => {
     expect(lines[2]).toContain("[Total]");
     expect(lines[2]).toContain("$4.0000");
   });
+
+  it("includes cache suffix when cache tokens are non-zero", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 1.0,
+        inputTokens: 5000,
+        outputTokens: 2000,
+        cacheReadInputTokens: 1000,
+        cacheCreationInputTokens: 500,
+        durationMs: 20000,
+        numTurns: 8,
+      },
+    ]);
+
+    const output = formatCycleUsage(cu);
+    const totalLine = output.split("\n").find(l => l.includes("[Total]"))!;
+    expect(totalLine).toContain("Cache:");
+    expect(totalLine).toContain("read");
+    expect(totalLine).toContain("created");
+  });
+
+  it("omits cache suffix when all cache tokens are zero", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Test",
+        totalCostUsd: 0.5,
+        inputTokens: 100,
+        outputTokens: 50,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 1000,
+        numTurns: 1,
+      },
+    ]);
+
+    const output = formatCycleUsage(cu);
+    expect(output).not.toContain("Cache:");
+  });
 });
 
 describe("formatUsageForJournal", () => {
@@ -214,5 +275,43 @@ describe("formatUsageForJournal", () => {
     expect(md).toContain("**Assessment**");
     expect(md).toContain("$1.5000");
     expect(md).toContain("**Total**");
+  });
+
+  it("includes cache suffix when cache tokens are non-zero", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Evolution",
+        totalCostUsd: 2.0,
+        inputTokens: 10000,
+        outputTokens: 5000,
+        cacheReadInputTokens: 3000,
+        cacheCreationInputTokens: 1500,
+        durationMs: 40000,
+        numTurns: 15,
+      },
+    ]);
+
+    const md = formatUsageForJournal(cu);
+    expect(md).toContain("cache:");
+    expect(md).toContain("read");
+    expect(md).toContain("created");
+  });
+
+  it("omits cache suffix when all cache tokens are zero", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.5,
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 5000,
+        numTurns: 3,
+      },
+    ]);
+
+    const md = formatUsageForJournal(cu);
+    expect(md).not.toContain("cache:");
   });
 });
