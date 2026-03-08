@@ -229,7 +229,6 @@ async function main() {
     outcome.pushSucceeded = false;
     if (pushChanges()) {
       console.log("Changes pushed successfully.");
-      pushTags();
       outcome.pushSucceeded = true;
     } else {
       console.error("Push failed. Changes remain local.");
