@@ -225,6 +225,28 @@ describe("db", () => {
       expect(singleCycleSummary).not.toContain("Cycle 1");
     });
 
+    it("truncates at exact boundary allowing partial cycles", () => {
+      // Insert 3 cycles
+      for (let i = 1; i <= 3; i++) {
+        insertCycle(db, makeOutcome({ cycleNumber: i }));
+        insertJournalEntry(db, i, "attempted", `Attempt ${i}`);
+        insertJournalEntry(db, i, "succeeded", `Success ${i}`);
+        insertJournalEntry(db, i, "failed", "");
+        insertJournalEntry(db, i, "learnings", `Learning ${i}`);
+      }
+
+      // Get the full summary and measure single-cycle length
+      const fullSummary = getRecentJournalSummary(db, 100000);
+      const cycle3Section = fullSummary.split("---")[0] + "---\n";
+      const twoCycleBudget = cycle3Section.length * 2 + 1;
+
+      // With budget for ~2 cycles, the third should be truncated
+      const result = getRecentJournalSummary(db, twoCycleBudget);
+      expect(result).toContain("Cycle 3");
+      expect(result).toContain("Cycle 2");
+      expect(result).not.toContain("Cycle 1");
+    });
+
     it("always includes at least one cycle even if it exceeds maxChars", () => {
       insertCycle(db, makeOutcome({ cycleNumber: 1 }));
       insertJournalEntry(db, 1, "attempted", "A".repeat(500));
