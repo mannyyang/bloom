@@ -18,5 +18,11 @@
     "tsx": "^4.0",
     "typescript": "^5.4",
     "vitest": "^2.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild"
+    ]
   }
 }
