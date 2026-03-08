@@ -446,6 +446,16 @@ describe("db", () => {
       expect(result).toContain("1");
     });
 
+    it("displays negative test count trend without plus sign", () => {
+      const result = formatCycleStats({
+        totalCycles: 5, successRate: 60, avgImprovements: 1,
+        testCountTrend: -7, recentFailures: 2, avgDurationMinutes: null,
+        totalCostUsd: 0, avgCostPerCycle: 0,
+      });
+      expect(result).toContain("-7");
+      expect(result).not.toContain("+-7");
+    });
+
     it("omits duration when null", () => {
       const result = formatCycleStats({
         totalCycles: 5, successRate: 100, avgImprovements: 2,
