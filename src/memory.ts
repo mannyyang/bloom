@@ -83,33 +83,6 @@ export function storeLearnings(
 // --- Strategic Context ---
 
 /**
- * Parse STRATEGIC_CONTEXT from evolution result text.
- */
-export function parseStrategicContext(result: string): string | null {
-  // Try single-line formats first
-  for (const line of result.split("\n")) {
-    const trimmed = line.trim();
-    const patterns = [
-      "STRATEGIC_CONTEXT:",
-      "**STRATEGIC_CONTEXT**:",
-      "**STRATEGIC_CONTEXT:**",
-    ];
-    for (const pattern of patterns) {
-      if (trimmed.startsWith(pattern)) {
-        const content = trimmed.slice(pattern.length).trim();
-        if (content) return content;
-      }
-    }
-  }
-
-  // Try multiline: capture everything after STRATEGIC_CONTEXT header
-  const match = result.match(
-    /(?:^|\n)\s*(?:\*{0,2})STRATEGIC_CONTEXT(?:\*{0,2}):?\s*\n([\s\S]*?)(?:\n\s*(?:[A-Z_]{3,}:|$))/,
-  );
-  return match?.[1]?.trim() || null;
-}
-
-/**
  * Store strategic context for a cycle.
  */
 export function storeStrategicContext(

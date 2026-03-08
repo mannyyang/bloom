@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type Database from "better-sqlite3";
 import { initDb, insertCycle, insertLearning, getRelevantLearnings, decayLearningRelevance, insertStrategicContext, getLatestStrategicContext } from "../src/db.js";
-import { extractLearnings, storeLearnings, parseStrategicContext, formatMemoryForPrompt } from "../src/memory.js";
+import { extractLearnings, storeLearnings, formatMemoryForPrompt } from "../src/memory.js";
 import { makeOutcome } from "./helpers.js";
 
 describe("extractLearnings", () => {
@@ -99,32 +99,6 @@ describe("storeLearnings", () => {
     expect(newLearning!.relevance).toBe(1.0);
     expect(oldLearning!.relevance).toBeLessThan(1.0);
     expect(oldLearning!.relevance).toBeCloseTo(0.95);
-  });
-});
-
-describe("parseStrategicContext", () => {
-  it("extracts from STRATEGIC_CONTEXT: line", () => {
-    const text = "LEARNINGS: stuff\nSTRATEGIC_CONTEXT: I am focusing on test coverage and reliability.";
-    expect(parseStrategicContext(text)).toBe("I am focusing on test coverage and reliability.");
-  });
-
-  it("extracts from **STRATEGIC_CONTEXT**: format", () => {
-    const text = "**STRATEGIC_CONTEXT**: Improving code clarity across modules.";
-    expect(parseStrategicContext(text)).toBe("Improving code clarity across modules.");
-  });
-
-  it("extracts from **STRATEGIC_CONTEXT:** format", () => {
-    const text = "**STRATEGIC_CONTEXT:** Working on error handling improvements.";
-    expect(parseStrategicContext(text)).toBe("Working on error handling improvements.");
-  });
-
-  it("returns null when section is missing", () => {
-    const text = "ATTEMPTED: something\nSUCCEEDED: it worked";
-    expect(parseStrategicContext(text)).toBeNull();
-  });
-
-  it("returns null for empty input", () => {
-    expect(parseStrategicContext("")).toBeNull();
   });
 });
 
