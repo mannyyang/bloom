@@ -59,6 +59,49 @@ describe("buildAssessmentPrompt", () => {
     expect(prompt).not.toContain("track record");
   });
 
+  it("includes memoryContext when provided", () => {
+    const prompt = buildAssessmentPrompt({
+      identity: "test",
+      journalSummary: "",
+      issues: [],
+      cycleCount: 5,
+      memoryContext: "[pattern] Always run tests before committing",
+    });
+    expect(prompt).toContain("accumulated knowledge");
+    expect(prompt).toContain("[pattern] Always run tests before committing");
+  });
+
+  it("omits memory section when memoryContext is absent", () => {
+    const prompt = buildAssessmentPrompt({
+      identity: "test",
+      journalSummary: "",
+      issues: [],
+      cycleCount: 5,
+    });
+    expect(prompt).not.toContain("accumulated knowledge");
+  });
+
+  it("includes planningContext when provided", () => {
+    const prompt = buildAssessmentPrompt({
+      identity: "test",
+      journalSummary: "",
+      issues: [],
+      cycleCount: 5,
+      planningContext: "Current item: Improve error handling",
+    });
+    expect(prompt).toContain("Current item: Improve error handling");
+  });
+
+  it("omits planning section when planningContext is absent", () => {
+    const prompt = buildAssessmentPrompt({
+      identity: "test",
+      journalSummary: "",
+      issues: [],
+      cycleCount: 5,
+    });
+    expect(prompt).not.toContain("Current item");
+  });
+
   it("includes journal summary in prompt", () => {
     const prompt = buildAssessmentPrompt({
       identity: "test",
