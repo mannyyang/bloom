@@ -180,6 +180,30 @@ describe("db", () => {
       expect(exported[0].failed).toBe("");
       expect(exported[0].learnings).toBe("");
     });
+
+    it("includes strategic_context field when present", () => {
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
+      insertJournalEntry(db, 1, "attempted", "Improved tests");
+      insertJournalEntry(db, 1, "strategic_context", "Focusing on test coverage and code clarity.");
+
+      const exported = exportJournalJson(db);
+      expect(exported).toHaveLength(1);
+      expect(exported[0].strategic_context).toBe("Focusing on test coverage and code clarity.");
+    });
+
+    it("defaults strategic_context to empty string when absent", () => {
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
+      insertJournalEntry(db, 1, "attempted", "Some work");
+
+      const exported = exportJournalJson(db);
+      expect(exported[0].strategic_context).toBe("");
+    });
   });
 
   describe("getRecentJournalSummary", () => {
