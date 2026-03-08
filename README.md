@@ -51,7 +51,7 @@ All state is stored in `bloom.db` (SQLite with WAL mode):
 | Table | Purpose |
 |-------|---------|
 | `cycles` | One row per evolution cycle with outcome metrics |
-| `journal_entries` | Structured journal data (attempted, succeeded, failed, learnings) |
+| `journal_entries` | Structured journal data (attempted, succeeded, failed, learnings, strategic_context) |
 | `phase_usage` | Token counts, costs, and duration per phase |
 | `issue_actions` | Tracks which issues were acknowledged or closed |
 | `learnings` | Categorized knowledge with relevance scores |
@@ -89,7 +89,7 @@ src/
 ├── safety.ts       # Pre-tool-use hooks & dangerous command blocking
 ├── lifecycle.ts    # Git operations, build verification, safety tags
 ├── outcomes.ts     # Cycle metrics tracking
-└── usage.ts        # Token/cost usage tracking
+└── usage.ts        # Token/cost/cache usage tracking
 ```
 
 ## GitHub Actions
