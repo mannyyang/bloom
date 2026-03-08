@@ -286,6 +286,41 @@ It worked`;
     expect(result.failed).toContain("Nothing");
     expect(result.learnings).toContain("Dash works");
   });
+
+  it("parses STRATEGIC_CONTEXT with inline content", () => {
+    const input = "STRATEGIC_CONTEXT: Focusing on test coverage and reliability.";
+    const result = parseEvolutionResult(input);
+    expect(result.strategic_context).toBe("Focusing on test coverage and reliability.");
+  });
+
+  it("parses STRATEGIC_CONTEXT with content on following lines", () => {
+    const input = `STRATEGIC_CONTEXT:
+Building towards better error handling.
+Also improving test coverage.`;
+    const result = parseEvolutionResult(input);
+    expect(result.strategic_context).toContain("Building towards better error handling.");
+    expect(result.strategic_context).toContain("Also improving test coverage.");
+  });
+
+  it("parses **STRATEGIC_CONTEXT**: bold format", () => {
+    const input = "**STRATEGIC_CONTEXT**: Bold strategic context here.";
+    const result = parseEvolutionResult(input);
+    expect(result.strategic_context).toBe("Bold strategic context here.");
+  });
+
+  it("parses STRATEGIC_CONTEXT alongside other sections", () => {
+    const input = `ATTEMPTED: Fix regex bug
+SUCCEEDED: Regex fixed
+FAILED: Nothing
+LEARNINGS: [pattern] Always test with underscores
+STRATEGIC_CONTEXT: Focusing on parsing robustness.`;
+    const result = parseEvolutionResult(input);
+    expect(result.attempted).toContain("Fix regex bug");
+    expect(result.succeeded).toContain("Regex fixed");
+    expect(result.failed).toContain("Nothing");
+    expect(result.learnings).toContain("[pattern] Always test with underscores");
+    expect(result.strategic_context).toBe("Focusing on parsing robustness.");
+  });
 });
 
 describe("countImprovements", () => {
