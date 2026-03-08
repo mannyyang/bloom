@@ -103,18 +103,26 @@ export function parseEvolutionResult(result: string): Record<string, string> {
 
 /**
  * Count the number of improvement items in a section text.
- * Counts lines starting with "- " or numbered items like "1. ", "2. ".
+ * Counts lines starting with "- " or numbered items like "1. ", "2. ", "1) ".
+ * Also counts inline numbered items (e.g., "1) foo. 2) bar. 3) baz" on one line).
  */
 export function countImprovements(text: string): number {
   if (!text) return 0;
-  let count = 0;
+
+  // Count lines starting with "- ", "N. ", or "N) "
+  let lineCount = 0;
   for (const line of text.split("\n")) {
     const trimmed = line.trim();
-    if (trimmed.match(/^(?:-|\d+\.)\s+/)) {
-      count++;
+    if (trimmed.match(/^(?:-|\d+[.)]\s)/)) {
+      lineCount++;
     }
   }
-  return count;
+
+  // Also count all numbered items throughout text (catches inline "1) foo. 2) bar")
+  const inlineMatches = text.match(/(?:^|[\s,;(])\d+[.)]\s/gm);
+  const inlineCount = inlineMatches ? inlineMatches.length : 0;
+
+  return Math.max(lineCount, inlineCount);
 }
 
 /**

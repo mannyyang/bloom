@@ -269,6 +269,22 @@ describe("countImprovements", () => {
   it("handles indented bullets", () => {
     expect(countImprovements("  - Indented item\n  1. Another")).toBe(2);
   });
+
+  it("counts N) format on separate lines", () => {
+    expect(countImprovements("1) First\n2) Second\n3) Third")).toBe(3);
+  });
+
+  it("counts inline numbered items with N) format", () => {
+    expect(countImprovements("1) Include strategic_context. 2) Add cache tokens. 3) Remove fallback.")).toBe(3);
+  });
+
+  it("counts inline numbered items with N. format", () => {
+    expect(countImprovements("1. First item, 2. second item, 3. third item")).toBe(3);
+  });
+
+  it("counts inline items preceded by prose", () => {
+    expect(countImprovements("All three succeeded. 1) Added field. 2) Updated usage. 3) Removed fallback.")).toBe(3);
+  });
 });
 
 describe("extractResolvedIssueNumbers", () => {
