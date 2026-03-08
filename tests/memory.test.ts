@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type Database from "better-sqlite3";
 import { initDb, insertCycle, insertLearning, getRelevantLearnings, decayLearningRelevance, insertStrategicContext, getLatestStrategicContext } from "../src/db.js";
-import { extractLearnings, storeLearnings, formatMemoryForPrompt } from "../src/memory.js";
+import { extractLearnings, storeLearnings, storeStrategicContext, formatMemoryForPrompt } from "../src/memory.js";
 import { makeOutcome } from "./helpers.js";
 
 describe("extractLearnings", () => {
@@ -167,6 +167,27 @@ describe("formatMemoryForPrompt", () => {
     const result = formatMemoryForPrompt(db);
     expect(result).toContain("Strategic Context");
     expect(result).toContain("Key Learnings");
+  });
+});
+
+describe("storeStrategicContext", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+  });
+
+  it("stores and retrieves strategic context via memory module", () => {
+    storeStrategicContext(db, 1, "Focusing on test coverage.");
+    expect(getLatestStrategicContext(db)).toBe("Focusing on test coverage.");
+  });
+
+  it("overwrites earlier context when storing for a later cycle", () => {
+    storeStrategicContext(db, 1, "Old focus.");
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    storeStrategicContext(db, 2, "New focus.");
+    expect(getLatestStrategicContext(db)).toBe("New focus.");
   });
 });
 
