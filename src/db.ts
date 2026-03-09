@@ -267,6 +267,8 @@ export interface CycleStats {
   avgDurationMinutes: number | null;
   totalCostUsd: number;
   avgCostPerCycle: number;
+  totalInputTokens: number;
+  totalOutputTokens: number;
 }
 
 /**
@@ -294,7 +296,7 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
   }[];
 
   if (rows.length === 0) {
-    return { totalCycles: 0, successRate: 0, avgImprovements: 0, testCountTrend: null, recentFailures: 0, avgDurationMinutes: null, totalCostUsd: 0, avgCostPerCycle: 0 };
+    return { totalCycles: 0, successRate: 0, avgImprovements: 0, testCountTrend: null, recentFailures: 0, avgDurationMinutes: null, totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0 };
   }
 
   const totalCycles = rows.length;
@@ -329,15 +331,17 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
     avgDurationMinutes = Math.round((totalMs / withTimes.length / 60000) * 10) / 10;
   }
 
-  // Aggregate cost from phase_usage for the cycles in scope
+  // Aggregate cost and token usage from phase_usage for the cycles in scope
   // rows.length > 0 is guaranteed here (early return above handles empty case)
-  const costRow = db.prepare(
-    `SELECT COALESCE(SUM(cost_usd), 0) as total_cost FROM phase_usage WHERE cycle_number IN (SELECT cycle_number FROM cycles ORDER BY cycle_number DESC LIMIT ?)`
-  ).get(limit) as { total_cost: number };
-  const totalCostUsd = Math.round(costRow.total_cost * 100) / 100;
+  const usageRow = db.prepare(
+    `SELECT COALESCE(SUM(cost_usd), 0) as total_cost, COALESCE(SUM(input_tokens), 0) as total_input, COALESCE(SUM(output_tokens), 0) as total_output FROM phase_usage WHERE cycle_number IN (SELECT cycle_number FROM cycles ORDER BY cycle_number DESC LIMIT ?)`
+  ).get(limit) as { total_cost: number; total_input: number; total_output: number };
+  const totalCostUsd = Math.round(usageRow.total_cost * 100) / 100;
   const avgCostPerCycle = totalCycles > 0 ? Math.round((totalCostUsd / totalCycles) * 100) / 100 : 0;
+  const totalInputTokens = usageRow.total_input;
+  const totalOutputTokens = usageRow.total_output;
 
-  return { totalCycles, successRate, avgImprovements, testCountTrend, recentFailures, avgDurationMinutes, totalCostUsd, avgCostPerCycle };
+  return { totalCycles, successRate, avgImprovements, testCountTrend, recentFailures, avgDurationMinutes, totalCostUsd, avgCostPerCycle, totalInputTokens, totalOutputTokens };
 }
 
 /**
@@ -360,6 +364,10 @@ export function formatCycleStats(stats: CycleStats): string {
   if (stats.totalCostUsd > 0) {
     lines.push(`- **Total cost**: $${stats.totalCostUsd.toFixed(2)}`);
     lines.push(`- **Avg cost/cycle**: $${stats.avgCostPerCycle.toFixed(2)}`);
+  }
+  if (stats.totalInputTokens > 0 || stats.totalOutputTokens > 0) {
+    const fmtTokens = (n: number) => n >= 1000 ? `${Math.round(n / 1000)}k` : `${n}`;
+    lines.push(`- **Total tokens**: ${fmtTokens(stats.totalInputTokens)} in / ${fmtTokens(stats.totalOutputTokens)} out`);
   }
   lines.push(`- **Recent failures** (last 5): ${stats.recentFailures}`);
   return lines.join("\n");

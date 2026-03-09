@@ -516,6 +516,38 @@ describe("db", () => {
       expect(stats.totalCostUsd).toBe(0);
       expect(stats.avgCostPerCycle).toBe(0);
     });
+
+    it("aggregates token counts from phase_usage", () => {
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
+      insertPhaseUsage(db, 1, {
+        phase: "Assessment", totalCostUsd: 0.50, inputTokens: 3000,
+        outputTokens: 1500, cacheReadInputTokens: 0, cacheCreationInputTokens: 0,
+        durationMs: 5000, numTurns: 3,
+      });
+      insertPhaseUsage(db, 1, {
+        phase: "Evolution", totalCostUsd: 1.00, inputTokens: 5000,
+        outputTokens: 2500, cacheReadInputTokens: 0, cacheCreationInputTokens: 0,
+        durationMs: 10000, numTurns: 5,
+      });
+
+      const stats = getCycleStats(db);
+      expect(stats.totalInputTokens).toBe(8000);
+      expect(stats.totalOutputTokens).toBe(4000);
+    });
+
+    it("returns zero tokens when no phase_usage rows exist", () => {
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
+
+      const stats = getCycleStats(db);
+      expect(stats.totalInputTokens).toBe(0);
+      expect(stats.totalOutputTokens).toBe(0);
+    });
   });
 
   describe("formatCycleStats", () => {
@@ -523,7 +555,7 @@ describe("db", () => {
       const result = formatCycleStats({
         totalCycles: 0, successRate: 0, avgImprovements: 0,
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
-        totalCostUsd: 0, avgCostPerCycle: 0,
+        totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
       });
       expect(result).toBe("No previous cycle data available.");
     });
@@ -533,6 +565,7 @@ describe("db", () => {
         totalCycles: 10, successRate: 80, avgImprovements: 1.5,
         testCountTrend: 42, recentFailures: 1, avgDurationMinutes: 8.5,
         totalCostUsd: 15.50, avgCostPerCycle: 1.55,
+        totalInputTokens: 50000, totalOutputTokens: 25000,
       });
       expect(result).toContain("10");
       expect(result).toContain("80%");
@@ -541,6 +574,7 @@ describe("db", () => {
       expect(result).toContain("8.5 min");
       expect(result).toContain("$15.50");
       expect(result).toContain("$1.55");
+      expect(result).toContain("50k in / 25k out");
       expect(result).toContain("1");
     });
 
@@ -548,7 +582,7 @@ describe("db", () => {
       const result = formatCycleStats({
         totalCycles: 5, successRate: 60, avgImprovements: 1,
         testCountTrend: -7, recentFailures: 2, avgDurationMinutes: null,
-        totalCostUsd: 0, avgCostPerCycle: 0,
+        totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
       });
       expect(result).toContain("-7");
       expect(result).not.toContain("+-7");
@@ -558,10 +592,29 @@ describe("db", () => {
       const result = formatCycleStats({
         totalCycles: 5, successRate: 100, avgImprovements: 2,
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
-        totalCostUsd: 0, avgCostPerCycle: 0,
+        totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
       });
       expect(result).not.toContain("duration");
       expect(result).not.toContain("cost");
+    });
+
+    it("omits tokens line when both are zero", () => {
+      const result = formatCycleStats({
+        totalCycles: 5, successRate: 100, avgImprovements: 2,
+        testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
+        totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
+      });
+      expect(result).not.toContain("tokens");
+    });
+
+    it("formats small token counts without k suffix", () => {
+      const result = formatCycleStats({
+        totalCycles: 1, successRate: 100, avgImprovements: 1,
+        testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
+        totalCostUsd: 0.10, avgCostPerCycle: 0.10,
+        totalInputTokens: 500, totalOutputTokens: 200,
+      });
+      expect(result).toContain("500 in / 200 out");
     });
   });
 });
