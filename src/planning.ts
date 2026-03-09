@@ -194,6 +194,73 @@ export function extractProjectConfig(project: ProjectShape): ProjectConfig | nul
 // --- Item CRUD ---
 
 /**
+ * Resolve a GitHub issue number to its GraphQL node ID.
+ */
+export async function getIssueNodeId(
+  repo: string,
+  issueNumber: number,
+): Promise<string | null> {
+  const [owner, name] = repo.split("/");
+  if (!owner || !name) return null;
+
+  const query = `
+    query($owner: String!, $name: String!, $number: Int!) {
+      repository(owner: $owner, name: $name) {
+        issue(number: $number) { id }
+      }
+    }
+  `;
+
+  try {
+    const result = await githubGraphQL(query, { owner, name, number: issueNumber });
+    return (result.data as Record<string, { issue?: { id: string } }>)?.repository?.issue?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Add a real GitHub issue to the project board (linked, not a draft).
+ * Falls back to addDraftItem if the issue can't be linked.
+ */
+export async function addLinkedItem(
+  config: ProjectConfig,
+  repo: string,
+  issueNumber: number,
+  title: string,
+  body: string,
+  status: StatusColumn = "Backlog",
+): Promise<string | null> {
+  const nodeId = await getIssueNodeId(repo, issueNumber);
+  if (!nodeId) {
+    // Fall back to draft item
+    return addDraftItem(config, `#${issueNumber}: ${title}`, body, status);
+  }
+
+  const mutation = `
+    mutation($projectId: ID!, $contentId: ID!) {
+      addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
+        item { id }
+      }
+    }
+  `;
+
+  try {
+    const result = await githubGraphQL(mutation, {
+      projectId: config.projectId,
+      contentId: nodeId,
+    });
+    const itemId = (result.data as Record<string, { item?: { id: string } }>)?.addProjectV2ItemById?.item?.id;
+    if (!itemId) return addDraftItem(config, `#${issueNumber}: ${title}`, body, status);
+
+    await updateItemStatus(config, itemId, status);
+    return itemId;
+  } catch {
+    return addDraftItem(config, `#${issueNumber}: ${title}`, body, status);
+  }
+}
+
+/**
  * Get all items from the project with their status.
  */
 export async function getProjectItems(

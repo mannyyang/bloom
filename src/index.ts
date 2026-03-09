@@ -1,7 +1,8 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { readFileSync } from "fs";
 import { initDb, getLatestCycleNumber, insertCycle, updateCycleOutcome, insertPhaseUsage, getRecentJournalSummary, getCycleStats, formatCycleStats } from "./db.js";
-import { fetchCommunityIssues, acknowledgeIssues } from "./issues.js";
+import { fetchCommunityIssues } from "./issues.js";
+import { triageIssues } from "./triage.js";
 import { buildAssessmentPrompt, buildEvolutionPrompt } from "./evolve.js";
 import {
   protectIdentity,
@@ -99,11 +100,30 @@ async function main() {
         console.log(`[planning] Project found (id: ${projectConfig.projectId.slice(0, 20)}...)`);
         console.log(`[planning] Status field: ${projectConfig.statusFieldId.slice(0, 20)}...`);
         console.log(`[planning] Status columns: ${[...projectConfig.statusOptions.keys()].join(", ")}`);
-        const projectItems = await getProjectItems(projectConfig);
+        let projectItems = await getProjectItems(projectConfig);
         console.log(`[planning] ${projectItems.length} items on board`);
         for (const item of projectItems) {
           console.log(`  - [${item.status ?? "No Status"}] ${item.title}${item.reactions > 0 ? ` (${item.reactions} reactions)` : ""}`);
         }
+
+        // Triage community issues against the board
+        if (issues.length > 0) {
+          console.log(`\n[triage] Triaging ${issues.length} community issues against project board...`);
+          const triageResult = await triageIssues(issues, projectItems, cycleCount, projectConfig, db);
+          if (triageResult.addedToBacklog.length > 0) {
+            console.log(`[triage] Added to backlog: ${triageResult.addedToBacklog.map(n => `#${n}`).join(", ")}`);
+          }
+          if (triageResult.closed.length > 0) {
+            console.log(`[triage] Closed: ${triageResult.closed.map(n => `#${n}`).join(", ")}`);
+          }
+          for (const d of triageResult.decisions) {
+            console.log(`  - #${d.issueNumber}: ${d.action} — ${d.reason.slice(0, 100)}`);
+          }
+          // Re-fetch board items since triage may have added new ones
+          projectItems = await getProjectItems(projectConfig);
+          console.log(`[planning] ${projectItems.length} items on board (post-triage)`);
+        }
+
         currentItem = pickNextItem(projectItems);
         if (currentItem) {
           console.log(`[planning] Selected: "${currentItem.title}" → marking In Progress`);
@@ -128,7 +148,7 @@ async function main() {
     const phaseUsages: PhaseUsage[] = [];
     let assessmentTurns = 0;
     for await (const msg of query({
-      prompt: buildAssessmentPrompt({ identity, journalSummary, issues, cycleCount, cycleStatsText, memoryContext, planningContext }),
+      prompt: buildAssessmentPrompt({ identity, journalSummary, cycleCount, cycleStatsText, memoryContext, planningContext }),
       options: {
         cwd: process.cwd(),
         model: "claude-opus-4-6",
@@ -155,11 +175,6 @@ async function main() {
 
     console.log(`\n[assessment] Completed in ${(assessmentMs / 1000).toFixed(1)}s (${assessmentTurns} turns, ${assessment.length} chars)`);
     console.log(`[assessment] Output preview:\n${assessment.slice(0, 500)}${assessment.length > 500 ? "\n  ..." : ""}`);
-
-    // Acknowledge all community issues so contributors see their input was seen.
-    console.log(`\n[issues] Acknowledging ${issues.length} community issues...`);
-    await acknowledgeIssues(issues, cycleCount, db);
-    console.log("[issues] Done.");
 
     // Phase 2: Evolution (read-write with safety hooks)
     console.log("\n========================================");
@@ -211,7 +226,7 @@ async function main() {
 
     // Process evolution result: parse journal, store learnings, close resolved issues
     console.log("\n[journal] Processing evolution result...");
-    const processed = await processEvolutionResult(db, cycleCount, evolutionResult, issues);
+    const processed = await processEvolutionResult(db, cycleCount, evolutionResult);
     for (const [section, content] of Object.entries(processed.journalSections)) {
       if (content) {
         console.log(`[journal] Stored section "${section}" (${content.length} chars)`);
@@ -224,9 +239,6 @@ async function main() {
     outcome.improvementsAttempted = processed.improvementsAttempted;
     outcome.improvementsSucceeded = processed.improvementsSucceeded;
     console.log(`[outcome] Improvements: ${outcome.improvementsSucceeded}/${outcome.improvementsAttempted} succeeded`);
-    if (processed.issuesClosed.length > 0) {
-      console.log(`[issues] Closed resolved issues: ${processed.issuesClosed.map(n => `#${n}`).join(", ")}`);
-    }
 
     // Phase 2.5: Post-evolution build verification
     console.log("\n========================================");

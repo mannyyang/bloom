@@ -10,7 +10,7 @@ vi.mock("../src/issues.js", () => ({
   isValidRepo: vi.fn(),
 }));
 
-import { ensureProject, getProjectItems, addDraftItem, updateItemStatus, type ProjectConfig } from "../src/planning.js";
+import { ensureProject, getProjectItems, addDraftItem, updateItemStatus, getIssueNodeId, addLinkedItem, type ProjectConfig } from "../src/planning.js";
 import { githubGraphQL } from "../src/github-app.js";
 import { detectRepo, isValidRepo } from "../src/issues.js";
 
@@ -356,5 +356,108 @@ describe("updateItemStatus", () => {
 
     const result = await updateItemStatus(config, "item-1", "Done");
     expect(result).toBe(false);
+  });
+});
+
+describe("getIssueNodeId", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("resolves an issue number to a node ID", async () => {
+    mockGraphQL.mockResolvedValueOnce({
+      data: { repository: { issue: { id: "I_abc123" } } },
+    });
+
+    const nodeId = await getIssueNodeId("owner/repo", 42);
+    expect(nodeId).toBe("I_abc123");
+    expect(mockGraphQL).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns null when issue does not exist", async () => {
+    mockGraphQL.mockResolvedValueOnce({
+      data: { repository: { issue: null } },
+    });
+
+    const nodeId = await getIssueNodeId("owner/repo", 999);
+    expect(nodeId).toBeNull();
+  });
+
+  it("returns null when GraphQL throws", async () => {
+    mockGraphQL.mockRejectedValueOnce(new Error("Network error"));
+
+    const nodeId = await getIssueNodeId("owner/repo", 1);
+    expect(nodeId).toBeNull();
+  });
+
+  it("returns null for invalid repo format", async () => {
+    const nodeId = await getIssueNodeId("invalid", 1);
+    expect(nodeId).toBeNull();
+  });
+});
+
+describe("addLinkedItem", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("adds a real issue to the project by node ID", async () => {
+    const config = makeConfig();
+    // getIssueNodeId
+    mockGraphQL.mockResolvedValueOnce({
+      data: { repository: { issue: { id: "I_abc123" } } },
+    });
+    // addProjectV2ItemById
+    mockGraphQL.mockResolvedValueOnce({
+      data: { addProjectV2ItemById: { item: { id: "proj-item-1" } } },
+    });
+    // updateItemStatus
+    mockGraphQL.mockResolvedValueOnce({
+      data: { updateProjectV2ItemFieldValue: { projectV2Item: { id: "proj-item-1" } } },
+    });
+
+    const itemId = await addLinkedItem(config, "owner/repo", 42, "Fix bug", "Description");
+    expect(itemId).toBe("proj-item-1");
+    expect(mockGraphQL).toHaveBeenCalledTimes(3);
+  });
+
+  it("falls back to draft item when node ID lookup fails", async () => {
+    const config = makeConfig();
+    // getIssueNodeId fails
+    mockGraphQL.mockRejectedValueOnce(new Error("Not found"));
+    // addDraftItem
+    mockGraphQL.mockResolvedValueOnce({
+      data: { addProjectV2DraftIssue: { projectItem: { id: "draft-1" } } },
+    });
+    // updateItemStatus for draft
+    mockGraphQL.mockResolvedValueOnce({
+      data: { updateProjectV2ItemFieldValue: { projectV2Item: { id: "draft-1" } } },
+    });
+
+    const itemId = await addLinkedItem(config, "owner/repo", 42, "Fix bug", "Description");
+    expect(itemId).toBe("draft-1");
+  });
+
+  it("falls back to draft when addProjectV2ItemById returns null", async () => {
+    const config = makeConfig();
+    // getIssueNodeId succeeds
+    mockGraphQL.mockResolvedValueOnce({
+      data: { repository: { issue: { id: "I_abc123" } } },
+    });
+    // addProjectV2ItemById returns null
+    mockGraphQL.mockResolvedValueOnce({
+      data: { addProjectV2ItemById: { item: null } },
+    });
+    // addDraftItem fallback
+    mockGraphQL.mockResolvedValueOnce({
+      data: { addProjectV2DraftIssue: { projectItem: { id: "draft-2" } } },
+    });
+    // updateItemStatus for draft
+    mockGraphQL.mockResolvedValueOnce({
+      data: { updateProjectV2ItemFieldValue: { projectV2Item: { id: "draft-2" } } },
+    });
+
+    const itemId = await addLinkedItem(config, "owner/repo", 42, "Fix bug", "Description");
+    expect(itemId).toBe("draft-2");
   });
 });

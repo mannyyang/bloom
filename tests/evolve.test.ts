@@ -6,42 +6,25 @@ describe("buildAssessmentPrompt", () => {
     const prompt = buildAssessmentPrompt({
       identity: "I am Bloom",
       journalSummary: "# Journal",
-      issues: [],
       cycleCount: 5,
     });
     expect(prompt).toContain("evolution cycle 5");
     expect(prompt).toContain("I am Bloom");
   });
 
-  it("includes community issues sorted by reactions", () => {
+  it("references project board for community work", () => {
     const prompt = buildAssessmentPrompt({
       identity: "test",
       journalSummary: "",
-      issues: [
-        { number: 1, title: "Add feature X", body: "", reactions: 10 },
-        { number: 2, title: "Fix bug Y", body: "", reactions: 5 },
-      ],
       cycleCount: 1,
     });
-    expect(prompt).toContain("#1: Add feature X (10 reactions)");
-    expect(prompt).toContain("#2: Fix bug Y (5 reactions)");
-  });
-
-  it("handles no issues gracefully", () => {
-    const prompt = buildAssessmentPrompt({
-      identity: "test",
-      journalSummary: "",
-      issues: [],
-      cycleCount: 1,
-    });
-    expect(prompt).toContain("No community issues");
+    expect(prompt).toContain("project board");
   });
 
   it("includes cycleStatsText in prompt when provided", () => {
     const prompt = buildAssessmentPrompt({
       identity: "test",
       journalSummary: "",
-      issues: [],
       cycleCount: 10,
       cycleStatsText: "Total cycles: 9 | Success rate: 78%",
     });
@@ -53,7 +36,6 @@ describe("buildAssessmentPrompt", () => {
     const prompt = buildAssessmentPrompt({
       identity: "test",
       journalSummary: "",
-      issues: [],
       cycleCount: 10,
     });
     expect(prompt).not.toContain("track record");
@@ -63,7 +45,6 @@ describe("buildAssessmentPrompt", () => {
     const prompt = buildAssessmentPrompt({
       identity: "test",
       journalSummary: "",
-      issues: [],
       cycleCount: 5,
       memoryContext: "[pattern] Always run tests before committing",
     });
@@ -75,7 +56,6 @@ describe("buildAssessmentPrompt", () => {
     const prompt = buildAssessmentPrompt({
       identity: "test",
       journalSummary: "",
-      issues: [],
       cycleCount: 5,
     });
     expect(prompt).not.toContain("accumulated knowledge");
@@ -85,7 +65,6 @@ describe("buildAssessmentPrompt", () => {
     const prompt = buildAssessmentPrompt({
       identity: "test",
       journalSummary: "",
-      issues: [],
       cycleCount: 5,
       planningContext: "Current item: Improve error handling",
     });
@@ -96,7 +75,6 @@ describe("buildAssessmentPrompt", () => {
     const prompt = buildAssessmentPrompt({
       identity: "test",
       journalSummary: "",
-      issues: [],
       cycleCount: 5,
     });
     expect(prompt).not.toContain("Current item");
@@ -106,7 +84,6 @@ describe("buildAssessmentPrompt", () => {
     const prompt = buildAssessmentPrompt({
       identity: "test",
       journalSummary: "## Cycle 5 — 2026-03-06\nSome content here",
-      issues: [],
       cycleCount: 6,
     });
     expect(prompt).toContain("Cycle 5");

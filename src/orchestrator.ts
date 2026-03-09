@@ -1,8 +1,7 @@
 import type Database from "better-sqlite3";
 import { insertJournalEntry } from "./db.js";
-import { parseEvolutionResult, countImprovements, extractResolvedIssueNumbers } from "./evolve.js";
+import { parseEvolutionResult, countImprovements } from "./evolve.js";
 import { extractLearnings, storeLearnings, storeStrategicContext } from "./memory.js";
-import { closeResolvedIssue, hasCommitForIssue, type CommunityIssue } from "./issues.js";
 import type { CycleOutcome } from "./outcomes.js";
 
 /**
@@ -14,20 +13,18 @@ export interface ProcessedEvolution {
   improvementsSucceeded: number;
   learningsStored: number;
   strategicContextStored: boolean;
-  issuesClosed: number[];
 }
 
 /**
  * Process the raw evolution result text: parse journal sections, store learnings,
- * store strategic context, count improvements, and close resolved issues.
+ * store strategic context, and count improvements.
  *
- * Extracted from index.ts main() to enable unit testing.
+ * Issue lifecycle is now handled by the triage step (src/triage.ts), not here.
  */
 export async function processEvolutionResult(
   db: Database.Database,
   cycleCount: number,
   evolutionResult: string,
-  issues: CommunityIssue[],
 ): Promise<ProcessedEvolution> {
   // Parse journal sections from evolution result
   const journalSections = parseEvolutionResult(evolutionResult);
@@ -63,25 +60,12 @@ export async function processEvolutionResult(
   const improvementsAttempted = countImprovements(journalSections.attempted);
   const improvementsSucceeded = countImprovements(journalSections.succeeded);
 
-  // Close issues mentioned in the succeeded section that have associated commits
-  const openIssueNumbers = issues.map(i => i.number);
-  const resolvedNumbers = extractResolvedIssueNumbers(journalSections.succeeded, openIssueNumbers);
-  const issuesClosed: number[] = [];
-  for (const issueNum of resolvedNumbers) {
-    if (hasCommitForIssue(issueNum)) {
-      const issue = issues.find(i => i.number === issueNum);
-      await closeResolvedIssue(issueNum, cycleCount, `Addressed: ${issue?.title ?? `issue #${issueNum}`}`, db);
-      issuesClosed.push(issueNum);
-    }
-  }
-
   return {
     journalSections,
     improvementsAttempted,
     improvementsSucceeded,
     learningsStored,
     strategicContextStored,
-    issuesClosed,
   };
 }
 
