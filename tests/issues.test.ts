@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { execFileSync } from "child_process";
 import { fetchCommunityIssues, acknowledgeIssues, closeResolvedIssue, hasCommitForIssue, isValidRepo, isSafeIssueNumber, detectRepo } from "../src/issues.js";
 import { githubApiRequest } from "../src/github-app.js";
+import { initDb, hasIssueAction } from "../src/db.js";
 
 vi.mock("../src/github-app.js", () => ({
   githubApiRequest: vi.fn(),
@@ -537,5 +538,106 @@ describe("closeResolvedIssue", () => {
     const result = await closeResolvedIssue(3, 48, "reason");
     expect(result).toBe(false);
     expect(mockGithubApiRequest).not.toHaveBeenCalled();
+  });
+});
+
+describe("acknowledgeIssues — DB idempotency", () => {
+  const originalEnv = process.env.GITHUB_REPOSITORY;
+
+  afterEach(() => {
+    mockGithubApiRequest.mockReset();
+    if (originalEnv !== undefined) {
+      process.env.GITHUB_REPOSITORY = originalEnv;
+    } else {
+      delete process.env.GITHUB_REPOSITORY;
+    }
+  });
+
+  it("records acknowledgement in DB and skips on re-run", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    const db = initDb(":memory:");
+    // Insert a cycle row so foreign key is satisfied
+    db.prepare("INSERT INTO cycles (cycle_number, started_at) VALUES (?, ?)").run(10, new Date().toISOString());
+
+    const issue = { number: 42, title: "Test", body: "", reactions: 0 };
+
+    // First call: no Bloom comment found → posts comment + label
+    mockGithubApiRequest.mockResolvedValueOnce({
+      ok: true, json: async () => [],
+    } as unknown as Response);
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+
+    await acknowledgeIssues([issue], 10, db);
+
+    // Action should be recorded
+    expect(hasIssueAction(db, 42, "acknowledged")).toBe(true);
+    expect(mockGithubApiRequest).toHaveBeenCalledTimes(3);
+
+    // Second call: DB says already acknowledged → no API calls
+    mockGithubApiRequest.mockReset();
+    await acknowledgeIssues([issue], 10, db);
+    expect(mockGithubApiRequest).not.toHaveBeenCalled();
+
+    db.close();
+  });
+
+  it("records acknowledgement in DB even when prior Bloom comment exists", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    const db = initDb(":memory:");
+    db.prepare("INSERT INTO cycles (cycle_number, started_at) VALUES (?, ?)").run(5, new Date().toISOString());
+
+    const issue = { number: 7, title: "Old", body: "", reactions: 0 };
+
+    // GET comments returns existing Bloom comment
+    mockGithubApiRequest.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ body: "Seen by Bloom in cycle 3. Thank you!" }],
+    } as unknown as Response);
+
+    await acknowledgeIssues([issue], 5, db);
+
+    // Should record even though it found via API
+    expect(hasIssueAction(db, 7, "acknowledged")).toBe(true);
+    // Only 1 API call (GET comments), no POST
+    expect(mockGithubApiRequest).toHaveBeenCalledTimes(1);
+
+    db.close();
+  });
+});
+
+describe("closeResolvedIssue — DB idempotency", () => {
+  const originalEnv = process.env.GITHUB_REPOSITORY;
+
+  afterEach(() => {
+    mockGithubApiRequest.mockReset();
+    if (originalEnv !== undefined) {
+      process.env.GITHUB_REPOSITORY = originalEnv;
+    } else {
+      delete process.env.GITHUB_REPOSITORY;
+    }
+  });
+
+  it("records close in DB and short-circuits on re-run", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    const db = initDb(":memory:");
+    db.prepare("INSERT INTO cycles (cycle_number, started_at) VALUES (?, ?)").run(48, new Date().toISOString());
+
+    // First call: POST comment + PATCH close
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+
+    const result1 = await closeResolvedIssue(3, 48, "Fixed.", db);
+    expect(result1).toBe(true);
+    expect(hasIssueAction(db, 3, "closed")).toBe(true);
+    expect(mockGithubApiRequest).toHaveBeenCalledTimes(2);
+
+    // Second call: DB says already closed → returns true without API calls
+    mockGithubApiRequest.mockReset();
+    const result2 = await closeResolvedIssue(3, 48, "Fixed.", db);
+    expect(result2).toBe(true);
+    expect(mockGithubApiRequest).not.toHaveBeenCalled();
+
+    db.close();
   });
 });
