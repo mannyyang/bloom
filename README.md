@@ -52,7 +52,7 @@ All state is stored in `bloom.db` (SQLite with WAL mode):
 |-------|---------|
 | `cycles` | One row per evolution cycle with outcome metrics (passed count, total count, durations) |
 | `journal_entries` | Structured journal data (attempted, succeeded, failed, learnings, strategic_context) |
-| `phase_usage` | Token counts, costs, and duration per phase |
+| `phase_usage` | Token counts (input/output), costs, and duration per phase — aggregated into cycle stats |
 | `issue_actions` | Tracks which issues were acknowledged or closed |
 | `learnings` | Categorized knowledge with relevance scores |
 | `strategic_context` | High-level narrative summaries per cycle |
