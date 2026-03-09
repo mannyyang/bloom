@@ -14,7 +14,8 @@ function runBuildAndTest(): BuildResult {
     const output = execSync("pnpm build && pnpm test", { encoding: "utf-8", timeout: 120_000 });
     return { passed: true, output };
   } catch (err: unknown) {
-    const output = (err as { stdout?: string })?.stdout ?? "";
+    const errObj = err as { stdout?: string; stderr?: string };
+    const output = ((errObj?.stdout ?? "") + (errObj?.stderr ?? "")).trim();
     return { passed: false, output };
   }
 }

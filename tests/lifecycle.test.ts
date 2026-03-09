@@ -60,6 +60,26 @@ describe("lifecycle helpers", () => {
       expect(result.passed).toBe(false);
       expect(result.output).toBe("Tests  100 passed\nsome failure");
     });
+
+    it("captures stderr from error object on failure", () => {
+      const err = new Error("build failed") as Error & { stderr: string };
+      err.stderr = "Error: Cannot find module './missing'";
+      mockedExecSync.mockImplementation(() => { throw err; });
+      const result = runPreflightCheck();
+      expect(result.passed).toBe(false);
+      expect(result.output).toContain("Cannot find module './missing'");
+    });
+
+    it("combines stdout and stderr from error object on failure", () => {
+      const err = new Error("build failed") as Error & { stdout: string; stderr: string };
+      err.stdout = "Tests  50 passed\n";
+      err.stderr = "FAIL src/foo.test.ts\nAssertionError: expected true";
+      mockedExecSync.mockImplementation(() => { throw err; });
+      const result = runPreflightCheck();
+      expect(result.passed).toBe(false);
+      expect(result.output).toContain("Tests  50 passed");
+      expect(result.output).toContain("AssertionError: expected true");
+    });
   });
 
   describe("setGitBotIdentity", () => {
