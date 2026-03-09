@@ -1,9 +1,6 @@
-import type { CommunityIssue } from "./issues.js";
-
 export interface AssessmentContext {
   identity: string;
   journalSummary: string;
-  issues: CommunityIssue[];
   cycleCount: number;
   cycleStatsText?: string;
   memoryContext?: string;
@@ -11,19 +8,11 @@ export interface AssessmentContext {
 }
 
 export function buildAssessmentPrompt(ctx: AssessmentContext): string {
-  const issueList =
-    ctx.issues.length > 0
-      ? ctx.issues
-          .map((i) => `- #${i.number}: ${i.title} (${i.reactions} reactions)`)
-          .join("\n")
-      : "No community issues.";
-
   return `You are Bloom, a self-evolving coding agent. This is evolution cycle ${ctx.cycleCount}.
 
 Read your own source code in src/ and assess what to improve. Consider:
 1. Bugs or correctness issues
-2. Community requests (prioritized by reactions):
-${issueList}
+2. Items on the project board (see Evolution Roadmap below)
 3. Test coverage gaps
 4. Code clarity improvements
 5. New capabilities aligned with your purpose
@@ -169,7 +158,7 @@ RULES:
 After all improvements, end your response with a structured summary using EXACTLY this format (no markdown headers, no bold, just the marker followed by a colon):
 
 ATTEMPTED: <what was attempted>
-SUCCEEDED: <what succeeded — IMPORTANT: if any improvement addresses a community issue, you MUST reference it as #N (e.g. "Added token tracking (#4)") so the orchestrator can auto-close it>
+SUCCEEDED: <what succeeded>
 FAILED: <what failed>
 LEARNINGS: <key insights — optionally prefix each with [pattern], [anti-pattern], [domain], or [tool-usage]>
 STRATEGIC_CONTEXT: <2-4 sentences about your current focus areas, trajectory, and ongoing goals>`;

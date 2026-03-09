@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { execFileSync } from "child_process";
-import { fetchCommunityIssues, acknowledgeIssues, closeResolvedIssue, hasCommitForIssue, isValidRepo, isSafeIssueNumber, detectRepo } from "../src/issues.js";
+import { fetchCommunityIssues, acknowledgeIssues, closeResolvedIssue, closeIssueWithComment, hasCommitForIssue, isValidRepo, isSafeIssueNumber, detectRepo } from "../src/issues.js";
 import { githubApiRequest } from "../src/github-app.js";
 import { initDb, hasIssueAction } from "../src/db.js";
 
@@ -601,6 +601,58 @@ describe("acknowledgeIssues — DB idempotency", () => {
     expect(hasIssueAction(db, 7, "acknowledged")).toBe(true);
     // Only 1 API call (GET comments), no POST
     expect(mockGithubApiRequest).toHaveBeenCalledTimes(1);
+
+    db.close();
+  });
+});
+
+describe("closeIssueWithComment", () => {
+  const originalEnv = process.env.GITHUB_REPOSITORY;
+
+  afterEach(() => {
+    mockGithubApiRequest.mockReset();
+    if (originalEnv !== undefined) {
+      process.env.GITHUB_REPOSITORY = originalEnv;
+    } else {
+      delete process.env.GITHUB_REPOSITORY;
+    }
+  });
+
+  it("posts a custom comment and closes the issue", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+
+    const result = await closeIssueWithComment(5, 10, "Custom triage message");
+    expect(result).toBe(true);
+    expect(mockGithubApiRequest).toHaveBeenCalledWith(
+      "POST",
+      "/repos/owner/repo/issues/5/comments",
+      { body: "Custom triage message" },
+    );
+    expect(mockGithubApiRequest).toHaveBeenCalledWith(
+      "PATCH",
+      "/repos/owner/repo/issues/5",
+      { state: "closed" },
+    );
+  });
+
+  it("uses custom action type for DB idempotency", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    const db = initDb(":memory:");
+    db.prepare("INSERT INTO cycles (cycle_number, started_at) VALUES (?, ?)").run(10, new Date().toISOString());
+
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+
+    await closeIssueWithComment(5, 10, "Triaged", db, "triaged");
+    expect(hasIssueAction(db, 5, "triaged")).toBe(true);
+
+    // Second call skips
+    mockGithubApiRequest.mockReset();
+    const result = await closeIssueWithComment(5, 10, "Triaged", db, "triaged");
+    expect(result).toBe(true);
+    expect(mockGithubApiRequest).not.toHaveBeenCalled();
 
     db.close();
   });

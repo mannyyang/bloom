@@ -148,26 +148,27 @@ export function hasCommitForIssue(issueNumber: number): boolean {
 }
 
 /**
- * Close a resolved issue with a comment explaining the resolution.
+ * Close an issue with a comment. Generic helper used by triage and legacy resolution.
  * Best-effort — failures are swallowed to never block evolution.
  */
-export async function closeResolvedIssue(
+export async function closeIssueWithComment(
   issueNumber: number,
   cycleCount: number,
-  reason: string,
+  comment: string,
   db?: Database.Database,
+  action: string = "closed",
 ): Promise<boolean> {
   const repo = detectRepo();
   if (!repo || !isValidRepo(repo)) return false;
   if (!isSafeIssueNumber(issueNumber)) return false;
 
-  // Skip if already closed locally
-  if (db && hasIssueAction(db, issueNumber, "closed")) return true;
+  // Skip if already performed this action locally
+  if (db && hasIssueAction(db, issueNumber, action)) return true;
 
   try {
     // Post closing comment
     await githubApiRequest("POST", `/repos/${repo}/issues/${issueNumber}/comments`, {
-      body: `Resolved by Bloom in cycle ${cycleCount}.\n\n${reason}`,
+      body: comment,
     });
 
     // Close the issue
@@ -175,11 +176,21 @@ export async function closeResolvedIssue(
       state: "closed",
     });
 
-    // Record the close action
-    if (db) insertIssueAction(db, cycleCount, issueNumber, "closed");
+    // Record the action
+    if (db) insertIssueAction(db, cycleCount, issueNumber, action);
 
     return true;
   } catch {
     return false;
   }
+}
+
+/** @deprecated Use closeIssueWithComment instead */
+export async function closeResolvedIssue(
+  issueNumber: number,
+  cycleCount: number,
+  reason: string,
+  db?: Database.Database,
+): Promise<boolean> {
+  return closeIssueWithComment(issueNumber, cycleCount, `Resolved by Bloom in cycle ${cycleCount}.\n\n${reason}`, db, "closed");
 }
