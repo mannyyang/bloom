@@ -80,10 +80,12 @@ Open an issue with the `agent-input` label to suggest improvements. Issues are p
 ```
 src/
 ├── index.ts        # Main orchestrator (5 phases)
+├── orchestrator.ts # Extracted helpers: evolution result processing, cycle summary
 ├── evolve.ts       # Assessment & evolution prompt building
 ├── memory.ts       # Learning extraction, storage, and prompt formatting
 ├── planning.ts     # GitHub Projects v2 integration via GraphQL
 ├── db.ts           # SQLite persistence (bloom.db)
+├── stats.ts        # CLI entry point for querying evolution statistics
 ├── issues.ts       # GitHub issues integration
 ├── github-app.ts   # GitHub App JWT auth + REST/GraphQL API client
 ├── safety.ts       # Pre-tool-use hooks & dangerous command blocking
@@ -124,3 +126,11 @@ pnpm test
 ```bash
 ANTHROPIC_API_KEY=sk-... pnpm run evolve
 ```
+
+### View Statistics
+
+```bash
+pnpm stats
+```
+
+Prints cycle statistics (success rate, test trends, costs, token usage) and the latest strategic context. Useful for answering "how is Bloom doing?" without running a full evolution cycle.
