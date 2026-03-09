@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   parseTestCount,
+  parseTestTotal,
   createOutcome,
   formatOutcomeForJournal,
 } from "../src/outcomes.js";
@@ -34,6 +35,58 @@ describe("parseTestCount", () => {
 
   it("parses large count", () => {
     expect(parseTestCount("Tests  1234 passed")).toBe(1234);
+  });
+
+  it("returns 0 when all tests fail (no passed token)", () => {
+    expect(parseTestCount("Tests  5 failed (5)")).toBe(0);
+  });
+
+  it("returns 0 for all-failed multiline output", () => {
+    const output = `
+ Test Files  2 failed (2)
+      Tests  5 failed (5)
+   Start at  19:02:38
+`;
+    expect(parseTestCount(output)).toBe(0);
+  });
+
+  it("parses passed count with mixed passed/failed output", () => {
+    expect(parseTestCount("Tests  490 passed | 5 failed (495)")).toBe(490);
+  });
+
+  it("parses passed count with passed/skipped output", () => {
+    expect(parseTestCount("Tests  3 passed | 1 skipped (4)")).toBe(3);
+  });
+});
+
+describe("parseTestTotal", () => {
+  it("parses total from passed-only output", () => {
+    expect(parseTestTotal("Tests  490 passed (490)")).toBe(490);
+  });
+
+  it("parses total from mixed passed/failed output", () => {
+    expect(parseTestTotal("Tests  490 passed | 5 failed (495)")).toBe(495);
+  });
+
+  it("parses total from all-failed output", () => {
+    expect(parseTestTotal("Tests  5 failed (5)")).toBe(5);
+  });
+
+  it("parses total from multiline vitest output", () => {
+    const output = `
+ Test Files  7 passed (7)
+      Tests  490 passed (490)
+   Start at  19:02:38
+`;
+    expect(parseTestTotal(output)).toBe(490);
+  });
+
+  it("returns null when no match found", () => {
+    expect(parseTestTotal("no test output here")).toBeNull();
+  });
+
+  it("returns null for empty string", () => {
+    expect(parseTestTotal("")).toBeNull();
   });
 });
 

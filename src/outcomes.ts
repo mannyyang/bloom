@@ -15,13 +15,34 @@ export interface CycleOutcome {
 }
 
 /**
- * Parse the test count from pnpm test output.
- * Looks for patterns like "490 passed" in vitest output.
+ * Parse the passed test count from pnpm test output.
+ * Looks for patterns like "Tests  490 passed" in vitest output.
+ * Also handles cases where all tests fail (e.g., "Tests  5 failed (5)") — returns 0 passed.
  * Returns null if the pattern is not found.
  */
 export function parseTestCount(output: string): number | null {
-  // Vitest format: "Tests  490 passed" (skip "Test Files  7 passed")
-  const match = output.match(/Tests\s+(\d+)\s+passed/);
+  // Vitest format: "Tests  490 passed" or "Tests  490 passed | 5 failed (495)"
+  const passedMatch = output.match(/Tests\s+(\d+)\s+passed/);
+  if (passedMatch) {
+    return parseInt(passedMatch[1], 10);
+  }
+  // All tests failed: "Tests  5 failed (5)" with no "passed" token
+  const allFailedMatch = output.match(/Tests\s+\d+\s+failed\s+\(\d+\)/);
+  if (allFailedMatch) {
+    return 0;
+  }
+  return null;
+}
+
+/**
+ * Parse the total test count from pnpm test output.
+ * Looks for the parenthesized total in vitest output, e.g., "Tests  490 passed (490)"
+ * or "Tests  3 passed | 2 failed (5)".
+ * Returns null if the pattern is not found.
+ */
+export function parseTestTotal(output: string): number | null {
+  // Vitest wraps the total in parentheses at the end of the Tests line
+  const match = output.match(/Tests\s+.+\((\d+)\)/);
   if (match) {
     return parseInt(match[1], 10);
   }
