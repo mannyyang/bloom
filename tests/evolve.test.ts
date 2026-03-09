@@ -152,6 +152,12 @@ describe("buildEvolutionPrompt", () => {
     expect(prompt).toContain("Preflight: passed");
   });
 
+  it("instructs agent to update README and documentation", () => {
+    const prompt = buildEvolutionPrompt("assessment");
+    expect(prompt).toContain("update README.md");
+    expect(prompt).toContain("public-facing documentation");
+  });
+
   it("includes both usage and outcome context together", () => {
     const prompt = buildEvolutionPrompt("assessment text", {
       usageContext: "Cost: $0.50",
