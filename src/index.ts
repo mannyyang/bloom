@@ -1,8 +1,8 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { readFileSync } from "fs";
-import { initDb, getLatestCycleNumber, insertCycle, updateCycleOutcome, insertJournalEntry, insertPhaseUsage, getRecentJournalSummary, getCycleStats, formatCycleStats } from "./db.js";
-import { fetchCommunityIssues, acknowledgeIssues, closeResolvedIssue, hasCommitForIssue } from "./issues.js";
-import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements, extractResolvedIssueNumbers } from "./evolve.js";
+import { initDb, getLatestCycleNumber, insertCycle, updateCycleOutcome, insertPhaseUsage, getRecentJournalSummary, getCycleStats, formatCycleStats } from "./db.js";
+import { fetchCommunityIssues, acknowledgeIssues } from "./issues.js";
+import { buildAssessmentPrompt, buildEvolutionPrompt } from "./evolve.js";
 import {
   protectIdentity,
   protectJournal,
@@ -26,7 +26,8 @@ import {
   PhaseUsage,
 } from "./usage.js";
 import { createOutcome, formatOutcomeForJournal, parseTestCount, parseTestTotal } from "./outcomes.js";
-import { extractLearnings, storeLearnings, storeStrategicContext, formatMemoryForPrompt } from "./memory.js";
+import { formatMemoryForPrompt } from "./memory.js";
+import { processEvolutionResult, formatCycleSummaryWithDuration } from "./orchestrator.js";
 import { ensureProject, getProjectItems, pickNextItem, updateItemStatus, formatPlanningContext, type ProjectConfig, type ProjectItem } from "./planning.js";
 
 async function main() {
@@ -208,55 +209,23 @@ async function main() {
     console.log("\n[usage] Cycle usage summary:");
     console.log(formatCycleUsage(cycleUsage));
 
-    // Parse journal sections from evolution result
-    console.log("\n[journal] Parsing evolution result...");
-    const journalSections = parseEvolutionResult(evolutionResult);
-    for (const [section, content] of Object.entries(journalSections)) {
+    // Process evolution result: parse journal, store learnings, close resolved issues
+    console.log("\n[journal] Processing evolution result...");
+    const processed = await processEvolutionResult(db, cycleCount, evolutionResult, issues);
+    for (const [section, content] of Object.entries(processed.journalSections)) {
       if (content) {
-        insertJournalEntry(db, cycleCount, section, content);
         console.log(`[journal] Stored section "${section}" (${content.length} chars)`);
       }
     }
-
-    // Extract and store learnings (best-effort)
-    try {
-      const extracted = extractLearnings(journalSections.learnings);
-      storeLearnings(db, cycleCount, extracted);
-      console.log(`[memory] Stored ${extracted.learnings.length} learnings`);
-    } catch {
-      console.error("[memory] Failed to store learnings (non-fatal)");
+    console.log(`[memory] Stored ${processed.learningsStored} learnings`);
+    if (processed.strategicContextStored) {
+      console.log(`[memory] Stored strategic context`);
     }
-
-    // Extract and store strategic context (best-effort)
-    try {
-      const strategicCtx = journalSections.strategic_context;
-      if (strategicCtx) {
-        storeStrategicContext(db, cycleCount, strategicCtx);
-        console.log(`[memory] Stored strategic context (${strategicCtx.length} chars)`);
-      }
-    } catch {
-      console.error("[memory] Failed to store strategic context (non-fatal)");
-    }
-
-    // Populate improvement counts from parsed sections
-    outcome.improvementsAttempted = countImprovements(journalSections.attempted);
-    outcome.improvementsSucceeded = countImprovements(journalSections.succeeded);
+    outcome.improvementsAttempted = processed.improvementsAttempted;
+    outcome.improvementsSucceeded = processed.improvementsSucceeded;
     console.log(`[outcome] Improvements: ${outcome.improvementsSucceeded}/${outcome.improvementsAttempted} succeeded`);
-
-    // Close issues mentioned in the succeeded section that have associated commits
-    const openIssueNumbers = issues.map(i => i.number);
-    const resolvedNumbers = extractResolvedIssueNumbers(journalSections.succeeded, openIssueNumbers);
-    if (resolvedNumbers.length > 0) {
-      console.log(`\n[issues] Found ${resolvedNumbers.length} potentially resolved issues: ${resolvedNumbers.map(n => `#${n}`).join(", ")}`);
-    }
-    for (const issueNum of resolvedNumbers) {
-      if (hasCommitForIssue(issueNum)) {
-        const issue = issues.find(i => i.number === issueNum);
-        await closeResolvedIssue(issueNum, cycleCount, `Addressed: ${issue?.title ?? `issue #${issueNum}`}`, db);
-        console.log(`[issues] Closed resolved issue #${issueNum}`);
-      } else {
-        console.log(`[issues] Skipping #${issueNum} — no commits found referencing it`);
-      }
+    if (processed.issuesClosed.length > 0) {
+      console.log(`[issues] Closed resolved issues: ${processed.issuesClosed.map(n => `#${n}`).join(", ")}`);
     }
 
     // Phase 2.5: Post-evolution build verification
@@ -277,7 +246,7 @@ async function main() {
     // Update planning status (best-effort)
     try {
       if (projectConfig && currentItem) {
-        const succeeded = countImprovements(journalSections.succeeded) > 0;
+        const succeeded = processed.improvementsSucceeded > 0;
         const newStatus = succeeded ? "Done" : "Up Next";
         await updateItemStatus(projectConfig, currentItem.id, newStatus);
         console.log(`[planning] Updated "${currentItem.title}" → ${newStatus}`);
@@ -318,14 +287,7 @@ async function main() {
   pushTags();
 
   const totalMs = Date.now() - cycleStartTime;
-  console.log(`\n========================================`);
-  console.log(`  Cycle ${cycleCount} — ${evolutionError ? "FAILED" : "COMPLETE"}`);
-  console.log(`  Duration: ${(totalMs / 1000).toFixed(1)}s`);
-  console.log(`  Improvements: ${outcome.improvementsSucceeded}/${outcome.improvementsAttempted}`);
-  console.log(`  Tests: ${outcome.testCountBefore ?? "?"} → ${outcome.testCountAfter ?? "?"}`);
-  console.log(`  Build: ${outcome.buildVerificationPassed ? "PASSED" : "FAILED"}`);
-  console.log(`  Push: ${outcome.pushSucceeded ? "OK" : "FAILED"}`);
-  console.log(`========================================\n`);
+  console.log(`\n${formatCycleSummaryWithDuration(cycleCount, outcome, evolutionError, totalMs)}\n`);
   console.log(formatOutcomeForJournal(outcome));
 
   // Exit with error code if the cycle failed, after DB has been committed/pushed
