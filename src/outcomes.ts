@@ -12,6 +12,8 @@ export interface CycleOutcome {
   pushSucceeded: boolean;
   testCountBefore: number | null;
   testCountAfter: number | null;
+  testTotalBefore: number | null;
+  testTotalAfter: number | null;
 }
 
 /**
@@ -63,6 +65,8 @@ export function createOutcome(cycleNumber: number): CycleOutcome {
     pushSucceeded: false,
     testCountBefore: null,
     testCountAfter: null,
+    testTotalBefore: null,
+    testTotalAfter: null,
   };
 }
 
@@ -84,9 +88,11 @@ export function formatOutcomeForJournal(outcome: CycleOutcome): string {
   if (outcome.testCountBefore !== null && outcome.testCountAfter !== null) {
     const delta = outcome.testCountAfter - outcome.testCountBefore;
     const deltaStr = delta >= 0 ? `+${delta}` : `${delta}`;
-    lines.push(
-      `- **Tests**: ${outcome.testCountBefore} before, ${outcome.testCountAfter} after (${deltaStr})`,
-    );
+    let testLine = `- **Tests**: ${outcome.testCountBefore} before, ${outcome.testCountAfter} after (${deltaStr})`;
+    if (outcome.testTotalBefore !== null && outcome.testTotalAfter !== null) {
+      testLine += ` — total: ${outcome.testTotalBefore} → ${outcome.testTotalAfter}`;
+    }
+    lines.push(testLine);
   } else if (outcome.testCountBefore !== null) {
     lines.push(`- **Tests**: ${outcome.testCountBefore} before (after count unavailable)`);
   } else if (outcome.testCountAfter !== null) {

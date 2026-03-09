@@ -20,6 +20,8 @@ export function initDb(path: string = DEFAULT_DB_PATH): Database.Database {
       push_succeeded           INTEGER NOT NULL DEFAULT 0,
       test_count_before        INTEGER,
       test_count_after         INTEGER,
+      test_total_before        INTEGER,
+      test_total_after         INTEGER,
       completed_at             TEXT
     );
 
@@ -73,6 +75,16 @@ export function initDb(path: string = DEFAULT_DB_PATH): Database.Database {
     );
   `);
 
+  // Migration: add test_total columns if missing (added in cycle 63)
+  const columns = db.prepare("PRAGMA table_info(cycles)").all() as { name: string }[];
+  const colNames = new Set(columns.map(c => c.name));
+  if (!colNames.has("test_total_before")) {
+    db.exec("ALTER TABLE cycles ADD COLUMN test_total_before INTEGER");
+  }
+  if (!colNames.has("test_total_after")) {
+    db.exec("ALTER TABLE cycles ADD COLUMN test_total_after INTEGER");
+  }
+
   return db;
 }
 
@@ -86,8 +98,8 @@ export function insertCycle(db: Database.Database, outcome: CycleOutcome): void 
     INSERT OR REPLACE INTO cycles (
       cycle_number, started_at, preflight_passed, improvements_attempted,
       improvements_succeeded, build_verification_passed, push_succeeded,
-      test_count_before, test_count_after
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      test_count_before, test_count_after, test_total_before, test_total_after
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     outcome.cycleNumber,
     new Date().toISOString(),
@@ -98,6 +110,8 @@ export function insertCycle(db: Database.Database, outcome: CycleOutcome): void 
     outcome.pushSucceeded ? 1 : 0,
     outcome.testCountBefore,
     outcome.testCountAfter,
+    outcome.testTotalBefore,
+    outcome.testTotalAfter,
   );
 }
 
@@ -115,6 +129,8 @@ export function updateCycleOutcome(db: Database.Database, outcome: CycleOutcome)
       push_succeeded = ?,
       test_count_before = ?,
       test_count_after = ?,
+      test_total_before = ?,
+      test_total_after = ?,
       completed_at = ?
     WHERE cycle_number = ?
   `).run(
@@ -125,6 +141,8 @@ export function updateCycleOutcome(db: Database.Database, outcome: CycleOutcome)
     outcome.pushSucceeded ? 1 : 0,
     outcome.testCountBefore,
     outcome.testCountAfter,
+    outcome.testTotalBefore,
+    outcome.testTotalAfter,
     new Date().toISOString(),
     outcome.cycleNumber,
   );

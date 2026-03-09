@@ -101,6 +101,8 @@ describe("createOutcome", () => {
     expect(outcome.pushSucceeded).toBe(false);
     expect(outcome.testCountBefore).toBeNull();
     expect(outcome.testCountAfter).toBeNull();
+    expect(outcome.testTotalBefore).toBeNull();
+    expect(outcome.testTotalAfter).toBeNull();
   });
 });
 
@@ -160,6 +162,27 @@ describe("formatOutcomeForJournal", () => {
     });
     const result = formatOutcomeForJournal(outcome);
     expect(result).toContain("50 before (after count unavailable)");
+  });
+
+  it("includes total test counts when available", () => {
+    const outcome = makeOutcome({
+      cycleNumber: 46, improvementsAttempted: 2, improvementsSucceeded: 2,
+      buildVerificationPassed: true, pushSucceeded: true,
+      testCountBefore: 490, testCountAfter: 505,
+      testTotalBefore: 495, testTotalAfter: 510,
+    });
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).toContain("total: 495 → 510");
+  });
+
+  it("omits total when test totals are null", () => {
+    const outcome = makeOutcome({
+      cycleNumber: 46, improvementsAttempted: 2, improvementsSucceeded: 2,
+      buildVerificationPassed: true, pushSucceeded: true,
+      testCountBefore: 490, testCountAfter: 505,
+    });
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).not.toContain("total:");
   });
 
   it("handles both test counts null", () => {

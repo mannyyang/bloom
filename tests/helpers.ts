@@ -14,6 +14,8 @@ export function makeOutcome(overrides: Partial<CycleOutcome> = {}): CycleOutcome
     pushSucceeded: false,
     testCountBefore: null,
     testCountAfter: null,
+    testTotalBefore: null,
+    testTotalAfter: null,
     ...overrides,
   };
 }

@@ -25,7 +25,7 @@ import {
   formatUsageForJournal,
   PhaseUsage,
 } from "./usage.js";
-import { createOutcome, formatOutcomeForJournal, parseTestCount } from "./outcomes.js";
+import { createOutcome, formatOutcomeForJournal, parseTestCount, parseTestTotal } from "./outcomes.js";
 import { extractLearnings, storeLearnings, storeStrategicContext, formatMemoryForPrompt } from "./memory.js";
 import { ensureProject, getProjectItems, pickNextItem, updateItemStatus, formatPlanningContext, type ProjectConfig, type ProjectItem } from "./planning.js";
 
@@ -51,7 +51,8 @@ async function main() {
   }
   outcome.preflightPassed = true;
   outcome.testCountBefore = parseTestCount(preflight.output);
-  console.log(`[preflight] PASSED in ${(preflightMs / 1000).toFixed(1)}s (${outcome.testCountBefore ?? "?"} tests)`);
+  outcome.testTotalBefore = parseTestTotal(preflight.output);
+  console.log(`[preflight] PASSED in ${(preflightMs / 1000).toFixed(1)}s (${outcome.testCountBefore ?? "?"}/${outcome.testTotalBefore ?? "?"} tests)`);
 
   setGitBotIdentity();
 
@@ -267,7 +268,8 @@ async function main() {
     const buildMs = Date.now() - buildStart;
     outcome.buildVerificationPassed = buildResult.passed;
     outcome.testCountAfter = parseTestCount(buildResult.output);
-    console.log(`[build] ${buildResult.passed ? "PASSED" : "FAILED"} in ${(buildMs / 1000).toFixed(1)}s (${outcome.testCountAfter ?? "?"} tests)`);
+    outcome.testTotalAfter = parseTestTotal(buildResult.output);
+    console.log(`[build] ${buildResult.passed ? "PASSED" : "FAILED"} in ${(buildMs / 1000).toFixed(1)}s (${outcome.testCountAfter ?? "?"}/${outcome.testTotalAfter ?? "?"} tests)`);
     if (!buildResult.passed) {
       throw new Error("Build verification failed. Hard reset performed.");
     }
