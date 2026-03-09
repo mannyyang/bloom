@@ -169,7 +169,7 @@ RULES:
 After all improvements, end your response with a structured summary using EXACTLY this format (no markdown headers, no bold, just the marker followed by a colon):
 
 ATTEMPTED: <what was attempted>
-SUCCEEDED: <what succeeded>
+SUCCEEDED: <what succeeded — IMPORTANT: if any improvement addresses a community issue, you MUST reference it as #N (e.g. "Added token tracking (#4)") so the orchestrator can auto-close it>
 FAILED: <what failed>
 LEARNINGS: <key insights — optionally prefix each with [pattern], [anti-pattern], [domain], or [tool-usage]>
 STRATEGIC_CONTEXT: <2-4 sentences about your current focus areas, trajectory, and ongoing goals>`;
