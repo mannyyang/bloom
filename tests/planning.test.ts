@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { pickNextItem, formatPlanningContext, type ProjectItem, type ProjectConfig } from "../src/planning.js";
+import { pickNextItem, formatPlanningContext, extractProjectConfig, type ProjectItem, type ProjectConfig, type ProjectShape, type FieldNode } from "../src/planning.js";
 
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
@@ -136,5 +136,90 @@ describe("formatPlanningContext", () => {
     const result = formatPlanningContext(items, null);
     const backlogMatches = result.match(/^- Item \d+$/gm);
     expect(backlogMatches!.length).toBe(5);
+  });
+});
+
+describe("extractProjectConfig", () => {
+  it("returns valid config for a well-formed project", () => {
+    const project: ProjectShape = {
+      id: "proj-123",
+      fields: {
+        nodes: [
+          { id: "field-1", name: "Title" },
+          {
+            id: "field-2",
+            name: "Status",
+            options: [
+              { id: "opt-1", name: "Backlog" },
+              { id: "opt-2", name: "In Progress" },
+              { id: "opt-3", name: "Done" },
+            ],
+          },
+        ],
+      },
+    };
+    const config = extractProjectConfig(project);
+    expect(config).not.toBeNull();
+    expect(config!.projectId).toBe("proj-123");
+    expect(config!.statusFieldId).toBe("field-2");
+    expect(config!.statusOptions.get("Backlog")).toBe("opt-1");
+    expect(config!.statusOptions.get("In Progress")).toBe("opt-2");
+    expect(config!.statusOptions.get("Done")).toBe("opt-3");
+    expect(config!.statusOptions.size).toBe(3);
+  });
+
+  it("returns null when fields property is missing", () => {
+    const project: ProjectShape = { id: "proj-123" };
+    expect(extractProjectConfig(project)).toBeNull();
+  });
+
+  it("returns null when fields.nodes is empty", () => {
+    const project: ProjectShape = { id: "proj-123", fields: { nodes: [] } };
+    expect(extractProjectConfig(project)).toBeNull();
+  });
+
+  it("returns null when no Status field exists", () => {
+    const project: ProjectShape = {
+      id: "proj-123",
+      fields: {
+        nodes: [
+          { id: "field-1", name: "Title" },
+          { id: "field-2", name: "Priority", options: [{ id: "o1", name: "High" }] },
+        ],
+      },
+    };
+    expect(extractProjectConfig(project)).toBeNull();
+  });
+
+  it("returns null when Status field has no id", () => {
+    const project: ProjectShape = {
+      id: "proj-123",
+      fields: {
+        nodes: [{ name: "Status", options: [{ id: "o1", name: "Backlog" }] }],
+      },
+    };
+    expect(extractProjectConfig(project)).toBeNull();
+  });
+
+  it("returns null when Status field has no options", () => {
+    const project: ProjectShape = {
+      id: "proj-123",
+      fields: {
+        nodes: [{ id: "field-1", name: "Status" }],
+      },
+    };
+    expect(extractProjectConfig(project)).toBeNull();
+  });
+
+  it("returns config with empty map when options array is empty", () => {
+    const project: ProjectShape = {
+      id: "proj-123",
+      fields: {
+        nodes: [{ id: "field-1", name: "Status", options: [] }],
+      },
+    };
+    const config = extractProjectConfig(project);
+    expect(config).not.toBeNull();
+    expect(config!.statusOptions.size).toBe(0);
   });
 });

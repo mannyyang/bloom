@@ -163,18 +163,18 @@ async function createProject(
   });
 }
 
-interface FieldNode {
+export interface FieldNode {
   id?: string;
   name?: string;
   options?: Array<{ id: string; name: string }>;
 }
 
-interface ProjectShape {
+export interface ProjectShape {
   id: string;
   fields?: { nodes: FieldNode[] };
 }
 
-function extractProjectConfig(project: ProjectShape): ProjectConfig | null {
+export function extractProjectConfig(project: ProjectShape): ProjectConfig | null {
   const fields = project.fields?.nodes ?? [];
   const statusField = fields.find((f) => f.name === "Status" && f.id);
   if (!statusField?.id || !statusField.options) return null;
