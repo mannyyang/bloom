@@ -6,7 +6,8 @@
     "build": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "evolve": "tsx src/index.ts"
+    "evolve": "tsx src/index.ts",
+    "stats": "tsx src/stats.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "latest",
