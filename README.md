@@ -50,7 +50,7 @@ All state is stored in `bloom.db` (SQLite with WAL mode):
 
 | Table | Purpose |
 |-------|---------|
-| `cycles` | One row per evolution cycle with outcome metrics |
+| `cycles` | One row per evolution cycle with outcome metrics (passed count, total count, durations) |
 | `journal_entries` | Structured journal data (attempted, succeeded, failed, learnings, strategic_context) |
 | `phase_usage` | Token counts, costs, and duration per phase |
 | `issue_actions` | Tracks which issues were acknowledged or closed |
@@ -88,7 +88,7 @@ src/
 ├── github-app.ts   # GitHub App JWT auth + REST/GraphQL API client
 ├── safety.ts       # Pre-tool-use hooks & dangerous command blocking
 ├── lifecycle.ts    # Git operations, build verification, safety tags
-├── outcomes.ts     # Cycle metrics tracking
+├── outcomes.ts     # Cycle metrics tracking (passed + total test counts)
 └── usage.ts        # Token/cost/cache usage tracking
 ```
 
