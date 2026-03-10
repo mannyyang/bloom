@@ -21,11 +21,11 @@ export interface ProcessedEvolution {
  *
  * Issue lifecycle is now handled by the triage step (src/triage.ts), not here.
  */
-export async function processEvolutionResult(
+export function processEvolutionResult(
   db: Database.Database,
   cycleCount: number,
   evolutionResult: string,
-): Promise<ProcessedEvolution> {
+): ProcessedEvolution {
   // Parse journal sections from evolution result
   const journalSections = parseEvolutionResult(evolutionResult);
   for (const [section, content] of Object.entries(journalSections)) {

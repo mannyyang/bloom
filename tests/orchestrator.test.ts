@@ -18,7 +18,7 @@ describe("orchestrator", () => {
       insertCycle(db, makeOutcome({ cycleNumber: 1 }));
     });
 
-    it("parses and stores journal sections", async () => {
+    it("parses and stores journal sections", () => {
       const result = `Some preamble text
 
 ATTEMPTED: Added new feature X
@@ -27,7 +27,7 @@ FAILED: Nothing failed
 LEARNINGS: - [pattern] Small changes are better
 STRATEGIC_CONTEXT: Focus on test coverage next`;
 
-      const processed = await processEvolutionResult(db, 1, result);
+      const processed = processEvolutionResult(db, 1, result);
 
       expect(processed.journalSections.attempted).toBe("Added new feature X");
       expect(processed.journalSections.succeeded).toBe("Feature X works");
@@ -41,14 +41,14 @@ STRATEGIC_CONTEXT: Focus on test coverage next`;
       expect(entries.length).toBeGreaterThanOrEqual(4);
     });
 
-    it("skips empty sections when storing to DB", async () => {
+    it("skips empty sections when storing to DB", () => {
       const result = `ATTEMPTED: Did something
 SUCCEEDED:
 FAILED:
 LEARNINGS:
 STRATEGIC_CONTEXT:`;
 
-      const processed = await processEvolutionResult(db, 1, result);
+      const processed = processEvolutionResult(db, 1, result);
 
       expect(processed.journalSections.attempted).toBe("Did something");
       // Empty sections should not be stored
@@ -58,7 +58,7 @@ STRATEGIC_CONTEXT:`;
       expect(sections).not.toContain("succeeded");
     });
 
-    it("counts improvements from attempted and succeeded sections", async () => {
+    it("counts improvements from attempted and succeeded sections", () => {
       const result = `ATTEMPTED: - Improvement A
 - Improvement B
 - Improvement C
@@ -68,13 +68,13 @@ FAILED: - Improvement C
 LEARNINGS: - [domain] Learned something
 STRATEGIC_CONTEXT: Continue improving`;
 
-      const processed = await processEvolutionResult(db, 1, result);
+      const processed = processEvolutionResult(db, 1, result);
 
       expect(processed.improvementsAttempted).toBe(3);
       expect(processed.improvementsSucceeded).toBe(2);
     });
 
-    it("extracts and stores learnings", async () => {
+    it("extracts and stores learnings", () => {
       const result = `ATTEMPTED: Something
 SUCCEEDED: Something
 FAILED: Nothing
@@ -83,36 +83,36 @@ LEARNINGS: - [pattern] Always test first
 - [domain] SQLite WAL mode is fast
 STRATEGIC_CONTEXT: Keep going`;
 
-      const processed = await processEvolutionResult(db, 1, result);
+      const processed = processEvolutionResult(db, 1, result);
 
       expect(processed.learningsStored).toBe(3);
     });
 
-    it("stores strategic context", async () => {
+    it("stores strategic context", () => {
       const result = `ATTEMPTED: Something
 SUCCEEDED: Something
 FAILED: Nothing
 LEARNINGS: - Learned things
 STRATEGIC_CONTEXT: Focus on orchestrator tests next cycle`;
 
-      const processed = await processEvolutionResult(db, 1, result);
+      const processed = processEvolutionResult(db, 1, result);
 
       expect(processed.strategicContextStored).toBe(true);
     });
 
-    it("handles missing strategic context gracefully", async () => {
+    it("handles missing strategic context gracefully", () => {
       const result = `ATTEMPTED: Something
 SUCCEEDED: Something
 FAILED: Nothing
 LEARNINGS: - Learned things`;
 
-      const processed = await processEvolutionResult(db, 1, result);
+      const processed = processEvolutionResult(db, 1, result);
 
       expect(processed.strategicContextStored).toBe(false);
     });
 
-    it("handles empty evolution result", async () => {
-      const processed = await processEvolutionResult(db, 1, "");
+    it("handles empty evolution result", () => {
+      const processed = processEvolutionResult(db, 1, "");
 
       expect(processed.improvementsAttempted).toBe(0);
       expect(processed.improvementsSucceeded).toBe(0);
@@ -120,27 +120,27 @@ LEARNINGS: - Learned things`;
       expect(processed.strategicContextStored).toBe(false);
     });
 
-    it("handles malformed learnings without crashing", async () => {
+    it("handles malformed learnings without crashing", () => {
       const result = `ATTEMPTED: Something
 SUCCEEDED: Something
 FAILED: Nothing
 LEARNINGS: not a proper list at all
 STRATEGIC_CONTEXT: Keep going`;
 
-      const processed = await processEvolutionResult(db, 1, result);
+      const processed = processEvolutionResult(db, 1, result);
 
       // Should not crash, learnings count may be 0
       expect(processed.learningsStored).toBe(0);
     });
 
-    it("returns correct ProcessedEvolution structure", async () => {
+    it("returns correct ProcessedEvolution structure", () => {
       const result = `ATTEMPTED: - One thing
 SUCCEEDED: - One thing
 FAILED: Nothing
 LEARNINGS: - [pattern] A learning
 STRATEGIC_CONTEXT: Strategic info`;
 
-      const processed = await processEvolutionResult(db, 1, result);
+      const processed = processEvolutionResult(db, 1, result);
 
       expect(processed).toHaveProperty("journalSections");
       expect(processed).toHaveProperty("improvementsAttempted");

@@ -223,7 +223,7 @@ async function main() {
 
     // Process evolution result: parse journal, store learnings, close resolved issues
     console.log("\n[journal] Processing evolution result...");
-    const processed = await processEvolutionResult(db, cycleCount, evolutionResult);
+    const processed = processEvolutionResult(db, cycleCount, evolutionResult);
     for (const [section, content] of Object.entries(processed.journalSections)) {
       if (content) {
         console.log(`[journal] Stored section "${section}" (${content.length} chars)`);
