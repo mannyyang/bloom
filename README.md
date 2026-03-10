@@ -49,7 +49,7 @@ Every 4 hours, Bloom runs an evolution cycle via GitHub Actions:
 4. **Evolution** - Implements 1-3 improvements, testing each before committing
 5. **Build verification** - Verifies build still passes after evolution; reverts if broken
 6. **Learning extraction** - Stores categorized learnings and updates strategic context
-7. **Roadmap update** - Updates the GitHub Project board with cycle results
+7. **Roadmap update** - Updates ROADMAP.md with cycle results
 8. **Push** - Pushes passing changes to main
 
 The workflow retries up to 3 times with backoff on failure.
@@ -63,9 +63,9 @@ Bloom accumulates knowledge across evolution cycles via two mechanisms:
 - **Structured learnings** — Categorized insights (pattern, anti-pattern, domain, tool-usage) stored in SQLite with relevance decay. Newer learnings naturally rank higher than older ones. Injected into each assessment prompt so Bloom builds on past experience.
 - **Strategic context** — A persistent narrative summary of focus areas, trajectory, and ongoing goals. Updated each cycle so Bloom maintains awareness of its multi-cycle direction.
 
-### Planning via GitHub Projects
+### Planning via ROADMAP.md
 
-Bloom manages its own **kanban-style roadmap** using a GitHub Projects v2 board ("Bloom Evolution Roadmap"):
+Bloom manages its own **kanban-style roadmap** using a local `ROADMAP.md` file:
 
 - **Hybrid planning** — Bloom proposes its own improvement goals and incorporates community issues, with reactions influencing priority
 - **Automated status tracking** — Items flow from Backlog → Up Next → In Progress → Done as Bloom works through cycles
@@ -110,12 +110,12 @@ src/
 ├── orchestrator.ts # Extracted helpers: evolution result processing, cycle summary
 ├── evolve.ts       # Assessment & evolution prompt building
 ├── memory.ts       # Learning extraction, storage, and prompt formatting
-├── planning.ts     # GitHub Projects v2 integration via GraphQL
+├── planning.ts     # Local ROADMAP.md parsing and item management
 ├── db.ts           # SQLite persistence (bloom.db)
 ├── stats.ts        # CLI entry point for querying evolution statistics
 ├── triage.ts       # Issue triage and lifecycle management
 ├── issues.ts       # GitHub issues integration
-├── github-app.ts   # GitHub App JWT auth + REST/GraphQL API client
+├── github-app.ts   # GitHub App JWT auth + REST API client
 ├── safety.ts       # Pre-tool-use hooks & dangerous command blocking
 ├── lifecycle.ts    # Git operations, build verification, safety tags
 ├── outcomes.ts     # Cycle metrics tracking (passed + total test counts)
