@@ -4,7 +4,6 @@ import { initDb, getJournalEntries } from "../src/db.js";
 import {
   processEvolutionResult,
   formatCycleSummaryWithDuration,
-  formatCycleSummary,
 } from "../src/orchestrator.js";
 import { insertCycle } from "../src/db.js";
 import { makeOutcome } from "./helpers.js";
@@ -226,24 +225,4 @@ STRATEGIC_CONTEXT: Strategic info`;
     });
   });
 
-  describe("formatCycleSummary", () => {
-    it("formats with placeholder duration", () => {
-      const outcome = makeOutcome({
-        cycleNumber: 10,
-        improvementsAttempted: 1,
-        improvementsSucceeded: 1,
-        buildVerificationPassed: true,
-        pushSucceeded: true,
-        testCountBefore: 100,
-        testCountAfter: 105,
-      });
-
-      const summary = formatCycleSummary(10, outcome, null);
-
-      expect(summary).toContain("Cycle 10");
-      expect(summary).toContain("COMPLETE");
-      expect(summary).toContain("1/1");
-      expect(summary).toContain("100 → 105");
-    });
-  });
 });

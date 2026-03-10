@@ -70,28 +70,6 @@ export async function processEvolutionResult(
 }
 
 /**
- * Format the final cycle summary as a multi-line string.
- * Pure function — no side effects.
- */
-export function formatCycleSummary(
-  cycleCount: number,
-  outcome: CycleOutcome,
-  evolutionError: Error | null,
-): string {
-  const lines = [
-    `========================================`,
-    `  Cycle ${cycleCount} — ${evolutionError ? "FAILED" : "COMPLETE"}`,
-    `  Duration: replaced-at-call-site`,
-    `  Improvements: ${outcome.improvementsSucceeded}/${outcome.improvementsAttempted}`,
-    `  Tests: ${outcome.testCountBefore ?? "?"} → ${outcome.testCountAfter ?? "?"}`,
-    `  Build: ${outcome.buildVerificationPassed ? "PASSED" : "FAILED"}`,
-    `  Push: ${outcome.pushSucceeded ? "OK" : "FAILED"}`,
-    `========================================`,
-  ];
-  return lines.join("\n");
-}
-
-/**
  * Format the final cycle summary with actual duration.
  * Pure function — no side effects.
  */
