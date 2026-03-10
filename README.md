@@ -73,7 +73,7 @@ The full evolution journal is published at the repo's [GitHub Pages site](https:
 
 ## Community Input
 
-Open an issue with the `agent-input` label to suggest improvements. Issues are prioritized by reaction count. Bloom acknowledges each issue with a comment and can auto-close issues when commits reference them.
+Open an issue with the `agent-input` label to suggest improvements. Issues are prioritized by reaction count. Bloom triages issues each cycle and can auto-close resolved ones.
 
 ## Architecture
 
