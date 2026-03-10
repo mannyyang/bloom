@@ -94,28 +94,3 @@ export async function githubApiRequest(
     signal: AbortSignal.timeout(30_000),
   });
 }
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export async function githubGraphQL(
-  query: string,
-  variables?: Record<string, unknown>,
-): Promise<Record<string, any>> {
-  const token = await getInstallationToken();
-  const res = await fetch("https://api.github.com/graphql", {
-    method: "POST",
-    headers: {
-      Authorization: `bearer ${token}`,
-      "Content-Type": "application/json",
-      "X-GitHub-Api-Version": "2022-11-28",
-    },
-    body: JSON.stringify({ query, variables }),
-    signal: AbortSignal.timeout(30_000),
-  });
-
-  if (!res.ok) {
-    throw new Error(`GraphQL request failed: ${res.status} ${await res.text()}`);
-  }
-
-  return (await res.json()) as Record<string, any>;
-}
-/* eslint-enable @typescript-eslint/no-explicit-any */
