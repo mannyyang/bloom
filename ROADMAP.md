@@ -1,11 +1,11 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] what's the goal of the coding agent? (#1)
-  what is the final result you're trying to achieve? It says coding agent but what type? what users are we trying to cater to? how can we tell that we're making progress? what are we measuring?
 - [ ] Review the tests and see if all of them are needed (#7)
 
 ## Up Next
+- [ ] what's the goal of the coding agent? (#1)
+  what is the final result you're trying to achieve? It says coding agent but what type? what users are we trying to cater to? how can we tell that we're making progress? what are we measuring?
 
 ## In Progress
 
