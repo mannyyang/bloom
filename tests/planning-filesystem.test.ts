@@ -37,10 +37,10 @@ afterEach(() => {
 });
 
 describe("ensureProject", () => {
-  it("creates ROADMAP.md if it does not exist", async () => {
+  it("creates ROADMAP.md if it does not exist", () => {
     if (existsSync(ROADMAP_PATH)) unlinkSync(ROADMAP_PATH);
 
-    const config = await ensureProject();
+    const config = ensureProject();
     expect(config).not.toBeNull();
     expect(config!.filePath).toBe(ROADMAP_PATH);
     expect(existsSync(ROADMAP_PATH)).toBe(true);
@@ -48,10 +48,10 @@ describe("ensureProject", () => {
     expect(content).toContain("# Bloom Evolution Roadmap");
   });
 
-  it("returns config if ROADMAP.md already exists", async () => {
+  it("returns config if ROADMAP.md already exists", () => {
     writeTestRoadmap("# Bloom Evolution Roadmap\n\n## Backlog\n- [ ] Existing item\n");
 
-    const config = await ensureProject();
+    const config = ensureProject();
     expect(config).not.toBeNull();
     // Should not overwrite existing content
     const content = readTestRoadmap();
@@ -60,7 +60,7 @@ describe("ensureProject", () => {
 });
 
 describe("getProjectItems", () => {
-  it("returns parsed items from ROADMAP.md", async () => {
+  it("returns parsed items from ROADMAP.md", () => {
     writeTestRoadmap(`# Bloom Evolution Roadmap
 
 ## Backlog
@@ -74,7 +74,7 @@ describe("getProjectItems", () => {
 ## Done
 `);
     const config = makeConfig();
-    const items = await getProjectItems(config);
+    const items = getProjectItems(config);
     expect(items).toHaveLength(1);
     expect(items[0].title).toBe("Fix bug");
     expect(items[0].linkedIssueNumber).toBe(42);
@@ -82,7 +82,7 @@ describe("getProjectItems", () => {
     expect(items[0].body).toBe("Description here");
   });
 
-  it("returns empty array when roadmap has no items", async () => {
+  it("returns empty array when roadmap has no items", () => {
     writeTestRoadmap(`# Bloom Evolution Roadmap
 
 ## Backlog
@@ -90,13 +90,13 @@ describe("getProjectItems", () => {
 ## Done
 `);
     const config = makeConfig();
-    const items = await getProjectItems(config);
+    const items = getProjectItems(config);
     expect(items).toEqual([]);
   });
 });
 
 describe("addDraftItem", () => {
-  it("adds a draft item to the roadmap", async () => {
+  it("adds a draft item to the roadmap", () => {
     writeTestRoadmap(`# Bloom Evolution Roadmap
 
 ## Backlog
@@ -108,7 +108,7 @@ describe("addDraftItem", () => {
 ## Done
 `);
     const config = makeConfig();
-    const itemId = await addDraftItem(config, "New feature", "Details", "Up Next");
+    const itemId = addDraftItem(config, "New feature", "Details", "Up Next");
     expect(itemId).not.toBeNull();
 
     const content = readTestRoadmap();
@@ -116,7 +116,7 @@ describe("addDraftItem", () => {
     expect(content).toContain("  Details");
   });
 
-  it("defaults to Backlog status", async () => {
+  it("defaults to Backlog status", () => {
     writeTestRoadmap(`# Bloom Evolution Roadmap
 
 ## Backlog
@@ -128,16 +128,16 @@ describe("addDraftItem", () => {
 ## Done
 `);
     const config = makeConfig();
-    await addDraftItem(config, "Title", "Body");
+    addDraftItem(config, "Title", "Body");
 
-    const items = await getProjectItems(config);
+    const items = getProjectItems(config);
     expect(items).toHaveLength(1);
     expect(items[0].status).toBe("Backlog");
   });
 });
 
 describe("addLinkedItem", () => {
-  it("adds an issue-linked item to the roadmap", async () => {
+  it("adds an issue-linked item to the roadmap", () => {
     writeTestRoadmap(`# Bloom Evolution Roadmap
 
 ## Backlog
@@ -149,14 +149,14 @@ describe("addLinkedItem", () => {
 ## Done
 `);
     const config = makeConfig();
-    const itemId = await addLinkedItem(config, "owner/repo", 42, "Fix bug", "Description");
+    const itemId = addLinkedItem(config, "owner/repo", 42, "Fix bug", "Description");
     expect(itemId).not.toBeNull();
 
     const content = readTestRoadmap();
     expect(content).toContain("- [ ] Fix bug (#42)");
   });
 
-  it("does not add duplicate issue numbers", async () => {
+  it("does not add duplicate issue numbers", () => {
     writeTestRoadmap(`# Bloom Evolution Roadmap
 
 ## Backlog
@@ -169,16 +169,16 @@ describe("addLinkedItem", () => {
 ## Done
 `);
     const config = makeConfig();
-    await addLinkedItem(config, "owner/repo", 42, "Fix bug", "Description");
+    addLinkedItem(config, "owner/repo", 42, "Fix bug", "Description");
 
-    const items = await getProjectItems(config);
+    const items = getProjectItems(config);
     const issue42Items = items.filter((i) => i.linkedIssueNumber === 42);
     expect(issue42Items).toHaveLength(1);
   });
 });
 
 describe("updateItemStatus", () => {
-  it("updates an item's status", async () => {
+  it("updates an item's status", () => {
     writeTestRoadmap(`# Bloom Evolution Roadmap
 
 ## Backlog
@@ -191,17 +191,17 @@ describe("updateItemStatus", () => {
 ## Done
 `);
     const config = makeConfig();
-    let items = await getProjectItems(config);
+    let items = getProjectItems(config);
     expect(items[0].status).toBe("Backlog");
 
-    const result = await updateItemStatus(config, items[0].id, "In Progress");
+    const result = updateItemStatus(config, items[0].id, "In Progress");
     expect(result).toBe(true);
 
-    items = await getProjectItems(config);
+    items = getProjectItems(config);
     expect(items[0].status).toBe("In Progress");
   });
 
-  it("returns false for non-existent item", async () => {
+  it("returns false for non-existent item", () => {
     writeTestRoadmap(`# Bloom Evolution Roadmap
 
 ## Backlog
@@ -209,11 +209,11 @@ describe("updateItemStatus", () => {
 ## Done
 `);
     const config = makeConfig();
-    const result = await updateItemStatus(config, "nonexistent", "Done");
+    const result = updateItemStatus(config, "nonexistent", "Done");
     expect(result).toBe(false);
   });
 
-  it("marks Done items with [x]", async () => {
+  it("marks Done items with [x]", () => {
     writeTestRoadmap(`# Bloom Evolution Roadmap
 
 ## Backlog
@@ -226,8 +226,8 @@ describe("updateItemStatus", () => {
 ## Done
 `);
     const config = makeConfig();
-    const items = await getProjectItems(config);
-    await updateItemStatus(config, items[0].id, "Done");
+    const items = getProjectItems(config);
+    updateItemStatus(config, items[0].id, "Done");
 
     const content = readTestRoadmap();
     expect(content).toContain("- [x] Complete me");
