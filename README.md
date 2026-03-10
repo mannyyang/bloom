@@ -86,6 +86,7 @@ src/
 ├── planning.ts     # GitHub Projects v2 integration via GraphQL
 ├── db.ts           # SQLite persistence (bloom.db)
 ├── stats.ts        # CLI entry point for querying evolution statistics
+├── triage.ts       # Issue triage and lifecycle management
 ├── issues.ts       # GitHub issues integration
 ├── github-app.ts   # GitHub App JWT auth + REST/GraphQL API client
 ├── safety.ts       # Pre-tool-use hooks & dangerous command blocking
