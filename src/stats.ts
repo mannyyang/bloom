@@ -8,35 +8,54 @@
  * by making success metrics queryable outside the evolution loop.
  */
 
+import type Database from "better-sqlite3";
 import { initDb, getCycleStats, formatCycleStats, getLatestCycleNumber } from "./db.js";
 import { formatMemoryForPrompt } from "./memory.js";
+
+/**
+ * Core stats logic, accepting a db parameter for testability.
+ * Returns the lines that would be printed to console.
+ */
+export function generateStatsOutput(db: Database.Database): string[] {
+  const lines: string[] = [];
+
+  const latestCycle = getLatestCycleNumber(db);
+  if (latestCycle === 0) {
+    lines.push("No evolution cycles recorded yet.");
+    return lines;
+  }
+
+  const stats = getCycleStats(db);
+  const formatted = formatCycleStats(stats);
+
+  lines.push("");
+  lines.push("========================================");
+  lines.push("  Bloom Evolution Statistics");
+  lines.push(`  Latest cycle: ${latestCycle}`);
+  lines.push("========================================");
+  lines.push("");
+  lines.push(formatted);
+
+  // Show latest strategic context if available
+  const memory = formatMemoryForPrompt(db, 1000);
+  if (memory) {
+    lines.push("");
+    lines.push(memory);
+  }
+
+  lines.push("");
+
+  return lines;
+}
 
 function main() {
   const db = initDb();
 
   try {
-    const latestCycle = getLatestCycleNumber(db);
-    if (latestCycle === 0) {
-      console.log("No evolution cycles recorded yet.");
-      return;
+    const output = generateStatsOutput(db);
+    for (const line of output) {
+      console.log(line);
     }
-
-    const stats = getCycleStats(db);
-    const formatted = formatCycleStats(stats);
-
-    console.log(`\n========================================`);
-    console.log(`  Bloom Evolution Statistics`);
-    console.log(`  Latest cycle: ${latestCycle}`);
-    console.log(`========================================\n`);
-    console.log(formatted);
-
-    // Show latest strategic context if available
-    const memory = formatMemoryForPrompt(db, 1000);
-    if (memory) {
-      console.log(`\n${memory}`);
-    }
-
-    console.log("");
   } finally {
     db.close();
   }
