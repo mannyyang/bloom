@@ -184,13 +184,3 @@ export async function closeIssueWithComment(
     return false;
   }
 }
-
-/** @deprecated Use closeIssueWithComment instead */
-export async function closeResolvedIssue(
-  issueNumber: number,
-  cycleCount: number,
-  reason: string,
-  db?: Database.Database,
-): Promise<boolean> {
-  return closeIssueWithComment(issueNumber, cycleCount, `Resolved by Bloom in cycle ${cycleCount}.\n\n${reason}`, db, "closed");
-}
