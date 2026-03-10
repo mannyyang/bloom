@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements, extractResolvedIssueNumbers } from "../src/evolve.js";
+import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements } from "../src/evolve.js";
 
 describe("buildAssessmentPrompt", () => {
   it("includes identity and cycle count", () => {
@@ -348,37 +348,3 @@ describe("countImprovements", () => {
   });
 });
 
-describe("extractResolvedIssueNumbers", () => {
-  it("extracts issue numbers mentioned in succeeded text that are in the open set", () => {
-    const text = "Fixed community issue #3 and also addressed #5.";
-    expect(extractResolvedIssueNumbers(text, [3, 5, 7])).toEqual(
-      expect.arrayContaining([3, 5]),
-    );
-    expect(extractResolvedIssueNumbers(text, [3, 5, 7])).toHaveLength(2);
-  });
-
-  it("ignores issue numbers not in the open set", () => {
-    const text = "Fixed #3 and #99.";
-    expect(extractResolvedIssueNumbers(text, [3, 5])).toEqual([3]);
-  });
-
-  it("returns empty array when succeeded text is empty", () => {
-    expect(extractResolvedIssueNumbers("", [3, 5])).toEqual([]);
-  });
-
-  it("returns empty array when no open issues", () => {
-    expect(extractResolvedIssueNumbers("Fixed #3", [])).toEqual([]);
-  });
-
-  it("deduplicates repeated references to the same issue", () => {
-    const text = "Addressed #3 in two commits. Verified #3 works.";
-    expect(extractResolvedIssueNumbers(text, [3])).toEqual([3]);
-  });
-
-  it("handles issue numbers in various formats", () => {
-    const text = "community issue #4, PR #6, issue #8";
-    expect(extractResolvedIssueNumbers(text, [4, 6, 8])).toEqual(
-      expect.arrayContaining([4, 6, 8]),
-    );
-  });
-});

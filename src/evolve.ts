@@ -114,24 +114,6 @@ export function countImprovements(text: string): number {
   return Math.max(lineCount, inlineCount);
 }
 
-/**
- * Extract issue numbers mentioned in the "succeeded" section that match known open issues.
- * Looks for patterns like #3, issue #3, community issue #3.
- */
-export function extractResolvedIssueNumbers(
-  succeededText: string,
-  openIssueNumbers: number[],
-): number[] {
-  if (!succeededText || openIssueNumbers.length === 0) return [];
-  const openSet = new Set(openIssueNumbers);
-  const mentioned = new Set<number>();
-  for (const match of succeededText.matchAll(/#(\d+)/g)) {
-    const num = parseInt(match[1], 10);
-    if (openSet.has(num)) mentioned.add(num);
-  }
-  return [...mentioned];
-}
-
 export function buildEvolutionPrompt(assessment: string, context?: EvolutionContext): string {
   const usageSection = context?.usageContext
     ? `\n\nResource usage so far this cycle:\n${context.usageContext}\n`
