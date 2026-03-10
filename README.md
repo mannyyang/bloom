@@ -12,6 +12,33 @@ Inspired by [yoyo-evolve](https://github.com/yologdev/yoyo-evolve).
 
 Bloom is a proof-of-concept demonstrating that an AI agent can **safely and transparently evolve its own source code**. Every change must pass the build and test suite before it is committed, every decision is logged in a public journal, and an immutable constitution (`IDENTITY.md`) defines hard boundaries that the agent cannot override. The project is guided by community input — anyone can open an issue to suggest what Bloom should improve next.
 
+### Target Audience
+
+- **Developers** interested in autonomous code agents and self-improving systems
+- **Researchers** studying safe AI self-modification and transparent decision-making
+- **Open-source contributors** who want to guide an evolving agent via issues and feedback
+
+### Success Criteria
+
+Bloom measures its own progress through quantitative metrics (available via `pnpm stats`):
+
+| Metric | What it measures |
+|--------|-----------------|
+| **Build pass rate** | % of cycles where the build passes after evolution — the core safety metric |
+| **Improvement throughput** | Average improvements successfully committed per cycle |
+| **Test coverage trend** | Whether test counts grow over time (a proxy for code quality) |
+| **Cost efficiency** | Average cost per cycle — lower is better for sustainability |
+| **Community responsiveness** | How quickly community issues are triaged and addressed |
+
+### What "Done" Looks Like
+
+Bloom is an ongoing experiment, not a product with a finish line. However, the project will have demonstrated its thesis when:
+
+1. It has sustained a **>90% build pass rate** over 50+ cycles
+2. It has **autonomously added meaningful capabilities** beyond its initial feature set
+3. Community-filed issues are routinely **triaged, prioritized, and resolved** by the agent
+4. The evolution history serves as a **public reference** for safe autonomous code modification
+
 ## How It Works
 
 Every 4 hours, Bloom runs an evolution cycle via GitHub Actions:
