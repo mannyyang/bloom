@@ -214,7 +214,7 @@ describe("lifecycle helpers", () => {
   });
 
   describe("revertUncommitted", () => {
-    it("runs git checkout . using execFileSync", () => {
+    it("runs git checkout . and git clean -fd using execFileSync", () => {
       mockedExecFileSync.mockReturnValue(Buffer.from(""));
       revertUncommitted();
       expect(mockedExecFileSync).toHaveBeenCalledWith(
@@ -222,11 +222,31 @@ describe("lifecycle helpers", () => {
         ["checkout", "."],
         expect.objectContaining({ timeout: 10_000 }),
       );
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["clean", "-fd"],
+        expect.objectContaining({ timeout: 10_000 }),
+      );
     });
 
     it("does not throw when git checkout fails", () => {
       mockedExecFileSync.mockImplementation(() => { throw new Error("checkout failed"); });
       expect(() => revertUncommitted()).not.toThrow();
+    });
+
+    it("still runs git clean even when git checkout fails", () => {
+      let callCount = 0;
+      mockedExecFileSync.mockImplementation((..._args: unknown[]) => {
+        callCount++;
+        if (callCount === 1) throw new Error("checkout failed");
+        return Buffer.from("");
+      });
+      revertUncommitted();
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["clean", "-fd"],
+        expect.objectContaining({ timeout: 10_000 }),
+      );
     });
   });
 
@@ -320,11 +340,16 @@ describe("lifecycle helpers", () => {
       // All 3 builds fail → hard reset
       const result = runBuildVerification(42, 3);
       expect(result.passed).toBe(false);
-      // revertUncommitted now uses execFileSync; count checkout calls in execFileSync
-      const revertCount = mockedExecFileSync.mock.calls.filter(
+      // revertUncommitted runs checkout + clean; count checkout calls
+      const checkoutCount = mockedExecFileSync.mock.calls.filter(
         (args) => args[0] === "git" && Array.isArray(args[1]) && (args[1] as string[])[0] === "checkout"
       ).length;
-      expect(revertCount).toBe(2);
+      expect(checkoutCount).toBe(2);
+      // Also verify git clean -fd was called for each revert
+      const cleanCount = mockedExecFileSync.mock.calls.filter(
+        (args) => args[0] === "git" && Array.isArray(args[1]) && (args[1] as string[])[0] === "clean"
+      ).length;
+      expect(cleanCount).toBe(2);
     });
 
     it("hard resets and returns passed=false when all attempts fail", () => {

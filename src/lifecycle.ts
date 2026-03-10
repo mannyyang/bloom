@@ -96,6 +96,9 @@ export function revertUncommitted(): void {
   try {
     execFileSync("git", ["checkout", "."], { stdio: "inherit", timeout: 10_000 });
   } catch { /* ignore */ }
+  try {
+    execFileSync("git", ["clean", "-fd"], { stdio: "inherit", timeout: 10_000 });
+  } catch { /* ignore */ }
 }
 
 /**
