@@ -172,7 +172,7 @@ export async function triageIssues(
       switch (decision.action) {
         case "add_to_backlog": {
           if (repo && isValidRepo(repo)) {
-            await addLinkedItem(
+            addLinkedItem(
               projectConfig,
               repo,
               issue.number,

@@ -165,7 +165,7 @@ export function serializeRoadmap(items: ProjectItem[]): string {
 /**
  * Ensure the ROADMAP.md file exists, creating it with default structure if not.
  */
-export async function ensureProject(): Promise<ProjectConfig | null> {
+export function ensureProject(): ProjectConfig | null {
   const filePath = getRoadmapPath();
   if (!existsSync(filePath)) {
     writeRoadmap(serializeRoadmap([]));
@@ -178,23 +178,23 @@ export async function ensureProject(): Promise<ProjectConfig | null> {
 /**
  * Get all items from the roadmap file.
  */
-export async function getProjectItems(
+export function getProjectItems(
   _config: ProjectConfig,
-): Promise<ProjectItem[]> {
+): ProjectItem[] {
   return parseRoadmap(readRoadmap());
 }
 
 /**
  * Add a linked GitHub issue to the roadmap.
  */
-export async function addLinkedItem(
+export function addLinkedItem(
   _config: ProjectConfig,
   _repo: string,
   issueNumber: number,
   title: string,
   body: string,
   status: StatusColumn = "Backlog",
-): Promise<string | null> {
+): string | null {
   const content = readRoadmap();
   const items = parseRoadmap(content);
 
@@ -220,12 +220,12 @@ export async function addLinkedItem(
 /**
  * Add a draft item (no linked issue) to the roadmap.
  */
-export async function addDraftItem(
+export function addDraftItem(
   _config: ProjectConfig,
   title: string,
   body: string,
   status: StatusColumn = "Backlog",
-): Promise<string | null> {
+): string | null {
   const content = readRoadmap();
   const items = parseRoadmap(content);
 
@@ -246,11 +246,11 @@ export async function addDraftItem(
 /**
  * Update the status of an item by its ID.
  */
-export async function updateItemStatus(
+export function updateItemStatus(
   _config: ProjectConfig,
   itemId: string,
   status: StatusColumn,
-): Promise<boolean> {
+): boolean {
   const content = readRoadmap();
   const items = parseRoadmap(content);
   const item = items.find((i) => i.id === itemId);

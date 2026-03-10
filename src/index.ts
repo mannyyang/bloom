@@ -96,10 +96,10 @@ async function main() {
     let currentItem: ProjectItem | null = null;
     try {
       console.log("[planning] Loading roadmap...");
-      projectConfig = await ensureProject();
+      projectConfig = ensureProject();
       if (projectConfig) {
         console.log(`[planning] Roadmap: ${projectConfig.filePath}`);
-        let projectItems = await getProjectItems(projectConfig);
+        let projectItems = getProjectItems(projectConfig);
         console.log(`[planning] ${projectItems.length} items on roadmap`);
         for (const item of projectItems) {
           console.log(`  - [${item.status ?? "No Status"}] ${item.title}${item.reactions > 0 ? ` (${item.reactions} reactions)` : ""}`);
@@ -119,14 +119,14 @@ async function main() {
             console.log(`  - #${d.issueNumber}: ${d.action} — ${d.reason.slice(0, 100)}`);
           }
           // Re-fetch items since triage may have added new ones
-          projectItems = await getProjectItems(projectConfig);
+          projectItems = getProjectItems(projectConfig);
           console.log(`[planning] ${projectItems.length} items on roadmap (post-triage)`);
         }
 
         currentItem = pickNextItem(projectItems);
         if (currentItem) {
           console.log(`[planning] Selected: "${currentItem.title}" → marking In Progress`);
-          await updateItemStatus(projectConfig, currentItem.id, "In Progress");
+          updateItemStatus(projectConfig, currentItem.id, "In Progress");
         } else {
           console.log("[planning] No actionable items found");
         }
@@ -257,7 +257,7 @@ async function main() {
       if (projectConfig && currentItem) {
         const succeeded = processed.improvementsSucceeded > 0;
         const newStatus = succeeded ? "Done" : "Up Next";
-        await updateItemStatus(projectConfig, currentItem.id, newStatus);
+        updateItemStatus(projectConfig, currentItem.id, newStatus);
         console.log(`[planning] Updated "${currentItem.title}" → ${newStatus}`);
         commitRoadmap(cycleCount);
       }
