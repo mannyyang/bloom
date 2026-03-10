@@ -58,6 +58,20 @@ export function commitDb(cycleCount: number, label?: string): boolean {
 }
 
 /**
+ * Stage and commit the ROADMAP.md file. Returns true on success, false if
+ * the commit fails (e.g. nothing to commit).
+ */
+export function commitRoadmap(cycleCount: number): boolean {
+  try {
+    execFileSync("git", ["add", "ROADMAP.md"], { stdio: "inherit", timeout: 30_000 });
+    execFileSync("git", ["commit", "-m", `cycle ${cycleCount}: update roadmap`], { stdio: "inherit", timeout: 30_000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Push local commits to origin main. Returns true on success, false on failure.
  */
 export function pushChanges(): boolean {

@@ -12,7 +12,7 @@ export function buildAssessmentPrompt(ctx: AssessmentContext): string {
 
 Read your own source code in src/ and assess what to improve. Consider:
 1. Bugs or correctness issues
-2. Items on the project board (see Evolution Roadmap below)
+2. Items on the roadmap (see Evolution Roadmap below)
 3. Test coverage gaps
 4. Code clarity improvements
 5. New capabilities aligned with your purpose

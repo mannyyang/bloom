@@ -30,6 +30,7 @@ import { createOutcome, formatOutcomeForJournal, parseTestCount, parseTestTotal 
 import { formatMemoryForPrompt } from "./memory.js";
 import { processEvolutionResult, formatCycleSummaryWithDuration } from "./orchestrator.js";
 import { ensureProject, getProjectItems, pickNextItem, updateItemStatus, formatPlanningContext, type ProjectConfig, type ProjectItem } from "./planning.js";
+import { commitRoadmap } from "./lifecycle.js";
 
 async function main() {
   const cycleStartTime = Date.now();
@@ -89,26 +90,24 @@ async function main() {
     const memoryContext = formatMemoryForPrompt(db, 2000);
     console.log(`[context] Memory context: ${memoryContext ? `${memoryContext.length} chars` : "empty"}`);
 
-    // Planning context (best-effort)
+    // Planning context (best-effort, uses ROADMAP.md)
     let planningContext = "";
     let projectConfig: ProjectConfig | null = null;
     let currentItem: ProjectItem | null = null;
     try {
-      console.log("[planning] Looking for GitHub Project board...");
+      console.log("[planning] Loading roadmap...");
       projectConfig = await ensureProject();
       if (projectConfig) {
-        console.log(`[planning] Project found (id: ${projectConfig.projectId.slice(0, 20)}...)`);
-        console.log(`[planning] Status field: ${projectConfig.statusFieldId.slice(0, 20)}...`);
-        console.log(`[planning] Status columns: ${[...projectConfig.statusOptions.keys()].join(", ")}`);
+        console.log(`[planning] Roadmap: ${projectConfig.filePath}`);
         let projectItems = await getProjectItems(projectConfig);
-        console.log(`[planning] ${projectItems.length} items on board`);
+        console.log(`[planning] ${projectItems.length} items on roadmap`);
         for (const item of projectItems) {
           console.log(`  - [${item.status ?? "No Status"}] ${item.title}${item.reactions > 0 ? ` (${item.reactions} reactions)` : ""}`);
         }
 
-        // Triage community issues against the board
+        // Triage community issues against the roadmap
         if (issues.length > 0) {
-          console.log(`\n[triage] Triaging ${issues.length} community issues against project board...`);
+          console.log(`\n[triage] Triaging ${issues.length} community issues against roadmap...`);
           const triageResult = await triageIssues(issues, projectItems, cycleCount, projectConfig, db);
           if (triageResult.addedToBacklog.length > 0) {
             console.log(`[triage] Added to backlog: ${triageResult.addedToBacklog.map(n => `#${n}`).join(", ")}`);
@@ -119,9 +118,9 @@ async function main() {
           for (const d of triageResult.decisions) {
             console.log(`  - #${d.issueNumber}: ${d.action} — ${d.reason.slice(0, 100)}`);
           }
-          // Re-fetch board items since triage may have added new ones
+          // Re-fetch items since triage may have added new ones
           projectItems = await getProjectItems(projectConfig);
-          console.log(`[planning] ${projectItems.length} items on board (post-triage)`);
+          console.log(`[planning] ${projectItems.length} items on roadmap (post-triage)`);
         }
 
         currentItem = pickNextItem(projectItems);
@@ -132,8 +131,6 @@ async function main() {
           console.log("[planning] No actionable items found");
         }
         planningContext = formatPlanningContext(projectItems, currentItem);
-      } else {
-        console.log("[planning] No project board found (ensureProject returned null)");
       }
     } catch (err) {
       console.error(`[planning] Failed (non-fatal): ${(err as Error).message}`);
@@ -262,9 +259,10 @@ async function main() {
         const newStatus = succeeded ? "Done" : "Up Next";
         await updateItemStatus(projectConfig, currentItem.id, newStatus);
         console.log(`[planning] Updated "${currentItem.title}" → ${newStatus}`);
+        commitRoadmap(cycleCount);
       }
     } catch (err) {
-      console.error(`[planning] Failed to update project status (non-fatal): ${(err as Error).message}`);
+      console.error(`[planning] Failed to update roadmap status (non-fatal): ${(err as Error).message}`);
     }
 
     // Phase 3: Push

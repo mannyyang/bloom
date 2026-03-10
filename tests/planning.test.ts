@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { pickNextItem, formatPlanningContext, extractProjectConfig, type ProjectItem, type ProjectConfig, type ProjectShape, type FieldNode } from "../src/planning.js";
+import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, type ProjectItem } from "../src/planning.js";
 
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
@@ -7,23 +7,9 @@ function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
     title: "Test item",
     status: "Backlog",
     body: "",
-    fieldValueId: null,
     linkedIssueNumber: null,
     reactions: 0,
     ...overrides,
-  };
-}
-
-function makeConfig(): ProjectConfig {
-  return {
-    projectId: "proj-1",
-    statusFieldId: "field-1",
-    statusOptions: new Map([
-      ["Backlog", "opt-1"],
-      ["Up Next", "opt-2"],
-      ["In Progress", "opt-3"],
-      ["Done", "opt-4"],
-    ]),
   };
 }
 
@@ -139,87 +125,127 @@ describe("formatPlanningContext", () => {
   });
 });
 
-describe("extractProjectConfig", () => {
-  it("returns valid config for a well-formed project", () => {
-    const project: ProjectShape = {
-      id: "proj-123",
-      fields: {
-        nodes: [
-          { id: "field-1", name: "Title" },
-          {
-            id: "field-2",
-            name: "Status",
-            options: [
-              { id: "opt-1", name: "Backlog" },
-              { id: "opt-2", name: "In Progress" },
-              { id: "opt-3", name: "Done" },
-            ],
-          },
-        ],
-      },
-    };
-    const config = extractProjectConfig(project);
-    expect(config).not.toBeNull();
-    expect(config!.projectId).toBe("proj-123");
-    expect(config!.statusFieldId).toBe("field-2");
-    expect(config!.statusOptions.get("Backlog")).toBe("opt-1");
-    expect(config!.statusOptions.get("In Progress")).toBe("opt-2");
-    expect(config!.statusOptions.get("Done")).toBe("opt-3");
-    expect(config!.statusOptions.size).toBe(3);
+describe("parseRoadmap", () => {
+  it("parses a well-formed roadmap", () => {
+    const content = `# Bloom Evolution Roadmap
+
+## Backlog
+- [ ] Fix bug (#3)
+  Some description
+- [ ] Add feature
+
+## Up Next
+- [ ] Important task (#7)
+
+## In Progress
+
+## Done
+- [x] Completed item (#1)
+`;
+    const items = parseRoadmap(content);
+    expect(items).toHaveLength(4);
+    expect(items[0]).toMatchObject({
+      title: "Fix bug",
+      status: "Backlog",
+      body: "Some description",
+      linkedIssueNumber: 3,
+    });
+    expect(items[1]).toMatchObject({
+      title: "Add feature",
+      status: "Backlog",
+      linkedIssueNumber: null,
+    });
+    expect(items[2]).toMatchObject({
+      title: "Important task",
+      status: "Up Next",
+      linkedIssueNumber: 7,
+    });
+    expect(items[3]).toMatchObject({
+      title: "Completed item",
+      status: "Done",
+      linkedIssueNumber: 1,
+    });
   });
 
-  it("returns null when fields property is missing", () => {
-    const project: ProjectShape = { id: "proj-123" };
-    expect(extractProjectConfig(project)).toBeNull();
+  it("returns empty array for empty content", () => {
+    expect(parseRoadmap("")).toEqual([]);
   });
 
-  it("returns null when fields.nodes is empty", () => {
-    const project: ProjectShape = { id: "proj-123", fields: { nodes: [] } };
-    expect(extractProjectConfig(project)).toBeNull();
+  it("returns empty array for content with no items", () => {
+    const content = `# Bloom Evolution Roadmap
+
+## Backlog
+
+## Done
+`;
+    expect(parseRoadmap(content)).toEqual([]);
   });
 
-  it("returns null when no Status field exists", () => {
-    const project: ProjectShape = {
-      id: "proj-123",
-      fields: {
-        nodes: [
-          { id: "field-1", name: "Title" },
-          { id: "field-2", name: "Priority", options: [{ id: "o1", name: "High" }] },
-        ],
-      },
-    };
-    expect(extractProjectConfig(project)).toBeNull();
+  it("handles multi-line body", () => {
+    const content = `## Backlog
+- [ ] My task
+  Line one
+  Line two
+`;
+    const items = parseRoadmap(content);
+    expect(items).toHaveLength(1);
+    expect(items[0].body).toBe("Line one\nLine two");
   });
 
-  it("returns null when Status field has no id", () => {
-    const project: ProjectShape = {
-      id: "proj-123",
-      fields: {
-        nodes: [{ name: "Status", options: [{ id: "o1", name: "Backlog" }] }],
-      },
-    };
-    expect(extractProjectConfig(project)).toBeNull();
+  it("ignores items under unknown headings", () => {
+    const content = `## Random Section
+- [ ] Should be ignored
+
+## Backlog
+- [ ] Should be included
+`;
+    const items = parseRoadmap(content);
+    expect(items).toHaveLength(1);
+    expect(items[0].title).toBe("Should be included");
+  });
+});
+
+describe("serializeRoadmap", () => {
+  it("serializes items into markdown format", () => {
+    const items: ProjectItem[] = [
+      makeItem({ title: "Task A", status: "Backlog", linkedIssueNumber: 3, body: "Description" }),
+      makeItem({ title: "Task B", status: "Done", linkedIssueNumber: null }),
+    ];
+    const result = serializeRoadmap(items);
+    expect(result).toContain("# Bloom Evolution Roadmap");
+    expect(result).toContain("## Backlog");
+    expect(result).toContain("- [ ] Task A (#3)");
+    expect(result).toContain("  Description");
+    expect(result).toContain("## Done");
+    expect(result).toContain("- [x] Task B");
   });
 
-  it("returns null when Status field has no options", () => {
-    const project: ProjectShape = {
-      id: "proj-123",
-      fields: {
-        nodes: [{ id: "field-1", name: "Status" }],
-      },
-    };
-    expect(extractProjectConfig(project)).toBeNull();
+  it("produces empty sections for statuses with no items", () => {
+    const result = serializeRoadmap([]);
+    expect(result).toContain("## Backlog");
+    expect(result).toContain("## Up Next");
+    expect(result).toContain("## In Progress");
+    expect(result).toContain("## Done");
   });
 
-  it("returns config with empty map when options array is empty", () => {
-    const project: ProjectShape = {
-      id: "proj-123",
-      fields: {
-        nodes: [{ id: "field-1", name: "Status", options: [] }],
-      },
-    };
-    const config = extractProjectConfig(project);
-    expect(config).not.toBeNull();
-    expect(config!.statusOptions.size).toBe(0);
+  it("roundtrips through parse and serialize", () => {
+    const original: ProjectItem[] = [
+      makeItem({ id: "item-0", title: "Alpha", status: "Backlog", linkedIssueNumber: 1, body: "Body A" }),
+      makeItem({ id: "item-1", title: "Beta", status: "Up Next", linkedIssueNumber: null, body: "" }),
+      makeItem({ id: "item-2", title: "Gamma", status: "Done", linkedIssueNumber: 5, body: "Done body" }),
+    ];
+    const serialized = serializeRoadmap(original);
+    const parsed = parseRoadmap(serialized);
+
+    expect(parsed).toHaveLength(3);
+    expect(parsed[0].title).toBe("Alpha");
+    expect(parsed[0].status).toBe("Backlog");
+    expect(parsed[0].linkedIssueNumber).toBe(1);
+    expect(parsed[0].body).toBe("Body A");
+    expect(parsed[1].title).toBe("Beta");
+    expect(parsed[1].status).toBe("Up Next");
+    expect(parsed[2].title).toBe("Gamma");
+    expect(parsed[2].status).toBe("Done");
+    expect(parsed[2].linkedIssueNumber).toBe(5);
   });
 });

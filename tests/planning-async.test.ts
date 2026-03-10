@@ -1,463 +1,235 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { existsSync, readFileSync, writeFileSync, unlinkSync } from "fs";
+import { resolve } from "path";
+import { ensureProject, getProjectItems, addDraftItem, addLinkedItem, updateItemStatus, type ProjectConfig } from "../src/planning.js";
 
-// Mock dependencies before importing the module
-vi.mock("../src/github-app.js", () => ({
-  githubGraphQL: vi.fn(),
-}));
-
-vi.mock("../src/issues.js", () => ({
-  detectRepo: vi.fn(),
-  isValidRepo: vi.fn(),
-}));
-
-import { ensureProject, getProjectItems, addDraftItem, updateItemStatus, getIssueNodeId, addLinkedItem, type ProjectConfig } from "../src/planning.js";
-import { githubGraphQL } from "../src/github-app.js";
-import { detectRepo, isValidRepo } from "../src/issues.js";
-
-const mockGraphQL = vi.mocked(githubGraphQL);
-const mockDetectRepo = vi.mocked(detectRepo);
-const mockIsValidRepo = vi.mocked(isValidRepo);
+const ROADMAP_PATH = resolve(process.cwd(), "ROADMAP.md");
 
 function makeConfig(): ProjectConfig {
-  return {
-    projectId: "proj-1",
-    statusFieldId: "field-1",
-    statusOptions: new Map([
-      ["Backlog", "opt-1"],
-      ["Up Next", "opt-2"],
-      ["In Progress", "opt-3"],
-      ["Done", "opt-4"],
-    ]),
-  };
+  return { filePath: ROADMAP_PATH };
 }
 
-// GraphQL response for a project with a Status field
-function orgProjectResponse() {
-  return {
-    data: {
-      organization: {
-        projectsV2: {
-          nodes: [
-            {
-              id: "proj-found",
-              title: "Bloom Evolution Roadmap",
-              fields: {
-                nodes: [
-                  { id: "f1", name: "Title" },
-                  {
-                    id: "f-status",
-                    name: "Status",
-                    options: [
-                      { id: "s1", name: "Backlog" },
-                      { id: "s2", name: "Done" },
-                    ],
-                  },
-                ],
-              },
-            },
-          ],
-        },
-      },
-    },
-  };
+function writeTestRoadmap(content: string): void {
+  writeFileSync(ROADMAP_PATH, content, "utf-8");
 }
+
+function readTestRoadmap(): string {
+  return readFileSync(ROADMAP_PATH, "utf-8");
+}
+
+// Save and restore the original ROADMAP.md if it exists
+let originalContent: string | null = null;
+
+beforeEach(() => {
+  if (existsSync(ROADMAP_PATH)) {
+    originalContent = readFileSync(ROADMAP_PATH, "utf-8");
+  } else {
+    originalContent = null;
+  }
+});
+
+afterEach(() => {
+  if (originalContent !== null) {
+    writeFileSync(ROADMAP_PATH, originalContent, "utf-8");
+  } else if (existsSync(ROADMAP_PATH)) {
+    unlinkSync(ROADMAP_PATH);
+  }
+});
 
 describe("ensureProject", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+  it("creates ROADMAP.md if it does not exist", async () => {
+    if (existsSync(ROADMAP_PATH)) unlinkSync(ROADMAP_PATH);
+
+    const config = await ensureProject();
+    expect(config).not.toBeNull();
+    expect(config!.filePath).toBe(ROADMAP_PATH);
+    expect(existsSync(ROADMAP_PATH)).toBe(true);
+    const content = readTestRoadmap();
+    expect(content).toContain("# Bloom Evolution Roadmap");
   });
 
-  it("returns null when detectRepo returns null", async () => {
-    mockDetectRepo.mockReturnValue(null);
-    expect(await ensureProject()).toBeNull();
-  });
+  it("returns config if ROADMAP.md already exists", async () => {
+    writeTestRoadmap("# Bloom Evolution Roadmap\n\n## Backlog\n- [ ] Existing item\n");
 
-  it("returns null when isValidRepo returns false", async () => {
-    mockDetectRepo.mockReturnValue("owner/repo");
-    mockIsValidRepo.mockReturnValue(false);
-    expect(await ensureProject()).toBeNull();
-  });
-
-  it("finds existing project via organization query", async () => {
-    mockDetectRepo.mockReturnValue("myorg/bloom");
-    mockIsValidRepo.mockReturnValue(true);
-    mockGraphQL.mockResolvedValueOnce(orgProjectResponse());
-
-    const result = await ensureProject();
-    expect(result).not.toBeNull();
-    expect(result!.projectId).toBe("proj-found");
-    expect(result!.statusFieldId).toBe("f-status");
-    expect(result!.statusOptions.get("Backlog")).toBe("s1");
-  });
-
-  it("falls back to user query when organization returns null", async () => {
-    mockDetectRepo.mockReturnValue("myuser/bloom");
-    mockIsValidRepo.mockReturnValue(true);
-
-    // First call (org query) returns no data
-    mockGraphQL.mockResolvedValueOnce({ data: {} });
-    // Second call (user fallback) returns project
-    mockGraphQL.mockResolvedValueOnce({
-      data: {
-        user: {
-          projectsV2: {
-            nodes: [
-              {
-                id: "proj-user",
-                title: "Bloom Evolution Roadmap",
-                fields: {
-                  nodes: [
-                    {
-                      id: "f-status-u",
-                      name: "Status",
-                      options: [{ id: "su1", name: "Backlog" }],
-                    },
-                  ],
-                },
-              },
-            ],
-          },
-        },
-      },
-    });
-
-    const result = await ensureProject();
-    expect(result).not.toBeNull();
-    expect(result!.projectId).toBe("proj-user");
-    // Verify the second call replaced "organization" with "user"
-    const secondCallQuery = mockGraphQL.mock.calls[1][0];
-    expect(secondCallQuery).toContain("user");
-    expect(secondCallQuery).not.toContain("organization");
-  });
-
-  it("returns null when project is not found and creation fails", async () => {
-    mockDetectRepo.mockReturnValue("myorg/bloom");
-    mockIsValidRepo.mockReturnValue(true);
-
-    // findProject returns empty nodes
-    mockGraphQL.mockResolvedValueOnce({
-      data: { organization: { projectsV2: { nodes: [] } } },
-    });
-    // createProject: get owner ID
-    mockGraphQL.mockResolvedValueOnce({
-      data: { organization: { id: "owner-id" } },
-    });
-    // createProject: create mutation returns null
-    mockGraphQL.mockResolvedValueOnce({
-      data: { createProjectV2: { projectV2: null } },
-    });
-
-    const result = await ensureProject();
-    expect(result).toBeNull();
-  });
-
-  it("returns null when GraphQL throws an error", async () => {
-    mockDetectRepo.mockReturnValue("myorg/bloom");
-    mockIsValidRepo.mockReturnValue(true);
-    mockGraphQL.mockRejectedValueOnce(new Error("Network error"));
-
-    const result = await ensureProject();
-    expect(result).toBeNull();
+    const config = await ensureProject();
+    expect(config).not.toBeNull();
+    // Should not overwrite existing content
+    const content = readTestRoadmap();
+    expect(content).toContain("Existing item");
   });
 });
 
 describe("getProjectItems", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+  it("returns parsed items from ROADMAP.md", async () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
 
-  it("returns parsed items from GraphQL response", async () => {
+## Backlog
+- [ ] Fix bug (#42)
+  Description here
+
+## Up Next
+
+## In Progress
+
+## Done
+`);
     const config = makeConfig();
-    mockGraphQL.mockResolvedValueOnce({
-      data: {
-        node: {
-          items: {
-            nodes: [
-              {
-                id: "item-1",
-                content: {
-                  title: "Fix bug",
-                  body: "Description",
-                  number: 42,
-                  reactions: { totalCount: 5 },
-                },
-                fieldValues: {
-                  nodes: [
-                    {
-                      id: "fv-1",
-                      name: "Backlog",
-                      field: { id: "field-1" },
-                    },
-                  ],
-                },
-              },
-            ],
-          },
-        },
-      },
-    });
-
     const items = await getProjectItems(config);
     expect(items).toHaveLength(1);
-    expect(items[0]).toEqual({
-      id: "item-1",
-      title: "Fix bug",
-      body: "Description",
-      status: "Backlog",
-      fieldValueId: "fv-1",
-      linkedIssueNumber: 42,
-      reactions: 5,
-    });
+    expect(items[0].title).toBe("Fix bug");
+    expect(items[0].linkedIssueNumber).toBe(42);
+    expect(items[0].status).toBe("Backlog");
+    expect(items[0].body).toBe("Description here");
   });
 
-  it("returns empty array when no items exist", async () => {
+  it("returns empty array when roadmap has no items", async () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+
+## Done
+`);
     const config = makeConfig();
-    mockGraphQL.mockResolvedValueOnce({
-      data: { node: { items: { nodes: [] } } },
-    });
-
-    const items = await getProjectItems(config);
-    expect(items).toEqual([]);
-  });
-
-  it("handles items with null content (draft issues without fields)", async () => {
-    const config = makeConfig();
-    mockGraphQL.mockResolvedValueOnce({
-      data: {
-        node: {
-          items: {
-            nodes: [
-              {
-                id: "item-2",
-                content: null,
-                fieldValues: { nodes: [] },
-              },
-            ],
-          },
-        },
-      },
-    });
-
-    const items = await getProjectItems(config);
-    expect(items).toHaveLength(1);
-    expect(items[0].title).toBe("");
-    expect(items[0].body).toBe("");
-    expect(items[0].status).toBeNull();
-    expect(items[0].linkedIssueNumber).toBeNull();
-    expect(items[0].reactions).toBe(0);
-  });
-
-  it("returns empty array when node data is missing", async () => {
-    const config = makeConfig();
-    mockGraphQL.mockResolvedValueOnce({ data: {} });
-
     const items = await getProjectItems(config);
     expect(items).toEqual([]);
   });
 });
 
 describe("addDraftItem", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+  it("adds a draft item to the roadmap", async () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
 
-  it("creates a draft item and sets its status", async () => {
+## Backlog
+
+## Up Next
+
+## In Progress
+
+## Done
+`);
     const config = makeConfig();
-    // First call: create draft
-    mockGraphQL.mockResolvedValueOnce({
-      data: {
-        addProjectV2DraftIssue: { projectItem: { id: "new-item-1" } },
-      },
-    });
-    // Second call: updateItemStatus
-    mockGraphQL.mockResolvedValueOnce({
-      data: { updateProjectV2ItemFieldValue: { projectV2Item: { id: "new-item-1" } } },
-    });
-
     const itemId = await addDraftItem(config, "New feature", "Details", "Up Next");
-    expect(itemId).toBe("new-item-1");
-    // Verify status update was called
-    expect(mockGraphQL).toHaveBeenCalledTimes(2);
+    expect(itemId).not.toBeNull();
+
+    const content = readTestRoadmap();
+    expect(content).toContain("- [ ] New feature");
+    expect(content).toContain("  Details");
   });
 
-  it("returns null when draft creation fails", async () => {
+  it("defaults to Backlog status", async () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+
+## Up Next
+
+## In Progress
+
+## Done
+`);
     const config = makeConfig();
-    mockGraphQL.mockResolvedValueOnce({
-      data: { addProjectV2DraftIssue: { projectItem: null } },
-    });
-
-    const itemId = await addDraftItem(config, "Title", "Body");
-    expect(itemId).toBeNull();
-    // Should not attempt status update
-    expect(mockGraphQL).toHaveBeenCalledTimes(1);
-  });
-
-  it("defaults to Backlog status when not specified", async () => {
-    const config = makeConfig();
-    mockGraphQL.mockResolvedValueOnce({
-      data: {
-        addProjectV2DraftIssue: { projectItem: { id: "item-default" } },
-      },
-    });
-    mockGraphQL.mockResolvedValueOnce({
-      data: { updateProjectV2ItemFieldValue: { projectV2Item: { id: "item-default" } } },
-    });
-
     await addDraftItem(config, "Title", "Body");
-    // Second call should use Backlog option ID
-    const statusCallVars = mockGraphQL.mock.calls[1][1];
-    expect(statusCallVars).toEqual(
-      expect.objectContaining({ optionId: "opt-1" }),
-    );
-  });
-});
 
-describe("updateItemStatus", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("returns true on successful status update", async () => {
-    const config = makeConfig();
-    mockGraphQL.mockResolvedValueOnce({
-      data: { updateProjectV2ItemFieldValue: { projectV2Item: { id: "item-1" } } },
-    });
-
-    const result = await updateItemStatus(config, "item-1", "In Progress");
-    expect(result).toBe(true);
-    const vars = mockGraphQL.mock.calls[0][1];
-    expect(vars).toEqual(
-      expect.objectContaining({
-        projectId: "proj-1",
-        itemId: "item-1",
-        fieldId: "field-1",
-        optionId: "opt-3",
-      }),
-    );
-  });
-
-  it("returns false when status option is not found", async () => {
-    const config: ProjectConfig = {
-      projectId: "proj-1",
-      statusFieldId: "field-1",
-      statusOptions: new Map(), // empty - no options
-    };
-
-    const result = await updateItemStatus(config, "item-1", "Backlog");
-    expect(result).toBe(false);
-    expect(mockGraphQL).not.toHaveBeenCalled();
-  });
-
-  it("returns false when GraphQL returns null data", async () => {
-    const config = makeConfig();
-    mockGraphQL.mockResolvedValueOnce({
-      data: { updateProjectV2ItemFieldValue: null },
-    });
-
-    const result = await updateItemStatus(config, "item-1", "Done");
-    expect(result).toBe(false);
-  });
-});
-
-describe("getIssueNodeId", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("resolves an issue number to a node ID", async () => {
-    mockGraphQL.mockResolvedValueOnce({
-      data: { repository: { issue: { id: "I_abc123" } } },
-    });
-
-    const nodeId = await getIssueNodeId("owner/repo", 42);
-    expect(nodeId).toBe("I_abc123");
-    expect(mockGraphQL).toHaveBeenCalledTimes(1);
-  });
-
-  it("returns null when issue does not exist", async () => {
-    mockGraphQL.mockResolvedValueOnce({
-      data: { repository: { issue: null } },
-    });
-
-    const nodeId = await getIssueNodeId("owner/repo", 999);
-    expect(nodeId).toBeNull();
-  });
-
-  it("returns null when GraphQL throws", async () => {
-    mockGraphQL.mockRejectedValueOnce(new Error("Network error"));
-
-    const nodeId = await getIssueNodeId("owner/repo", 1);
-    expect(nodeId).toBeNull();
-  });
-
-  it("returns null for invalid repo format", async () => {
-    const nodeId = await getIssueNodeId("invalid", 1);
-    expect(nodeId).toBeNull();
+    const items = await getProjectItems(config);
+    expect(items).toHaveLength(1);
+    expect(items[0].status).toBe("Backlog");
   });
 });
 
 describe("addLinkedItem", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+  it("adds an issue-linked item to the roadmap", async () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+
+## Up Next
+
+## In Progress
+
+## Done
+`);
+    const config = makeConfig();
+    const itemId = await addLinkedItem(config, "owner/repo", 42, "Fix bug", "Description");
+    expect(itemId).not.toBeNull();
+
+    const content = readTestRoadmap();
+    expect(content).toContain("- [ ] Fix bug (#42)");
   });
 
-  it("adds a real issue to the project by node ID", async () => {
-    const config = makeConfig();
-    // getIssueNodeId
-    mockGraphQL.mockResolvedValueOnce({
-      data: { repository: { issue: { id: "I_abc123" } } },
-    });
-    // addProjectV2ItemById
-    mockGraphQL.mockResolvedValueOnce({
-      data: { addProjectV2ItemById: { item: { id: "proj-item-1" } } },
-    });
-    // updateItemStatus
-    mockGraphQL.mockResolvedValueOnce({
-      data: { updateProjectV2ItemFieldValue: { projectV2Item: { id: "proj-item-1" } } },
-    });
+  it("does not add duplicate issue numbers", async () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
 
-    const itemId = await addLinkedItem(config, "owner/repo", 42, "Fix bug", "Description");
-    expect(itemId).toBe("proj-item-1");
-    expect(mockGraphQL).toHaveBeenCalledTimes(3);
+## Backlog
+- [ ] Fix bug (#42)
+
+## Up Next
+
+## In Progress
+
+## Done
+`);
+    const config = makeConfig();
+    await addLinkedItem(config, "owner/repo", 42, "Fix bug", "Description");
+
+    const items = await getProjectItems(config);
+    const issue42Items = items.filter((i) => i.linkedIssueNumber === 42);
+    expect(issue42Items).toHaveLength(1);
+  });
+});
+
+describe("updateItemStatus", () => {
+  it("updates an item's status", async () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+- [ ] My task
+
+## Up Next
+
+## In Progress
+
+## Done
+`);
+    const config = makeConfig();
+    let items = await getProjectItems(config);
+    expect(items[0].status).toBe("Backlog");
+
+    const result = await updateItemStatus(config, items[0].id, "In Progress");
+    expect(result).toBe(true);
+
+    items = await getProjectItems(config);
+    expect(items[0].status).toBe("In Progress");
   });
 
-  it("falls back to draft item when node ID lookup fails", async () => {
-    const config = makeConfig();
-    // getIssueNodeId fails
-    mockGraphQL.mockRejectedValueOnce(new Error("Not found"));
-    // addDraftItem
-    mockGraphQL.mockResolvedValueOnce({
-      data: { addProjectV2DraftIssue: { projectItem: { id: "draft-1" } } },
-    });
-    // updateItemStatus for draft
-    mockGraphQL.mockResolvedValueOnce({
-      data: { updateProjectV2ItemFieldValue: { projectV2Item: { id: "draft-1" } } },
-    });
+  it("returns false for non-existent item", async () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
 
-    const itemId = await addLinkedItem(config, "owner/repo", 42, "Fix bug", "Description");
-    expect(itemId).toBe("draft-1");
+## Backlog
+
+## Done
+`);
+    const config = makeConfig();
+    const result = await updateItemStatus(config, "nonexistent", "Done");
+    expect(result).toBe(false);
   });
 
-  it("falls back to draft when addProjectV2ItemById returns null", async () => {
-    const config = makeConfig();
-    // getIssueNodeId succeeds
-    mockGraphQL.mockResolvedValueOnce({
-      data: { repository: { issue: { id: "I_abc123" } } },
-    });
-    // addProjectV2ItemById returns null
-    mockGraphQL.mockResolvedValueOnce({
-      data: { addProjectV2ItemById: { item: null } },
-    });
-    // addDraftItem fallback
-    mockGraphQL.mockResolvedValueOnce({
-      data: { addProjectV2DraftIssue: { projectItem: { id: "draft-2" } } },
-    });
-    // updateItemStatus for draft
-    mockGraphQL.mockResolvedValueOnce({
-      data: { updateProjectV2ItemFieldValue: { projectV2Item: { id: "draft-2" } } },
-    });
+  it("marks Done items with [x]", async () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
 
-    const itemId = await addLinkedItem(config, "owner/repo", 42, "Fix bug", "Description");
-    expect(itemId).toBe("draft-2");
+## Backlog
+- [ ] Complete me
+
+## Up Next
+
+## In Progress
+
+## Done
+`);
+    const config = makeConfig();
+    const items = await getProjectItems(config);
+    await updateItemStatus(config, items[0].id, "Done");
+
+    const content = readTestRoadmap();
+    expect(content).toContain("- [x] Complete me");
   });
 });

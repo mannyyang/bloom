@@ -46,14 +46,14 @@ export function buildTriagePrompt(
   return `You are Bloom, a self-evolving coding agent. You need to triage new community issues.
 
 For each issue below, decide one of:
-- "add_to_backlog": Valid work request — add to the project board backlog for future cycles.
+- "add_to_backlog": Valid work request — add to the roadmap backlog for future cycles.
 - "already_done": This capability/fix already exists in the codebase or board.
 - "not_applicable": Not relevant, not actionable, or out of scope.
 
 ## New issues to triage:
 ${issueList}
 
-## Current project board state:
+## Current roadmap state:
 ${boardList}
 
 Respond with ONLY a JSON array of objects. No other text. Example:
@@ -117,7 +117,7 @@ export async function triageIssues(
     await closeIssueWithComment(
       issue.number,
       cycleCount,
-      "This issue is already tracked on the Bloom Evolution Roadmap project board.",
+      "This issue is already tracked on the Bloom Evolution Roadmap.",
       db,
       "triaged",
     );

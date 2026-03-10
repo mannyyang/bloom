@@ -12,13 +12,13 @@ describe("buildAssessmentPrompt", () => {
     expect(prompt).toContain("I am Bloom");
   });
 
-  it("references project board for community work", () => {
+  it("references roadmap for community work", () => {
     const prompt = buildAssessmentPrompt({
       identity: "test",
       journalSummary: "",
       cycleCount: 1,
     });
-    expect(prompt).toContain("project board");
+    expect(prompt).toContain("roadmap");
   });
 
   it("includes cycleStatsText in prompt when provided", () => {

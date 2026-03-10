@@ -19,7 +19,6 @@ function makeBoardItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
     title: "Board item",
     body: "",
     status: "Backlog",
-    fieldValueId: null,
     linkedIssueNumber: null,
     reactions: 0,
     ...overrides,
