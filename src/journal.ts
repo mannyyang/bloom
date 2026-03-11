@@ -83,13 +83,13 @@ export function generateJournalOutput(
   return JSON.stringify(entries, null, 2);
 }
 
-function parseArgs(argv: string[]): { format: "json" | "md"; limit?: number } {
+export function parseArgs(argv: string[]): { format: "json" | "md"; limit?: number } {
   const format = argv.includes("--md") ? "md" as const : "json" as const;
   const limitIdx = argv.indexOf("--limit");
   const limit = limitIdx !== -1 && argv[limitIdx + 1]
     ? parseInt(argv[limitIdx + 1], 10)
     : undefined;
-  return { format, limit: limit && !isNaN(limit) ? limit : undefined };
+  return { format, limit: limit && !isNaN(limit) && limit > 0 ? limit : undefined };
 }
 
 function main() {

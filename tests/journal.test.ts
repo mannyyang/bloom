@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertJournalEntry } from "../src/db.js";
-import { generateJournalOutput, formatJournalMarkdown } from "../src/journal.js";
+import { generateJournalOutput, formatJournalMarkdown, parseArgs } from "../src/journal.js";
 import { makeOutcome } from "./helpers.js";
 
 describe("generateJournalOutput", () => {
@@ -94,5 +94,47 @@ describe("formatJournalMarkdown", () => {
     expect(output).toContain("### What was attempted");
     expect(output).not.toContain("### What succeeded");
     expect(output).not.toContain("### What failed");
+  });
+});
+
+describe("parseArgs", () => {
+  it("returns json format by default with no limit", () => {
+    const result = parseArgs([]);
+    expect(result).toEqual({ format: "json", limit: undefined });
+  });
+
+  it("returns md format when --md is passed", () => {
+    const result = parseArgs(["--md"]);
+    expect(result).toEqual({ format: "md", limit: undefined });
+  });
+
+  it("parses --limit with a valid number", () => {
+    const result = parseArgs(["--limit", "5"]);
+    expect(result).toEqual({ format: "json", limit: 5 });
+  });
+
+  it("handles combined --md and --limit", () => {
+    const result = parseArgs(["--md", "--limit", "3"]);
+    expect(result).toEqual({ format: "md", limit: 3 });
+  });
+
+  it("ignores --limit with NaN value", () => {
+    const result = parseArgs(["--limit", "abc"]);
+    expect(result).toEqual({ format: "json", limit: undefined });
+  });
+
+  it("ignores --limit with no following argument", () => {
+    const result = parseArgs(["--limit"]);
+    expect(result).toEqual({ format: "json", limit: undefined });
+  });
+
+  it("treats --limit 0 as undefined (no limit)", () => {
+    const result = parseArgs(["--limit", "0"]);
+    expect(result).toEqual({ format: "json", limit: undefined });
+  });
+
+  it("handles negative --limit as undefined", () => {
+    const result = parseArgs(["--limit", "-1"]);
+    expect(result).toEqual({ format: "json", limit: undefined });
   });
 });
