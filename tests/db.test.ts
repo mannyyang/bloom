@@ -204,6 +204,49 @@ describe("db", () => {
       const exported = exportJournalJson(db);
       expect(exported[0].strategic_context).toBe("");
     });
+
+    it("groups multiple sections from the same cycle into one entry", () => {
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 2, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
+      insertJournalEntry(db, 1, "attempted", "First attempt");
+      insertJournalEntry(db, 1, "succeeded", "One success");
+      insertJournalEntry(db, 1, "failed", "One failure");
+      insertJournalEntry(db, 1, "learnings", "Lesson learned");
+      insertJournalEntry(db, 1, "strategic_context", "Focus on testing");
+
+      const exported = exportJournalJson(db);
+      expect(exported).toHaveLength(1);
+      expect(exported[0].attempted).toBe("First attempt");
+      expect(exported[0].succeeded).toBe("One success");
+      expect(exported[0].failed).toBe("One failure");
+      expect(exported[0].learnings).toBe("Lesson learned");
+      expect(exported[0].strategic_context).toBe("Focus on testing");
+    });
+
+    it("sorts entries by cycle number descending regardless of insertion order", () => {
+      // Insert cycles in non-sequential order
+      insertCycle(db, makeOutcome({ cycleNumber: 3 }));
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+      insertJournalEntry(db, 3, "attempted", "Third");
+      insertJournalEntry(db, 1, "attempted", "First");
+      insertJournalEntry(db, 2, "attempted", "Second");
+
+      const exported = exportJournalJson(db);
+      expect(exported).toHaveLength(3);
+      expect(exported[0].cycleNumber).toBe(3);
+      expect(exported[1].cycleNumber).toBe(2);
+      expect(exported[2].cycleNumber).toBe(1);
+    });
+
+    it("returns empty array when no journal entries exist", () => {
+      // Cycle exists but no journal entries
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      const exported = exportJournalJson(db);
+      expect(exported).toHaveLength(0);
+    });
   });
 
   describe("getRecentJournalSummary", () => {
@@ -293,6 +336,33 @@ describe("db", () => {
 
       const summary = getRecentJournalSummary(db);
       expect(summary).not.toContain("Strategic Context");
+    });
+
+    it("includes strategic_context section in budget calculation", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+      insertJournalEntry(db, 1, "attempted", "Work 1");
+      insertJournalEntry(db, 1, "succeeded", "");
+      insertJournalEntry(db, 1, "failed", "");
+      insertJournalEntry(db, 1, "learnings", "");
+      insertJournalEntry(db, 2, "attempted", "Work 2");
+      insertJournalEntry(db, 2, "succeeded", "");
+      insertJournalEntry(db, 2, "failed", "");
+      insertJournalEntry(db, 2, "learnings", "");
+      insertJournalEntry(db, 2, "strategic_context", "X".repeat(200));
+
+      // The strategic context adds significant length to cycle 2's section
+      const fullSummary = getRecentJournalSummary(db, 100000);
+      expect(fullSummary).toContain("Strategic Context");
+      expect(fullSummary).toContain("X".repeat(200));
+
+      // With a tight budget that fits cycle 2 (with its long strategic context)
+      // but not cycle 1, only cycle 2 should appear
+      const cycle2Section = fullSummary.split("---")[0] + "---\n";
+      const tightBudget = cycle2Section.length + 5;
+      const truncated = getRecentJournalSummary(db, tightBudget);
+      expect(truncated).toContain("Cycle 2");
+      expect(truncated).not.toContain("Cycle 1");
     });
 
     it("always includes at least one cycle even if it exceeds maxChars", () => {
