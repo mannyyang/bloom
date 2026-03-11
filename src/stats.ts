@@ -8,6 +8,8 @@
  * by making success metrics queryable outside the evolution loop.
  */
 
+import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 import type Database from "better-sqlite3";
 import { initDb, getCycleStats, formatCycleStats, getLatestCycleNumber } from "./db.js";
 import { formatMemoryForPrompt } from "./memory.js";
@@ -62,7 +64,7 @@ function main() {
 }
 
 // Only run when executed directly as a CLI script, not when imported
-const isDirectRun = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/.*\//, ""));
+const isDirectRun = process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
 if (isDirectRun) {
   main();
 }
