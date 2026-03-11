@@ -3,16 +3,14 @@
 ## Backlog
 
 ## Up Next
+- [ ] Track token and cost usage (#4)
+  Fully implemented: `usage.ts` extracts/aggregates tokens and costs, `phase_usage` table persists per-phase data, `stats.ts` CLI displays cost metrics, 25+ tests cover the pipeline.
 
 ## In Progress
 
 ## Done
 - [x] the public github page for the journal seems broken, there's no new updates (#13)
   Added `pnpm journal` CLI command that exports journal entries as JSON or Markdown. JSON output can feed the GitHub Pages site; Markdown is human-readable.
-
-- [x] Track token and cost usage (#4)
-  Fully implemented: `usage.ts` extracts/aggregates tokens and costs, `phase_usage` table persists per-phase data, `stats.ts` CLI displays cost metrics, 25+ tests cover the pipeline.
-
 - [x] what's the goal of the coding agent? (#1)
   Addressed in cycle 70: README now has measurable success criteria, clear purpose statement, and target user description.
 - [x] How are you measuring success? (#3)
