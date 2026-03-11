@@ -1,5 +1,14 @@
 import { execSync, execFileSync } from "child_process";
 
+/** Timeout for `pnpm build && pnpm test` (2 minutes). */
+export const BUILD_TIMEOUT_MS = 120_000;
+/** Timeout for git add/commit/tag operations (30 seconds). */
+export const GIT_OP_TIMEOUT_MS = 30_000;
+/** Timeout for git push operations (60 seconds). */
+export const GIT_PUSH_TIMEOUT_MS = 60_000;
+/** Timeout for git checkout/clean/reset operations (10 seconds). */
+export const GIT_REVERT_TIMEOUT_MS = 10_000;
+
 export interface BuildResult {
   passed: boolean;
   output: string;
@@ -11,7 +20,7 @@ export interface BuildResult {
  */
 function runBuildAndTest(): BuildResult {
   try {
-    const output = execSync("pnpm build && pnpm test", { encoding: "utf-8", timeout: 120_000 });
+    const output = execSync("pnpm build && pnpm test", { encoding: "utf-8", timeout: BUILD_TIMEOUT_MS });
     return { passed: true, output };
   } catch (err: unknown) {
     const errObj = err as { stdout?: string; stderr?: string };
@@ -49,8 +58,8 @@ export function setGitBotIdentity(): void {
 export function commitDb(cycleCount: number, label?: string): boolean {
   try {
     const msg = label ? `cycle ${cycleCount}: ${label}` : `cycle ${cycleCount}`;
-    execFileSync("git", ["add", "bloom.db"], { stdio: "inherit", timeout: 30_000 });
-    execFileSync("git", ["commit", "-m", msg], { stdio: "inherit", timeout: 30_000 });
+    execFileSync("git", ["add", "bloom.db"], { stdio: "inherit", timeout: GIT_OP_TIMEOUT_MS });
+    execFileSync("git", ["commit", "-m", msg], { stdio: "inherit", timeout: GIT_OP_TIMEOUT_MS });
     return true;
   } catch {
     return false;
@@ -63,8 +72,8 @@ export function commitDb(cycleCount: number, label?: string): boolean {
  */
 export function commitRoadmap(cycleCount: number): boolean {
   try {
-    execFileSync("git", ["add", "ROADMAP.md"], { stdio: "inherit", timeout: 30_000 });
-    execFileSync("git", ["commit", "-m", `cycle ${cycleCount}: update roadmap`], { stdio: "inherit", timeout: 30_000 });
+    execFileSync("git", ["add", "ROADMAP.md"], { stdio: "inherit", timeout: GIT_OP_TIMEOUT_MS });
+    execFileSync("git", ["commit", "-m", `cycle ${cycleCount}: update roadmap`], { stdio: "inherit", timeout: GIT_OP_TIMEOUT_MS });
     return true;
   } catch {
     return false;
@@ -76,7 +85,7 @@ export function commitRoadmap(cycleCount: number): boolean {
  */
 export function pushChanges(): boolean {
   try {
-    execFileSync("git", ["push", "origin", "main"], { stdio: "inherit", timeout: 60_000 });
+    execFileSync("git", ["push", "origin", "main"], { stdio: "inherit", timeout: GIT_PUSH_TIMEOUT_MS });
     return true;
   } catch {
     return false;
@@ -88,7 +97,7 @@ export function pushChanges(): boolean {
  */
 export function pushTags(): boolean {
   try {
-    execFileSync("git", ["push", "--tags"], { stdio: "inherit", timeout: 60_000 });
+    execFileSync("git", ["push", "--tags"], { stdio: "inherit", timeout: GIT_PUSH_TIMEOUT_MS });
     return true;
   } catch {
     return false;
@@ -108,10 +117,10 @@ export function verifyBuild(): BuildResult {
  */
 export function revertUncommitted(): void {
   try {
-    execFileSync("git", ["checkout", "."], { stdio: "inherit", timeout: 10_000 });
+    execFileSync("git", ["checkout", "."], { stdio: "inherit", timeout: GIT_REVERT_TIMEOUT_MS });
   } catch { /* ignore */ }
   try {
-    execFileSync("git", ["clean", "-fd"], { stdio: "inherit", timeout: 10_000 });
+    execFileSync("git", ["clean", "-fd"], { stdio: "inherit", timeout: GIT_REVERT_TIMEOUT_MS });
   } catch { /* ignore */ }
 }
 
@@ -124,7 +133,7 @@ export function createSafetyTag(cycleCount: number): boolean {
     return false;
   }
   try {
-    execFileSync("git", ["tag", "-f", `pre-evolution-cycle-${cycleCount}`], { stdio: "inherit", timeout: 30_000 });
+    execFileSync("git", ["tag", "-f", `pre-evolution-cycle-${cycleCount}`], { stdio: "inherit", timeout: GIT_OP_TIMEOUT_MS });
     return true;
   } catch {
     return false;
@@ -175,5 +184,5 @@ export function hardResetTo(ref: string): void {
   if (!isValidGitRef(ref)) {
     throw new Error(`Invalid git ref: ${ref}`);
   }
-  execFileSync("git", ["reset", "--hard", ref], { stdio: "inherit", timeout: 10_000 });
+  execFileSync("git", ["reset", "--hard", ref], { stdio: "inherit", timeout: GIT_REVERT_TIMEOUT_MS });
 }

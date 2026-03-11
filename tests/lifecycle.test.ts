@@ -22,6 +22,10 @@ import {
   isValidGitRef,
   createSafetyTag,
   runBuildVerification,
+  BUILD_TIMEOUT_MS,
+  GIT_OP_TIMEOUT_MS,
+  GIT_PUSH_TIMEOUT_MS,
+  GIT_REVERT_TIMEOUT_MS,
   type BuildResult,
 } from "../src/lifecycle.js";
 
@@ -35,6 +39,15 @@ describe("lifecycle helpers", () => {
     vi.restoreAllMocks();
   });
 
+  describe("timeout constants", () => {
+    it("exports expected timeout values", () => {
+      expect(BUILD_TIMEOUT_MS).toBe(120_000);
+      expect(GIT_OP_TIMEOUT_MS).toBe(30_000);
+      expect(GIT_PUSH_TIMEOUT_MS).toBe(60_000);
+      expect(GIT_REVERT_TIMEOUT_MS).toBe(10_000);
+    });
+  });
+
   describe("runPreflightCheck", () => {
     it("returns passed=true with captured output when build+test succeeds", () => {
       mockedExecSync.mockReturnValue("Tests  490 passed\n");
@@ -43,7 +56,7 @@ describe("lifecycle helpers", () => {
       expect(result.output).toBe("Tests  490 passed\n");
       expect(mockedExecSync).toHaveBeenCalledWith(
         "pnpm build && pnpm test",
-        expect.objectContaining({ encoding: "utf-8", timeout: 120_000 }),
+        expect.objectContaining({ encoding: "utf-8", timeout: BUILD_TIMEOUT_MS }),
       );
     });
 
@@ -119,12 +132,12 @@ describe("lifecycle helpers", () => {
       expect(mockedExecFileSync).toHaveBeenCalledWith(
         "git",
         ["add", "bloom.db"],
-        expect.objectContaining({ timeout: 30_000 }),
+        expect.objectContaining({ timeout: GIT_OP_TIMEOUT_MS }),
       );
       expect(mockedExecFileSync).toHaveBeenCalledWith(
         "git",
         ["commit", "-m", "cycle 42"],
-        expect.objectContaining({ timeout: 30_000 }),
+        expect.objectContaining({ timeout: GIT_OP_TIMEOUT_MS }),
       );
     });
 
@@ -134,7 +147,7 @@ describe("lifecycle helpers", () => {
       expect(mockedExecFileSync).toHaveBeenCalledWith(
         "git",
         ["commit", "-m", "cycle 42: start"],
-        expect.objectContaining({ timeout: 30_000 }),
+        expect.objectContaining({ timeout: GIT_OP_TIMEOUT_MS }),
       );
     });
 
@@ -144,7 +157,7 @@ describe("lifecycle helpers", () => {
       expect(mockedExecFileSync).toHaveBeenCalledWith(
         "git",
         ["commit", "-m", "cycle 42"],
-        expect.objectContaining({ timeout: 30_000 }),
+        expect.objectContaining({ timeout: GIT_OP_TIMEOUT_MS }),
       );
     });
 
@@ -168,12 +181,12 @@ describe("lifecycle helpers", () => {
       expect(mockedExecFileSync).toHaveBeenCalledWith(
         "git",
         ["add", "ROADMAP.md"],
-        expect.objectContaining({ timeout: 30_000 }),
+        expect.objectContaining({ timeout: GIT_OP_TIMEOUT_MS }),
       );
       expect(mockedExecFileSync).toHaveBeenCalledWith(
         "git",
         ["commit", "-m", "cycle 42: update roadmap"],
-        expect.objectContaining({ timeout: 30_000 }),
+        expect.objectContaining({ timeout: GIT_OP_TIMEOUT_MS }),
       );
     });
 
@@ -197,7 +210,7 @@ describe("lifecycle helpers", () => {
       expect(mockedExecFileSync).toHaveBeenCalledWith(
         "git",
         ["push", "origin", "main"],
-        expect.objectContaining({ timeout: 60_000 }),
+        expect.objectContaining({ timeout: GIT_PUSH_TIMEOUT_MS }),
       );
     });
 
@@ -214,7 +227,7 @@ describe("lifecycle helpers", () => {
       expect(mockedExecFileSync).toHaveBeenCalledWith(
         "git",
         ["push", "--tags"],
-        expect.objectContaining({ timeout: 60_000 }),
+        expect.objectContaining({ timeout: GIT_PUSH_TIMEOUT_MS }),
       );
     });
 
@@ -232,7 +245,7 @@ describe("lifecycle helpers", () => {
       expect(result.output).toBe("Tests  522 passed\n");
       expect(mockedExecSync).toHaveBeenCalledWith(
         "pnpm build && pnpm test",
-        expect.objectContaining({ encoding: "utf-8", timeout: 120_000 }),
+        expect.objectContaining({ encoding: "utf-8", timeout: BUILD_TIMEOUT_MS }),
       );
     });
 
@@ -250,12 +263,12 @@ describe("lifecycle helpers", () => {
       expect(mockedExecFileSync).toHaveBeenCalledWith(
         "git",
         ["checkout", "."],
-        expect.objectContaining({ timeout: 10_000 }),
+        expect.objectContaining({ timeout: GIT_REVERT_TIMEOUT_MS }),
       );
       expect(mockedExecFileSync).toHaveBeenCalledWith(
         "git",
         ["clean", "-fd"],
-        expect.objectContaining({ timeout: 10_000 }),
+        expect.objectContaining({ timeout: GIT_REVERT_TIMEOUT_MS }),
       );
     });
 
@@ -275,7 +288,7 @@ describe("lifecycle helpers", () => {
       expect(mockedExecFileSync).toHaveBeenCalledWith(
         "git",
         ["clean", "-fd"],
-        expect.objectContaining({ timeout: 10_000 }),
+        expect.objectContaining({ timeout: GIT_REVERT_TIMEOUT_MS }),
       );
     });
   });
@@ -287,7 +300,7 @@ describe("lifecycle helpers", () => {
       expect(mockedExecFileSync).toHaveBeenCalledWith(
         "git",
         ["tag", "-f", "pre-evolution-cycle-42"],
-        expect.objectContaining({ timeout: 30_000 }),
+        expect.objectContaining({ timeout: GIT_OP_TIMEOUT_MS }),
       );
     });
 
@@ -329,7 +342,7 @@ describe("lifecycle helpers", () => {
       expect(mockedExecFileSync).toHaveBeenCalledWith(
         "git",
         ["reset", "--hard", "pre-evolution-cycle-42"],
-        expect.objectContaining({ timeout: 10_000 }),
+        expect.objectContaining({ timeout: GIT_REVERT_TIMEOUT_MS }),
       );
     });
 
@@ -393,7 +406,7 @@ describe("lifecycle helpers", () => {
       expect(mockedExecFileSync).toHaveBeenCalledWith(
         "git",
         ["reset", "--hard", "pre-evolution-cycle-42"],
-        expect.objectContaining({ timeout: 10_000 }),
+        expect.objectContaining({ timeout: GIT_REVERT_TIMEOUT_MS }),
       );
     });
 
