@@ -69,7 +69,8 @@ Bloom manages its own **kanban-style roadmap** using a local `ROADMAP.md` file:
 
 - **Hybrid planning** — Bloom proposes its own improvement goals and incorporates community issues, with reactions influencing priority
 - **Automated status tracking** — Items flow from Backlog → Up Next → In Progress → Done as Bloom works through cycles
-- **Priority algorithm** — "Up Next" items are picked first (sorted by reactions), then "Backlog" items
+- **Priority algorithm** — "In Progress" items are resumed first (unfinished work), then "Up Next" (sorted by reactions), then "Backlog"
+- **Completion notes** — When items move to Done, a summary of what was accomplished is recorded automatically
 
 ### Persistence
 
