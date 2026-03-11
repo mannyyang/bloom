@@ -90,7 +90,7 @@ All state is stored in `bloom.db` (SQLite with WAL mode):
 - **Immutable constitution** (`IDENTITY.md`) - Defines purpose and boundaries, protected by hooks
 - **Test-gated commits** - Only changes that pass `pnpm build && pnpm test` are committed
 - **Post-evolution verification** - Build is verified after the agent runs; broken builds are reverted
-- **Append-only journal** - `JOURNAL.md` can only be appended to, never overwritten
+- **Journal protection** - Journal entries are stored in SQLite; `JOURNAL.md` is protected from overwrites by safety hooks
 - **Dangerous command blocking** - Safety hooks prevent `rm -rf`, force pushes, etc.
 - **Budget limits** - Max 50 turns and $5 per evolution cycle
 - **Best-effort externals** - GitHub API failures (issues, projects) never block evolution
