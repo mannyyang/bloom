@@ -13,6 +13,7 @@ import {
   runPreflightCheck,
   setGitBotIdentity,
   commitDb,
+  commitRoadmap,
   pushChanges,
   pushTags,
   verifyBuild,
@@ -157,6 +158,35 @@ describe("lifecycle helpers", () => {
         .mockReturnValueOnce(Buffer.from(""))
         .mockImplementationOnce(() => { throw new Error("nothing to commit"); });
       expect(commitDb(42)).toBe(false);
+    });
+  });
+
+  describe("commitRoadmap", () => {
+    it("returns true on successful commit", () => {
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+      expect(commitRoadmap(42)).toBe(true);
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["add", "ROADMAP.md"],
+        expect.objectContaining({ timeout: 30_000 }),
+      );
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["commit", "-m", "cycle 42: update roadmap"],
+        expect.objectContaining({ timeout: 30_000 }),
+      );
+    });
+
+    it("returns false when git add fails", () => {
+      mockedExecFileSync.mockImplementation(() => { throw new Error("add failed"); });
+      expect(commitRoadmap(42)).toBe(false);
+    });
+
+    it("returns false when git commit fails", () => {
+      mockedExecFileSync
+        .mockReturnValueOnce(Buffer.from(""))
+        .mockImplementationOnce(() => { throw new Error("nothing to commit"); });
+      expect(commitRoadmap(42)).toBe(false);
     });
   });
 
