@@ -18,12 +18,20 @@ describe("pickNextItem", () => {
     expect(pickNextItem([])).toBeNull();
   });
 
-  it("returns null when all items are Done or In Progress", () => {
+  it("returns null when all items are Done", () => {
     const items = [
       makeItem({ status: "Done" }),
-      makeItem({ status: "In Progress" }),
     ];
     expect(pickNextItem(items)).toBeNull();
+  });
+
+  it("prefers In Progress items over Up Next and Backlog", () => {
+    const items = [
+      makeItem({ id: "backlog-1", title: "Backlog item", status: "Backlog", reactions: 10 }),
+      makeItem({ id: "upnext-1", title: "Up Next item", status: "Up Next", reactions: 5 }),
+      makeItem({ id: "inprog-1", title: "In Progress item", status: "In Progress", reactions: 1 }),
+    ];
+    expect(pickNextItem(items)!.id).toBe("inprog-1");
   });
 
   it("prefers Up Next items over Backlog", () => {

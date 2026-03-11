@@ -265,9 +265,15 @@ export function updateItemStatus(
 
 /**
  * Pick the highest-priority item to work on this cycle.
- * Priority: "Up Next" first, then "Backlog".
+ * Priority: "In Progress" first (resume unfinished work), then "Up Next", then "Backlog".
  */
 export function pickNextItem(items: ProjectItem[]): ProjectItem | null {
+  // Resume unfinished work first
+  const inProgress = items
+    .filter((i) => i.status === "In Progress")
+    .sort((a, b) => b.reactions - a.reactions);
+  if (inProgress.length > 0) return inProgress[0];
+
   const upNext = items
     .filter((i) => i.status === "Up Next")
     .sort((a, b) => b.reactions - a.reactions);
