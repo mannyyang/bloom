@@ -247,6 +247,40 @@ describe("db", () => {
       const exported = exportJournalJson(db);
       expect(exported).toHaveLength(0);
     });
+
+    it("limits results when maxCycles is provided", () => {
+      for (let i = 1; i <= 5; i++) {
+        insertCycle(db, makeOutcome({ cycleNumber: i }));
+        insertJournalEntry(db, i, "attempted", `Cycle ${i} work`);
+        insertJournalEntry(db, i, "succeeded", `Cycle ${i} success`);
+      }
+
+      const exported = exportJournalJson(db, 2);
+      expect(exported).toHaveLength(2);
+      // Newest first
+      expect(exported[0].cycleNumber).toBe(5);
+      expect(exported[1].cycleNumber).toBe(4);
+    });
+
+    it("returns all entries when maxCycles exceeds total cycles", () => {
+      for (let i = 1; i <= 3; i++) {
+        insertCycle(db, makeOutcome({ cycleNumber: i }));
+        insertJournalEntry(db, i, "attempted", `Cycle ${i}`);
+      }
+
+      const exported = exportJournalJson(db, 10);
+      expect(exported).toHaveLength(3);
+    });
+
+    it("returns all entries when maxCycles is undefined", () => {
+      for (let i = 1; i <= 4; i++) {
+        insertCycle(db, makeOutcome({ cycleNumber: i }));
+        insertJournalEntry(db, i, "attempted", `Cycle ${i}`);
+      }
+
+      const exported = exportJournalJson(db);
+      expect(exported).toHaveLength(4);
+    });
   });
 
   describe("getRecentJournalSummary", () => {

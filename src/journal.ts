@@ -70,11 +70,7 @@ export function generateJournalOutput(
   options: { format?: "json" | "md"; limit?: number } = {},
 ): string {
   const { format = "json", limit } = options;
-  let entries = exportJournalJson(db);
-
-  if (limit && limit > 0) {
-    entries = entries.slice(0, limit);
-  }
+  const entries = exportJournalJson(db, limit && limit > 0 ? limit : undefined);
 
   if (format === "md") {
     return formatJournalMarkdown(entries);

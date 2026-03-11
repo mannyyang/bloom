@@ -228,8 +228,12 @@ export interface JournalExportEntry {
   strategic_context: string;
 }
 
-export function exportJournalJson(db: Database.Database): JournalExportEntry[] {
-  const rows = getJournalEntries(db);
+export function exportJournalJson(db: Database.Database, maxCycles?: number): JournalExportEntry[] {
+  // Estimate row limit: each cycle has at most 6 sections (attempted, succeeded,
+  // failed, learnings, strategic_context, plus potential extras). Fetch a few
+  // extra rows to account for cycles with fewer sections.
+  const rowLimit = maxCycles ? maxCycles * 6 : undefined;
+  const rows = getJournalEntries(db, rowLimit);
   const grouped = new Map<number, { date: string; sections: Map<string, string> }>();
 
   for (const row of rows) {
@@ -255,7 +259,8 @@ export function exportJournalJson(db: Database.Database): JournalExportEntry[] {
     });
   }
 
-  return entries.sort((a, b) => b.cycleNumber - a.cycleNumber);
+  const sorted = entries.sort((a, b) => b.cycleNumber - a.cycleNumber);
+  return maxCycles ? sorted.slice(0, maxCycles) : sorted;
 }
 
 export interface CycleStats {
@@ -440,7 +445,7 @@ export function getLatestStrategicContext(
 }
 
 export function getRecentJournalSummary(db: Database.Database, maxChars: number = 4000): string {
-  const entries = exportJournalJson(db).slice(0, 10);
+  const entries = exportJournalJson(db, 10);
   const lines: string[] = [];
   let totalLen = 0;
 
