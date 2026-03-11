@@ -257,7 +257,10 @@ async function main() {
       if (projectConfig && currentItem) {
         const succeeded = processed.improvementsSucceeded > 0;
         const newStatus = succeeded ? "Done" : "Up Next";
-        updateItemStatus(projectConfig, currentItem.id, newStatus);
+        const completionNote = succeeded
+          ? `Completed in cycle ${cycleCount}: ${processed.improvementsSucceeded}/${processed.improvementsAttempted} improvements succeeded.`
+          : undefined;
+        updateItemStatus(projectConfig, currentItem.id, newStatus, completionNote);
         console.log(`[planning] Updated "${currentItem.title}" → ${newStatus}`);
         commitRoadmap(cycleCount);
       }

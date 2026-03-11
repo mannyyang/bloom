@@ -245,11 +245,14 @@ export function addDraftItem(
 
 /**
  * Update the status of an item by its ID.
+ * When moving to "Done", an optional completionNote replaces the item body
+ * to document what was accomplished.
  */
 export function updateItemStatus(
   _config: ProjectConfig,
   itemId: string,
   status: StatusColumn,
+  completionNote?: string,
 ): boolean {
   const content = readRoadmap();
   const items = parseRoadmap(content);
@@ -257,6 +260,9 @@ export function updateItemStatus(
   if (!item) return false;
 
   item.status = status;
+  if (status === "Done" && completionNote) {
+    item.body = completionNote;
+  }
   writeRoadmap(serializeRoadmap(items));
   return true;
 }

@@ -232,4 +232,71 @@ describe("updateItemStatus", () => {
     const content = readTestRoadmap();
     expect(content).toContain("- [x] Complete me");
   });
+
+  it("replaces body with completion note when moving to Done", () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+- [ ] Fix the bug (#5)
+  Original description of the bug
+
+## Up Next
+
+## In Progress
+
+## Done
+`);
+    const config = makeConfig();
+    const items = getProjectItems(config);
+    updateItemStatus(config, items[0].id, "Done", "Fixed in cycle 73: resolved the root cause.");
+
+    const content = readTestRoadmap();
+    expect(content).toContain("- [x] Fix the bug (#5)");
+    expect(content).toContain("  Fixed in cycle 73: resolved the root cause.");
+    expect(content).not.toContain("Original description of the bug");
+  });
+
+  it("preserves original body when no completion note is provided", () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+- [ ] Keep my body (#9)
+  Important details
+
+## Up Next
+
+## In Progress
+
+## Done
+`);
+    const config = makeConfig();
+    const items = getProjectItems(config);
+    updateItemStatus(config, items[0].id, "Done");
+
+    const content = readTestRoadmap();
+    expect(content).toContain("  Important details");
+  });
+
+  it("ignores completion note when status is not Done", () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+- [ ] Not done yet
+  Original body
+
+## Up Next
+
+## In Progress
+
+## Done
+`);
+    const config = makeConfig();
+    const items = getProjectItems(config);
+    updateItemStatus(config, items[0].id, "Up Next", "Should be ignored");
+
+    const content = readTestRoadmap();
+    const updatedItems = getProjectItems(config);
+    expect(updatedItems[0].status).toBe("Up Next");
+    expect(updatedItems[0].body).toBe("Original body");
+  });
 });
