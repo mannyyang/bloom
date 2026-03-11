@@ -113,6 +113,7 @@ src/
 ├── memory.ts       # Learning extraction, storage, and prompt formatting
 ├── planning.ts     # Local ROADMAP.md parsing and item management
 ├── db.ts           # SQLite persistence (bloom.db)
+├── journal.ts      # CLI entry point for exporting journal entries (JSON/Markdown)
 ├── stats.ts        # CLI entry point for querying evolution statistics
 ├── triage.ts       # Issue triage and lifecycle management
 ├── issues.ts       # GitHub issues integration
@@ -163,3 +164,13 @@ pnpm stats
 ```
 
 Prints cycle statistics (success rate, test trends, costs, token usage) and the latest strategic context. Useful for answering "how is Bloom doing?" without running a full evolution cycle.
+
+### Export Journal
+
+```bash
+pnpm journal              # JSON output (default)
+pnpm journal -- --md      # Markdown output
+pnpm journal -- --limit 5 # Limit to last 5 entries
+```
+
+Exports journal entries to stdout. The JSON format is designed for use by the [GitHub Pages site](https://mannyyang.github.io/bloom/), while Markdown is useful for human reading.
