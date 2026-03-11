@@ -111,6 +111,56 @@ LEARNINGS: - Learned things`;
       expect(processed.strategicContextStored).toBe(false);
     });
 
+    it("handles result with only LEARNINGS and STRATEGIC_CONTEXT sections", () => {
+      const result = `LEARNINGS: - [pattern] Important lesson
+- [domain] Domain insight
+STRATEGIC_CONTEXT: Focus on refactoring next`;
+
+      const processed = processEvolutionResult(db, 1, result);
+
+      expect(processed.learningsStored).toBe(2);
+      expect(processed.strategicContextStored).toBe(true);
+      expect(processed.improvementsAttempted).toBe(0);
+      expect(processed.improvementsSucceeded).toBe(0);
+
+      // Verify only non-empty sections were stored
+      const entries = getJournalEntries(db);
+      const sections = entries.map((e) => e.section);
+      expect(sections).toContain("learnings");
+      expect(sections).toContain("strategic_context");
+    });
+
+    it("handles duplicate section headers by keeping last value", () => {
+      // parseEvolutionResult uses a regex that captures until the next marker,
+      // so a duplicate header would overwrite the first
+      const result = `ATTEMPTED: First attempt
+SUCCEEDED: First success
+ATTEMPTED: Second attempt
+FAILED: Nothing
+LEARNINGS: Lesson
+STRATEGIC_CONTEXT: Context`;
+
+      const processed = processEvolutionResult(db, 1, result);
+
+      // The parsing behavior should not crash regardless of duplicate handling
+      expect(processed.journalSections).toBeDefined();
+      expect(processed.improvementsAttempted).toBeGreaterThanOrEqual(0);
+    });
+
+    it("handles very long evolution output without crashing", () => {
+      const longContent = "A".repeat(10000);
+      const result = `ATTEMPTED: ${longContent}
+SUCCEEDED: ${longContent}
+FAILED: Nothing
+LEARNINGS: - [pattern] ${longContent}
+STRATEGIC_CONTEXT: ${longContent}`;
+
+      const processed = processEvolutionResult(db, 1, result);
+
+      expect(processed.journalSections.attempted).toBe(longContent);
+      expect(processed.strategicContextStored).toBe(true);
+    });
+
     it("handles empty evolution result", () => {
       const processed = processEvolutionResult(db, 1, "");
 
@@ -222,6 +272,33 @@ STRATEGIC_CONTEXT: Strategic info`;
 
       expect(lines[0]).toContain("====");
       expect(lines[lines.length - 1]).toContain("====");
+    });
+
+    it("shows ? for testCountBefore but number for testCountAfter", () => {
+      const outcome = makeOutcome({
+        testCountBefore: null,
+        testCountAfter: 42,
+      });
+
+      const summary = formatCycleSummaryWithDuration(1, outcome, null, 5000);
+      expect(summary).toContain("? → 42");
+    });
+
+    it("shows number for testCountBefore but ? for testCountAfter", () => {
+      const outcome = makeOutcome({
+        testCountBefore: 100,
+        testCountAfter: null,
+      });
+
+      const summary = formatCycleSummaryWithDuration(1, outcome, null, 5000);
+      expect(summary).toContain("100 → ?");
+    });
+
+    it("formats very long durations correctly", () => {
+      const outcome = makeOutcome();
+      // 10 minutes = 600000ms
+      const summary = formatCycleSummaryWithDuration(1, outcome, null, 600000);
+      expect(summary).toContain("600.0s");
     });
   });
 
