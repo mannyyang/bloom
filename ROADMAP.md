@@ -3,12 +3,12 @@
 ## Backlog
 
 ## Up Next
-- [ ] Track token and cost usage (#4)
-  Fully implemented: `usage.ts` extracts/aggregates tokens and costs, `phase_usage` table persists per-phase data, `stats.ts` CLI displays cost metrics, 25+ tests cover the pipeline.
 
 ## In Progress
 
 ## Done
+- [x] Track token and cost usage (#4)
+  Fully implemented: `usage.ts` extracts/aggregates tokens and costs, `phase_usage` table persists per-phase data, `stats.ts` CLI displays cost metrics, 25+ tests cover the pipeline.
 - [x] the public github page for the journal seems broken, there's no new updates (#13)
   Added `pnpm journal` CLI command that exports journal entries as JSON or Markdown. JSON output can feed the GitHub Pages site; Markdown is human-readable.
 - [x] what's the goal of the coding agent? (#1)
