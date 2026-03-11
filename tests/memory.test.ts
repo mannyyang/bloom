@@ -161,6 +161,59 @@ describe("formatMemoryForPrompt", () => {
     expect(truncated.length).toBeLessThan(fullResult.length);
   });
 
+  it("excludes learnings entirely when strategic context fills the budget", () => {
+    const longContext = "X".repeat(200);
+    insertStrategicContext(db, 1, longContext);
+    insertLearning(db, 1, "pattern", "Should not appear");
+    // Budget barely fits the strategic context section
+    const contextSection = `## Strategic Context\n${longContext}\n`;
+    const result = formatMemoryForPrompt(db, contextSection.length + 5);
+    expect(result).toContain("Strategic Context");
+    expect(result).not.toContain("Should not appear");
+  });
+
+  it("includes at least some learnings when budget allows after strategic context", () => {
+    insertStrategicContext(db, 1, "Short context.");
+    insertLearning(db, 1, "pattern", "First learning");
+    insertLearning(db, 1, "pattern", "Second learning");
+    // Large budget should include everything
+    const result = formatMemoryForPrompt(db, 100000);
+    expect(result).toContain("First learning");
+    expect(result).toContain("Second learning");
+  });
+
+  it("stops adding items within a category when budget is reached", () => {
+    // No strategic context — all budget goes to learnings
+    for (let i = 0; i < 20; i++) {
+      insertLearning(db, 1, "domain", `Learning item number ${i} with padding text`);
+    }
+    const fullResult = formatMemoryForPrompt(db, 100000);
+    // Use a tight budget that fits header + a few items but not all
+    const tightBudget = Math.floor(fullResult.length * 0.3);
+    const truncated = formatMemoryForPrompt(db, tightBudget);
+    expect(truncated).toContain("## Key Learnings");
+    expect(truncated.length).toBeLessThan(fullResult.length);
+    // Count how many learning lines appear
+    const learningLines = truncated.split("\n").filter(l => l.startsWith("- Learning"));
+    expect(learningLines.length).toBeGreaterThan(0);
+    expect(learningLines.length).toBeLessThan(20);
+  });
+
+  it("stops adding category headers when budget is exhausted", () => {
+    // Insert learnings in two categories
+    for (let i = 0; i < 10; i++) {
+      insertLearning(db, 1, "pattern", `Pattern item ${i} with some extra text`);
+    }
+    for (let i = 0; i < 10; i++) {
+      insertLearning(db, 1, "anti-pattern", `Anti-pattern item ${i} with some extra text`);
+    }
+    const fullResult = formatMemoryForPrompt(db, 100000);
+    // Budget fits first category but not second
+    const tightBudget = Math.floor(fullResult.length * 0.5);
+    const truncated = formatMemoryForPrompt(db, tightBudget);
+    expect(truncated.length).toBeLessThan(fullResult.length);
+  });
+
   it("includes both strategic context and learnings", () => {
     insertStrategicContext(db, 1, "Building test infrastructure.");
     insertLearning(db, 1, "pattern", "Small incremental changes work best");
