@@ -124,7 +124,8 @@ export function formatMemoryForPrompt(
       grouped.set(l.category, list);
     }
 
-    let learningSection = "## Key Learnings\n";
+    const learningSectionHeader = "## Key Learnings\n";
+    let learningSection = learningSectionHeader;
     for (const [category, items] of grouped) {
       const header = `### ${category}\n`;
       if (totalLen + learningSection.length + header.length > maxChars) break;
@@ -135,7 +136,10 @@ export function formatMemoryForPrompt(
         learningSection += line;
       }
     }
-    sections.push(learningSection);
+    // Only include the learnings section if it contains more than just the header
+    if (learningSection.length > learningSectionHeader.length) {
+      sections.push(learningSection);
+    }
   }
 
   return sections.join("\n");

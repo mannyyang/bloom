@@ -161,6 +161,15 @@ describe("formatMemoryForPrompt", () => {
     expect(truncated.length).toBeLessThan(fullResult.length);
   });
 
+  it("omits empty Key Learnings header when budget prevents any items", () => {
+    // Learnings exist but budget is too tight for any items after the header
+    insertLearning(db, 1, "pattern", "Should not appear");
+    // Budget just barely too small for header + category header + item
+    const result = formatMemoryForPrompt(db, 5);
+    // Should not contain a bare "## Key Learnings" header with no content
+    expect(result).not.toContain("## Key Learnings");
+  });
+
   it("excludes learnings entirely when strategic context fills the budget", () => {
     const longContext = "X".repeat(200);
     insertStrategicContext(db, 1, longContext);
