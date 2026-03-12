@@ -77,7 +77,7 @@ export function processEvolutionResult(
 export function formatCycleSummaryWithDuration(
   cycleCount: number,
   outcome: CycleOutcome,
-  evolutionError: Error | null,
+  evolutionError: unknown,
   totalMs: number,
 ): string {
   const lines = [

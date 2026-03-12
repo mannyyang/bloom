@@ -368,7 +368,7 @@ async function main() {
   // Create safety tag
   createSafetyTag(cycleCount);
 
-  let evolutionError: Error | null = null;
+  let evolutionError: unknown = null;
 
   try {
     const ctx = await loadEvolutionContext(db, cycleCount);
@@ -386,8 +386,8 @@ async function main() {
 
     pushChangesPhase(outcome);
   } catch (err) {
-    evolutionError = err as Error;
-    console.error(`\n[error] Evolution failed: ${evolutionError.message}`);
+    evolutionError = err;
+    console.error(`\n[error] Evolution failed: ${errorMessage(err)}`);
   } finally {
     // Always persist outcome and close DB, even on errors
     updateCycleOutcome(db, outcome);
