@@ -214,8 +214,9 @@ export async function triageIssues(
           break;
         }
       }
-    } catch {
+    } catch (err) {
       // Best-effort: don't let a single issue failure block others
+      console.error(`[triage] Failed to process issue #${decision.issueNumber} (action=${decision.action}): ${(err as Error).message}`);
     }
   }
 

@@ -57,7 +57,8 @@ export async function fetchCommunityIssues(): Promise<CommunityIssue[]> {
         reactions: i.reactions?.total_count ?? 0,
       }))
       .sort((a, b) => b.reactions - a.reactions);
-  } catch {
+  } catch (err) {
+    console.error(`[issues] fetchCommunityIssues failed (non-fatal): ${(err as Error).message}`);
     return [];
   }
 }
@@ -95,7 +96,8 @@ export async function closeIssueWithComment(
     if (db) insertIssueAction(db, cycleCount, issueNumber, action);
 
     return true;
-  } catch {
+  } catch (err) {
+    console.error(`[issues] closeIssueWithComment failed for issue #${issueNumber} (non-fatal): ${(err as Error).message}`);
     return false;
   }
 }
