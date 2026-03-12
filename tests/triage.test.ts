@@ -1,7 +1,47 @@
-import { describe, it, expect } from "vitest";
-import { buildTriagePrompt, parseTriageResponse } from "../src/triage.js";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { buildTriagePrompt, parseTriageResponse, triageIssues } from "../src/triage.js";
 import type { CommunityIssue } from "../src/issues.js";
-import type { ProjectItem } from "../src/planning.js";
+import { closeIssueWithComment, detectRepo, isValidRepo } from "../src/issues.js";
+import { hasIssueAction, insertIssueAction } from "../src/db.js";
+import { addLinkedItem } from "../src/planning.js";
+import type { ProjectItem, ProjectConfig } from "../src/planning.js";
+
+vi.mock("../src/issues.js", async (importOriginal) => {
+  const actual = await importOriginal() as Record<string, unknown>;
+  return {
+    ...actual,
+    closeIssueWithComment: vi.fn().mockResolvedValue(true),
+    detectRepo: vi.fn().mockReturnValue("test-owner/test-repo"),
+    isValidRepo: vi.fn().mockReturnValue(true),
+  };
+});
+
+vi.mock("../src/db.js", async (importOriginal) => {
+  const actual = await importOriginal() as Record<string, unknown>;
+  return {
+    ...actual,
+    hasIssueAction: vi.fn().mockReturnValue(false),
+    insertIssueAction: vi.fn(),
+  };
+});
+
+vi.mock("../src/planning.js", async (importOriginal) => {
+  const actual = await importOriginal() as Record<string, unknown>;
+  return {
+    ...actual,
+    addLinkedItem: vi.fn(),
+  };
+});
+
+vi.mock("@anthropic-ai/claude-agent-sdk", () => ({
+  query: vi.fn(),
+}));
+
+import { query } from "@anthropic-ai/claude-agent-sdk";
+
+const mockQuery = vi.mocked(query);
+const mockCloseIssue = vi.mocked(closeIssueWithComment);
+const mockHasIssueAction = vi.mocked(hasIssueAction);
 
 function makeIssue(overrides: Partial<CommunityIssue> = {}): CommunityIssue {
   return {
@@ -176,5 +216,78 @@ describe("parseTriageResponse", () => {
     const result = parseTriageResponse(input);
     expect(result).toHaveLength(2);
     expect(result.map((r) => r.issueNumber)).toEqual([1, 3]);
+  });
+});
+
+describe("triageIssues error resilience", () => {
+  const projectConfig: ProjectConfig = { filePath: "ROADMAP.md" };
+
+  function makeQueryResult(decisions: Array<{ issueNumber: number; action: string; reason: string }>) {
+    const json = JSON.stringify(decisions);
+    // query returns an async iterable that yields messages; last message has `result`
+    async function* fakeQuery() {
+      yield { result: json };
+    }
+    mockQuery.mockReturnValue(fakeQuery() as unknown as ReturnType<typeof query>);
+  }
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("continues processing remaining issues when one closeIssueWithComment throws", async () => {
+    const issues = [
+      makeIssue({ number: 10, title: "Issue A" }),
+      makeIssue({ number: 20, title: "Issue B" }),
+      makeIssue({ number: 30, title: "Issue C" }),
+    ];
+
+    makeQueryResult([
+      { issueNumber: 10, action: "not_applicable", reason: "Out of scope" },
+      { issueNumber: 20, action: "not_applicable", reason: "Not relevant" },
+      { issueNumber: 30, action: "not_applicable", reason: "Duplicate" },
+    ]);
+
+    // Make closeIssueWithComment throw on issue #20, succeed on others
+    mockCloseIssue
+      .mockResolvedValueOnce(true)   // issue #10 succeeds
+      .mockRejectedValueOnce(new Error("API rate limit"))  // issue #20 throws
+      .mockResolvedValueOnce(true);  // issue #30 succeeds
+
+    const result = await triageIssues(issues, [], 81, projectConfig);
+
+    // Issues #10 and #30 should be closed despite #20 failing
+    expect(result.closed).toContain(10);
+    expect(result.closed).not.toContain(20);
+    expect(result.closed).toContain(30);
+    expect(result.decisions).toHaveLength(3);
+  });
+
+  it("logs error to console.error when per-issue processing fails", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const issues = [makeIssue({ number: 42, title: "Failing issue" })];
+    makeQueryResult([
+      { issueNumber: 42, action: "already_done", reason: "Done" },
+    ]);
+    mockCloseIssue.mockRejectedValueOnce(new Error("Connection timeout"));
+
+    await triageIssues(issues, [], 81, projectConfig);
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[triage] Failed to process issue #42"),
+    );
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Connection timeout"),
+    );
+
+    errorSpy.mockRestore();
+  });
+
+  it("returns empty result when no issues provided", async () => {
+    const result = await triageIssues([], [], 81, projectConfig);
+    expect(result.decisions).toEqual([]);
+    expect(result.addedToBacklog).toEqual([]);
+    expect(result.closed).toEqual([]);
   });
 });
