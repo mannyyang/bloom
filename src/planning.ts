@@ -274,21 +274,14 @@ export function updateItemStatus(
  * Priority: "In Progress" first (resume unfinished work), then "Up Next", then "Backlog".
  */
 export function pickNextItem(items: ProjectItem[]): ProjectItem | null {
-  // Resume unfinished work first
-  const inProgress = items
-    .filter((i) => i.status === "In Progress")
-    .sort((a, b) => b.reactions - a.reactions);
-  if (inProgress.length > 0) return inProgress[0];
-
-  const upNext = items
-    .filter((i) => i.status === "Up Next")
-    .sort((a, b) => b.reactions - a.reactions);
-  if (upNext.length > 0) return upNext[0];
-
-  const backlog = items
-    .filter((i) => i.status === "Backlog")
-    .sort((a, b) => b.reactions - a.reactions);
-  return backlog.length > 0 ? backlog[0] : null;
+  const statusPriority = ["In Progress", "Up Next", "Backlog"] as const;
+  for (const status of statusPriority) {
+    const candidates = items
+      .filter((i) => i.status === status)
+      .sort((a, b) => b.reactions - a.reactions);
+    if (candidates.length > 0) return candidates[0];
+  }
+  return null;
 }
 
 /**
