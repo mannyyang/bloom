@@ -346,5 +346,11 @@ describe("countImprovements", () => {
   it("counts inline items preceded by prose", () => {
     expect(countImprovements("All three succeeded. 1) Added field. 2) Updated usage. 3) Removed fallback.")).toBe(3);
   });
+
+  it("does not count horizontal rules or bare dashes as improvements", () => {
+    expect(countImprovements("---")).toBe(0);
+    expect(countImprovements("---\nSome text\n---")).toBe(0);
+    expect(countImprovements("-something without space")).toBe(0);
+  });
 });
 
