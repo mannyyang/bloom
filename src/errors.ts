@@ -20,3 +20,21 @@ export function errorMessage(err: unknown): string {
   }
   return String(err);
 }
+
+/**
+ * Safely extract stdout+stderr output from a failed `execSync` / `execFileSync` call.
+ * Node's child_process throws an object with `stdout` and `stderr` properties on failure,
+ * but we cannot assume the thrown value conforms to that shape.
+ */
+export function execSyncOutput(err: unknown): string {
+  if (err == null || typeof err !== "object") return "";
+  const stdout =
+    "stdout" in err && typeof (err as Record<string, unknown>).stdout === "string"
+      ? ((err as Record<string, unknown>).stdout as string)
+      : "";
+  const stderr =
+    "stderr" in err && typeof (err as Record<string, unknown>).stderr === "string"
+      ? ((err as Record<string, unknown>).stderr as string)
+      : "";
+  return (stdout + stderr).trim();
+}

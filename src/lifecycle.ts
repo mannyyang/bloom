@@ -1,4 +1,5 @@
 import { execSync, execFileSync } from "child_process";
+import { execSyncOutput } from "./errors.js";
 
 /** Timeout for `pnpm build && pnpm test` (2 minutes). */
 export const BUILD_TIMEOUT_MS = 120_000;
@@ -23,9 +24,7 @@ function runBuildAndTest(): BuildResult {
     const output = execSync("pnpm build && pnpm test", { encoding: "utf-8", timeout: BUILD_TIMEOUT_MS });
     return { passed: true, output };
   } catch (err: unknown) {
-    const errObj = err as { stdout?: string; stderr?: string };
-    const output = ((errObj?.stdout ?? "") + (errObj?.stderr ?? "")).trim();
-    return { passed: false, output };
+    return { passed: false, output: execSyncOutput(err) };
   }
 }
 

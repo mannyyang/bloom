@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { errorMessage } from "../src/errors.js";
+import { errorMessage, execSyncOutput } from "../src/errors.js";
 
 describe("errorMessage", () => {
   it("extracts message from Error instances", () => {
@@ -40,5 +40,46 @@ describe("errorMessage", () => {
 
   it("handles objects where message is not a string", () => {
     expect(errorMessage({ message: 123 })).toBe("[object Object]");
+  });
+});
+
+describe("execSyncOutput", () => {
+  it("extracts stdout and stderr from an exec error object", () => {
+    const err = { stdout: "out\n", stderr: "err\n" };
+    expect(execSyncOutput(err)).toBe("out\nerr");
+  });
+
+  it("returns stdout only when stderr is missing", () => {
+    expect(execSyncOutput({ stdout: "output" })).toBe("output");
+  });
+
+  it("returns stderr only when stdout is missing", () => {
+    expect(execSyncOutput({ stderr: "error" })).toBe("error");
+  });
+
+  it("returns empty string for null", () => {
+    expect(execSyncOutput(null)).toBe("");
+  });
+
+  it("returns empty string for undefined", () => {
+    expect(execSyncOutput(undefined)).toBe("");
+  });
+
+  it("returns empty string for non-object types", () => {
+    expect(execSyncOutput(42)).toBe("");
+    expect(execSyncOutput("string")).toBe("");
+    expect(execSyncOutput(true)).toBe("");
+  });
+
+  it("returns empty string when stdout/stderr are not strings", () => {
+    expect(execSyncOutput({ stdout: 123, stderr: Buffer.from("buf") })).toBe("");
+  });
+
+  it("returns empty string for empty object", () => {
+    expect(execSyncOutput({})).toBe("");
+  });
+
+  it("trims whitespace from combined output", () => {
+    expect(execSyncOutput({ stdout: "  out  ", stderr: "  err  " })).toBe("out    err");
   });
 });
