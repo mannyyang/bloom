@@ -107,8 +107,8 @@ Open an issue with the `agent-input` label to suggest improvements. Issues are p
 
 ```
 src/
-├── index.ts        # Main orchestrator (5 phases)
-├── orchestrator.ts # Extracted helpers: evolution result processing, cycle summary
+├── index.ts        # Main entry point with named phase functions (context, assessment, evolution, build, push)
+├── orchestrator.ts # Evolution result processing (journal, learnings, strategic context) and cycle summary
 ├── evolve.ts       # Assessment & evolution prompt building
 ├── memory.ts       # Learning extraction, storage, and prompt formatting
 ├── planning.ts     # Local ROADMAP.md parsing and item management
