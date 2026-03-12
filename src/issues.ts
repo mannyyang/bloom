@@ -1,5 +1,6 @@
 import { execFileSync } from "child_process";
 import type Database from "better-sqlite3";
+import { errorMessage } from "./errors.js";
 import { githubApiRequest } from "./github-app.js";
 import { insertIssueAction, hasIssueAction } from "./db.js";
 
@@ -58,7 +59,7 @@ export async function fetchCommunityIssues(): Promise<CommunityIssue[]> {
       }))
       .sort((a, b) => b.reactions - a.reactions);
   } catch (err) {
-    console.error(`[issues] fetchCommunityIssues failed (non-fatal): ${(err as Error).message}`);
+    console.error(`[issues] fetchCommunityIssues failed (non-fatal): ${errorMessage(err)}`);
     return [];
   }
 }
@@ -97,7 +98,7 @@ export async function closeIssueWithComment(
 
     return true;
   } catch (err) {
-    console.error(`[issues] closeIssueWithComment failed for issue #${issueNumber} (non-fatal): ${(err as Error).message}`);
+    console.error(`[issues] closeIssueWithComment failed for issue #${issueNumber} (non-fatal): ${errorMessage(err)}`);
     return false;
   }
 }

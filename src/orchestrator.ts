@@ -1,5 +1,6 @@
 import type Database from "better-sqlite3";
 import { insertJournalEntry } from "./db.js";
+import { errorMessage } from "./errors.js";
 import { parseEvolutionResult, countImprovements } from "./evolve.js";
 import { extractLearnings, storeLearnings, storeStrategicContext } from "./memory.js";
 import type { CycleOutcome } from "./outcomes.js";
@@ -41,7 +42,7 @@ export function processEvolutionResult(
     storeLearnings(db, cycleCount, extracted);
     learningsStored = extracted.learnings.length;
   } catch (err) {
-    console.error(`[orchestrator] Failed to store learnings (non-fatal): ${(err as Error).message}`);
+    console.error(`[orchestrator] Failed to store learnings (non-fatal): ${errorMessage(err)}`);
   }
 
   // Extract and store strategic context (best-effort)
@@ -53,7 +54,7 @@ export function processEvolutionResult(
       strategicContextStored = true;
     }
   } catch (err) {
-    console.error(`[orchestrator] Failed to store strategic context (non-fatal): ${(err as Error).message}`);
+    console.error(`[orchestrator] Failed to store strategic context (non-fatal): ${errorMessage(err)}`);
   }
 
   // Populate improvement counts from parsed sections

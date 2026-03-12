@@ -4,6 +4,7 @@ import { initDb, getLatestCycleNumber, insertCycle, updateCycleOutcome, insertPh
 import { fetchCommunityIssues } from "./issues.js";
 import { triageIssues } from "./triage.js";
 import { buildAssessmentPrompt, buildEvolutionPrompt } from "./evolve.js";
+import { errorMessage } from "./errors.js";
 import {
   protectIdentity,
   protectJournal,
@@ -122,7 +123,7 @@ async function loadEvolutionContext(
       planningContext = formatPlanningContext(projectItems, currentItem);
     }
   } catch (err) {
-    console.error(`[planning] Failed (non-fatal): ${(err as Error).message}`);
+    console.error(`[planning] Failed (non-fatal): ${errorMessage(err)}`);
   }
 
   return {
@@ -313,7 +314,7 @@ function updatePlanningStatus(
       commitRoadmap(cycleCount);
     }
   } catch (err) {
-    console.error(`[planning] Failed to update roadmap status (non-fatal): ${(err as Error).message}`);
+    console.error(`[planning] Failed to update roadmap status (non-fatal): ${errorMessage(err)}`);
   }
 }
 

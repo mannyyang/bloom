@@ -3,6 +3,7 @@ import type Database from "better-sqlite3";
 import type { CommunityIssue } from "./issues.js";
 import { closeIssueWithComment } from "./issues.js";
 import { hasIssueAction, insertIssueAction } from "./db.js";
+import { errorMessage } from "./errors.js";
 import { addLinkedItem, type ProjectConfig, type ProjectItem } from "./planning.js";
 import { detectRepo, isValidRepo } from "./issues.js";
 
@@ -152,7 +153,7 @@ export async function triageIssues(
       if ("result" in msg) triageText = msg.result;
     }
   } catch (err) {
-    console.error(`[triage] LLM call failed (non-fatal): ${(err as Error).message}`);
+    console.error(`[triage] LLM call failed (non-fatal): ${errorMessage(err)}`);
     return result;
   }
 
@@ -216,7 +217,7 @@ export async function triageIssues(
       }
     } catch (err) {
       // Best-effort: don't let a single issue failure block others
-      console.error(`[triage] Failed to process issue #${decision.issueNumber} (action=${decision.action}): ${(err as Error).message}`);
+      console.error(`[triage] Failed to process issue #${decision.issueNumber} (action=${decision.action}): ${errorMessage(err)}`);
     }
   }
 
