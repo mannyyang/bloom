@@ -173,54 +173,26 @@ export async function triageIssues(
     if (!issue) continue;
 
     try {
-      switch (decision.action) {
-        case "add_to_backlog": {
-          if (repo && isValidRepo(repo)) {
-            addLinkedItem(
-              projectConfig,
-              repo,
-              issue.number,
-              issue.title,
-              issue.body,
-            );
-          }
-          await closeIssueWithComment(
-            issue.number,
-            cycleCount,
-            `Added to Bloom Evolution Roadmap backlog (cycle ${cycleCount}).\n\n${decision.reason}`,
-            db,
-            "triaged",
-            repo ?? undefined,
-          );
-          result.addedToBacklog.push(issue.number);
-          result.closed.push(issue.number);
-          break;
-        }
-        case "already_done": {
-          await closeIssueWithComment(
-            issue.number,
-            cycleCount,
-            `Closing — this appears to already be addressed (cycle ${cycleCount}).\n\n${decision.reason}`,
-            db,
-            "triaged",
-            repo ?? undefined,
-          );
-          result.closed.push(issue.number);
-          break;
-        }
-        case "not_applicable": {
-          await closeIssueWithComment(
-            issue.number,
-            cycleCount,
-            `Closing — not applicable or out of scope (cycle ${cycleCount}).\n\n${decision.reason}`,
-            db,
-            "triaged",
-            repo ?? undefined,
-          );
-          result.closed.push(issue.number);
-          break;
-        }
+      const commentMap: Record<TriageDecision["action"], string> = {
+        add_to_backlog: `Added to Bloom Evolution Roadmap backlog (cycle ${cycleCount}).`,
+        already_done: `Closing — this appears to already be addressed (cycle ${cycleCount}).`,
+        not_applicable: `Closing — not applicable or out of scope (cycle ${cycleCount}).`,
+      };
+
+      if (decision.action === "add_to_backlog" && repo && isValidRepo(repo)) {
+        addLinkedItem(projectConfig, repo, issue.number, issue.title, issue.body);
+        result.addedToBacklog.push(issue.number);
       }
+
+      await closeIssueWithComment(
+        issue.number,
+        cycleCount,
+        `${commentMap[decision.action]}\n\n${decision.reason}`,
+        db,
+        "triaged",
+        repo ?? undefined,
+      );
+      result.closed.push(issue.number);
     } catch (err) {
       // Best-effort: don't let a single issue failure block others
       console.error(`[triage] Failed to process issue #${decision.issueNumber} (action=${decision.action}): ${errorMessage(err)}`);
