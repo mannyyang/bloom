@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import type Database from "better-sqlite3";
 import { initDb, getJournalEntries } from "../src/db.js";
 import {
@@ -197,6 +197,61 @@ STRATEGIC_CONTEXT: Strategic info`;
       expect(processed).toHaveProperty("improvementsSucceeded");
       expect(processed).toHaveProperty("learningsStored");
       expect(processed).toHaveProperty("strategicContextStored");
+    });
+
+    it("still returns correct results when extractLearnings throws", async () => {
+      const memoryModule = await import("../src/memory.js");
+      const spy = vi.spyOn(memoryModule, "extractLearnings").mockImplementation(() => {
+        throw new Error("simulated extraction failure");
+      });
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      const result = `ATTEMPTED: - Improvement A
+SUCCEEDED: - Improvement A
+FAILED: Nothing
+LEARNINGS: - [pattern] A learning
+STRATEGIC_CONTEXT: Focus on testing`;
+
+      const processed = processEvolutionResult(db, 1, result);
+
+      expect(processed.learningsStored).toBe(0);
+      expect(processed.improvementsAttempted).toBe(1);
+      expect(processed.improvementsSucceeded).toBe(1);
+      expect(processed.strategicContextStored).toBe(true);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Failed to store learnings"),
+      );
+
+      spy.mockRestore();
+      consoleSpy.mockRestore();
+    });
+
+    it("still returns correct results when storeStrategicContext throws", async () => {
+      const memoryModule = await import("../src/memory.js");
+      const spy = vi.spyOn(memoryModule, "storeStrategicContext").mockImplementation(() => {
+        throw new Error("simulated context storage failure");
+      });
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      const result = `ATTEMPTED: - Improvement A
+- Improvement B
+SUCCEEDED: - Improvement A
+FAILED: - Improvement B
+LEARNINGS: - [pattern] A learning
+STRATEGIC_CONTEXT: Focus on testing`;
+
+      const processed = processEvolutionResult(db, 1, result);
+
+      expect(processed.strategicContextStored).toBe(false);
+      expect(processed.improvementsAttempted).toBe(2);
+      expect(processed.improvementsSucceeded).toBe(1);
+      expect(processed.learningsStored).toBe(1);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Failed to store strategic context"),
+      );
+
+      spy.mockRestore();
+      consoleSpy.mockRestore();
     });
   });
 
