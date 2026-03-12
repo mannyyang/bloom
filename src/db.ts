@@ -259,8 +259,8 @@ export function exportJournalJson(db: Database.Database, maxCycles?: number): Jo
     });
   }
 
-  const sorted = entries.sort((a, b) => b.cycleNumber - a.cycleNumber);
-  return maxCycles ? sorted.slice(0, maxCycles) : sorted;
+  // entries are already in descending cycle order from getJournalEntries (ORDER BY DESC)
+  return maxCycles ? entries.slice(0, maxCycles) : entries;
 }
 
 export interface CycleStats {
