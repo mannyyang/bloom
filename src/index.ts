@@ -31,6 +31,307 @@ import { formatMemoryForPrompt } from "./memory.js";
 import { processEvolutionResult, formatCycleSummaryWithDuration } from "./orchestrator.js";
 import { ensureProject, getProjectItems, pickNextItem, updateItemStatus, formatPlanningContext, type ProjectConfig, type ProjectItem } from "./planning.js";
 import { commitRoadmap } from "./lifecycle.js";
+import type Database from "better-sqlite3";
+import type { CycleOutcome } from "./outcomes.js";
+import type { CommunityIssue } from "./issues.js";
+
+/**
+ * Context gathered for the evolution cycle: identity, journal, issues,
+ * memory, planning state, etc.
+ */
+interface EvolutionContext {
+  identity: string;
+  journalSummary: string;
+  cycleStatsText: string;
+  memoryContext: string;
+  planningContext: string;
+  issues: CommunityIssue[];
+  projectConfig: ProjectConfig | null;
+  currentItem: ProjectItem | null;
+}
+
+/**
+ * Load all context needed for the assessment and evolution phases.
+ * Gathers identity, journal history, community issues, memory, and planning state.
+ */
+async function loadEvolutionContext(
+  db: Database.Database,
+  cycleCount: number,
+): Promise<EvolutionContext> {
+  console.log("\n[context] Loading evolution context...");
+  const identity = readFileSync("IDENTITY.md", "utf-8");
+  console.log(`[context] Identity loaded (${identity.length} chars)`);
+
+  const journalSummary = getRecentJournalSummary(db);
+  console.log(`[context] Journal summary: ${journalSummary ? `${journalSummary.length} chars` : "empty"}`);
+
+  const issues = await fetchCommunityIssues();
+  console.log(`[context] Community issues: ${issues.length} open`);
+  for (const issue of issues) {
+    console.log(`  - #${issue.number}: ${issue.title} (${issue.reactions} reactions)`);
+  }
+
+  const cycleStats = getCycleStats(db);
+  const cycleStatsText = formatCycleStats(cycleStats);
+  console.log(`[context] Cycle stats: ${cycleStatsText ? `${cycleStatsText.length} chars` : "none"}`);
+
+  // Memory context (best-effort)
+  const memoryContext = formatMemoryForPrompt(db, 2000);
+  console.log(`[context] Memory context: ${memoryContext ? `${memoryContext.length} chars` : "empty"}`);
+
+  // Planning context (best-effort, uses ROADMAP.md)
+  let planningContext = "";
+  let projectConfig: ProjectConfig | null = null;
+  let currentItem: ProjectItem | null = null;
+  try {
+    console.log("[planning] Loading roadmap...");
+    projectConfig = ensureProject();
+    if (projectConfig) {
+      console.log(`[planning] Roadmap: ${projectConfig.filePath}`);
+      let projectItems = getProjectItems(projectConfig);
+      console.log(`[planning] ${projectItems.length} items on roadmap`);
+      for (const item of projectItems) {
+        console.log(`  - [${item.status ?? "No Status"}] ${item.title}${item.reactions > 0 ? ` (${item.reactions} reactions)` : ""}`);
+      }
+
+      // Triage community issues against the roadmap
+      if (issues.length > 0) {
+        console.log(`\n[triage] Triaging ${issues.length} community issues against roadmap...`);
+        const triageResult = await triageIssues(issues, projectItems, cycleCount, projectConfig, db);
+        if (triageResult.addedToBacklog.length > 0) {
+          console.log(`[triage] Added to backlog: ${triageResult.addedToBacklog.map(n => `#${n}`).join(", ")}`);
+        }
+        if (triageResult.closed.length > 0) {
+          console.log(`[triage] Closed: ${triageResult.closed.map(n => `#${n}`).join(", ")}`);
+        }
+        for (const d of triageResult.decisions) {
+          console.log(`  - #${d.issueNumber}: ${d.action} — ${d.reason.slice(0, 100)}`);
+        }
+        // Re-fetch items since triage may have added new ones
+        projectItems = getProjectItems(projectConfig);
+        console.log(`[planning] ${projectItems.length} items on roadmap (post-triage)`);
+      }
+
+      currentItem = pickNextItem(projectItems);
+      if (currentItem) {
+        console.log(`[planning] Selected: "${currentItem.title}" → marking In Progress`);
+        updateItemStatus(projectConfig, currentItem.id, "In Progress");
+      } else {
+        console.log("[planning] No actionable items found");
+      }
+      planningContext = formatPlanningContext(projectItems, currentItem);
+    }
+  } catch (err) {
+    console.error(`[planning] Failed (non-fatal): ${(err as Error).message}`);
+  }
+
+  return {
+    identity,
+    journalSummary: journalSummary ?? "",
+    cycleStatsText: cycleStatsText ?? "",
+    memoryContext,
+    planningContext,
+    issues,
+    projectConfig,
+    currentItem,
+  };
+}
+
+/**
+ * Run the read-only assessment phase using the Claude agent.
+ * Returns the assessment text and populates phaseUsages.
+ */
+async function runAssessmentPhase(
+  db: Database.Database,
+  cycleCount: number,
+  ctx: EvolutionContext,
+  phaseUsages: PhaseUsage[],
+): Promise<string> {
+  console.log("\n========================================");
+  console.log("  Phase 1: Assessment (read-only)");
+  console.log("========================================");
+  const assessmentStart = Date.now();
+  let assessment = "";
+  let assessmentTurns = 0;
+  for await (const msg of query({
+    prompt: buildAssessmentPrompt({
+      identity: ctx.identity,
+      journalSummary: ctx.journalSummary,
+      cycleCount,
+      cycleStatsText: ctx.cycleStatsText,
+      memoryContext: ctx.memoryContext,
+      planningContext: ctx.planningContext,
+    }),
+    options: {
+      cwd: process.cwd(),
+      model: "claude-opus-4-6",
+      allowedTools: ["Read", "Glob", "Grep", "Bash"],
+      permissionMode: "dontAsk",
+      maxTurns: 20,
+      maxBudgetUsd: 2.0,
+    },
+  })) {
+    assessmentTurns++;
+    if ("result" in msg) assessment = msg.result;
+    const usage = extractUsage(msg as Record<string, unknown>, "Assessment");
+    if (usage) {
+      phaseUsages.push(usage);
+      insertPhaseUsage(db, cycleCount, usage);
+      console.log(formatPhaseUsage(usage));
+    }
+  }
+  const assessmentMs = Date.now() - assessmentStart;
+
+  if (!assessment) {
+    throw new Error("Assessment produced no output. Aborting.");
+  }
+
+  console.log(`\n[assessment] Completed in ${(assessmentMs / 1000).toFixed(1)}s (${assessmentTurns} turns, ${assessment.length} chars)`);
+  console.log(`[assessment] Output preview:\n${assessment.slice(0, 500)}${assessment.length > 500 ? "\n  ..." : ""}`);
+
+  return assessment;
+}
+
+/**
+ * Run the read-write evolution phase using the Claude agent.
+ * Processes the result (journal, learnings, strategic context) and updates outcome.
+ */
+async function runEvolutionPhase(
+  db: Database.Database,
+  cycleCount: number,
+  outcome: CycleOutcome,
+  assessment: string,
+  identity: string,
+  phaseUsages: PhaseUsage[],
+): Promise<ReturnType<typeof processEvolutionResult>> {
+  console.log("\n========================================");
+  console.log("  Phase 2: Evolution (read-write)");
+  console.log("========================================");
+  const evolutionStart = Date.now();
+  const assessmentUsage = aggregateUsage(phaseUsages);
+  const usageContext = formatUsageForJournal(assessmentUsage);
+  const outcomeContext = formatOutcomeForJournal(outcome);
+  let evolutionResult = "";
+  let evolutionTurns = 0;
+  for await (const msg of query({
+    prompt: buildEvolutionPrompt(assessment, { usageContext, outcomeContext }),
+    options: {
+      cwd: process.cwd(),
+      model: "claude-opus-4-6",
+      allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
+      permissionMode: "acceptEdits",
+      systemPrompt: identity,
+      maxTurns: 50,
+      maxBudgetUsd: 5.0,
+      hooks: {
+        PreToolUse: [
+          { matcher: "Write|Edit", hooks: [protectIdentity, protectJournal] },
+          { matcher: "Bash", hooks: [blockDangerousCommands] },
+        ],
+      },
+    },
+  })) {
+    evolutionTurns++;
+    if ("result" in msg) {
+      evolutionResult = msg.result;
+      console.log(msg.result);
+    }
+    const usage = extractUsage(msg as Record<string, unknown>, "Evolution");
+    if (usage) {
+      phaseUsages.push(usage);
+      insertPhaseUsage(db, cycleCount, usage);
+      console.log(formatPhaseUsage(usage));
+    }
+  }
+  const evolutionMs = Date.now() - evolutionStart;
+  console.log(`\n[evolution] Completed in ${(evolutionMs / 1000).toFixed(1)}s (${evolutionTurns} turns)`);
+
+  // Log cycle usage summary
+  const cycleUsage = aggregateUsage(phaseUsages);
+  console.log("\n[usage] Cycle usage summary:");
+  console.log(formatCycleUsage(cycleUsage));
+
+  // Process evolution result: parse journal, store learnings, close resolved issues
+  console.log("\n[journal] Processing evolution result...");
+  const processed = processEvolutionResult(db, cycleCount, evolutionResult);
+  for (const [section, content] of Object.entries(processed.journalSections)) {
+    if (content) {
+      console.log(`[journal] Stored section "${section}" (${content.length} chars)`);
+    }
+  }
+  console.log(`[memory] Stored ${processed.learningsStored} learnings`);
+  if (processed.strategicContextStored) {
+    console.log(`[memory] Stored strategic context`);
+  }
+  outcome.improvementsAttempted = processed.improvementsAttempted;
+  outcome.improvementsSucceeded = processed.improvementsSucceeded;
+  console.log(`[outcome] Improvements: ${outcome.improvementsSucceeded}/${outcome.improvementsAttempted} succeeded`);
+
+  return processed;
+}
+
+/**
+ * Run post-evolution build verification. Throws if verification fails.
+ */
+function runBuildVerificationPhase(
+  cycleCount: number,
+  outcome: CycleOutcome,
+): void {
+  console.log("\n========================================");
+  console.log("  Build Verification");
+  console.log("========================================");
+  const buildStart = Date.now();
+  const buildResult = runBuildVerification(cycleCount);
+  const buildMs = Date.now() - buildStart;
+  outcome.buildVerificationPassed = buildResult.passed;
+  outcome.testCountAfter = parseTestCount(buildResult.output);
+  outcome.testTotalAfter = parseTestTotal(buildResult.output);
+  console.log(`[build] ${buildResult.passed ? "PASSED" : "FAILED"} in ${(buildMs / 1000).toFixed(1)}s (${outcome.testCountAfter ?? "?"}/${outcome.testTotalAfter ?? "?"} tests)`);
+  if (!buildResult.passed) {
+    throw new Error("Build verification failed. Hard reset performed.");
+  }
+}
+
+/**
+ * Update the roadmap planning status based on evolution results (best-effort).
+ */
+function updatePlanningStatus(
+  cycleCount: number,
+  projectConfig: ProjectConfig | null,
+  currentItem: ProjectItem | null,
+  processed: ReturnType<typeof processEvolutionResult>,
+): void {
+  try {
+    if (projectConfig && currentItem) {
+      const succeeded = processed.improvementsSucceeded > 0;
+      const newStatus = succeeded ? "Done" : "Up Next";
+      const completionNote = succeeded
+        ? `Completed in cycle ${cycleCount}: ${processed.improvementsSucceeded}/${processed.improvementsAttempted} improvements succeeded.`
+        : undefined;
+      updateItemStatus(projectConfig, currentItem.id, newStatus, completionNote);
+      console.log(`[planning] Updated "${currentItem.title}" → ${newStatus}`);
+      commitRoadmap(cycleCount);
+    }
+  } catch (err) {
+    console.error(`[planning] Failed to update roadmap status (non-fatal): ${(err as Error).message}`);
+  }
+}
+
+/**
+ * Push changes and tags to the remote repository.
+ */
+function pushChangesPhase(outcome: CycleOutcome): void {
+  console.log("\n========================================");
+  console.log("  Phase 3: Push");
+  console.log("========================================");
+  outcome.pushSucceeded = false;
+  if (pushChanges()) {
+    console.log("[push] Changes pushed successfully.");
+    outcome.pushSucceeded = true;
+  } else {
+    console.error("[push] Push failed. Changes remain local.");
+  }
+}
 
 async function main() {
   const cycleStartTime = Date.now();
@@ -69,216 +370,20 @@ async function main() {
   let evolutionError: Error | null = null;
 
   try {
-    console.log("\n[context] Loading evolution context...");
-    const identity = readFileSync("IDENTITY.md", "utf-8");
-    console.log(`[context] Identity loaded (${identity.length} chars)`);
-
-    const journalSummary = getRecentJournalSummary(db);
-    console.log(`[context] Journal summary: ${journalSummary ? `${journalSummary.length} chars` : "empty"}`);
-
-    const issues = await fetchCommunityIssues();
-    console.log(`[context] Community issues: ${issues.length} open`);
-    for (const issue of issues) {
-      console.log(`  - #${issue.number}: ${issue.title} (${issue.reactions} reactions)`);
-    }
-
-    const cycleStats = getCycleStats(db);
-    const cycleStatsText = formatCycleStats(cycleStats);
-    console.log(`[context] Cycle stats: ${cycleStatsText ? `${cycleStatsText.length} chars` : "none"}`);
-
-    // Memory context (best-effort)
-    const memoryContext = formatMemoryForPrompt(db, 2000);
-    console.log(`[context] Memory context: ${memoryContext ? `${memoryContext.length} chars` : "empty"}`);
-
-    // Planning context (best-effort, uses ROADMAP.md)
-    let planningContext = "";
-    let projectConfig: ProjectConfig | null = null;
-    let currentItem: ProjectItem | null = null;
-    try {
-      console.log("[planning] Loading roadmap...");
-      projectConfig = ensureProject();
-      if (projectConfig) {
-        console.log(`[planning] Roadmap: ${projectConfig.filePath}`);
-        let projectItems = getProjectItems(projectConfig);
-        console.log(`[planning] ${projectItems.length} items on roadmap`);
-        for (const item of projectItems) {
-          console.log(`  - [${item.status ?? "No Status"}] ${item.title}${item.reactions > 0 ? ` (${item.reactions} reactions)` : ""}`);
-        }
-
-        // Triage community issues against the roadmap
-        if (issues.length > 0) {
-          console.log(`\n[triage] Triaging ${issues.length} community issues against roadmap...`);
-          const triageResult = await triageIssues(issues, projectItems, cycleCount, projectConfig, db);
-          if (triageResult.addedToBacklog.length > 0) {
-            console.log(`[triage] Added to backlog: ${triageResult.addedToBacklog.map(n => `#${n}`).join(", ")}`);
-          }
-          if (triageResult.closed.length > 0) {
-            console.log(`[triage] Closed: ${triageResult.closed.map(n => `#${n}`).join(", ")}`);
-          }
-          for (const d of triageResult.decisions) {
-            console.log(`  - #${d.issueNumber}: ${d.action} — ${d.reason.slice(0, 100)}`);
-          }
-          // Re-fetch items since triage may have added new ones
-          projectItems = getProjectItems(projectConfig);
-          console.log(`[planning] ${projectItems.length} items on roadmap (post-triage)`);
-        }
-
-        currentItem = pickNextItem(projectItems);
-        if (currentItem) {
-          console.log(`[planning] Selected: "${currentItem.title}" → marking In Progress`);
-          updateItemStatus(projectConfig, currentItem.id, "In Progress");
-        } else {
-          console.log("[planning] No actionable items found");
-        }
-        planningContext = formatPlanningContext(projectItems, currentItem);
-      }
-    } catch (err) {
-      console.error(`[planning] Failed (non-fatal): ${(err as Error).message}`);
-    }
-
-    // Phase 1: Assessment (read-only)
-    console.log("\n========================================");
-    console.log("  Phase 1: Assessment (read-only)");
-    console.log("========================================");
-    const assessmentStart = Date.now();
-    let assessment = "";
+    const ctx = await loadEvolutionContext(db, cycleCount);
     const phaseUsages: PhaseUsage[] = [];
-    let assessmentTurns = 0;
-    for await (const msg of query({
-      prompt: buildAssessmentPrompt({ identity, journalSummary, cycleCount, cycleStatsText, memoryContext, planningContext }),
-      options: {
-        cwd: process.cwd(),
-        model: "claude-opus-4-6",
-        allowedTools: ["Read", "Glob", "Grep", "Bash"],
-        permissionMode: "dontAsk",
-        maxTurns: 20,
-        maxBudgetUsd: 2.0,
-      },
-    })) {
-      assessmentTurns++;
-      if ("result" in msg) assessment = msg.result;
-      const usage = extractUsage(msg as Record<string, unknown>, "Assessment");
-      if (usage) {
-        phaseUsages.push(usage);
-        insertPhaseUsage(db, cycleCount, usage);
-        console.log(formatPhaseUsage(usage));
-      }
-    }
-    const assessmentMs = Date.now() - assessmentStart;
 
-    if (!assessment) {
-      throw new Error("Assessment produced no output. Aborting.");
-    }
+    const assessment = await runAssessmentPhase(db, cycleCount, ctx, phaseUsages);
 
-    console.log(`\n[assessment] Completed in ${(assessmentMs / 1000).toFixed(1)}s (${assessmentTurns} turns, ${assessment.length} chars)`);
-    console.log(`[assessment] Output preview:\n${assessment.slice(0, 500)}${assessment.length > 500 ? "\n  ..." : ""}`);
+    const processed = await runEvolutionPhase(
+      db, cycleCount, outcome, assessment, ctx.identity, phaseUsages,
+    );
 
-    // Phase 2: Evolution (read-write with safety hooks)
-    console.log("\n========================================");
-    console.log("  Phase 2: Evolution (read-write)");
-    console.log("========================================");
-    const evolutionStart = Date.now();
-    const assessmentUsage = aggregateUsage(phaseUsages);
-    const usageContext = formatUsageForJournal(assessmentUsage);
-    const outcomeContext = formatOutcomeForJournal(outcome);
-    let evolutionResult = "";
-    let evolutionTurns = 0;
-    for await (const msg of query({
-      prompt: buildEvolutionPrompt(assessment, { usageContext, outcomeContext }),
-      options: {
-        cwd: process.cwd(),
-        model: "claude-opus-4-6",
-        allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
-        permissionMode: "acceptEdits",
-        systemPrompt: identity,
-        maxTurns: 50,
-        maxBudgetUsd: 5.0,
-        hooks: {
-          PreToolUse: [
-            { matcher: "Write|Edit", hooks: [protectIdentity, protectJournal] },
-            { matcher: "Bash", hooks: [blockDangerousCommands] },
-          ],
-        },
-      },
-    })) {
-      evolutionTurns++;
-      if ("result" in msg) {
-        evolutionResult = msg.result;
-        console.log(msg.result);
-      }
-      const usage = extractUsage(msg as Record<string, unknown>, "Evolution");
-      if (usage) {
-        phaseUsages.push(usage);
-        insertPhaseUsage(db, cycleCount, usage);
-        console.log(formatPhaseUsage(usage));
-      }
-    }
-    const evolutionMs = Date.now() - evolutionStart;
-    console.log(`\n[evolution] Completed in ${(evolutionMs / 1000).toFixed(1)}s (${evolutionTurns} turns)`);
+    runBuildVerificationPhase(cycleCount, outcome);
 
-    // Log cycle usage summary
-    const cycleUsage = aggregateUsage(phaseUsages);
-    console.log("\n[usage] Cycle usage summary:");
-    console.log(formatCycleUsage(cycleUsage));
+    updatePlanningStatus(cycleCount, ctx.projectConfig, ctx.currentItem, processed);
 
-    // Process evolution result: parse journal, store learnings, close resolved issues
-    console.log("\n[journal] Processing evolution result...");
-    const processed = processEvolutionResult(db, cycleCount, evolutionResult);
-    for (const [section, content] of Object.entries(processed.journalSections)) {
-      if (content) {
-        console.log(`[journal] Stored section "${section}" (${content.length} chars)`);
-      }
-    }
-    console.log(`[memory] Stored ${processed.learningsStored} learnings`);
-    if (processed.strategicContextStored) {
-      console.log(`[memory] Stored strategic context`);
-    }
-    outcome.improvementsAttempted = processed.improvementsAttempted;
-    outcome.improvementsSucceeded = processed.improvementsSucceeded;
-    console.log(`[outcome] Improvements: ${outcome.improvementsSucceeded}/${outcome.improvementsAttempted} succeeded`);
-
-    // Phase 2.5: Post-evolution build verification
-    console.log("\n========================================");
-    console.log("  Build Verification");
-    console.log("========================================");
-    const buildStart = Date.now();
-    const buildResult = runBuildVerification(cycleCount);
-    const buildMs = Date.now() - buildStart;
-    outcome.buildVerificationPassed = buildResult.passed;
-    outcome.testCountAfter = parseTestCount(buildResult.output);
-    outcome.testTotalAfter = parseTestTotal(buildResult.output);
-    console.log(`[build] ${buildResult.passed ? "PASSED" : "FAILED"} in ${(buildMs / 1000).toFixed(1)}s (${outcome.testCountAfter ?? "?"}/${outcome.testTotalAfter ?? "?"} tests)`);
-    if (!buildResult.passed) {
-      throw new Error("Build verification failed. Hard reset performed.");
-    }
-
-    // Update planning status (best-effort)
-    try {
-      if (projectConfig && currentItem) {
-        const succeeded = processed.improvementsSucceeded > 0;
-        const newStatus = succeeded ? "Done" : "Up Next";
-        const completionNote = succeeded
-          ? `Completed in cycle ${cycleCount}: ${processed.improvementsSucceeded}/${processed.improvementsAttempted} improvements succeeded.`
-          : undefined;
-        updateItemStatus(projectConfig, currentItem.id, newStatus, completionNote);
-        console.log(`[planning] Updated "${currentItem.title}" → ${newStatus}`);
-        commitRoadmap(cycleCount);
-      }
-    } catch (err) {
-      console.error(`[planning] Failed to update roadmap status (non-fatal): ${(err as Error).message}`);
-    }
-
-    // Phase 3: Push
-    console.log("\n========================================");
-    console.log("  Phase 3: Push");
-    console.log("========================================");
-    outcome.pushSucceeded = false;
-    if (pushChanges()) {
-      console.log("[push] Changes pushed successfully.");
-      outcome.pushSucceeded = true;
-    } else {
-      console.error("[push] Push failed. Changes remain local.");
-    }
+    pushChangesPhase(outcome);
   } catch (err) {
     evolutionError = err as Error;
     console.error(`\n[error] Evolution failed: ${evolutionError.message}`);
