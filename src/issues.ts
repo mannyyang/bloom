@@ -74,8 +74,9 @@ export async function closeIssueWithComment(
   comment: string,
   db?: Database.Database,
   action: string = "closed",
+  precomputedRepo?: string,
 ): Promise<boolean> {
-  const repo = detectRepo();
+  const repo = precomputedRepo ?? detectRepo();
   if (!repo || !isValidRepo(repo)) return false;
   if (!isSafeIssueNumber(issueNumber)) return false;
 

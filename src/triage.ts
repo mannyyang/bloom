@@ -104,6 +104,9 @@ export async function triageIssues(
 
   if (issues.length === 0) return result;
 
+  // Detect repo once upfront to avoid redundant subprocess calls per issue
+  const repo = detectRepo();
+
   // Filter out issues already on the board (by linkedIssueNumber)
   const boardIssueNumbers = new Set(
     boardItems
@@ -121,6 +124,7 @@ export async function triageIssues(
       "This issue is already tracked on the Bloom Evolution Roadmap.",
       db,
       "triaged",
+      repo ?? undefined,
     );
     result.closed.push(issue.number);
   }
@@ -162,7 +166,6 @@ export async function triageIssues(
 
   // Validate decisions against our actual issue set
   const untriagedNumbers = new Set(untriaged.map((i) => i.number));
-  const repo = detectRepo();
 
   for (const decision of decisions) {
     if (!untriagedNumbers.has(decision.issueNumber)) continue;
@@ -187,6 +190,7 @@ export async function triageIssues(
             `Added to Bloom Evolution Roadmap backlog (cycle ${cycleCount}).\n\n${decision.reason}`,
             db,
             "triaged",
+            repo ?? undefined,
           );
           result.addedToBacklog.push(issue.number);
           result.closed.push(issue.number);
@@ -199,6 +203,7 @@ export async function triageIssues(
             `Closing — this appears to already be addressed (cycle ${cycleCount}).\n\n${decision.reason}`,
             db,
             "triaged",
+            repo ?? undefined,
           );
           result.closed.push(issue.number);
           break;
@@ -210,6 +215,7 @@ export async function triageIssues(
             `Closing — not applicable or out of scope (cycle ${cycleCount}).\n\n${decision.reason}`,
             db,
             "triaged",
+            repo ?? undefined,
           );
           result.closed.push(issue.number);
           break;
