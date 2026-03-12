@@ -229,6 +229,10 @@ export function addDraftItem(
   const content = readRoadmap();
   const items = parseRoadmap(content);
 
+  // Don't add duplicates (match on title)
+  const existing = items.find((i) => i.title === title);
+  if (existing) return existing.id;
+
   const newItem: ProjectItem = {
     id: `item-${items.length}`,
     title,

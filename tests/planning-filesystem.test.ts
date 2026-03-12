@@ -116,6 +116,50 @@ describe("addDraftItem", () => {
     expect(content).toContain("  Details");
   });
 
+  it("does not add duplicate titles", () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+- [ ] Existing feature
+  Some body
+
+## Up Next
+
+## In Progress
+
+## Done
+`);
+    const config = makeConfig();
+    const existingId = addDraftItem(config, "Existing feature", "Different body");
+    expect(existingId).not.toBeNull();
+
+    const items = getProjectItems(config);
+    const matching = items.filter((i) => i.title === "Existing feature");
+    expect(matching).toHaveLength(1);
+    // Body should remain unchanged (original not overwritten)
+    expect(matching[0].body).toBe("Some body");
+  });
+
+  it("returns existing item ID when duplicate title is added", () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+- [ ] My task
+
+## Up Next
+
+## In Progress
+
+## Done
+`);
+    const config = makeConfig();
+    const items = getProjectItems(config);
+    const originalId = items[0].id;
+
+    const returnedId = addDraftItem(config, "My task", "New body");
+    expect(returnedId).toBe(originalId);
+  });
+
   it("defaults to Backlog status", () => {
     writeTestRoadmap(`# Bloom Evolution Roadmap
 
