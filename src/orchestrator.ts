@@ -40,8 +40,8 @@ export function processEvolutionResult(
     const extracted = extractLearnings(journalSections.learnings);
     storeLearnings(db, cycleCount, extracted);
     learningsStored = extracted.learnings.length;
-  } catch {
-    // Non-fatal
+  } catch (err) {
+    console.error(`[orchestrator] Failed to store learnings (non-fatal): ${(err as Error).message}`);
   }
 
   // Extract and store strategic context (best-effort)
@@ -52,8 +52,8 @@ export function processEvolutionResult(
       storeStrategicContext(db, cycleCount, strategicCtx);
       strategicContextStored = true;
     }
-  } catch {
-    // Non-fatal
+  } catch (err) {
+    console.error(`[orchestrator] Failed to store strategic context (non-fatal): ${(err as Error).message}`);
   }
 
   // Populate improvement counts from parsed sections
