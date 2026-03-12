@@ -110,8 +110,9 @@ src/
 ├── index.ts        # Main entry point with named phase functions (context, assessment, evolution, build, push)
 ├── orchestrator.ts # Evolution result processing (journal, learnings, strategic context) and cycle summary
 ├── evolve.ts       # Assessment & evolution prompt building
+├── errors.ts       # Safe error-message extraction from unknown thrown values
 ├── memory.ts       # Learning extraction, storage, and prompt formatting
-├── planning.ts     # Local ROADMAP.md parsing and item management
+├── planning.ts     # Local ROADMAP.md parsing and item management (with duplicate prevention)
 ├── db.ts           # SQLite persistence (bloom.db)
 ├── journal.ts      # CLI entry point for exporting journal entries (JSON/Markdown)
 ├── stats.ts        # CLI entry point for querying evolution statistics
