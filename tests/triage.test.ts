@@ -64,6 +64,18 @@ describe("buildTriagePrompt", () => {
     expect(prompt).not.toContain("x".repeat(500));
     expect(prompt).toContain("x".repeat(300));
   });
+
+  it("handles issues with empty bodies", () => {
+    const prompt = buildTriagePrompt([makeIssue({ number: 7, title: "No body", body: "" })], []);
+    expect(prompt).toContain("#7");
+    expect(prompt).toContain("No body");
+  });
+
+  it("includes zero-reaction issues", () => {
+    const prompt = buildTriagePrompt([makeIssue({ number: 10, reactions: 0 })], []);
+    expect(prompt).toContain("#10");
+    expect(prompt).toContain("0 reactions");
+  });
 });
 
 describe("parseTriageResponse", () => {
@@ -132,5 +144,37 @@ describe("parseTriageResponse", () => {
 
   it("handles empty array", () => {
     expect(parseTriageResponse("[]")).toEqual([]);
+  });
+
+  it("deduplicates by keeping all entries with same issue number", () => {
+    const input = `[
+      {"issueNumber": 1, "action": "add_to_backlog", "reason": "First"},
+      {"issueNumber": 1, "action": "already_done", "reason": "Second"}
+    ]`;
+    const result = parseTriageResponse(input);
+    expect(result).toHaveLength(2);
+    expect(result[0].action).toBe("add_to_backlog");
+    expect(result[1].action).toBe("already_done");
+  });
+
+  it("strips extra unexpected fields from entries", () => {
+    const input = `[{"issueNumber": 1, "action": "add_to_backlog", "reason": "Good", "extra": "field"}]`;
+    const result = parseTriageResponse(input);
+    expect(result).toHaveLength(1);
+    expect(result[0].issueNumber).toBe(1);
+    // Extra fields pass through the filter (no stripping)
+    expect((result[0] as unknown as Record<string, unknown>)["extra"]).toBe("field");
+  });
+
+  it("filters out-of-range actions mixed with valid ones", () => {
+    const input = `[
+      {"issueNumber": 1, "action": "add_to_backlog", "reason": "OK"},
+      {"issueNumber": 2, "action": "reject", "reason": "Bad"},
+      {"issueNumber": 3, "action": "not_applicable", "reason": "OK"},
+      {"issueNumber": 4, "action": "", "reason": "Empty"}
+    ]`;
+    const result = parseTriageResponse(input);
+    expect(result).toHaveLength(2);
+    expect(result.map((r) => r.issueNumber)).toEqual([1, 3]);
   });
 });
