@@ -110,7 +110,7 @@ src/
 ├── index.ts        # Main entry point with named phase functions (context, assessment, evolution, build, push)
 ├── orchestrator.ts # Evolution result processing (journal, learnings, strategic context) and cycle summary
 ├── evolve.ts       # Assessment & evolution prompt building
-├── errors.ts       # Safe error-message extraction from unknown thrown values
+├── errors.ts       # Safe error extraction: errorMessage() for thrown values, execSyncOutput() for subprocess failures
 ├── memory.ts       # Learning extraction, storage, and prompt formatting
 ├── planning.ts     # Local ROADMAP.md parsing and item management (with duplicate prevention)
 ├── db.ts           # SQLite persistence (bloom.db)
