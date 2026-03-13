@@ -195,6 +195,18 @@ export function nextItemId(items: ProjectItem[]): string {
 // --- Item CRUD ---
 
 /**
+ * Read-modify-write helper: reads the roadmap, parses items, passes them to
+ * `fn`, then serializes and writes back. Returns whatever `fn` returns.
+ * This deduplicates the boilerplate shared by all CRUD operations.
+ */
+function withRoadmapItems<T>(fn: (items: ProjectItem[]) => T): T {
+  const items = parseRoadmap(readRoadmap());
+  const result = fn(items);
+  writeRoadmap(serializeRoadmap(items));
+  return result;
+}
+
+/**
  * Get all items from the roadmap file.
  */
 export function getProjectItems(
@@ -214,26 +226,24 @@ export function addLinkedItem(
   body: string,
   status: StatusColumn = "Backlog",
 ): string | null {
-  const content = readRoadmap();
-  const items = parseRoadmap(content);
+  return withRoadmapItems((items) => {
+    // Don't add duplicates
+    if (items.some((i) => i.linkedIssueNumber === issueNumber)) {
+      return items.find((i) => i.linkedIssueNumber === issueNumber)?.id ?? null;
+    }
 
-  // Don't add duplicates
-  if (items.some((i) => i.linkedIssueNumber === issueNumber)) {
-    return items.find((i) => i.linkedIssueNumber === issueNumber)?.id ?? null;
-  }
+    const newItem: ProjectItem = {
+      id: nextItemId(items),
+      title,
+      status,
+      body: body.slice(0, 300),
+      linkedIssueNumber: issueNumber,
+      reactions: 0,
+    };
 
-  const newItem: ProjectItem = {
-    id: nextItemId(items),
-    title,
-    status,
-    body: body.slice(0, 300),
-    linkedIssueNumber: issueNumber,
-    reactions: 0,
-  };
-
-  items.push(newItem);
-  writeRoadmap(serializeRoadmap(items));
-  return newItem.id;
+    items.push(newItem);
+    return newItem.id;
+  });
 }
 
 /**
@@ -245,25 +255,23 @@ export function addDraftItem(
   body: string,
   status: StatusColumn = "Backlog",
 ): string | null {
-  const content = readRoadmap();
-  const items = parseRoadmap(content);
+  return withRoadmapItems((items) => {
+    // Don't add duplicates (match on title)
+    const existing = items.find((i) => i.title === title);
+    if (existing) return existing.id;
 
-  // Don't add duplicates (match on title)
-  const existing = items.find((i) => i.title === title);
-  if (existing) return existing.id;
+    const newItem: ProjectItem = {
+      id: nextItemId(items),
+      title,
+      status,
+      body: body.slice(0, 300),
+      linkedIssueNumber: null,
+      reactions: 0,
+    };
 
-  const newItem: ProjectItem = {
-    id: nextItemId(items),
-    title,
-    status,
-    body: body.slice(0, 300),
-    linkedIssueNumber: null,
-    reactions: 0,
-  };
-
-  items.push(newItem);
-  writeRoadmap(serializeRoadmap(items));
-  return newItem.id;
+    items.push(newItem);
+    return newItem.id;
+  });
 }
 
 /**
@@ -277,17 +285,16 @@ export function updateItemStatus(
   status: StatusColumn,
   completionNote?: string,
 ): boolean {
-  const content = readRoadmap();
-  const items = parseRoadmap(content);
-  const item = items.find((i) => i.id === itemId);
-  if (!item) return false;
+  return withRoadmapItems((items) => {
+    const item = items.find((i) => i.id === itemId);
+    if (!item) return false;
 
-  item.status = status;
-  if (status === "Done" && completionNote) {
-    item.body = completionNote;
-  }
-  writeRoadmap(serializeRoadmap(items));
-  return true;
+    item.status = status;
+    if (status === "Done" && completionNote) {
+      item.body = completionNote;
+    }
+    return true;
+  });
 }
 
 // --- Planning Logic ---
