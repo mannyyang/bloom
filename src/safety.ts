@@ -19,8 +19,15 @@ export function denyResult(reason: string) {
 }
 
 export function parseHookInput(input: unknown): ParsedHookInput {
-  const record = input as Record<string, unknown>;
-  const toolInput = record.tool_input as Record<string, unknown> | undefined;
+  const record =
+    typeof input === "object" && input !== null
+      ? (input as Record<string, unknown>)
+      : ({} as Record<string, unknown>);
+  const rawToolInput = record.tool_input;
+  const toolInput =
+    typeof rawToolInput === "object" && rawToolInput !== null
+      ? (rawToolInput as Record<string, unknown>)
+      : undefined;
   return {
     toolName: String(record.tool_name ?? ""),
     filePath: String(toolInput?.file_path ?? ""),

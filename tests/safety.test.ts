@@ -655,6 +655,46 @@ describe("parseHookInput (direct)", () => {
     const result = parseHookInput({});
     expect(result.toolName).toBe("");
   });
+
+  it("returns all empty strings when input is a string (non-object)", () => {
+    const result = parseHookInput("not an object");
+    expect(result).toEqual({
+      toolName: "",
+      filePath: "",
+      command: "",
+      oldString: "",
+      newString: "",
+    });
+  });
+
+  it("returns all empty strings when input is a number (non-object)", () => {
+    const result = parseHookInput(42);
+    expect(result).toEqual({
+      toolName: "",
+      filePath: "",
+      command: "",
+      oldString: "",
+      newString: "",
+    });
+  });
+
+  it("returns all empty strings when input is null", () => {
+    const result = parseHookInput(null);
+    expect(result).toEqual({
+      toolName: "",
+      filePath: "",
+      command: "",
+      oldString: "",
+      newString: "",
+    });
+  });
+
+  it("handles tool_input as a string (non-object) gracefully", () => {
+    const result = parseHookInput({ tool_name: "Bash", tool_input: "bad" });
+    expect(result.toolName).toBe("Bash");
+    expect(result.filePath).toBe("");
+    expect(result.command).toBe("");
+  });
 });
 
 describe("denyResult (direct)", () => {
