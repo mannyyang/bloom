@@ -126,13 +126,18 @@ export function formatMemoryForPrompt(
 
     const learningSectionHeader = "## Key Learnings\n";
     let learningSection = learningSectionHeader;
+    let budgetExhausted = false;
     for (const [category, items] of grouped) {
+      if (budgetExhausted) break;
       const header = `### ${category}\n`;
       if (totalLen + learningSection.length + header.length > maxChars) break;
       learningSection += header;
       for (const item of items) {
         const line = `- ${item.content}\n`;
-        if (totalLen + learningSection.length + line.length > maxChars) break;
+        if (totalLen + learningSection.length + line.length > maxChars) {
+          budgetExhausted = true;
+          break;
+        }
         learningSection += line;
       }
     }

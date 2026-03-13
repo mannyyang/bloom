@@ -208,6 +208,31 @@ describe("formatMemoryForPrompt", () => {
     expect(learningLines.length).toBeLessThan(20);
   });
 
+  it("does not add empty category headers when budget exhausted mid-category", () => {
+    // Insert learnings in two categories — budget should exhaust within the first
+    for (let i = 0; i < 5; i++) {
+      insertLearning(db, 1, "pattern", `Pattern item ${i} with padding text to consume budget`);
+    }
+    for (let i = 0; i < 5; i++) {
+      insertLearning(db, 1, "anti-pattern", `Anti-pattern item ${i} with padding text`);
+    }
+    const fullResult = formatMemoryForPrompt(db, 100000);
+    // Budget that fits header + some pattern items but exhausts mid-category
+    const tightBudget = Math.floor(fullResult.length * 0.35);
+    const truncated = formatMemoryForPrompt(db, tightBudget);
+
+    // Every "### category" header must have at least one "- " item line following it
+    const lines = truncated.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].startsWith("### ")) {
+        // Next non-empty line must be a learning item
+        const nextContentLine = lines.slice(i + 1).find(l => l.trim() !== "");
+        expect(nextContentLine).toBeDefined();
+        expect(nextContentLine!.startsWith("- ")).toBe(true);
+      }
+    }
+  });
+
   it("stops adding category headers when budget is exhausted", () => {
     // Insert learnings in two categories
     for (let i = 0; i < 10; i++) {
