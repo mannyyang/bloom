@@ -173,6 +173,25 @@ export function ensureProject(): ProjectConfig | null {
   return { filePath };
 }
 
+// --- ID Generation ---
+
+/**
+ * Compute the next unique item ID by scanning all existing IDs.
+ * Uses max(numeric suffix) + 1 instead of items.length to avoid
+ * ID collisions if items are ever removed or reordered.
+ */
+export function nextItemId(items: ProjectItem[]): string {
+  let maxIndex = -1;
+  for (const item of items) {
+    const match = item.id.match(/^item-(\d+)$/);
+    if (match) {
+      const idx = parseInt(match[1], 10);
+      if (idx > maxIndex) maxIndex = idx;
+    }
+  }
+  return `item-${maxIndex + 1}`;
+}
+
 // --- Item CRUD ---
 
 /**
@@ -204,7 +223,7 @@ export function addLinkedItem(
   }
 
   const newItem: ProjectItem = {
-    id: `item-${items.length}`,
+    id: nextItemId(items),
     title,
     status,
     body: body.slice(0, 300),
@@ -234,7 +253,7 @@ export function addDraftItem(
   if (existing) return existing.id;
 
   const newItem: ProjectItem = {
-    id: `item-${items.length}`,
+    id: nextItemId(items),
     title,
     status,
     body: body.slice(0, 300),

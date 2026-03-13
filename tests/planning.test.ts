@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, type ProjectItem } from "../src/planning.js";
+import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, type ProjectItem } from "../src/planning.js";
 
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
@@ -255,5 +255,34 @@ describe("serializeRoadmap", () => {
     expect(parsed[2].title).toBe("Gamma");
     expect(parsed[2].status).toBe("Done");
     expect(parsed[2].linkedIssueNumber).toBe(5);
+  });
+});
+
+describe("nextItemId", () => {
+  it("returns item-0 for empty array", () => {
+    expect(nextItemId([])).toBe("item-0");
+  });
+
+  it("returns next sequential ID for consecutive items", () => {
+    const items = [
+      makeItem({ id: "item-0" }),
+      makeItem({ id: "item-1" }),
+      makeItem({ id: "item-2" }),
+    ];
+    expect(nextItemId(items)).toBe("item-3");
+  });
+
+  it("handles gaps in ID sequence (e.g., after item removal)", () => {
+    const items = [
+      makeItem({ id: "item-0" }),
+      makeItem({ id: "item-3" }),
+      makeItem({ id: "item-5" }),
+    ];
+    expect(nextItemId(items)).toBe("item-6");
+  });
+
+  it("handles single item", () => {
+    const items = [makeItem({ id: "item-7" })];
+    expect(nextItemId(items)).toBe("item-8");
   });
 });
