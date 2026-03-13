@@ -26,17 +26,21 @@ export interface CycleUsage {
 /**
  * Extract usage data from an SDK result message.
  * Returns null if the message is not a result message or lacks usage data.
+ * Accepts `unknown` so callers don't need `as` casts on opaque SDK messages.
  */
 export function extractUsage(
-  msg: Record<string, unknown>,
+  msg: unknown,
   phase: string,
 ): PhaseUsage | null {
-  if (msg.type !== "result") return null;
-  if (typeof msg.total_cost_usd !== "number") return null;
+  if (typeof msg !== "object" || msg === null) return null;
+
+  const rec = msg as Record<string, unknown>;
+  if (rec.type !== "result") return null;
+  if (typeof rec.total_cost_usd !== "number") return null;
 
   const usage =
-    msg.usage != null && typeof msg.usage === "object"
-      ? (msg.usage as Record<string, unknown>)
+    rec.usage != null && typeof rec.usage === "object"
+      ? (rec.usage as Record<string, unknown>)
       : undefined;
 
   const numOrZero = (val: unknown): number =>
@@ -44,13 +48,13 @@ export function extractUsage(
 
   return {
     phase,
-    totalCostUsd: msg.total_cost_usd,
+    totalCostUsd: rec.total_cost_usd,
     inputTokens: numOrZero(usage?.input_tokens),
     outputTokens: numOrZero(usage?.output_tokens),
     cacheReadInputTokens: numOrZero(usage?.cache_read_input_tokens),
     cacheCreationInputTokens: numOrZero(usage?.cache_creation_input_tokens),
-    durationMs: numOrZero(msg.duration_ms),
-    numTurns: numOrZero(msg.num_turns),
+    durationMs: numOrZero(rec.duration_ms),
+    numTurns: numOrZero(rec.num_turns),
   };
 }
 

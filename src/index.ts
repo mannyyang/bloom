@@ -174,7 +174,7 @@ async function runAssessmentPhase(
   })) {
     assessmentTurns++;
     if ("result" in msg) assessment = msg.result;
-    const usage = extractUsage(msg as Record<string, unknown>, "Assessment");
+    const usage = extractUsage(msg, "Assessment");
     if (usage) {
       phaseUsages.push(usage);
       insertPhaseUsage(db, cycleCount, usage);
@@ -237,7 +237,7 @@ async function runEvolutionPhase(
       evolutionResult = msg.result;
       console.log(msg.result);
     }
-    const usage = extractUsage(msg as Record<string, unknown>, "Evolution");
+    const usage = extractUsage(msg, "Evolution");
     if (usage) {
       phaseUsages.push(usage);
       insertPhaseUsage(db, cycleCount, usage);

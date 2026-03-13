@@ -38,6 +38,14 @@ describe("extractUsage", () => {
     });
   });
 
+  it("returns null for non-object inputs", () => {
+    expect(extractUsage(null, "Test")).toBeNull();
+    expect(extractUsage(undefined, "Test")).toBeNull();
+    expect(extractUsage(42, "Test")).toBeNull();
+    expect(extractUsage("string", "Test")).toBeNull();
+    expect(extractUsage(true, "Test")).toBeNull();
+  });
+
   it("returns null for non-result messages", () => {
     expect(extractUsage({ type: "stream_event" }, "Test")).toBeNull();
     expect(extractUsage({ type: "system" }, "Test")).toBeNull();
