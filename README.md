@@ -108,7 +108,8 @@ Open an issue with the `agent-input` label to suggest improvements. Issues are p
 
 ```
 src/
-├── index.ts        # Main entry point — orchestrates the evolution cycle (assessment, evolution, push)
+├── index.ts        # Main entry point — orchestrates the evolution cycle
+├── agent-phases.ts # Assessment & evolution phase runners with dependency injection for testability
 ├── context.ts      # Evolution context loader — gathers identity, journal, issues, memory, and planning state
 ├── phases.ts       # Exported phase helpers (build verification, planning status, push) — extracted for testability
 ├── orchestrator.ts # Evolution result processing (journal, learnings, strategic context) and cycle summary
