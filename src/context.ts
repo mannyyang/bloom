@@ -1,0 +1,119 @@
+import { readFileSync } from "fs";
+import type Database from "better-sqlite3";
+import { getRecentJournalSummary, getCycleStats, formatCycleStats } from "./db.js";
+import { fetchCommunityIssues } from "./issues.js";
+import { triageIssues } from "./triage.js";
+import { errorMessage } from "./errors.js";
+import { formatMemoryForPrompt } from "./memory.js";
+import {
+  ensureProject,
+  getProjectItems,
+  pickNextItem,
+  updateItemStatus,
+  formatPlanningContext,
+  type ProjectConfig,
+  type ProjectItem,
+} from "./planning.js";
+import type { CommunityIssue } from "./issues.js";
+
+/**
+ * Context gathered for the evolution cycle: identity, journal, issues,
+ * memory, planning state, etc.
+ */
+export interface EvolutionContext {
+  identity: string;
+  journalSummary: string;
+  cycleStatsText: string;
+  memoryContext: string;
+  planningContext: string;
+  issues: CommunityIssue[];
+  projectConfig: ProjectConfig | null;
+  currentItem: ProjectItem | null;
+}
+
+/**
+ * Load all context needed for the assessment and evolution phases.
+ * Gathers identity, journal history, community issues, memory, and planning state.
+ */
+export async function loadEvolutionContext(
+  db: Database.Database,
+  cycleCount: number,
+): Promise<EvolutionContext> {
+  console.log("\n[context] Loading evolution context...");
+  const identity = readFileSync("IDENTITY.md", "utf-8");
+  console.log(`[context] Identity loaded (${identity.length} chars)`);
+
+  const journalSummary = getRecentJournalSummary(db);
+  console.log(`[context] Journal summary: ${journalSummary ? `${journalSummary.length} chars` : "empty"}`);
+
+  const issues = await fetchCommunityIssues();
+  console.log(`[context] Community issues: ${issues.length} open`);
+  for (const issue of issues) {
+    console.log(`  - #${issue.number}: ${issue.title} (${issue.reactions} reactions)`);
+  }
+
+  const cycleStats = getCycleStats(db);
+  const cycleStatsText = formatCycleStats(cycleStats);
+  console.log(`[context] Cycle stats: ${cycleStatsText ? `${cycleStatsText.length} chars` : "none"}`);
+
+  // Memory context (best-effort)
+  const memoryContext = formatMemoryForPrompt(db, 2000);
+  console.log(`[context] Memory context: ${memoryContext ? `${memoryContext.length} chars` : "empty"}`);
+
+  // Planning context (best-effort, uses ROADMAP.md)
+  let planningContext = "";
+  let projectConfig: ProjectConfig | null = null;
+  let currentItem: ProjectItem | null = null;
+  try {
+    console.log("[planning] Loading roadmap...");
+    projectConfig = ensureProject();
+    if (projectConfig) {
+      console.log(`[planning] Roadmap: ${projectConfig.filePath}`);
+      let projectItems = getProjectItems(projectConfig);
+      console.log(`[planning] ${projectItems.length} items on roadmap`);
+      for (const item of projectItems) {
+        console.log(`  - [${item.status ?? "No Status"}] ${item.title}${item.reactions > 0 ? ` (${item.reactions} reactions)` : ""}`);
+      }
+
+      // Triage community issues against the roadmap
+      if (issues.length > 0) {
+        console.log(`\n[triage] Triaging ${issues.length} community issues against roadmap...`);
+        const triageResult = await triageIssues(issues, projectItems, cycleCount, projectConfig, db);
+        if (triageResult.addedToBacklog.length > 0) {
+          console.log(`[triage] Added to backlog: ${triageResult.addedToBacklog.map(n => `#${n}`).join(", ")}`);
+        }
+        if (triageResult.closed.length > 0) {
+          console.log(`[triage] Closed: ${triageResult.closed.map(n => `#${n}`).join(", ")}`);
+        }
+        for (const d of triageResult.decisions) {
+          console.log(`  - #${d.issueNumber}: ${d.action} — ${d.reason.slice(0, 100)}`);
+        }
+        // Re-fetch items since triage may have added new ones
+        projectItems = getProjectItems(projectConfig);
+        console.log(`[planning] ${projectItems.length} items on roadmap (post-triage)`);
+      }
+
+      currentItem = pickNextItem(projectItems);
+      if (currentItem) {
+        console.log(`[planning] Selected: "${currentItem.title}" → marking In Progress`);
+        updateItemStatus(projectConfig, currentItem.id, "In Progress");
+      } else {
+        console.log("[planning] No actionable items found");
+      }
+      planningContext = formatPlanningContext(projectItems, currentItem);
+    }
+  } catch (err) {
+    console.error(`[planning] Failed (non-fatal): ${errorMessage(err)}`);
+  }
+
+  return {
+    identity,
+    journalSummary: journalSummary ?? "",
+    cycleStatsText: cycleStatsText ?? "",
+    memoryContext,
+    planningContext,
+    issues,
+    projectConfig,
+    currentItem,
+  };
+}
