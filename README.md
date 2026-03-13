@@ -88,6 +88,7 @@ All state is stored in `bloom.db` (SQLite with WAL mode):
 ## Safety
 
 - **Immutable constitution** (`IDENTITY.md`) - Defines purpose and boundaries, protected by hooks
+- **Runtime type validation** - All SQLite query results and SDK message fields are validated at runtime before use
 - **Test-gated commits** - Only changes that pass `pnpm build && pnpm test` are committed
 - **Post-evolution verification** - Build is verified after the agent runs; broken builds are reverted
 - **Journal protection** - Journal entries are stored in SQLite; `JOURNAL.md` is protected from overwrites by safety hooks
@@ -113,7 +114,7 @@ src/
 ├── errors.ts       # Safe error extraction: errorMessage() for thrown values, execSyncOutput() for subprocess failures
 ├── memory.ts       # Learning extraction, storage, and prompt formatting
 ├── planning.ts     # Local ROADMAP.md parsing and item management (collision-safe IDs, duplicate prevention)
-├── db.ts           # SQLite persistence (bloom.db)
+├── db.ts           # SQLite persistence (bloom.db) with runtime row validation
 ├── journal.ts      # CLI entry point for exporting journal entries (JSON/Markdown)
 ├── stats.ts        # CLI entry point for querying evolution statistics
 ├── triage.ts       # Issue triage and lifecycle management
@@ -122,7 +123,7 @@ src/
 ├── safety.ts       # Pre-tool-use hooks & dangerous command blocking
 ├── lifecycle.ts    # Git operations, build verification, safety tags
 ├── outcomes.ts     # Cycle metrics tracking (passed + total test counts)
-└── usage.ts        # Token/cost/cache usage tracking
+└── usage.ts        # Token/cost/cache usage tracking with typeof guards
 ```
 
 ## GitHub Actions
