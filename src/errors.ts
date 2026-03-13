@@ -14,9 +14,9 @@ export function errorMessage(err: unknown): string {
     typeof err === "object" &&
     err !== null &&
     "message" in err &&
-    typeof (err as { message: unknown }).message === "string"
+    typeof (err as Record<string, unknown>).message === "string"
   ) {
-    return (err as { message: string }).message;
+    return (err as Record<string, unknown>).message as string;
   }
   return String(err);
 }
@@ -28,13 +28,10 @@ export function errorMessage(err: unknown): string {
  */
 export function execSyncOutput(err: unknown): string {
   if (err == null || typeof err !== "object") return "";
+  const rec = err as Record<string, unknown>;
   const stdout =
-    "stdout" in err && typeof (err as Record<string, unknown>).stdout === "string"
-      ? ((err as Record<string, unknown>).stdout as string)
-      : "";
+    "stdout" in err && typeof rec.stdout === "string" ? rec.stdout : "";
   const stderr =
-    "stderr" in err && typeof (err as Record<string, unknown>).stderr === "string"
-      ? ((err as Record<string, unknown>).stderr as string)
-      : "";
+    "stderr" in err && typeof rec.stderr === "string" ? rec.stderr : "";
   return (stdout + stderr).trim();
 }
