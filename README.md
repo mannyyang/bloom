@@ -112,7 +112,7 @@ src/
 ├── evolve.ts       # Assessment & evolution prompt building
 ├── errors.ts       # Safe error extraction: errorMessage() for thrown values, execSyncOutput() for subprocess failures
 ├── memory.ts       # Learning extraction, storage, and prompt formatting
-├── planning.ts     # Local ROADMAP.md parsing and item management (with duplicate prevention)
+├── planning.ts     # Local ROADMAP.md parsing and item management (collision-safe IDs, duplicate prevention)
 ├── db.ts           # SQLite persistence (bloom.db)
 ├── journal.ts      # CLI entry point for exporting journal entries (JSON/Markdown)
 ├── stats.ts        # CLI entry point for querying evolution statistics
