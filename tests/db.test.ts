@@ -13,6 +13,9 @@ import {
   getRecentJournalSummary,
   getCycleStats,
   formatCycleStats,
+  validateRow,
+  validateOptionalRow,
+  validateRows,
 } from "../src/db.js";
 import type Database from "better-sqlite3";
 import { makeOutcome } from "./helpers.js";
@@ -719,6 +722,72 @@ describe("db", () => {
         totalInputTokens: 500, totalOutputTokens: 200,
       });
       expect(result).toContain("500 in / 200 out");
+    });
+  });
+
+  describe("validateRow / validateOptionalRow / validateRows", () => {
+    it("validateRow passes for matching schema", () => {
+      const row = { name: "bloom", count: 42 };
+      const result = validateRow<{ name: string; count: number }>(
+        row, { name: "string", count: "number" }, "test",
+      );
+      expect(result).toEqual({ name: "bloom", count: 42 });
+    });
+
+    it("validateRow throws for wrong field type", () => {
+      expect(() => validateRow({ count: "not-a-number" }, { count: "number" }, "test"))
+        .toThrow('test: expected "count" to be number, got string');
+    });
+
+    it("validateRow throws for undefined row", () => {
+      expect(() => validateRow(undefined, { id: "number" }, "test"))
+        .toThrow("test: expected a row but got undefined");
+    });
+
+    it("validateRow throws for null row", () => {
+      expect(() => validateRow(null, { id: "number" }, "test"))
+        .toThrow("test: expected row object, got object");
+    });
+
+    it("validateOptionalRow returns undefined for undefined input", () => {
+      expect(validateOptionalRow(undefined, { id: "number" }, "test")).toBeUndefined();
+    });
+
+    it("validateOptionalRow validates nullable number fields", () => {
+      const row = { val: null };
+      const result = validateOptionalRow<{ val: number | null }>(row, { val: "number?" }, "test");
+      expect(result).toEqual({ val: null });
+    });
+
+    it("validateOptionalRow rejects string for number? field", () => {
+      expect(() => validateOptionalRow({ val: "oops" }, { val: "number?" }, "test"))
+        .toThrow('expected "val" to be number|null');
+    });
+
+    it("validateOptionalRow validates nullable string fields", () => {
+      expect(validateOptionalRow({ s: null }, { s: "string?" }, "test")).toEqual({ s: null });
+      expect(validateOptionalRow({ s: "hello" }, { s: "string?" }, "test")).toEqual({ s: "hello" });
+    });
+
+    it("validateOptionalRow rejects number for string? field", () => {
+      expect(() => validateOptionalRow({ s: 123 }, { s: "string?" }, "test"))
+        .toThrow('expected "s" to be string|null');
+    });
+
+    it("validateRows validates all rows in array", () => {
+      const rows = [{ id: 1 }, { id: 2 }];
+      const result = validateRows<{ id: number }>(rows, { id: "number" }, "test");
+      expect(result).toEqual([{ id: 1 }, { id: 2 }]);
+    });
+
+    it("validateRows throws with index on bad row", () => {
+      const rows = [{ id: 1 }, { id: "bad" }];
+      expect(() => validateRows(rows, { id: "number" }, "test"))
+        .toThrow('test[1]: expected "id" to be number, got string');
+    });
+
+    it("validateRows returns empty array for empty input", () => {
+      expect(validateRows([], { id: "number" }, "test")).toEqual([]);
     });
   });
 });

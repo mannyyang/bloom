@@ -4,6 +4,64 @@ import type { PhaseUsage } from "./usage.js";
 
 const DEFAULT_DB_PATH = "bloom.db";
 
+// --- Row validation helpers ---
+
+type FieldType = "number" | "number?" | "string" | "string?";
+type RowSchema = Record<string, FieldType>;
+
+function checkField(row: Record<string, unknown>, key: string, spec: FieldType, label: string): void {
+  const val = row[key];
+  switch (spec) {
+    case "number":
+      if (typeof val !== "number") throw new Error(`${label}: expected "${key}" to be number, got ${typeof val}`);
+      break;
+    case "number?":
+      if (val !== null && typeof val !== "number") throw new Error(`${label}: expected "${key}" to be number|null, got ${typeof val}`);
+      break;
+    case "string":
+      if (typeof val !== "string") throw new Error(`${label}: expected "${key}" to be string, got ${typeof val}`);
+      break;
+    case "string?":
+      if (val !== null && typeof val !== "string") throw new Error(`${label}: expected "${key}" to be string|null, got ${typeof val}`);
+      break;
+  }
+}
+
+/**
+ * Validate that a single row (from `.get()`) matches the expected schema.
+ * Returns the row cast to T, or undefined if the input is undefined.
+ * Throws a descriptive error if any field has the wrong type.
+ */
+export function validateOptionalRow<T>(row: unknown, schema: RowSchema, label: string): T | undefined {
+  if (row === undefined) return undefined;
+  if (row === null || typeof row !== "object") {
+    throw new Error(`${label}: expected row object, got ${typeof row}`);
+  }
+  const obj = row as Record<string, unknown>;
+  for (const [key, spec] of Object.entries(schema)) {
+    checkField(obj, key, spec, label);
+  }
+  return row as T;
+}
+
+/**
+ * Validate that a single row matches the expected schema. Throws if undefined.
+ */
+export function validateRow<T>(row: unknown, schema: RowSchema, label: string): T {
+  const result = validateOptionalRow<T>(row, schema, label);
+  if (result === undefined) {
+    throw new Error(`${label}: expected a row but got undefined`);
+  }
+  return result;
+}
+
+/**
+ * Validate that all rows in an array match the expected schema.
+ */
+export function validateRows<T>(rows: unknown[], schema: RowSchema, label: string): T[] {
+  return rows.map((row, i) => validateRow<T>(row, schema, `${label}[${i}]`));
+}
+
 export function initDb(path: string = DEFAULT_DB_PATH): Database.Database {
   const db = new Database(path);
   db.pragma("journal_mode = WAL");
@@ -79,7 +137,11 @@ export function initDb(path: string = DEFAULT_DB_PATH): Database.Database {
 }
 
 export function getLatestCycleNumber(db: Database.Database): number {
-  const row = db.prepare("SELECT MAX(cycle_number) as max_cycle FROM cycles").get() as { max_cycle: number | null } | undefined;
+  const row = validateOptionalRow<{ max_cycle: number | null }>(
+    db.prepare("SELECT MAX(cycle_number) as max_cycle FROM cycles").get(),
+    { max_cycle: "number?" },
+    "getLatestCycleNumber",
+  );
   return row?.max_cycle ?? 0;
 }
 
@@ -213,9 +275,9 @@ export function getJournalEntries(db: Database.Database, limit?: number): Journa
     ORDER BY c.cycle_number DESC, j.id ASC
     ${limit ? `LIMIT ?` : ""}
   `;
-  return limit
-    ? (db.prepare(sql).all(limit) as JournalRow[])
-    : (db.prepare(sql).all() as JournalRow[]);
+  const journalSchema: RowSchema = { cycleNumber: "number", startedAt: "string", section: "string", content: "string" };
+  const raw = limit ? db.prepare(sql).all(limit) : db.prepare(sql).all();
+  return validateRows<JournalRow>(raw, journalSchema, "getJournalEntries");
 }
 
 export interface JournalExportEntry {
@@ -281,14 +343,16 @@ export interface CycleStats {
  * Answers the question: "How are you measuring success?" (community issue #3).
  */
 export function getCycleStats(db: Database.Database, limit: number = 20): CycleStats {
-  const rows = db.prepare(`
+  const rawRows = db.prepare(`
     SELECT
       preflight_passed, improvements_attempted, improvements_succeeded,
       build_verification_passed, push_succeeded,
       test_count_before, test_count_after,
       started_at, completed_at
     FROM cycles ORDER BY cycle_number DESC LIMIT ?
-  `).all(limit) as {
+  `).all(limit);
+
+  interface CycleRow {
     preflight_passed: number;
     improvements_attempted: number;
     improvements_succeeded: number;
@@ -298,7 +362,16 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
     test_count_after: number | null;
     started_at: string;
     completed_at: string | null;
-  }[];
+  }
+
+  const cycleRowSchema: RowSchema = {
+    preflight_passed: "number", improvements_attempted: "number",
+    improvements_succeeded: "number", build_verification_passed: "number",
+    push_succeeded: "number", test_count_before: "number?",
+    test_count_after: "number?", started_at: "string", completed_at: "string?",
+  };
+
+  const rows = validateRows<CycleRow>(rawRows, cycleRowSchema, "getCycleStats");
 
   if (rows.length === 0) {
     return { totalCycles: 0, successRate: 0, avgImprovements: 0, testCountTrend: null, recentFailures: 0, avgDurationMinutes: null, totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0 };
@@ -338,9 +411,13 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
 
   // Aggregate cost and token usage from phase_usage for the cycles in scope
   // rows.length > 0 is guaranteed here (early return above handles empty case)
-  const usageRow = db.prepare(
-    `SELECT COALESCE(SUM(cost_usd), 0) as total_cost, COALESCE(SUM(input_tokens), 0) as total_input, COALESCE(SUM(output_tokens), 0) as total_output FROM phase_usage WHERE cycle_number IN (SELECT cycle_number FROM cycles ORDER BY cycle_number DESC LIMIT ?)`
-  ).get(limit) as { total_cost: number; total_input: number; total_output: number };
+  const usageRow = validateRow<{ total_cost: number; total_input: number; total_output: number }>(
+    db.prepare(
+      `SELECT COALESCE(SUM(cost_usd), 0) as total_cost, COALESCE(SUM(input_tokens), 0) as total_input, COALESCE(SUM(output_tokens), 0) as total_output FROM phase_usage WHERE cycle_number IN (SELECT cycle_number FROM cycles ORDER BY cycle_number DESC LIMIT ?)`
+    ).get(limit),
+    { total_cost: "number", total_input: "number", total_output: "number" },
+    "getCycleStats.usage",
+  );
   const totalCostUsd = Math.round(usageRow.total_cost * 100) / 100;
   const avgCostPerCycle = totalCycles > 0 ? Math.round((totalCostUsd / totalCycles) * 100) / 100 : 0;
   const totalInputTokens = usageRow.total_input;
@@ -404,16 +481,25 @@ export function getRelevantLearnings(
   maxItems: number = 20,
   category?: string,
 ): Learning[] {
+  const learningSchema: RowSchema = { id: "number", cycleNumber: "number", category: "string", content: "string", relevance: "number" };
   if (category) {
-    return db.prepare(
-      `SELECT id, cycle_number as cycleNumber, category, content, relevance
-       FROM learnings WHERE category = ? ORDER BY relevance DESC, id DESC LIMIT ?`,
-    ).all(category, maxItems) as Learning[];
+    return validateRows<Learning>(
+      db.prepare(
+        `SELECT id, cycle_number as cycleNumber, category, content, relevance
+         FROM learnings WHERE category = ? ORDER BY relevance DESC, id DESC LIMIT ?`,
+      ).all(category, maxItems),
+      learningSchema,
+      "getRelevantLearnings",
+    );
   }
-  return db.prepare(
-    `SELECT id, cycle_number as cycleNumber, category, content, relevance
-     FROM learnings ORDER BY relevance DESC, id DESC LIMIT ?`,
-  ).all(maxItems) as Learning[];
+  return validateRows<Learning>(
+    db.prepare(
+      `SELECT id, cycle_number as cycleNumber, category, content, relevance
+       FROM learnings ORDER BY relevance DESC, id DESC LIMIT ?`,
+    ).all(maxItems),
+    learningSchema,
+    "getRelevantLearnings",
+  );
 }
 
 export function decayLearningRelevance(
@@ -438,9 +524,11 @@ export function insertStrategicContext(
 export function getLatestStrategicContext(
   db: Database.Database,
 ): string | null {
-  const row = db.prepare(
-    "SELECT summary FROM strategic_context ORDER BY id DESC LIMIT 1",
-  ).get() as { summary: string } | undefined;
+  const row = validateOptionalRow<{ summary: string }>(
+    db.prepare("SELECT summary FROM strategic_context ORDER BY id DESC LIMIT 1").get(),
+    { summary: "string" },
+    "getLatestStrategicContext",
+  );
   return row?.summary ?? null;
 }
 
