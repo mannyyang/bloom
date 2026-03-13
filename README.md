@@ -108,7 +108,8 @@ Open an issue with the `agent-input` label to suggest improvements. Issues are p
 
 ```
 src/
-├── index.ts        # Main entry point with named phase functions (context, assessment, evolution, build, push)
+├── index.ts        # Main entry point — orchestrates the evolution cycle (context, assessment, evolution, push)
+├── phases.ts       # Exported phase helpers (build verification, planning status, push) — extracted for testability
 ├── orchestrator.ts # Evolution result processing (journal, learnings, strategic context) and cycle summary
 ├── evolve.ts       # Assessment & evolution prompt building
 ├── errors.ts       # Safe error extraction: errorMessage() for thrown values, execSyncOutput() for subprocess failures
@@ -123,7 +124,7 @@ src/
 ├── safety.ts       # Pre-tool-use hooks & dangerous command blocking
 ├── lifecycle.ts    # Git operations, build verification, safety tags
 ├── outcomes.ts     # Cycle metrics tracking (passed + total test counts)
-└── usage.ts        # Token/cost/cache usage tracking with typeof guards
+└── usage.ts        # Token/cost/cache usage tracking — accepts unknown inputs with runtime guards
 ```
 
 ## GitHub Actions
