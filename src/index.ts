@@ -1,6 +1,5 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
-import { initDb, getLatestCycleNumber, insertCycle, updateCycleOutcome, insertPhaseUsage } from "./db.js";
-import { buildAssessmentPrompt, buildEvolutionPrompt } from "./evolve.js";
+import { initDb, getLatestCycleNumber, insertCycle, updateCycleOutcome } from "./db.js";
 import { errorMessage } from "./errors.js";
 import {
   protectIdentity,
@@ -16,152 +15,15 @@ import {
   createSafetyTag,
 } from "./lifecycle.js";
 import { runBuildVerificationPhase, updatePlanningStatus, pushChangesPhase } from "./phases.js";
-import {
-  extractUsage,
-  aggregateUsage,
-  formatPhaseUsage,
-  formatCycleUsage,
-  formatUsageForJournal,
-  PhaseUsage,
-} from "./usage.js";
+import { type PhaseUsage } from "./usage.js";
 import { createOutcome, formatOutcomeForJournal, parseTestCount, parseTestTotal } from "./outcomes.js";
-import { processEvolutionResult, formatCycleSummaryWithDuration } from "./orchestrator.js";
-import { loadEvolutionContext, type EvolutionContext } from "./context.js";
-import type Database from "better-sqlite3";
-import type { CycleOutcome } from "./outcomes.js";
-
-/**
- * Run the read-only assessment phase using the Claude agent.
- * Returns the assessment text and populates phaseUsages.
- */
-async function runAssessmentPhase(
-  db: Database.Database,
-  cycleCount: number,
-  ctx: EvolutionContext,
-  phaseUsages: PhaseUsage[],
-): Promise<string> {
-  console.log("\n========================================");
-  console.log("  Phase 1: Assessment (read-only)");
-  console.log("========================================");
-  const assessmentStart = Date.now();
-  let assessment = "";
-  let assessmentTurns = 0;
-  for await (const msg of query({
-    prompt: buildAssessmentPrompt({
-      identity: ctx.identity,
-      journalSummary: ctx.journalSummary,
-      cycleCount,
-      cycleStatsText: ctx.cycleStatsText,
-      memoryContext: ctx.memoryContext,
-      planningContext: ctx.planningContext,
-    }),
-    options: {
-      cwd: process.cwd(),
-      model: "claude-opus-4-6",
-      allowedTools: ["Read", "Glob", "Grep", "Bash"],
-      permissionMode: "dontAsk",
-      maxTurns: 20,
-      maxBudgetUsd: 2.0,
-    },
-  })) {
-    assessmentTurns++;
-    if ("result" in msg) assessment = msg.result;
-    const usage = extractUsage(msg, "Assessment");
-    if (usage) {
-      phaseUsages.push(usage);
-      insertPhaseUsage(db, cycleCount, usage);
-      console.log(formatPhaseUsage(usage));
-    }
-  }
-  const assessmentMs = Date.now() - assessmentStart;
-
-  if (!assessment) {
-    throw new Error("Assessment produced no output. Aborting.");
-  }
-
-  console.log(`\n[assessment] Completed in ${(assessmentMs / 1000).toFixed(1)}s (${assessmentTurns} turns, ${assessment.length} chars)`);
-  console.log(`[assessment] Output preview:\n${assessment.slice(0, 500)}${assessment.length > 500 ? "\n  ..." : ""}`);
-
-  return assessment;
-}
-
-/**
- * Run the read-write evolution phase using the Claude agent.
- * Processes the result (journal, learnings, strategic context) and updates outcome.
- */
-async function runEvolutionPhase(
-  db: Database.Database,
-  cycleCount: number,
-  outcome: CycleOutcome,
-  assessment: string,
-  identity: string,
-  phaseUsages: PhaseUsage[],
-): Promise<ReturnType<typeof processEvolutionResult>> {
-  console.log("\n========================================");
-  console.log("  Phase 2: Evolution (read-write)");
-  console.log("========================================");
-  const evolutionStart = Date.now();
-  const assessmentUsage = aggregateUsage(phaseUsages);
-  const usageContext = formatUsageForJournal(assessmentUsage);
-  const outcomeContext = formatOutcomeForJournal(outcome);
-  let evolutionResult = "";
-  let evolutionTurns = 0;
-  for await (const msg of query({
-    prompt: buildEvolutionPrompt(assessment, { usageContext, outcomeContext }),
-    options: {
-      cwd: process.cwd(),
-      model: "claude-opus-4-6",
-      allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
-      permissionMode: "acceptEdits",
-      systemPrompt: identity,
-      maxTurns: 50,
-      maxBudgetUsd: 5.0,
-      hooks: {
-        PreToolUse: [
-          { matcher: "Write|Edit", hooks: [protectIdentity, protectJournal] },
-          { matcher: "Bash", hooks: [blockDangerousCommands] },
-        ],
-      },
-    },
-  })) {
-    evolutionTurns++;
-    if ("result" in msg) {
-      evolutionResult = msg.result;
-      console.log(msg.result);
-    }
-    const usage = extractUsage(msg, "Evolution");
-    if (usage) {
-      phaseUsages.push(usage);
-      insertPhaseUsage(db, cycleCount, usage);
-      console.log(formatPhaseUsage(usage));
-    }
-  }
-  const evolutionMs = Date.now() - evolutionStart;
-  console.log(`\n[evolution] Completed in ${(evolutionMs / 1000).toFixed(1)}s (${evolutionTurns} turns)`);
-
-  // Log cycle usage summary
-  const cycleUsage = aggregateUsage(phaseUsages);
-  console.log("\n[usage] Cycle usage summary:");
-  console.log(formatCycleUsage(cycleUsage));
-
-  // Process evolution result: parse journal, store learnings, close resolved issues
-  console.log("\n[journal] Processing evolution result...");
-  const processed = processEvolutionResult(db, cycleCount, evolutionResult);
-  for (const [section, content] of Object.entries(processed.journalSections)) {
-    if (content) {
-      console.log(`[journal] Stored section "${section}" (${content.length} chars)`);
-    }
-  }
-  console.log(`[memory] Stored ${processed.learningsStored} learnings`);
-  if (processed.strategicContextStored) {
-    console.log(`[memory] Stored strategic context`);
-  }
-  outcome.improvementsAttempted = processed.improvementsAttempted;
-  outcome.improvementsSucceeded = processed.improvementsSucceeded;
-  console.log(`[outcome] Improvements: ${outcome.improvementsSucceeded}/${outcome.improvementsAttempted} succeeded`);
-
-  return processed;
-}
+import { formatCycleSummaryWithDuration } from "./orchestrator.js";
+import { loadEvolutionContext } from "./context.js";
+import {
+  runAssessmentPhase,
+  runEvolutionPhase,
+  createDefaultDeps,
+} from "./agent-phases.js";
 
 async function main() {
   const cycleStartTime = Date.now();
@@ -197,16 +59,19 @@ async function main() {
   // Create safety tag
   createSafetyTag(cycleCount);
 
+  const deps = createDefaultDeps(query);
+  const safetyHooks = { protectIdentity, protectJournal, blockDangerousCommands };
+
   let evolutionError: unknown = null;
 
   try {
     const ctx = await loadEvolutionContext(db, cycleCount);
     const phaseUsages: PhaseUsage[] = [];
 
-    const assessment = await runAssessmentPhase(db, cycleCount, ctx, phaseUsages);
+    const assessment = await runAssessmentPhase(db, cycleCount, ctx, phaseUsages, deps);
 
     const processed = await runEvolutionPhase(
-      db, cycleCount, outcome, assessment, ctx.identity, phaseUsages,
+      db, cycleCount, outcome, assessment, ctx.identity, phaseUsages, deps, safetyHooks,
     );
 
     runBuildVerificationPhase(cycleCount, outcome);
