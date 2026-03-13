@@ -47,12 +47,14 @@ export function extractLearnings(learningsText: string): ExtractedLearnings {
     let cleanContent = content;
 
     if (categoryMatch) {
-      const candidate = categoryMatch[1] as string;
+      const candidate = categoryMatch[1];
+      const remainder = categoryMatch[2];
       if (
+        candidate &&
         (LEARNING_CATEGORIES as readonly string[]).includes(candidate)
       ) {
         category = candidate as LearningCategory;
-        cleanContent = categoryMatch[2];
+        cleanContent = remainder ?? "";
       }
     }
 
