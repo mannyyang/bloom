@@ -72,6 +72,47 @@ describe("extractUsage", () => {
     });
   });
 
+  it("defaults non-number usage fields to 0", () => {
+    const msg = {
+      type: "result",
+      total_cost_usd: 0.5,
+      usage: {
+        input_tokens: "123",       // string, not number
+        output_tokens: true,        // boolean, not number
+        cache_read_input_tokens: null,
+        cache_creation_input_tokens: undefined,
+      },
+      duration_ms: "fast",          // string, not number
+      num_turns: [10],              // array, not number
+    };
+
+    const result = extractUsage(msg, "Test");
+    expect(result).not.toBeNull();
+    expect(result!.inputTokens).toBe(0);
+    expect(result!.outputTokens).toBe(0);
+    expect(result!.cacheReadInputTokens).toBe(0);
+    expect(result!.cacheCreationInputTokens).toBe(0);
+    expect(result!.durationMs).toBe(0);
+    expect(result!.numTurns).toBe(0);
+  });
+
+  it("handles usage field that is not an object", () => {
+    const msg = {
+      type: "result",
+      total_cost_usd: 0.5,
+      usage: "not-an-object",
+      duration_ms: 1000,
+      num_turns: 2,
+    };
+
+    const result = extractUsage(msg, "Test");
+    expect(result).not.toBeNull();
+    expect(result!.inputTokens).toBe(0);
+    expect(result!.outputTokens).toBe(0);
+    expect(result!.durationMs).toBe(1000);
+    expect(result!.numTurns).toBe(2);
+  });
+
   it("handles error result messages", () => {
     const msg = {
       type: "result",

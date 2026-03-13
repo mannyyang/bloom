@@ -34,17 +34,23 @@ export function extractUsage(
   if (msg.type !== "result") return null;
   if (typeof msg.total_cost_usd !== "number") return null;
 
-  const usage = msg.usage as Record<string, number> | undefined;
+  const usage =
+    msg.usage != null && typeof msg.usage === "object"
+      ? (msg.usage as Record<string, unknown>)
+      : undefined;
+
+  const numOrZero = (val: unknown): number =>
+    typeof val === "number" ? val : 0;
 
   return {
     phase,
     totalCostUsd: msg.total_cost_usd,
-    inputTokens: (usage?.input_tokens as number) ?? 0,
-    outputTokens: (usage?.output_tokens as number) ?? 0,
-    cacheReadInputTokens: (usage?.cache_read_input_tokens as number) ?? 0,
-    cacheCreationInputTokens: (usage?.cache_creation_input_tokens as number) ?? 0,
-    durationMs: (msg.duration_ms as number) ?? 0,
-    numTurns: (msg.num_turns as number) ?? 0,
+    inputTokens: numOrZero(usage?.input_tokens),
+    outputTokens: numOrZero(usage?.output_tokens),
+    cacheReadInputTokens: numOrZero(usage?.cache_read_input_tokens),
+    cacheCreationInputTokens: numOrZero(usage?.cache_creation_input_tokens),
+    durationMs: numOrZero(msg.duration_ms),
+    numTurns: numOrZero(msg.num_turns),
   };
 }
 
