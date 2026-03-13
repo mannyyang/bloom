@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { CycleOutcome } from "../src/outcomes.js";
+import type { ProjectConfig, ProjectItem } from "../src/planning.js";
 
 // Mock lifecycle module
 vi.mock("../src/lifecycle.js", () => ({
@@ -84,11 +85,18 @@ describe("updatePlanningStatus", () => {
     vi.resetAllMocks();
   });
 
-  const projectConfig = { filePath: "ROADMAP.md", sections: [] } as any;
-  const currentItem = { id: "item-1", title: "Test item", status: "In Progress", reactions: 0 } as any;
+  const projectConfig: ProjectConfig = { filePath: "ROADMAP.md" };
+  const currentItem: ProjectItem = {
+    id: "item-1",
+    title: "Test item",
+    status: "In Progress",
+    body: "",
+    linkedIssueNumber: null,
+    reactions: 0,
+  };
 
   it("marks item Done when improvements succeeded", () => {
-    const processed = { improvementsSucceeded: 2, improvementsAttempted: 3 } as any;
+    const processed = { improvementsSucceeded: 2, improvementsAttempted: 3 };
     updatePlanningStatus(10, projectConfig, currentItem, processed);
 
     expect(updateItemStatus).toHaveBeenCalledWith(
@@ -101,7 +109,7 @@ describe("updatePlanningStatus", () => {
   });
 
   it("marks item Up Next when no improvements succeeded", () => {
-    const processed = { improvementsSucceeded: 0, improvementsAttempted: 2 } as any;
+    const processed = { improvementsSucceeded: 0, improvementsAttempted: 2 };
     updatePlanningStatus(10, projectConfig, currentItem, processed);
 
     expect(updateItemStatus).toHaveBeenCalledWith(
@@ -113,7 +121,7 @@ describe("updatePlanningStatus", () => {
   });
 
   it("does nothing when projectConfig is null", () => {
-    const processed = { improvementsSucceeded: 1, improvementsAttempted: 1 } as any;
+    const processed = { improvementsSucceeded: 1, improvementsAttempted: 1 };
     updatePlanningStatus(10, null, currentItem, processed);
 
     expect(updateItemStatus).not.toHaveBeenCalled();
@@ -121,7 +129,7 @@ describe("updatePlanningStatus", () => {
   });
 
   it("does nothing when currentItem is null", () => {
-    const processed = { improvementsSucceeded: 1, improvementsAttempted: 1 } as any;
+    const processed = { improvementsSucceeded: 1, improvementsAttempted: 1 };
     updatePlanningStatus(10, projectConfig, null, processed);
 
     expect(updateItemStatus).not.toHaveBeenCalled();
@@ -131,7 +139,7 @@ describe("updatePlanningStatus", () => {
     vi.mocked(updateItemStatus).mockImplementation(() => {
       throw new Error("write failed");
     });
-    const processed = { improvementsSucceeded: 1, improvementsAttempted: 1 } as any;
+    const processed = { improvementsSucceeded: 1, improvementsAttempted: 1 };
 
     // Should not throw
     expect(() =>
