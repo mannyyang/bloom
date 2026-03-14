@@ -1,4 +1,3 @@
-import { query } from "@anthropic-ai/claude-agent-sdk";
 import type Database from "better-sqlite3";
 import type { CommunityIssue } from "./issues.js";
 import { closeIssueWithComment } from "./issues.js";
@@ -6,6 +5,7 @@ import { hasIssueAction, insertIssueAction } from "./db.js";
 import { errorMessage } from "./errors.js";
 import { addLinkedItem, type ProjectConfig, type ProjectItem } from "./planning.js";
 import { detectRepo, isValidRepo } from "./issues.js";
+import type { QueryFn } from "./agent-phases.js";
 
 // --- Types ---
 
@@ -87,6 +87,12 @@ export function parseTriageResponse(text: string): TriageDecision[] {
   }
 }
 
+// --- Dependency Injection ---
+
+export interface TriageDeps {
+  queryFn: QueryFn;
+}
+
 // --- Main Triage Function ---
 
 export async function triageIssues(
@@ -95,6 +101,7 @@ export async function triageIssues(
   cycleCount: number,
   projectConfig: ProjectConfig,
   db?: Database.Database,
+  deps?: TriageDeps,
 ): Promise<TriageResult> {
   const result: TriageResult = {
     decisions: [],
@@ -144,17 +151,37 @@ export async function triageIssues(
   let triageText = "";
 
   try {
-    for await (const msg of query({
-      prompt,
-      options: {
-        model: "claude-sonnet-4-20250514",
-        maxTurns: 3,
-        maxBudgetUsd: 0.5,
-        permissionMode: "dontAsk",
-        allowedTools: [],
-      },
-    })) {
-      if ("result" in msg) triageText = msg.result;
+    const queryFn = deps?.queryFn;
+    if (!queryFn) {
+      // Lazy-import to avoid hard dependency when deps are injected
+      const sdk = await import("@anthropic-ai/claude-agent-sdk");
+      const realQuery = sdk.query;
+      for await (const msg of realQuery({
+        prompt,
+        options: {
+          model: "claude-sonnet-4-20250514",
+          maxTurns: 3,
+          maxBudgetUsd: 0.5,
+          permissionMode: "dontAsk",
+          allowedTools: [],
+        },
+      })) {
+        if ("result" in msg) triageText = msg.result;
+      }
+    } else {
+      for await (const msg of queryFn({
+        prompt,
+        options: {
+          model: "claude-sonnet-4-20250514",
+          maxTurns: 3,
+          maxBudgetUsd: 0.5,
+          permissionMode: "dontAsk",
+          allowedTools: [],
+        },
+      })) {
+        const m = msg as Record<string, unknown>;
+        if ("result" in m && typeof m.result === "string") triageText = m.result;
+      }
     }
   } catch (err) {
     console.error(`[triage] LLM call failed (non-fatal): ${errorMessage(err)}`);

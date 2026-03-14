@@ -291,3 +291,155 @@ describe("triageIssues error resilience", () => {
     expect(result.closed).toEqual([]);
   });
 });
+
+describe("triageIssues with injected deps", () => {
+  const projectConfig: ProjectConfig = { filePath: "ROADMAP.md" };
+  const mockAddLinkedItem = vi.mocked(addLinkedItem);
+  const mockDetectRepo = vi.mocked(detectRepo);
+  const mockIsValidRepo = vi.mocked(isValidRepo);
+
+  function makeDeps(decisions: Array<{ issueNumber: number; action: string; reason: string }>) {
+    const json = JSON.stringify(decisions);
+    async function* fakeQuery() {
+      yield { result: json };
+    }
+    return { queryFn: () => fakeQuery() as AsyncIterable<unknown> };
+  }
+
+  function makeFailingDeps(error: Error) {
+    async function* failingQuery(): AsyncIterable<unknown> {
+      throw error;
+    }
+    return { queryFn: () => failingQuery() };
+  }
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("adds issue to backlog via addLinkedItem when action is add_to_backlog", async () => {
+    const issues = [makeIssue({ number: 7, title: "Add caching", body: "Please add caching" })];
+    const deps = makeDeps([{ issueNumber: 7, action: "add_to_backlog", reason: "Good feature request" }]);
+
+    mockCloseIssue.mockResolvedValueOnce(true);
+
+    const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+
+    expect(result.addedToBacklog).toContain(7);
+    expect(result.closed).toContain(7);
+    expect(mockAddLinkedItem).toHaveBeenCalledWith(
+      projectConfig, "test-owner/test-repo", 7, "Add caching", "Please add caching",
+    );
+  });
+
+  it("closes already_done issues without adding to backlog", async () => {
+    const issues = [makeIssue({ number: 8, title: "Already done" })];
+    const deps = makeDeps([{ issueNumber: 8, action: "already_done", reason: "Already exists" }]);
+
+    mockCloseIssue.mockResolvedValueOnce(true);
+
+    const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+
+    expect(result.addedToBacklog).toEqual([]);
+    expect(result.closed).toContain(8);
+    expect(mockAddLinkedItem).not.toHaveBeenCalled();
+  });
+
+  it("skips issues already on the board by linkedIssueNumber", async () => {
+    const issues = [makeIssue({ number: 10, title: "On board" })];
+    const boardItems = [makeBoardItem({ linkedIssueNumber: 10 })];
+    const deps = makeDeps([]);
+
+    mockCloseIssue.mockResolvedValueOnce(true);
+
+    const result = await triageIssues(issues, boardItems, 5, projectConfig, undefined, deps);
+
+    // Issue was closed as already on board, not through LLM triage
+    expect(result.closed).toContain(10);
+    expect(result.decisions).toEqual([]);
+  });
+
+  it("ignores LLM decisions for issue numbers not in the untriaged set", async () => {
+    const issues = [makeIssue({ number: 1, title: "Real issue" })];
+    const deps = makeDeps([
+      { issueNumber: 1, action: "not_applicable", reason: "OK" },
+      { issueNumber: 999, action: "add_to_backlog", reason: "Hallucinated issue" },
+    ]);
+
+    mockCloseIssue.mockResolvedValue(true);
+
+    const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+
+    expect(result.closed).toEqual([1]);
+    expect(result.addedToBacklog).toEqual([]);
+  });
+
+  it("returns early with empty result when LLM call fails", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const issues = [makeIssue({ number: 1, title: "Issue" })];
+    const deps = makeFailingDeps(new Error("API timeout"));
+
+    const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+
+    expect(result.decisions).toEqual([]);
+    expect(result.addedToBacklog).toEqual([]);
+    expect(result.closed).toEqual([]);
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("LLM call failed"));
+    errorSpy.mockRestore();
+  });
+
+  it("handles mixed actions across multiple issues", async () => {
+    const issues = [
+      makeIssue({ number: 1, title: "Feature A" }),
+      makeIssue({ number: 2, title: "Feature B" }),
+      makeIssue({ number: 3, title: "Feature C" }),
+    ];
+    const deps = makeDeps([
+      { issueNumber: 1, action: "add_to_backlog", reason: "Good" },
+      { issueNumber: 2, action: "already_done", reason: "Exists" },
+      { issueNumber: 3, action: "not_applicable", reason: "Out of scope" },
+    ]);
+
+    mockCloseIssue.mockResolvedValue(true);
+
+    const result = await triageIssues(issues, [], 10, projectConfig, undefined, deps);
+
+    expect(result.decisions).toHaveLength(3);
+    expect(result.addedToBacklog).toEqual([1]);
+    expect(result.closed).toEqual([1, 2, 3]);
+  });
+
+  it("does not add to backlog when repo is invalid", async () => {
+    mockIsValidRepo.mockReturnValueOnce(false);
+    mockDetectRepo.mockReturnValueOnce(null);
+    const issues = [makeIssue({ number: 1, title: "Feature" })];
+    const deps = makeDeps([{ issueNumber: 1, action: "add_to_backlog", reason: "Good" }]);
+
+    mockCloseIssue.mockResolvedValue(true);
+
+    const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+
+    // addLinkedItem should not be called because repo is null
+    expect(mockAddLinkedItem).not.toHaveBeenCalled();
+    // But the issue should still be closed
+    expect(result.closed).toContain(1);
+  });
+
+  it("passes correct comment text for each action type", async () => {
+    const issues = [makeIssue({ number: 1 })];
+    const deps = makeDeps([{ issueNumber: 1, action: "not_applicable", reason: "Out of scope" }]);
+
+    mockCloseIssue.mockResolvedValue(true);
+
+    await triageIssues(issues, [], 7, projectConfig, undefined, deps);
+
+    expect(mockCloseIssue).toHaveBeenCalledWith(
+      1,
+      7,
+      expect.stringContaining("not applicable or out of scope"),
+      undefined,
+      "triaged",
+      "test-owner/test-repo",
+    );
+  });
+});
