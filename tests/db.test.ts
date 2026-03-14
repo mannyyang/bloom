@@ -415,6 +415,36 @@ describe("db", () => {
       expect(summary).toContain("A".repeat(500));
       expect(summary.length).toBeGreaterThan(10);
     });
+
+    it("omits section headers for empty fields to save prompt tokens", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertJournalEntry(db, 1, "attempted", "Did work");
+      insertJournalEntry(db, 1, "succeeded", "");
+      insertJournalEntry(db, 1, "failed", "");
+      insertJournalEntry(db, 1, "learnings", "Learned something");
+
+      const summary = getRecentJournalSummary(db);
+      expect(summary).toContain("### What was attempted");
+      expect(summary).toContain("### Learnings");
+      expect(summary).not.toContain("### What succeeded");
+      expect(summary).not.toContain("### What failed");
+    });
+
+    it("includes all section headers when all fields have content", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertJournalEntry(db, 1, "attempted", "A");
+      insertJournalEntry(db, 1, "succeeded", "B");
+      insertJournalEntry(db, 1, "failed", "C");
+      insertJournalEntry(db, 1, "learnings", "D");
+      insertJournalEntry(db, 1, "strategic_context", "E");
+
+      const summary = getRecentJournalSummary(db);
+      expect(summary).toContain("### What was attempted");
+      expect(summary).toContain("### What succeeded");
+      expect(summary).toContain("### What failed");
+      expect(summary).toContain("### Learnings");
+      expect(summary).toContain("### Strategic Context");
+    });
   });
 
   describe("insertPhaseUsage", () => {
