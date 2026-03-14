@@ -43,19 +43,27 @@ export async function fetchCommunityIssues(): Promise<CommunityIssue[]> {
     );
     if (!res.ok) return [];
 
-    const issues = (await res.json()) as Array<{
-      number: number;
-      title: string;
-      body: string;
-      reactions: { total_count: number };
-    }>;
+    const raw: unknown = await res.json();
+    if (!Array.isArray(raw)) return [];
 
-    return issues
+    return raw
+      .filter(
+        (item): item is { number: number; title: string; body: string; reactions: { total_count: number } } =>
+          typeof item === "object" &&
+          item !== null &&
+          typeof item.number === "number" &&
+          typeof item.title === "string",
+      )
       .map((i) => ({
         number: i.number,
         title: i.title,
-        body: i.body ?? "",
-        reactions: i.reactions?.total_count ?? 0,
+        body: typeof i.body === "string" ? i.body : "",
+        reactions:
+          typeof i.reactions === "object" &&
+          i.reactions !== null &&
+          typeof i.reactions.total_count === "number"
+            ? i.reactions.total_count
+            : 0,
       }))
       .sort((a, b) => b.reactions - a.reactions);
   } catch (err) {

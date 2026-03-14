@@ -171,6 +171,44 @@ describe("fetchCommunityIssues", () => {
     const result = await fetchCommunityIssues();
     expect(result).toEqual([]);
   });
+
+  it("returns empty array when API returns a non-array (rate-limit object)", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ message: "API rate limit exceeded", documentation_url: "https://..." }),
+    } as unknown as Response);
+    const result = await fetchCommunityIssues();
+    expect(result).toEqual([]);
+  });
+
+  it("filters out items missing required fields (number, title)", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [
+        { number: 1, title: "Valid", body: "b", reactions: { total_count: 1 } },
+        { title: "No number", body: "b", reactions: { total_count: 0 } },
+        { number: 3, body: "No title", reactions: { total_count: 0 } },
+        null,
+        "string-item",
+      ],
+    } as unknown as Response);
+    const result = await fetchCommunityIssues();
+    expect(result).toEqual([{ number: 1, title: "Valid", body: "b", reactions: 1 }]);
+  });
+
+  it("defaults body to empty string and reactions to 0 when missing", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [
+        { number: 5, title: "Minimal" },
+      ],
+    } as unknown as Response);
+    const result = await fetchCommunityIssues();
+    expect(result).toEqual([{ number: 5, title: "Minimal", body: "", reactions: 0 }]);
+  });
 });
 
 describe("fetchCommunityIssues — detectRepo git remote fallback", () => {
