@@ -152,38 +152,23 @@ export async function triageIssues(
   let triageText = "";
 
   try {
-    const queryFn = deps?.queryFn;
-    if (!queryFn) {
-      // Lazy-import to avoid hard dependency when deps are injected
-      const sdk = await import("@anthropic-ai/claude-agent-sdk");
-      const realQuery = sdk.query;
-      for await (const msg of realQuery({
-        prompt,
-        options: {
-          model: "claude-sonnet-4-20250514",
-          maxTurns: 3,
-          maxBudgetUsd: 0.5,
-          permissionMode: "dontAsk",
-          allowedTools: [],
-        },
-      })) {
-        const text = extractResultText(msg);
-        if (text !== null) triageText = text;
-      }
-    } else {
-      for await (const msg of queryFn({
-        prompt,
-        options: {
-          model: "claude-sonnet-4-20250514",
-          maxTurns: 3,
-          maxBudgetUsd: 0.5,
-          permissionMode: "dontAsk",
-          allowedTools: [],
-        },
-      })) {
-        const text = extractResultText(msg);
-        if (text !== null) triageText = text;
-      }
+    // Resolve query function once: use injected dep or lazy-import the real SDK
+    const queryFn =
+      deps?.queryFn ??
+      (await import("@anthropic-ai/claude-agent-sdk")).query;
+
+    for await (const msg of queryFn({
+      prompt,
+      options: {
+        model: "claude-sonnet-4-20250514",
+        maxTurns: 3,
+        maxBudgetUsd: 0.5,
+        permissionMode: "dontAsk",
+        allowedTools: [],
+      },
+    })) {
+      const text = extractResultText(msg);
+      if (text !== null) triageText = text;
     }
   } catch (err) {
     console.error(`[triage] LLM call failed (non-fatal): ${errorMessage(err)}`);
