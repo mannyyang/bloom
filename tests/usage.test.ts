@@ -6,6 +6,7 @@ import {
   formatPhaseUsage,
   formatCycleUsage,
   formatUsageForJournal,
+  formatDurationSec,
   PhaseUsage,
 } from "../src/usage.js";
 
@@ -389,5 +390,28 @@ describe("formatUsageForJournal", () => {
 
     const md = formatUsageForJournal(cu);
     expect(md).not.toContain("cache:");
+  });
+});
+
+describe("formatDurationSec", () => {
+  it("formats milliseconds as seconds with one decimal", () => {
+    expect(formatDurationSec(1234)).toBe("1.2s");
+  });
+
+  it("formats zero", () => {
+    expect(formatDurationSec(0)).toBe("0.0s");
+  });
+
+  it("formats exact seconds", () => {
+    expect(formatDurationSec(5000)).toBe("5.0s");
+  });
+
+  it("rounds correctly", () => {
+    expect(formatDurationSec(1450)).toBe("1.4s");
+    expect(formatDurationSec(1460)).toBe("1.5s");
+  });
+
+  it("handles large values", () => {
+    expect(formatDurationSec(123456)).toBe("123.5s");
   });
 });

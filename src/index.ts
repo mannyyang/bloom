@@ -15,7 +15,7 @@ import {
   createSafetyTag,
 } from "./lifecycle.js";
 import { runBuildVerificationPhase, updatePlanningStatus, pushChangesPhase } from "./phases.js";
-import { type PhaseUsage } from "./usage.js";
+import { type PhaseUsage, formatDurationSec } from "./usage.js";
 import { createOutcome, formatOutcomeForJournal, parseTestCount, parseTestTotal } from "./outcomes.js";
 import { formatCycleSummaryWithDuration } from "./orchestrator.js";
 import { loadEvolutionContext } from "./context.js";
@@ -41,14 +41,14 @@ async function main() {
   const preflight = runPreflightCheck();
   const preflightMs = Date.now() - preflightStart;
   if (!preflight.passed) {
-    console.error(`[preflight] FAILED after ${(preflightMs / 1000).toFixed(1)}s. Aborting evolution.`);
+    console.error(`[preflight] FAILED after ${formatDurationSec(preflightMs)}. Aborting evolution.`);
     db.close();
     process.exit(1);
   }
   outcome.preflightPassed = true;
   outcome.testCountBefore = parseTestCount(preflight.output);
   outcome.testTotalBefore = parseTestTotal(preflight.output);
-  console.log(`[preflight] PASSED in ${(preflightMs / 1000).toFixed(1)}s (${outcome.testCountBefore ?? "?"}/${outcome.testTotalBefore ?? "?"} tests)`);
+  console.log(`[preflight] PASSED in ${formatDurationSec(preflightMs)} (${outcome.testCountBefore ?? "?"}/${outcome.testTotalBefore ?? "?"} tests)`);
 
   setGitBotIdentity();
 

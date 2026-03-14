@@ -12,6 +12,7 @@ import {
   formatPhaseUsage,
   formatCycleUsage,
   formatUsageForJournal,
+  formatDurationSec,
   type PhaseUsage,
 } from "./usage.js";
 import { formatOutcomeForJournal } from "./outcomes.js";
@@ -104,7 +105,7 @@ export async function runAssessmentPhase(
     throw new Error("Assessment produced no output. Aborting.");
   }
 
-  console.log(`\n[assessment] Completed in ${(assessmentMs / 1000).toFixed(1)}s (${assessmentTurns} turns, ${assessment.length} chars)`);
+  console.log(`\n[assessment] Completed in ${formatDurationSec(assessmentMs)} (${assessmentTurns} turns, ${assessment.length} chars)`);
   console.log(`[assessment] Output preview:\n${assessment.slice(0, 500)}${assessment.length > 500 ? "\n  ..." : ""}`);
 
   return assessment;
@@ -172,7 +173,7 @@ export async function runEvolutionPhase(
     }
   }
   const evolutionMs = Date.now() - evolutionStart;
-  console.log(`\n[evolution] Completed in ${(evolutionMs / 1000).toFixed(1)}s (${evolutionTurns} turns)`);
+  console.log(`\n[evolution] Completed in ${formatDurationSec(evolutionMs)} (${evolutionTurns} turns)`);
 
   // Log cycle usage summary
   const cycleUsage = aggregateUsage(phaseUsages);

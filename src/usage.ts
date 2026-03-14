@@ -24,6 +24,14 @@ export interface CycleUsage {
 }
 
 /**
+ * Format a millisecond duration as seconds with one decimal place.
+ * e.g. 1234 → "1.2s"
+ */
+export function formatDurationSec(ms: number): string {
+  return `${(ms / 1000).toFixed(1)}s`;
+}
+
+/**
  * Safely extract the `result` text from an opaque SDK message.
  * Returns `null` if the message doesn't contain a string `result` field.
  * This replaces scattered unsafe `as { result: string }` casts.
@@ -91,8 +99,8 @@ export function formatPhaseUsage(pu: PhaseUsage): string {
   const cost = pu.totalCostUsd.toFixed(4);
   const input = pu.inputTokens.toLocaleString();
   const output = pu.outputTokens.toLocaleString();
-  const duration = (pu.durationMs / 1000).toFixed(1);
-  return `[${pu.phase}] Cost: $${cost} | Tokens: ${input} in / ${output} out | Turns: ${pu.numTurns} | Duration: ${duration}s`;
+  const duration = formatDurationSec(pu.durationMs);
+  return `[${pu.phase}] Cost: $${cost} | Tokens: ${input} in / ${output} out | Turns: ${pu.numTurns} | Duration: ${duration}`;
 }
 
 /**

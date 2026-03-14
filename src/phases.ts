@@ -9,6 +9,7 @@ import {
 } from "./lifecycle.js";
 import { parseTestCount, parseTestTotal } from "./outcomes.js";
 import { errorMessage } from "./errors.js";
+import { formatDurationSec } from "./usage.js";
 import { updateItemStatus, type ProjectConfig, type ProjectItem } from "./planning.js";
 import type { CycleOutcome } from "./outcomes.js";
 
@@ -28,7 +29,7 @@ export function runBuildVerificationPhase(
   outcome.buildVerificationPassed = buildResult.passed;
   outcome.testCountAfter = parseTestCount(buildResult.output);
   outcome.testTotalAfter = parseTestTotal(buildResult.output);
-  console.log(`[build] ${buildResult.passed ? "PASSED" : "FAILED"} in ${(buildMs / 1000).toFixed(1)}s (${outcome.testCountAfter ?? "?"}/${outcome.testTotalAfter ?? "?"} tests)`);
+  console.log(`[build] ${buildResult.passed ? "PASSED" : "FAILED"} in ${formatDurationSec(buildMs)} (${outcome.testCountAfter ?? "?"}/${outcome.testTotalAfter ?? "?"} tests)`);
   if (!buildResult.passed) {
     throw new Error("Build verification failed. Hard reset performed.");
   }

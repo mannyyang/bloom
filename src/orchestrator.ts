@@ -4,6 +4,7 @@ import { errorMessage } from "./errors.js";
 import { parseEvolutionResult, countImprovements } from "./evolve.js";
 import { extractLearnings, storeLearnings, storeStrategicContext } from "./memory.js";
 import type { CycleOutcome } from "./outcomes.js";
+import { formatDurationSec } from "./usage.js";
 
 /**
  * Result returned by processEvolutionResult with parsed data and applied side-effects.
@@ -83,7 +84,7 @@ export function formatCycleSummaryWithDuration(
   const lines = [
     `========================================`,
     `  Cycle ${cycleCount} — ${evolutionError ? "FAILED" : "COMPLETE"}`,
-    `  Duration: ${(totalMs / 1000).toFixed(1)}s`,
+    `  Duration: ${formatDurationSec(totalMs)}`,
     `  Improvements: ${outcome.improvementsSucceeded}/${outcome.improvementsAttempted}`,
     `  Tests: ${outcome.testCountBefore ?? "?"} → ${outcome.testCountAfter ?? "?"}`,
     `  Build: ${outcome.buildVerificationPassed ? "PASSED" : "FAILED"}`,
