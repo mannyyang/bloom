@@ -63,10 +63,21 @@ export async function getInstallationToken(): Promise<string> {
       throw new Error(`Failed to get installation token: ${res.status} ${await res.text()}`);
     }
 
-    const data = (await res.json()) as { token: string; expires_at: string };
+    const data: unknown = await res.json();
+    if (
+      typeof data !== "object" ||
+      data === null ||
+      typeof (data as Record<string, unknown>).token !== "string" ||
+      typeof (data as Record<string, unknown>).expires_at !== "string"
+    ) {
+      throw new Error(
+        `Unexpected installation token response shape: ${JSON.stringify(data).slice(0, 200)}`,
+      );
+    }
+    const { token, expires_at } = data as { token: string; expires_at: string };
     cachedToken = {
-      token: data.token,
-      expiresAt: new Date(data.expires_at).getTime() - 60_000,
+      token,
+      expiresAt: new Date(expires_at).getTime() - 60_000,
     };
     return cachedToken.token;
   })().finally(() => {

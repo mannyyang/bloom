@@ -226,6 +226,42 @@ describe("github-app", () => {
       expect(mockFetch).toHaveBeenCalledTimes(2);
     });
 
+    it("throws when the API returns a response missing 'token' field", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ expires_at: "2026-12-31T00:00:00Z" }),
+      });
+
+      const { getInstallationToken } = await loadModule();
+      await expect(getInstallationToken()).rejects.toThrow(
+        /Unexpected installation token response shape/,
+      );
+    });
+
+    it("throws when the API returns a response missing 'expires_at' field", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ token: "ghs_ok" }),
+      });
+
+      const { getInstallationToken } = await loadModule();
+      await expect(getInstallationToken()).rejects.toThrow(
+        /Unexpected installation token response shape/,
+      );
+    });
+
+    it("throws when the API returns a non-object response", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => "not an object",
+      });
+
+      const { getInstallationToken } = await loadModule();
+      await expect(getInstallationToken()).rejects.toThrow(
+        /Unexpected installation token response shape/,
+      );
+    });
+
     it("throws when the API returns a non-ok response", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
