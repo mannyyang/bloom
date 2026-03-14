@@ -80,6 +80,7 @@ export function initDb(path: string = DEFAULT_DB_PATH): Database.Database {
       test_count_after         INTEGER,
       test_total_before        INTEGER,
       test_total_after         INTEGER,
+      duration_ms              INTEGER,
       completed_at             TEXT
     );
 
@@ -150,8 +151,9 @@ export function insertCycle(db: Database.Database, outcome: CycleOutcome): void 
     INSERT OR REPLACE INTO cycles (
       cycle_number, started_at, preflight_passed, improvements_attempted,
       improvements_succeeded, build_verification_passed, push_succeeded,
-      test_count_before, test_count_after, test_total_before, test_total_after
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      test_count_before, test_count_after, test_total_before, test_total_after,
+      duration_ms
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     outcome.cycleNumber,
     new Date().toISOString(),
@@ -164,6 +166,7 @@ export function insertCycle(db: Database.Database, outcome: CycleOutcome): void 
     outcome.testCountAfter,
     outcome.testTotalBefore,
     outcome.testTotalAfter,
+    outcome.durationMs,
   );
 }
 
@@ -183,6 +186,7 @@ export function updateCycleOutcome(db: Database.Database, outcome: CycleOutcome)
       test_count_after = ?,
       test_total_before = ?,
       test_total_after = ?,
+      duration_ms = ?,
       completed_at = ?
     WHERE cycle_number = ?
   `).run(
@@ -195,6 +199,7 @@ export function updateCycleOutcome(db: Database.Database, outcome: CycleOutcome)
     outcome.testCountAfter,
     outcome.testTotalBefore,
     outcome.testTotalAfter,
+    outcome.durationMs,
     new Date().toISOString(),
     outcome.cycleNumber,
   );
@@ -348,7 +353,7 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
       preflight_passed, improvements_attempted, improvements_succeeded,
       build_verification_passed, push_succeeded,
       test_count_before, test_count_after,
-      started_at, completed_at
+      duration_ms, started_at, completed_at
     FROM cycles ORDER BY cycle_number DESC LIMIT ?
   `).all(limit);
 
@@ -360,6 +365,7 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
     push_succeeded: number;
     test_count_before: number | null;
     test_count_after: number | null;
+    duration_ms: number | null;
     started_at: string;
     completed_at: string | null;
   }
@@ -368,7 +374,8 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
     preflight_passed: "number", improvements_attempted: "number",
     improvements_succeeded: "number", build_verification_passed: "number",
     push_succeeded: "number", test_count_before: "number?",
-    test_count_after: "number?", started_at: "string", completed_at: "string?",
+    test_count_after: "number?", duration_ms: "number?",
+    started_at: "string", completed_at: "string?",
   };
 
   const rows = validateRows<CycleRow>(rawRows, cycleRowSchema, "getCycleStats");
@@ -399,14 +406,26 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
   const recent = rows.slice(0, 5);
   const recentFailures = recent.filter(r => r.build_verification_passed !== 1 || r.push_succeeded !== 1).length;
 
-  // Average cycle duration from started_at to completed_at
-  const withTimes = rows.filter(r => r.started_at && r.completed_at);
+  // Average cycle duration — prefer precise duration_ms, fall back to timestamp subtraction
   let avgDurationMinutes: number | null = null;
-  if (withTimes.length > 0) {
-    const totalMs = withTimes.reduce((sum, r) => {
-      return sum + (new Date(r.completed_at!).getTime() - new Date(r.started_at).getTime());
-    }, 0);
-    avgDurationMinutes = Math.round((totalMs / withTimes.length / 60000) * 10) / 10;
+  {
+    let totalMs = 0;
+    let count = 0;
+    for (const r of rows) {
+      if (r.duration_ms !== null) {
+        totalMs += r.duration_ms;
+        count++;
+      } else if (r.started_at && r.completed_at) {
+        const diff = new Date(r.completed_at).getTime() - new Date(r.started_at).getTime();
+        if (!isNaN(diff)) {
+          totalMs += diff;
+          count++;
+        }
+      }
+    }
+    if (count > 0) {
+      avgDurationMinutes = Math.round((totalMs / count / 60000) * 10) / 10;
+    }
   }
 
   // Aggregate cost and token usage from phase_usage for the cycles in scope

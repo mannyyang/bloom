@@ -122,6 +122,26 @@ describe("db", () => {
       expect(after.test_count_after).toBe(110);
     });
 
+    it("persists duration_ms from outcome", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+
+      updateCycleOutcome(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+        durationMs: 123456,
+      }));
+
+      const row = db.prepare("SELECT duration_ms FROM cycles WHERE cycle_number = 1").get() as { duration_ms: number | null };
+      expect(row.duration_ms).toBe(123456);
+    });
+
+    it("stores null duration_ms when not set", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+
+      const row = db.prepare("SELECT duration_ms FROM cycles WHERE cycle_number = 1").get() as { duration_ms: number | null };
+      expect(row.duration_ms).toBeNull();
+    });
+
     it("sets completed_at timestamp on update", () => {
       insertCycle(db, makeOutcome({ cycleNumber: 1 }));
 
@@ -575,7 +595,23 @@ describe("db", () => {
       expect(stats.testCountTrend).toBe(8);
     });
 
-    it("computes avgDurationMinutes when completed_at is set", () => {
+    it("computes avgDurationMinutes from duration_ms when available", () => {
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+        durationMs: 600000, // 10 minutes
+      }));
+      updateCycleOutcome(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+        durationMs: 600000,
+      }));
+
+      const stats = getCycleStats(db);
+      expect(stats.avgDurationMinutes).toBe(10);
+    });
+
+    it("falls back to timestamp subtraction when duration_ms is null", () => {
       insertCycle(db, makeOutcome({
         cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
         buildVerificationPassed: true, pushSucceeded: true,
@@ -588,6 +624,22 @@ describe("db", () => {
 
       const stats = getCycleStats(db);
       expect(stats.avgDurationMinutes).toBe(10);
+    });
+
+    it("ignores rows with malformed completed_at timestamps", () => {
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
+      // Set a malformed completed_at that would produce NaN
+      db.prepare("UPDATE cycles SET started_at = ?, completed_at = ? WHERE cycle_number = 1").run(
+        "2026-01-01T00:00:00.000Z",
+        "not-a-date",
+      );
+
+      const stats = getCycleStats(db);
+      // Should be null because the only row has NaN duration and is skipped
+      expect(stats.avgDurationMinutes).toBeNull();
     });
 
     it("returns null avgDurationMinutes when no completed_at exists", () => {

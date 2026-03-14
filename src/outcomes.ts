@@ -14,6 +14,7 @@ export interface CycleOutcome {
   testCountAfter: number | null;
   testTotalBefore: number | null;
   testTotalAfter: number | null;
+  durationMs: number | null;
 }
 
 /**
@@ -67,6 +68,7 @@ export function createOutcome(cycleNumber: number): CycleOutcome {
     testCountAfter: null,
     testTotalBefore: null,
     testTotalAfter: null,
+    durationMs: null,
   };
 }
 

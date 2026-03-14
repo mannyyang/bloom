@@ -103,6 +103,7 @@ describe("createOutcome", () => {
     expect(outcome.testCountAfter).toBeNull();
     expect(outcome.testTotalBefore).toBeNull();
     expect(outcome.testTotalAfter).toBeNull();
+    expect(outcome.durationMs).toBeNull();
   });
 });
 

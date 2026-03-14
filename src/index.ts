@@ -84,6 +84,7 @@ async function main() {
     console.error(`\n[error] Evolution failed: ${errorMessage(err)}`);
   } finally {
     // Always persist outcome and close DB, even on errors
+    outcome.durationMs = Date.now() - cycleStartTime;
     updateCycleOutcome(db, outcome);
     db.close();
     console.log("[db] Outcome persisted and database closed.");

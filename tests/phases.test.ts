@@ -30,6 +30,7 @@ function createOutcome(overrides: Partial<CycleOutcome> = {}): CycleOutcome {
     testCountAfter: null,
     testTotalBefore: null,
     testTotalAfter: null,
+    durationMs: null,
     ...overrides,
   };
 }
