@@ -24,6 +24,18 @@ export interface CycleUsage {
 }
 
 /**
+ * Safely extract the `result` text from an opaque SDK message.
+ * Returns `null` if the message doesn't contain a string `result` field.
+ * This replaces scattered unsafe `as { result: string }` casts.
+ */
+export function extractResultText(msg: unknown): string | null {
+  if (typeof msg !== "object" || msg === null) return null;
+  const rec = msg as Record<string, unknown>;
+  if ("result" in rec && typeof rec.result === "string") return rec.result;
+  return null;
+}
+
+/**
  * Extract usage data from an SDK result message.
  * Returns null if the message is not a result message or lacks usage data.
  * Accepts `unknown` so callers don't need `as` casts on opaque SDK messages.

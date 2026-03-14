@@ -7,6 +7,7 @@ import type Database from "better-sqlite3";
 import { buildAssessmentPrompt, buildEvolutionPrompt } from "./evolve.js";
 import {
   extractUsage,
+  extractResultText,
   aggregateUsage,
   formatPhaseUsage,
   formatCycleUsage,
@@ -86,8 +87,9 @@ export async function runAssessmentPhase(
     },
   })) {
     assessmentTurns++;
-    if (typeof msg === "object" && msg !== null && "result" in msg) {
-      assessment = (msg as { result: string }).result;
+    const resultText = extractResultText(msg);
+    if (resultText !== null) {
+      assessment = resultText;
     }
     const usage = extractUsage(msg, "Assessment");
     if (usage) {
@@ -157,9 +159,10 @@ export async function runEvolutionPhase(
     },
   })) {
     evolutionTurns++;
-    if (typeof msg === "object" && msg !== null && "result" in msg) {
-      evolutionResult = (msg as { result: string }).result;
-      console.log((msg as { result: string }).result);
+    const resultText = extractResultText(msg);
+    if (resultText !== null) {
+      evolutionResult = resultText;
+      console.log(resultText);
     }
     const usage = extractUsage(msg, "Evolution");
     if (usage) {

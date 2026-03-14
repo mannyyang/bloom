@@ -1,12 +1,39 @@
 import { describe, it, expect } from "vitest";
 import {
   extractUsage,
+  extractResultText,
   aggregateUsage,
   formatPhaseUsage,
   formatCycleUsage,
   formatUsageForJournal,
   PhaseUsage,
 } from "../src/usage.js";
+
+describe("extractResultText", () => {
+  it("extracts result string from a valid result message", () => {
+    expect(extractResultText({ result: "hello" })).toBe("hello");
+  });
+
+  it("returns null for a message without result field", () => {
+    expect(extractResultText({ type: "progress" })).toBeNull();
+  });
+
+  it("returns null when result is not a string", () => {
+    expect(extractResultText({ result: 42 })).toBeNull();
+  });
+
+  it("returns null for null input", () => {
+    expect(extractResultText(null)).toBeNull();
+  });
+
+  it("returns null for non-object input", () => {
+    expect(extractResultText("string")).toBeNull();
+  });
+
+  it("returns empty string when result is empty string", () => {
+    expect(extractResultText({ result: "" })).toBe("");
+  });
+});
 
 describe("extractUsage", () => {
   it("extracts usage from a valid result message", () => {

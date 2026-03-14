@@ -6,6 +6,7 @@ import { errorMessage } from "./errors.js";
 import { addLinkedItem, type ProjectConfig, type ProjectItem } from "./planning.js";
 import { detectRepo, isValidRepo } from "./issues.js";
 import type { QueryFn } from "./agent-phases.js";
+import { extractResultText } from "./usage.js";
 
 // --- Types ---
 
@@ -166,7 +167,8 @@ export async function triageIssues(
           allowedTools: [],
         },
       })) {
-        if ("result" in msg) triageText = msg.result;
+        const text = extractResultText(msg);
+        if (text !== null) triageText = text;
       }
     } else {
       for await (const msg of queryFn({
@@ -179,8 +181,8 @@ export async function triageIssues(
           allowedTools: [],
         },
       })) {
-        const m = msg as Record<string, unknown>;
-        if ("result" in m && typeof m.result === "string") triageText = m.result;
+        const text = extractResultText(msg);
+        if (text !== null) triageText = text;
       }
     }
   } catch (err) {
