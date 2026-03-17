@@ -134,6 +134,14 @@ export function initDb(path: string = DEFAULT_DB_PATH): Database.Database {
     );
   `);
 
+  // --- Migrations: add columns that may be missing from older databases ---
+  const cycleColumns = db.prepare("PRAGMA table_info(cycles)").all() as { name: string }[];
+  const cycleColNames = new Set(cycleColumns.map(c => c.name));
+
+  if (!cycleColNames.has("duration_ms")) {
+    db.exec("ALTER TABLE cycles ADD COLUMN duration_ms INTEGER");
+  }
+
   return db;
 }
 
