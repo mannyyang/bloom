@@ -80,7 +80,7 @@ export async function runAssessmentPhase(
     }),
     options: {
       cwd: process.cwd(),
-      model: "claude-opus-4-6",
+      model: process.env.BLOOM_MODEL ?? "claude-sonnet-4-6",
       allowedTools: ["Read", "Glob", "Grep", "Bash"],
       permissionMode: "dontAsk",
       maxTurns: 20,
@@ -145,7 +145,7 @@ export async function runEvolutionPhase(
     prompt: buildEvolutionPrompt(assessment, { usageContext, outcomeContext }),
     options: {
       cwd: process.cwd(),
-      model: "claude-opus-4-6",
+      model: process.env.BLOOM_MODEL ?? "claude-sonnet-4-6",
       allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
       permissionMode: "acceptEdits",
       systemPrompt: identity,
