@@ -1,4 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import { tmpdir } from "os";
+import { join } from "path";
+import { unlinkSync } from "fs";
 import {
   initDb,
   getLatestCycleNumber,
@@ -17,7 +20,7 @@ import {
   validateOptionalRow,
   validateRows,
 } from "../src/db.js";
-import type Database from "better-sqlite3";
+import Database from "better-sqlite3";
 import { makeOutcome } from "./helpers.js";
 
 describe("db", () => {
@@ -37,6 +40,61 @@ describe("db", () => {
       expect(names).toContain("journal_entries");
       expect(names).toContain("phase_usage");
       expect(names).toContain("issue_actions");
+    });
+
+    describe("migrations — legacy schema missing columns", () => {
+      // Creates a file-backed DB with only the original columns (no completed_at,
+      // test_total_before, test_total_after) and verifies initDb adds them.
+      function createLegacyDb(path: string): void {
+        const legacy = new Database(path);
+        legacy.exec(`
+          CREATE TABLE cycles (
+            cycle_number INTEGER PRIMARY KEY,
+            started_at TEXT NOT NULL,
+            preflight_passed INTEGER NOT NULL DEFAULT 0,
+            improvements_attempted INTEGER NOT NULL DEFAULT 0,
+            improvements_succeeded INTEGER NOT NULL DEFAULT 0,
+            build_verification_passed INTEGER NOT NULL DEFAULT 0,
+            push_succeeded INTEGER NOT NULL DEFAULT 0,
+            test_count_before INTEGER,
+            test_count_after INTEGER
+          )
+        `);
+        legacy.close();
+      }
+
+      it("adds completed_at column when missing", () => {
+        const path = join(tmpdir(), `bloom-migration-test-${Date.now()}-a.db`);
+        createLegacyDb(path);
+        const migratedDb = initDb(path);
+        const cols = migratedDb.prepare("PRAGMA table_info(cycles)").all() as { name: string }[];
+        const colNames = new Set(cols.map(c => c.name));
+        expect(colNames.has("completed_at")).toBe(true);
+        migratedDb.close();
+        unlinkSync(path);
+      });
+
+      it("adds test_total_before column when missing", () => {
+        const path = join(tmpdir(), `bloom-migration-test-${Date.now()}-b.db`);
+        createLegacyDb(path);
+        const migratedDb = initDb(path);
+        const cols = migratedDb.prepare("PRAGMA table_info(cycles)").all() as { name: string }[];
+        const colNames = new Set(cols.map(c => c.name));
+        expect(colNames.has("test_total_before")).toBe(true);
+        migratedDb.close();
+        unlinkSync(path);
+      });
+
+      it("adds test_total_after column when missing", () => {
+        const path = join(tmpdir(), `bloom-migration-test-${Date.now()}-c.db`);
+        createLegacyDb(path);
+        const migratedDb = initDb(path);
+        const cols = migratedDb.prepare("PRAGMA table_info(cycles)").all() as { name: string }[];
+        const colNames = new Set(cols.map(c => c.name));
+        expect(colNames.has("test_total_after")).toBe(true);
+        migratedDb.close();
+        unlinkSync(path);
+      });
     });
   });
 

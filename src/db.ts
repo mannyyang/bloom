@@ -141,6 +141,15 @@ export function initDb(path: string = DEFAULT_DB_PATH): Database.Database {
   if (!cycleColNames.has("duration_ms")) {
     db.exec("ALTER TABLE cycles ADD COLUMN duration_ms INTEGER");
   }
+  if (!cycleColNames.has("completed_at")) {
+    db.exec("ALTER TABLE cycles ADD COLUMN completed_at TEXT");
+  }
+  if (!cycleColNames.has("test_total_before")) {
+    db.exec("ALTER TABLE cycles ADD COLUMN test_total_before INTEGER");
+  }
+  if (!cycleColNames.has("test_total_after")) {
+    db.exec("ALTER TABLE cycles ADD COLUMN test_total_after INTEGER");
+  }
 
   return db;
 }
