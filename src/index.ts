@@ -122,7 +122,9 @@ async function main() {
       } else {
         console.error("[db] Database push failed. Journal data remains local.");
       }
-      pushTags();
+      if (!pushTags()) {
+        console.error("[db] Tag push failed. Tags remain local.");
+      }
     } catch (err) {
       console.error(`[db] Failed to commit/push: ${errorMessage(err)}`);
     }
