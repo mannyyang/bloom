@@ -95,6 +95,17 @@ describe("db", () => {
         migratedDb.close();
         unlinkSync(path);
       });
+
+      it("adds duration_ms column when missing", () => {
+        const path = join(tmpdir(), `bloom-migration-test-${Date.now()}-d.db`);
+        createLegacyDb(path);
+        const migratedDb = initDb(path);
+        const cols = migratedDb.prepare("PRAGMA table_info(cycles)").all() as { name: string }[];
+        const colNames = new Set(cols.map(c => c.name));
+        expect(colNames.has("duration_ms")).toBe(true);
+        migratedDb.close();
+        unlinkSync(path);
+      });
     });
   });
 
