@@ -51,9 +51,13 @@ export function updatePlanningStatus(
       const completionNote = succeeded
         ? `Completed in cycle ${cycleCount}: ${processed.improvementsSucceeded}/${processed.improvementsAttempted} improvements succeeded.`
         : undefined;
-      updateItemStatus(projectConfig, currentItem.id, newStatus, completionNote);
-      console.log(`[planning] Updated "${currentItem.title}" → ${newStatus}`);
-      commitRoadmap(cycleCount);
+      const updated = updateItemStatus(projectConfig, currentItem.id, newStatus, completionNote);
+      if (updated) {
+        console.log(`[planning] Updated "${currentItem.title}" → ${newStatus}`);
+        commitRoadmap(cycleCount);
+      } else {
+        console.error(`[planning] Item "${currentItem.title}" (id=${currentItem.id}) not found in roadmap — skipping commit.`);
+      }
     }
   } catch (err) {
     console.error(`[planning] Failed to update roadmap status (non-fatal): ${errorMessage(err)}`);

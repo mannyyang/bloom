@@ -97,6 +97,7 @@ describe("updatePlanningStatus", () => {
   };
 
   it("marks item Done when improvements succeeded", () => {
+    vi.mocked(updateItemStatus).mockReturnValue(true);
     const processed = { improvementsSucceeded: 2, improvementsAttempted: 3 };
     updatePlanningStatus(10, projectConfig, currentItem, processed);
 
@@ -110,6 +111,7 @@ describe("updatePlanningStatus", () => {
   });
 
   it("marks item Up Next when no improvements succeeded", () => {
+    vi.mocked(updateItemStatus).mockReturnValue(true);
     const processed = { improvementsSucceeded: 0, improvementsAttempted: 2 };
     updatePlanningStatus(10, projectConfig, currentItem, processed);
 
@@ -119,6 +121,18 @@ describe("updatePlanningStatus", () => {
       "Up Next",
       undefined,
     );
+  });
+
+  it("logs error and skips commitRoadmap when updateItemStatus returns false", () => {
+    vi.mocked(updateItemStatus).mockReturnValue(false);
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const processed = { improvementsSucceeded: 1, improvementsAttempted: 1 };
+
+    updatePlanningStatus(10, projectConfig, currentItem, processed);
+
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("not found in roadmap"));
+    expect(commitRoadmap).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 
   it("does nothing when projectConfig is null", () => {
