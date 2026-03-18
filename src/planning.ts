@@ -201,8 +201,12 @@ export function nextItemId(items: ProjectItem[]): string {
  */
 function withRoadmapItems<T>(fn: (items: ProjectItem[]) => T): T {
   const items = parseRoadmap(readRoadmap());
+  const before = JSON.stringify(items);
   const result = fn(items);
-  writeRoadmap(serializeRoadmap(items));
+  const after = JSON.stringify(items);
+  if (after !== before) {
+    writeRoadmap(serializeRoadmap(items));
+  }
   return result;
 }
 
