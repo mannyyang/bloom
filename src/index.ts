@@ -60,7 +60,9 @@ async function main() {
 
     // Insert cycle row (will be updated at end)
     insertCycle(db, outcome);
-    commitDb(cycleCount, "start");
+    if (!commitDb(cycleCount, "start")) {
+      console.error("[db] Start commit produced no changes — cycle row may not be persisted to git.");
+    }
 
     // Create safety tag
     createSafetyTag(cycleCount);
@@ -116,7 +118,9 @@ async function main() {
   if (cycleCount > 0) {
     console.log("\n[db] Committing database changes...");
     try {
-      commitDb(cycleCount, "outcome");
+      if (!commitDb(cycleCount, "outcome")) {
+        console.error("[db] Outcome commit produced no changes — metrics may not be persisted to git.");
+      }
       if (pushChanges()) {
         console.log("[db] Database changes pushed successfully.");
       } else {
