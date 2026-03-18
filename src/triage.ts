@@ -1,7 +1,7 @@
 import type Database from "better-sqlite3";
 import type { CommunityIssue } from "./issues.js";
 import { closeIssueWithComment } from "./issues.js";
-import { hasIssueAction, insertIssueAction } from "./db.js";
+import { hasIssueAction } from "./db.js";
 import { errorMessage } from "./errors.js";
 import { addLinkedItem, type ProjectConfig, type ProjectItem } from "./planning.js";
 import { detectRepo, isValidRepo } from "./issues.js";
@@ -126,7 +126,7 @@ export async function triageIssues(
   const alreadyOnBoard = issues.filter((i) => boardIssueNumbers.has(i.number));
   for (const issue of alreadyOnBoard) {
     if (db && hasIssueAction(db, issue.number, "triaged")) continue;
-    await closeIssueWithComment(
+    const wasClosed = await closeIssueWithComment(
       issue.number,
       cycleCount,
       "This issue is already tracked on the Bloom Evolution Roadmap.",
@@ -134,7 +134,7 @@ export async function triageIssues(
       "triaged",
       repo ?? undefined,
     );
-    result.closed.push(issue.number);
+    if (wasClosed) result.closed.push(issue.number);
   }
 
   // New issues that need triage
@@ -198,7 +198,7 @@ export async function triageIssues(
         result.addedToBacklog.push(issue.number);
       }
 
-      await closeIssueWithComment(
+      const wasClosed = await closeIssueWithComment(
         issue.number,
         cycleCount,
         `${commentMap[decision.action]}\n\n${decision.reason}`,
@@ -206,7 +206,7 @@ export async function triageIssues(
         "triaged",
         repo ?? undefined,
       );
-      result.closed.push(issue.number);
+      if (wasClosed) result.closed.push(issue.number);
     } catch (err) {
       // Best-effort: don't let a single issue failure block others
       console.error(`[triage] Failed to process issue #${decision.issueNumber} (action=${decision.action}): ${errorMessage(err)}`);
