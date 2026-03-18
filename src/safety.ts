@@ -136,6 +136,7 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bxargs\s+.*\brm\s/, category: "xargs-command-execution" },
   // Untrusted package installation — adding deps pulls arbitrary code
   { pattern: /\bpnpm\s+add\b/, category: "untrusted-package-installation" },
+  { pattern: /\bpnpm\s+(?:install|i)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
   { pattern: /\bnpm\s+(?:install|i)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
   { pattern: /\byarn\s+add\b/, category: "untrusted-package-installation" },
 ];
