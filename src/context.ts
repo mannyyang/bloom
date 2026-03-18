@@ -95,8 +95,12 @@ export async function loadEvolutionContext(
 
       currentItem = pickNextItem(projectItems);
       if (currentItem) {
-        console.log(`[planning] Selected: "${currentItem.title}" → marking In Progress`);
-        updateItemStatus(projectConfig, currentItem.id, "In Progress");
+        const markedInProgress = updateItemStatus(projectConfig, currentItem.id, "In Progress");
+        if (markedInProgress) {
+          console.log(`[planning] Selected: "${currentItem.title}" → marked In Progress`);
+        } else {
+          console.error(`[planning] Could not mark "${currentItem.title}" In Progress — item not found in roadmap.`);
+        }
       } else {
         console.log("[planning] No actionable items found");
       }
