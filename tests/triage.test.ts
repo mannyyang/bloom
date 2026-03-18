@@ -442,4 +442,47 @@ describe("triageIssues with injected deps", () => {
       "test-owner/test-repo",
     );
   });
+
+  it("uses BLOOM_MODEL env var when set", async () => {
+    const capturedOptions: unknown[] = [];
+    const issues = [makeIssue({ number: 1 })];
+    const customQuery = async function* (args: { options?: { model?: string } }) {
+      capturedOptions.push(args.options);
+      yield { result: JSON.stringify([{ issueNumber: 1, action: "not_applicable", reason: "Test" }]) };
+    };
+    const deps = { queryFn: customQuery as Parameters<typeof triageIssues>[5] extends undefined ? never : NonNullable<Parameters<typeof triageIssues>[5]>["queryFn"] };
+
+    mockCloseIssue.mockResolvedValue(true);
+    const originalModel = process.env.BLOOM_MODEL;
+    process.env.BLOOM_MODEL = "claude-test-model";
+    try {
+      await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+    } finally {
+      if (originalModel === undefined) delete process.env.BLOOM_MODEL;
+      else process.env.BLOOM_MODEL = originalModel;
+    }
+
+    expect(capturedOptions[0]).toMatchObject({ model: "claude-test-model" });
+  });
+
+  it("uses default model claude-sonnet-4-6 when BLOOM_MODEL is not set", async () => {
+    const capturedOptions: unknown[] = [];
+    const issues = [makeIssue({ number: 1 })];
+    const customQuery = async function* (args: { options?: { model?: string } }) {
+      capturedOptions.push(args.options);
+      yield { result: JSON.stringify([{ issueNumber: 1, action: "not_applicable", reason: "Test" }]) };
+    };
+    const deps = { queryFn: customQuery as Parameters<typeof triageIssues>[5] extends undefined ? never : NonNullable<Parameters<typeof triageIssues>[5]>["queryFn"] };
+
+    mockCloseIssue.mockResolvedValue(true);
+    const originalModel = process.env.BLOOM_MODEL;
+    delete process.env.BLOOM_MODEL;
+    try {
+      await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+    } finally {
+      if (originalModel !== undefined) process.env.BLOOM_MODEL = originalModel;
+    }
+
+    expect(capturedOptions[0]).toMatchObject({ model: "claude-sonnet-4-6" });
+  });
 });

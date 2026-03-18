@@ -160,7 +160,7 @@ export async function triageIssues(
     for await (const msg of queryFn({
       prompt,
       options: {
-        model: "claude-sonnet-4-20250514",
+        model: process.env.BLOOM_MODEL ?? "claude-sonnet-4-6",
         maxTurns: 3,
         maxBudgetUsd: 0.5,
         permissionMode: "dontAsk",
