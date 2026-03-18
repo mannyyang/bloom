@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   issues: write
+  actions: write
 
 concurrency:
   group: evolve
@@ -63,3 +64,9 @@ jobs:
           git pull --rebase origin main || true
           pnpm run evolve
         timeout-minutes: 120
+
+      - name: Trigger GitHub Pages deploy
+        if: always()
+        run: gh workflow run pages.yml
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
