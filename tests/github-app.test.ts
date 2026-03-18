@@ -298,7 +298,7 @@ describe("github-app", () => {
 
     it("sends GET requests with correct headers and no body", async () => {
       const { githubApiRequest } = await setupWithToken();
-      const res = await githubApiRequest("GET", "/repos/owner/repo/issues");
+      await githubApiRequest("GET", "/repos/owner/repo/issues");
 
       // Second fetch call is the API request
       const [url, opts] = mockFetch.mock.calls[1] as [string, RequestInit];

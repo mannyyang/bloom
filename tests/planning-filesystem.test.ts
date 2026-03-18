@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { existsSync, readFileSync, writeFileSync, unlinkSync } from "fs";
 import { resolve } from "path";
 import { ensureProject, getProjectItems, addDraftItem, addLinkedItem, updateItemStatus, type ProjectConfig } from "../src/planning.js";
@@ -338,7 +338,6 @@ describe("updateItemStatus", () => {
     const items = getProjectItems(config);
     updateItemStatus(config, items[0].id, "Up Next", "Should be ignored");
 
-    const content = readTestRoadmap();
     const updatedItems = getProjectItems(config);
     expect(updatedItems[0].status).toBe("Up Next");
     expect(updatedItems[0].body).toBe("Original body");

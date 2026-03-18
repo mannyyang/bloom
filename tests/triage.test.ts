@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { buildTriagePrompt, parseTriageResponse, triageIssues } from "../src/triage.js";
 import type { CommunityIssue } from "../src/issues.js";
 import { closeIssueWithComment, detectRepo, isValidRepo } from "../src/issues.js";
-import { hasIssueAction, insertIssueAction } from "../src/db.js";
+import { hasIssueAction } from "../src/db.js";
 import { addLinkedItem } from "../src/planning.js";
 import type { ProjectItem, ProjectConfig } from "../src/planning.js";
 

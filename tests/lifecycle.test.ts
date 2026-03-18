@@ -26,7 +26,6 @@ import {
   GIT_OP_TIMEOUT_MS,
   GIT_PUSH_TIMEOUT_MS,
   GIT_REVERT_TIMEOUT_MS,
-  type BuildResult,
 } from "../src/lifecycle.js";
 
 describe("lifecycle helpers", () => {

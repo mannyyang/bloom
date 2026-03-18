@@ -4,7 +4,7 @@
  * (e.g., no-op operations like updating a non-existent ID or adding a duplicate).
  */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, writeFileSync, statSync, mkdirSync } from "fs";
+import { mkdtempSync, writeFileSync, statSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 import {
