@@ -409,6 +409,42 @@ describe("triageIssues with injected deps", () => {
     expect(result.closed).toEqual([1, 2, 3]);
   });
 
+  it("Guard A: skips closing an alreadyOnBoard issue when db records it as already triaged", async () => {
+    // Issue #10 is on the board; db says it was already triaged in a prior cycle
+    const issues = [makeIssue({ number: 10, title: "On board" })];
+    const boardItems = [makeBoardItem({ linkedIssueNumber: 10 })];
+    const deps = makeDeps([]);
+
+    // Simulate a real db object with the issue already marked as triaged
+    const mockDb = {} as import("better-sqlite3").Database;
+    mockHasIssueAction.mockReturnValueOnce(true); // Guard A fires
+
+    const result = await triageIssues(issues, boardItems, 5, projectConfig, mockDb, deps);
+
+    // closeIssueWithComment must NOT be called because the guard skipped the issue
+    expect(mockCloseIssue).not.toHaveBeenCalled();
+    expect(result.closed).toEqual([]);
+  });
+
+  it("Guard B: skips re-triaging a new issue when db records it as already triaged", async () => {
+    // Issue #20 is NOT on the board, but db says it was triaged in a prior cycle
+    const issues = [makeIssue({ number: 20, title: "Previously triaged" })];
+    const deps = makeDeps([
+      { issueNumber: 20, action: "not_applicable", reason: "Should not reach LLM" },
+    ]);
+
+    const mockDb = {} as import("better-sqlite3").Database;
+    mockHasIssueAction.mockReturnValueOnce(true); // Guard B fires — issue filtered out
+
+    const result = await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
+
+    // LLM queryFn should not have been called because untriaged list is empty
+    // and no close should have happened
+    expect(mockCloseIssue).not.toHaveBeenCalled();
+    expect(result.closed).toEqual([]);
+    expect(result.decisions).toEqual([]);
+  });
+
   it("does not add to backlog when repo is invalid", async () => {
     mockIsValidRepo.mockReturnValueOnce(false);
     mockDetectRepo.mockReturnValueOnce(null);
