@@ -417,6 +417,49 @@ describe("runEvolutionPhase", () => {
 
     expect(deps.insertPhaseUsage).toHaveBeenCalledWith(db, 10, expect.objectContaining({ phase: "Evolution" }));
   });
+
+  it("logs journal section content when sections are non-empty", async () => {
+    const processed = createProcessedEvolution({
+      journalSections: {
+        attempted: "Added feature X",
+        succeeded: "Feature X works",
+        failed: "",
+        learnings: "",
+        strategic_context: "",
+      },
+    });
+    const { deps } = createMockDeps([
+      createUsageMessage({ result: "output" }),
+    ]);
+    vi.mocked(deps.processEvolutionResult).mockReturnValue(processed);
+    const db = createMockDb();
+    const consoleSpy = vi.spyOn(console, "log");
+
+    await runEvolutionPhase(
+      db, 1, createOutcome(), "assessment", "identity", [], deps, createMockSafetyHooks(),
+    );
+
+    const logCalls = consoleSpy.mock.calls.map((c) => c[0]);
+    expect(logCalls.some((msg) => typeof msg === "string" && msg.includes("attempted"))).toBe(true);
+    expect(logCalls.some((msg) => typeof msg === "string" && msg.includes("succeeded"))).toBe(true);
+  });
+
+  it("logs strategic context stored message when strategicContextStored is true", async () => {
+    const processed = createProcessedEvolution({ strategicContextStored: true });
+    const { deps } = createMockDeps([
+      createUsageMessage({ result: "output" }),
+    ]);
+    vi.mocked(deps.processEvolutionResult).mockReturnValue(processed);
+    const db = createMockDb();
+    const consoleSpy = vi.spyOn(console, "log");
+
+    await runEvolutionPhase(
+      db, 1, createOutcome(), "assessment", "identity", [], deps, createMockSafetyHooks(),
+    );
+
+    const logCalls = consoleSpy.mock.calls.map((c) => c[0]);
+    expect(logCalls.some((msg) => typeof msg === "string" && msg.includes("Stored strategic context"))).toBe(true);
+  });
 });
 
 describe("createDefaultDeps", () => {
