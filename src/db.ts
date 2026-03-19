@@ -351,6 +351,7 @@ export interface CycleStats {
   totalCycles: number;
   successRate: number;
   avgImprovements: number;
+  avgConversionRate: number | null;
   testCountTrend: number | null;
   recentFailures: number;
   avgDurationMinutes: number | null;
@@ -398,7 +399,7 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
   const rows = validateRows<CycleRow>(rawRows, cycleRowSchema, "getCycleStats");
 
   if (rows.length === 0) {
-    return { totalCycles: 0, successRate: 0, avgImprovements: 0, testCountTrend: null, recentFailures: 0, avgDurationMinutes: null, totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0 };
+    return { totalCycles: 0, successRate: 0, avgImprovements: 0, avgConversionRate: null, testCountTrend: null, recentFailures: 0, avgDurationMinutes: null, totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0 };
   }
 
   const totalCycles = rows.length;
@@ -407,6 +408,15 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
 
   const totalImprovements = rows.reduce((sum, r) => sum + r.improvements_succeeded, 0);
   const avgImprovements = Math.round((totalImprovements / totalCycles) * 10) / 10;
+
+  // Conversion rate: improvements_succeeded / improvements_attempted across cycles with ≥1 attempt
+  const cyclesWithAttempts = rows.filter(r => r.improvements_attempted > 0);
+  let avgConversionRate: number | null = null;
+  if (cyclesWithAttempts.length > 0) {
+    const totalAttempted = cyclesWithAttempts.reduce((sum, r) => sum + r.improvements_attempted, 0);
+    const totalSucceeded = cyclesWithAttempts.reduce((sum, r) => sum + r.improvements_succeeded, 0);
+    avgConversionRate = Math.round((totalSucceeded / totalAttempted) * 100);
+  }
 
   // Test count trend: difference between newest and oldest cycle that have both counts
   const withCounts = rows.filter(r => r.test_count_before !== null && r.test_count_after !== null);
@@ -459,7 +469,7 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
   const totalInputTokens = usageRow.total_input;
   const totalOutputTokens = usageRow.total_output;
 
-  return { totalCycles, successRate, avgImprovements, testCountTrend, recentFailures, avgDurationMinutes, totalCostUsd, avgCostPerCycle, totalInputTokens, totalOutputTokens };
+  return { totalCycles, successRate, avgImprovements, avgConversionRate, testCountTrend, recentFailures, avgDurationMinutes, totalCostUsd, avgCostPerCycle, totalInputTokens, totalOutputTokens };
 }
 
 /**
@@ -472,6 +482,9 @@ export function formatCycleStats(stats: CycleStats): string {
     `- **Success rate**: ${stats.successRate}% (build passed + pushed)`,
     `- **Avg improvements/cycle**: ${stats.avgImprovements}`,
   ];
+  if (stats.avgConversionRate !== null) {
+    lines.push(`- **Conversion rate**: ${stats.avgConversionRate}% (improvements that succeed)`);
+  }
   if (stats.testCountTrend !== null) {
     const sign = stats.testCountTrend >= 0 ? "+" : "";
     lines.push(`- **Test count trend**: ${sign}${stats.testCountTrend}`);

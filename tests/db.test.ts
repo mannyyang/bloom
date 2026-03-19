@@ -604,6 +604,7 @@ describe("db", () => {
       expect(stats.totalCycles).toBe(0);
       expect(stats.successRate).toBe(0);
       expect(stats.avgImprovements).toBe(0);
+      expect(stats.avgConversionRate).toBeNull();
       expect(stats.testCountTrend).toBeNull();
       expect(stats.recentFailures).toBe(0);
       expect(stats.avgDurationMinutes).toBeNull();
@@ -806,12 +807,65 @@ describe("db", () => {
       expect(stats.totalInputTokens).toBe(0);
       expect(stats.totalOutputTokens).toBe(0);
     });
+
+    it("returns null conversion rate when no cycles have attempts", () => {
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 0, improvementsSucceeded: 0,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
+
+      const stats = getCycleStats(db);
+      expect(stats.avgConversionRate).toBeNull();
+    });
+
+    it("computes 100% conversion rate when all attempted improvements succeed", () => {
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 2, improvementsSucceeded: 2,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
+
+      const stats = getCycleStats(db);
+      expect(stats.avgConversionRate).toBe(100);
+    });
+
+    it("computes conversion rate across mixed cycles, ignoring zero-attempt cycles", () => {
+      // cycle 1: 2 attempted, 1 succeeded
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 2, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
+      // cycle 2: 0 attempted (should be excluded from denominator)
+      insertCycle(db, makeOutcome({
+        cycleNumber: 2, improvementsAttempted: 0, improvementsSucceeded: 0,
+        buildVerificationPassed: false, pushSucceeded: false,
+      }));
+      // cycle 3: 3 attempted, 3 succeeded
+      insertCycle(db, makeOutcome({
+        cycleNumber: 3, improvementsAttempted: 3, improvementsSucceeded: 3,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
+
+      const stats = getCycleStats(db);
+      // (1+3) / (2+3) = 4/5 = 80%
+      expect(stats.avgConversionRate).toBe(80);
+    });
+
+    it("rounds conversion rate to nearest integer", () => {
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 3, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
+
+      const stats = getCycleStats(db);
+      // 1/3 = 33.33% → rounds to 33
+      expect(stats.avgConversionRate).toBe(33);
+    });
   });
 
   describe("formatCycleStats", () => {
     it("returns message when no data", () => {
       const result = formatCycleStats({
-        totalCycles: 0, successRate: 0, avgImprovements: 0,
+        totalCycles: 0, successRate: 0, avgImprovements: 0, avgConversionRate: null,
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
       });
@@ -820,7 +874,7 @@ describe("db", () => {
 
     it("includes all metrics when data exists", () => {
       const result = formatCycleStats({
-        totalCycles: 10, successRate: 80, avgImprovements: 1.5,
+        totalCycles: 10, successRate: 80, avgImprovements: 1.5, avgConversionRate: 75,
         testCountTrend: 42, recentFailures: 1, avgDurationMinutes: 8.5,
         totalCostUsd: 15.50, avgCostPerCycle: 1.55,
         totalInputTokens: 50000, totalOutputTokens: 25000,
@@ -828,6 +882,7 @@ describe("db", () => {
       expect(result).toContain("10");
       expect(result).toContain("80%");
       expect(result).toContain("1.5");
+      expect(result).toContain("75%");
       expect(result).toContain("+42");
       expect(result).toContain("8.5 min");
       expect(result).toContain("$15.50");
@@ -836,9 +891,18 @@ describe("db", () => {
       expect(result).toContain("1");
     });
 
+    it("omits conversion rate line when avgConversionRate is null", () => {
+      const result = formatCycleStats({
+        totalCycles: 3, successRate: 100, avgImprovements: 0, avgConversionRate: null,
+        testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
+        totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
+      });
+      expect(result).not.toContain("Conversion rate");
+    });
+
     it("displays negative test count trend without plus sign", () => {
       const result = formatCycleStats({
-        totalCycles: 5, successRate: 60, avgImprovements: 1,
+        totalCycles: 5, successRate: 60, avgImprovements: 1, avgConversionRate: null,
         testCountTrend: -7, recentFailures: 2, avgDurationMinutes: null,
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
       });
@@ -848,7 +912,7 @@ describe("db", () => {
 
     it("omits duration when null", () => {
       const result = formatCycleStats({
-        totalCycles: 5, successRate: 100, avgImprovements: 2,
+        totalCycles: 5, successRate: 100, avgImprovements: 2, avgConversionRate: null,
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
       });
@@ -858,7 +922,7 @@ describe("db", () => {
 
     it("omits tokens line when both are zero", () => {
       const result = formatCycleStats({
-        totalCycles: 5, successRate: 100, avgImprovements: 2,
+        totalCycles: 5, successRate: 100, avgImprovements: 2, avgConversionRate: null,
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
       });
@@ -867,7 +931,7 @@ describe("db", () => {
 
     it("formats small token counts without k suffix", () => {
       const result = formatCycleStats({
-        totalCycles: 1, successRate: 100, avgImprovements: 1,
+        totalCycles: 1, successRate: 100, avgImprovements: 1, avgConversionRate: null,
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
         totalCostUsd: 0.10, avgCostPerCycle: 0.10,
         totalInputTokens: 500, totalOutputTokens: 200,
