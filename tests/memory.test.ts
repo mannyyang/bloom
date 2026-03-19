@@ -233,6 +233,35 @@ describe("formatMemoryForPrompt", () => {
     }
   });
 
+  it("does not add empty category header when header fits but first item does not", () => {
+    // One short item in the first category, one long item in the second
+    insertLearning(db, 1, "pattern", "Short");
+    insertLearning(db, 1, "anti-pattern", "This is a long anti-pattern item that will not fit");
+
+    const fullResult = formatMemoryForPrompt(db, 100000);
+    // Build a budget that fits: section header + ### pattern + "- Short\n" + ### anti-pattern
+    // but NOT the long anti-pattern item
+    const upToSecondHeader =
+      "## Key Learnings\n".length +
+      "### pattern\n".length +
+      "- Short\n".length +
+      "### anti-pattern\n".length;
+    // Budget allows the anti-pattern header but not its first item
+    const result = formatMemoryForPrompt(db, upToSecondHeader + 2);
+
+    // The anti-pattern category header must NOT appear without any item following it
+    const lines = result.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].startsWith("### ")) {
+        const nextContentLine = lines.slice(i + 1).find(l => l.trim() !== "");
+        expect(nextContentLine).toBeDefined();
+        expect(nextContentLine!.startsWith("- ")).toBe(true);
+      }
+    }
+    // The full result should be longer (anti-pattern item was cut)
+    expect(result.length).toBeLessThan(fullResult.length);
+  });
+
   it("stops adding category headers when budget is exhausted", () => {
     // Insert learnings in two categories
     for (let i = 0; i < 10; i++) {
