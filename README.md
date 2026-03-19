@@ -179,3 +179,11 @@ pnpm journal -- --limit 5 # Limit to last 5 entries
 ```
 
 Exports journal entries to stdout. The JSON format is designed for use by the [GitHub Pages site](https://mannyyang.github.io/bloom/), while Markdown is useful for human reading.
+
+### View Roadmap
+
+```bash
+pnpm roadmap
+```
+
+Prints the current ROADMAP.md as a formatted summary, grouped by status (In Progress → Up Next → Backlog → Done) with visual markers, linked issue numbers, and body previews. Useful for checking Bloom's current focus without reading raw Markdown.
