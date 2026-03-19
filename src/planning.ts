@@ -28,7 +28,7 @@ function getRoadmapPath(): string {
   return resolve(process.cwd(), ROADMAP_FILE);
 }
 
-function readRoadmap(): string {
+export function readRoadmap(): string {
   const p = getRoadmapPath();
   if (!existsSync(p)) return "";
   return readFileSync(p, "utf-8");

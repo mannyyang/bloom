@@ -8,7 +8,8 @@
     "test:watch": "vitest",
     "evolve": "tsx src/index.ts",
     "stats": "tsx src/stats.ts",
-    "journal": "tsx src/journal.ts"
+    "journal": "tsx src/journal.ts",
+    "roadmap": "tsx src/roadmap.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "latest",
