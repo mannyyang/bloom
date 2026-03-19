@@ -199,4 +199,26 @@ describe("formatOutcomeForJournal", () => {
     const result = formatOutcomeForJournal(outcome);
     expect(result.startsWith("### Outcome Metrics")).toBe(true);
   });
+
+  it("omits total when testTotalBefore is set but testTotalAfter is null", () => {
+    const outcome = makeOutcome({
+      cycleNumber: 46, improvementsAttempted: 2, improvementsSucceeded: 2,
+      buildVerificationPassed: true, pushSucceeded: true,
+      testCountBefore: 490, testCountAfter: 500,
+      testTotalBefore: 495, testTotalAfter: null,
+    });
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).not.toContain("total:");
+  });
+
+  it("omits total when testTotalAfter is set but testTotalBefore is null", () => {
+    const outcome = makeOutcome({
+      cycleNumber: 46, improvementsAttempted: 2, improvementsSucceeded: 2,
+      buildVerificationPassed: true, pushSucceeded: true,
+      testCountBefore: 490, testCountAfter: 500,
+      testTotalBefore: null, testTotalAfter: 505,
+    });
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).not.toContain("total:");
+  });
 });
