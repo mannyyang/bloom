@@ -1,9 +1,6 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Detect and recover stale "In Progress" roadmap items
-  If an item stays "In Progress" for more than 3 cycles without completing, automatically
-  move it back to "Up Next" and log a warning. Prevents roadmap items from getting stuck.
 - [ ] Add structured error classification to evolution cycle outcomes
   Distinguish between build failures, test failures, LLM errors, and tool errors in the
   outcomes table. Enables pattern detection (e.g., "test failures dominate cycle losses").
@@ -13,6 +10,9 @@
   (Moved back from In Progress — no concrete code changes were made toward this goal.)
 
 ## Up Next
+- [ ] Detect and recover stale "In Progress" roadmap items
+  If an item stays "In Progress" for more than 3 cycles without completing, automatically
+  move it back to "Up Next" and log a warning. Prevents roadmap items from getting stuck.
 
 ## In Progress
 
