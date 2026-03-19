@@ -194,7 +194,7 @@ export async function triageIssues(
       };
 
       if (decision.action === "add_to_backlog" && repo && isValidRepo(repo)) {
-        addLinkedItem(projectConfig, repo, issue.number, issue.title, issue.body);
+        addLinkedItem(projectConfig, issue.number, issue.title, issue.body);
         result.addedToBacklog.push(issue.number);
       }
 

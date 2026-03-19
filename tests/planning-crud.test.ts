@@ -80,7 +80,7 @@ describe("withRoadmapItems write-skip optimization", () => {
     await new Promise((r) => setTimeout(r, 5));
     const before = statSync(join(tmpDir, "ROADMAP.md")).mtimeMs;
 
-    const result = addLinkedItem(config, "owner/repo", 42, "Duplicate title", "Body");
+    const result = addLinkedItem(config, 42, "Duplicate title", "Body");
 
     const after = statSync(join(tmpDir, "ROADMAP.md")).mtimeMs;
     expect(result).toBe("item-0");
@@ -93,7 +93,7 @@ describe("withRoadmapItems write-skip optimization", () => {
     await new Promise((r) => setTimeout(r, 5));
     const before = statSync(join(tmpDir, "ROADMAP.md")).mtimeMs;
 
-    const result = addLinkedItem(config, "owner/repo", 7, "New feature", "Body");
+    const result = addLinkedItem(config, 7, "New feature", "Body");
 
     const after = statSync(join(tmpDir, "ROADMAP.md")).mtimeMs;
     expect(result).toBe("item-0");

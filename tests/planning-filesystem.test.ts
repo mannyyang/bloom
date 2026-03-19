@@ -193,7 +193,7 @@ describe("addLinkedItem", () => {
 ## Done
 `);
     const config = makeConfig();
-    const itemId = addLinkedItem(config, "owner/repo", 42, "Fix bug", "Description");
+    const itemId = addLinkedItem(config, 42, "Fix bug", "Description");
     expect(itemId).not.toBeNull();
 
     const content = readTestRoadmap();
@@ -213,7 +213,7 @@ describe("addLinkedItem", () => {
 ## Done
 `);
     const config = makeConfig();
-    addLinkedItem(config, "owner/repo", 42, "Fix bug", "Description");
+    addLinkedItem(config, 42, "Fix bug", "Description");
 
     const items = getProjectItems(config);
     const issue42Items = items.filter((i) => i.linkedIssueNumber === 42);

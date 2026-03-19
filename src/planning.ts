@@ -224,7 +224,6 @@ export function getProjectItems(
  */
 export function addLinkedItem(
   _config: ProjectConfig,
-  _repo: string,
   issueNumber: number,
   title: string,
   body: string,

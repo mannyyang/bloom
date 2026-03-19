@@ -328,7 +328,7 @@ describe("triageIssues with injected deps", () => {
     expect(result.addedToBacklog).toContain(7);
     expect(result.closed).toContain(7);
     expect(mockAddLinkedItem).toHaveBeenCalledWith(
-      projectConfig, "test-owner/test-repo", 7, "Add caching", "Please add caching",
+      projectConfig, 7, "Add caching", "Please add caching",
     );
   });
 
