@@ -146,10 +146,28 @@ describe("loadEvolutionContext", () => {
     vi.mocked(ensureProject).mockReturnValue(config);
     vi.mocked(getProjectItems).mockReturnValue([item]);
     vi.mocked(pickNextItem).mockReturnValue(item);
+    vi.mocked(updateItemStatus).mockReturnValue(true);
     vi.mocked(formatPlanningContext).mockReturnValue("");
 
+    const consoleSpy = vi.spyOn(console, "log");
     await loadEvolutionContext(fakeDb, 1);
     expect(updateItemStatus).toHaveBeenCalledWith(config, "42", "In Progress");
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("marked In Progress"));
+  });
+
+  it("logs error when updateItemStatus returns false for In Progress mark", async () => {
+    const config = { filePath: "ROADMAP.md" };
+    const item = { id: "99", title: "Missing item", status: "Up Next", body: "", linkedIssueNumber: null, reactions: 0 };
+    vi.mocked(ensureProject).mockReturnValue(config);
+    vi.mocked(getProjectItems).mockReturnValue([item]);
+    vi.mocked(pickNextItem).mockReturnValue(item);
+    vi.mocked(updateItemStatus).mockReturnValue(false);
+    vi.mocked(formatPlanningContext).mockReturnValue("");
+
+    const consoleSpy = vi.spyOn(console, "error");
+    await loadEvolutionContext(fakeDb, 1);
+    expect(updateItemStatus).toHaveBeenCalledWith(config, "99", "In Progress");
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Could not mark"));
   });
 
   it("does not mark In Progress when pickNextItem returns null", async () => {
