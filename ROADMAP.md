@@ -1,6 +1,18 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
+- [ ] Improve prompt efficiency to reduce average cost per evolution cycle
+  Investigate token-heavy phases (assessment, implementation) and find opportunities to
+  shrink prompts without losing quality. Target: reduce median cycle cost by ~20%.
+- [ ] Track assessment-to-improvement conversion rate
+  Add a metric that measures how many assessed improvements are actually attempted and
+  succeed per cycle. Surface this in `pnpm stats` to make evolution efficiency visible.
+- [ ] Detect and recover stale "In Progress" roadmap items
+  If an item stays "In Progress" for more than 3 cycles without completing, automatically
+  move it back to "Up Next" and log a warning. Prevents roadmap items from getting stuck.
+- [ ] Add structured error classification to evolution cycle outcomes
+  Distinguish between build failures, test failures, LLM errors, and tool errors in the
+  outcomes table. Enables pattern detection (e.g., "test failures dominate cycle losses").
 
 ## Up Next
 
