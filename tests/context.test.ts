@@ -291,4 +291,42 @@ describe("loadEvolutionContext", () => {
     await loadEvolutionContext(fakeDb, 42);
     expect(triageIssues).toHaveBeenCalledWith(issues, [], 42, config, fakeDb);
   });
+
+  it("logs closed issue numbers when triage closes issues", async () => {
+    const config = { filePath: "ROADMAP.md" };
+    const issues = [
+      { number: 5, title: "Old Bug", body: "", reactions: 0, labels: [] },
+      { number: 6, title: "Stale Request", body: "", reactions: 0, labels: [] },
+    ];
+    vi.mocked(ensureProject).mockReturnValue(config);
+    vi.mocked(getProjectItems).mockReturnValue([]);
+    vi.mocked(fetchCommunityIssues).mockResolvedValue(issues);
+    vi.mocked(triageIssues).mockResolvedValue({
+      decisions: [],
+      addedToBacklog: [],
+      closed: [5, 6],
+    });
+    vi.mocked(pickNextItem).mockReturnValue(null);
+    vi.mocked(formatPlanningContext).mockReturnValue("");
+
+    const consoleSpy = vi.spyOn(console, "log");
+    await loadEvolutionContext(fakeDb, 1);
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Closed: #5, #6"));
+  });
+
+  it("logs reaction count for roadmap items with reactions > 0", async () => {
+    const config = { filePath: "ROADMAP.md" };
+    const items = [
+      { id: "1", title: "Popular Item", status: "Up Next", body: "", linkedIssueNumber: null, reactions: 5 },
+    ];
+    vi.mocked(ensureProject).mockReturnValue(config);
+    vi.mocked(getProjectItems).mockReturnValue(items);
+    vi.mocked(fetchCommunityIssues).mockResolvedValue([]);
+    vi.mocked(pickNextItem).mockReturnValue(null);
+    vi.mocked(formatPlanningContext).mockReturnValue("");
+
+    const consoleSpy = vi.spyOn(console, "log");
+    await loadEvolutionContext(fakeDb, 1);
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("(5 reactions)"));
+  });
 });
