@@ -501,6 +501,39 @@ describe("triageIssues with injected deps", () => {
     expect(capturedOptions[0]).toMatchObject({ model: "claude-test-model" });
   });
 
+  it("does not add to result.closed when alreadyOnBoard closeIssueWithComment returns false", async () => {
+    // Issue #10 is already on the board — alreadyOnBoard path
+    const issues = [makeIssue({ number: 10, title: "On board" })];
+    const boardItems = [makeBoardItem({ linkedIssueNumber: 10 })];
+    const deps = makeDeps([]);
+
+    // closeIssueWithComment returns false (soft failure — e.g. already closed externally)
+    mockCloseIssue.mockResolvedValueOnce(false);
+
+    const result = await triageIssues(issues, boardItems, 5, projectConfig, undefined, deps);
+
+    expect(mockCloseIssue).toHaveBeenCalledTimes(1);
+    // wasClosed was false, so the issue must NOT appear in result.closed
+    expect(result.closed).toEqual([]);
+  });
+
+  it("does not add to result.closed when decisions loop closeIssueWithComment returns false", async () => {
+    // Issue #5 goes through LLM triage — decisions loop path
+    const issues = [makeIssue({ number: 5, title: "Some issue" })];
+    const deps = makeDeps([{ issueNumber: 5, action: "not_applicable", reason: "Out of scope" }]);
+
+    // closeIssueWithComment returns false (soft failure, not a throw)
+    mockCloseIssue.mockResolvedValueOnce(false);
+
+    const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+
+    expect(mockCloseIssue).toHaveBeenCalledTimes(1);
+    // wasClosed was false, so the issue must NOT appear in result.closed
+    expect(result.closed).toEqual([]);
+    // The decision itself should still be recorded
+    expect(result.decisions).toHaveLength(1);
+  });
+
   it("uses default model claude-sonnet-4-6 when BLOOM_MODEL is not set", async () => {
     const capturedOptions: unknown[] = [];
     const issues = [makeIssue({ number: 1 })];
