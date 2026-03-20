@@ -10,6 +10,7 @@ import {
   getProjectItems,
   pickNextItem,
   updateItemStatus,
+  demoteStaleInProgressItems,
   formatPlanningContext,
   type ProjectConfig,
   type ProjectItem,
@@ -93,11 +94,18 @@ export async function loadEvolutionContext(
         console.log(`[planning] ${projectItems.length} items on roadmap (post-triage)`);
       }
 
+      // Demote any stale "In Progress" items before picking the next one
+      const demoted = demoteStaleInProgressItems(projectConfig, cycleCount);
+      if (demoted.length > 0) {
+        console.log(`[planning] Demoted ${demoted.length} stale In Progress item(s) back to Up Next: ${demoted.join(", ")}`);
+        projectItems = getProjectItems(projectConfig);
+      }
+
       currentItem = pickNextItem(projectItems);
       if (currentItem) {
-        const markedInProgress = updateItemStatus(projectConfig, currentItem.id, "In Progress");
+        const markedInProgress = updateItemStatus(projectConfig, currentItem.id, "In Progress", undefined, cycleCount);
         if (markedInProgress) {
-          console.log(`[planning] Selected: "${currentItem.title}" → marked In Progress`);
+          console.log(`[planning] Selected: "${currentItem.title}" → marked In Progress (since cycle ${cycleCount})`);
         } else {
           console.error(`[planning] Could not mark "${currentItem.title}" In Progress — item not found in roadmap.`);
         }

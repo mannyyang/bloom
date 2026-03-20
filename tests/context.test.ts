@@ -29,6 +29,7 @@ vi.mock("../src/planning.js", () => ({
   getProjectItems: vi.fn(),
   pickNextItem: vi.fn(),
   updateItemStatus: vi.fn(),
+  demoteStaleInProgressItems: vi.fn().mockReturnValue([]),
   formatPlanningContext: vi.fn(),
 }));
 
@@ -46,6 +47,7 @@ import {
   getProjectItems,
   pickNextItem,
   updateItemStatus,
+  demoteStaleInProgressItems,
   formatPlanningContext,
 } from "../src/planning.js";
 import { loadEvolutionContext } from "../src/context.js";
@@ -61,6 +63,7 @@ function setupDefaults() {
   vi.mocked(formatCycleStats).mockReturnValue("stats text");
   vi.mocked(formatMemoryForPrompt).mockReturnValue("memory context");
   vi.mocked(ensureProject).mockReturnValue(null);
+  vi.mocked(demoteStaleInProgressItems).mockReturnValue([]);
 }
 
 describe("loadEvolutionContext", () => {
@@ -151,7 +154,7 @@ describe("loadEvolutionContext", () => {
 
     const consoleSpy = vi.spyOn(console, "log");
     await loadEvolutionContext(fakeDb, 1);
-    expect(updateItemStatus).toHaveBeenCalledWith(config, "42", "In Progress");
+    expect(updateItemStatus).toHaveBeenCalledWith(config, "42", "In Progress", undefined, 1);
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("marked In Progress"));
   });
 
@@ -166,7 +169,7 @@ describe("loadEvolutionContext", () => {
 
     const consoleSpy = vi.spyOn(console, "error");
     await loadEvolutionContext(fakeDb, 1);
-    expect(updateItemStatus).toHaveBeenCalledWith(config, "99", "In Progress");
+    expect(updateItemStatus).toHaveBeenCalledWith(config, "99", "In Progress", undefined, 1);
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Could not mark"));
   });
 

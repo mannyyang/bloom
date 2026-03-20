@@ -281,12 +281,15 @@ export function addDraftItem(
  * Update the status of an item by its ID.
  * When moving to "Done", an optional completionNote replaces the item body
  * to document what was accomplished.
+ * When moving to "In Progress", an optional sinceCycle stamps a [since: N]
+ * annotation into the body so stale detection can identify stuck items.
  */
 export function updateItemStatus(
   _config: ProjectConfig,
   itemId: string,
   status: StatusColumn,
   completionNote?: string,
+  sinceCycle?: number,
 ): boolean {
   return withRoadmapItems((items) => {
     const item = items.find((i) => i.id === itemId);
@@ -295,8 +298,62 @@ export function updateItemStatus(
     item.status = status;
     if (status === "Done" && completionNote) {
       item.body = completionNote;
+    } else if (status === "In Progress" && sinceCycle !== undefined) {
+      // Strip any existing annotation then append a fresh one
+      const stripped = item.body.replace(/\n?\[since:\s*\d+\]/g, "").trim();
+      item.body = stripped
+        ? `${stripped}\n[since: ${sinceCycle}]`
+        : `[since: ${sinceCycle}]`;
     }
     return true;
+  });
+}
+
+// --- Stale Detection ---
+
+/**
+ * Parse the [since: N] annotation from an item body.
+ * Returns the cycle number N, or null if no annotation is present.
+ */
+export function parseInProgressSinceCycle(body: string): number | null {
+  const match = body.match(/\[since:\s*(\d+)\]/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+/**
+ * Detect "In Progress" items that are stale — stuck without progress for
+ * more than `threshold` cycles. Items without a [since: N] annotation are
+ * always considered stale (they predate this feature or were orphaned by a crash).
+ */
+export function detectStaleInProgressItems(
+  items: ProjectItem[],
+  currentCycle: number,
+  threshold: number = 3,
+): ProjectItem[] {
+  return items.filter((item) => {
+    if (item.status !== "In Progress") return false;
+    const since = parseInProgressSinceCycle(item.body);
+    if (since === null) return true; // no annotation → always stale
+    return currentCycle - since > threshold;
+  });
+}
+
+/**
+ * Demote stale "In Progress" items back to "Up Next" and strip their
+ * [since: N] annotation. Returns the titles of demoted items.
+ */
+export function demoteStaleInProgressItems(
+  _config: ProjectConfig,
+  currentCycle: number,
+  threshold: number = 3,
+): string[] {
+  return withRoadmapItems((items) => {
+    const stale = detectStaleInProgressItems(items, currentCycle, threshold);
+    for (const item of stale) {
+      item.status = "Up Next";
+      item.body = item.body.replace(/\n?\[since:\s*\d+\]/g, "").trim();
+    }
+    return stale.map((i) => i.title);
   });
 }
 

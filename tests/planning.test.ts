@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, type ProjectItem } from "../src/planning.js";
+import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, detectStaleInProgressItems, type ProjectItem } from "../src/planning.js";
 
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
@@ -255,6 +255,76 @@ describe("serializeRoadmap", () => {
     expect(parsed[2].title).toBe("Gamma");
     expect(parsed[2].status).toBe("Done");
     expect(parsed[2].linkedIssueNumber).toBe(5);
+  });
+});
+
+describe("parseInProgressSinceCycle", () => {
+  it("returns null when body is empty", () => {
+    expect(parseInProgressSinceCycle("")).toBeNull();
+  });
+
+  it("returns null when no annotation is present", () => {
+    expect(parseInProgressSinceCycle("some body text without annotation")).toBeNull();
+  });
+
+  it("parses [since: N] annotation", () => {
+    expect(parseInProgressSinceCycle("[since: 42]")).toBe(42);
+  });
+
+  it("parses annotation embedded in multi-line body text", () => {
+    expect(parseInProgressSinceCycle("some text\n[since: 10]")).toBe(10);
+  });
+
+  it("handles whitespace variations", () => {
+    expect(parseInProgressSinceCycle("[since:5]")).toBe(5);
+    expect(parseInProgressSinceCycle("[since:  100]")).toBe(100);
+  });
+});
+
+describe("detectStaleInProgressItems", () => {
+  it("returns empty array when no items", () => {
+    expect(detectStaleInProgressItems([], 10)).toEqual([]);
+  });
+
+  it("ignores non-In-Progress items", () => {
+    const items = [
+      makeItem({ status: "Backlog" }),
+      makeItem({ status: "Up Next" }),
+      makeItem({ status: "Done" }),
+    ];
+    expect(detectStaleInProgressItems(items, 10)).toEqual([]);
+  });
+
+  it("treats In Progress item with no annotation as always stale", () => {
+    const item = makeItem({ status: "In Progress", body: "" });
+    expect(detectStaleInProgressItems([item], 1)).toHaveLength(1);
+  });
+
+  it("detects item stuck beyond threshold as stale", () => {
+    // currentCycle=5, since=1 → 5-1=4 > threshold=3 → stale
+    const item = makeItem({ status: "In Progress", body: "[since: 1]" });
+    expect(detectStaleInProgressItems([item], 5, 3)).toHaveLength(1);
+  });
+
+  it("does not flag item within threshold", () => {
+    // currentCycle=5, since=3 → 5-3=2 ≤ threshold=3 → fresh
+    const item = makeItem({ status: "In Progress", body: "[since: 3]" });
+    expect(detectStaleInProgressItems([item], 5, 3)).toHaveLength(0);
+  });
+
+  it("does not flag item at exact threshold boundary", () => {
+    // currentCycle=5, since=2 → 5-2=3, not > 3 → fresh
+    const item = makeItem({ status: "In Progress", body: "[since: 2]" });
+    expect(detectStaleInProgressItems([item], 5, 3)).toHaveLength(0);
+  });
+
+  it("returns only the stale items from a mixed set", () => {
+    const fresh = makeItem({ id: "a", status: "In Progress", body: "[since: 3]" });
+    const stale = makeItem({ id: "b", status: "In Progress", body: "[since: 1]" });
+    // currentCycle=5, default threshold=3: fresh 5-3=2≤3, stale 5-1=4>3
+    const result = detectStaleInProgressItems([fresh, stale], 5);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("b");
   });
 });
 
