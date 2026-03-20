@@ -4,6 +4,17 @@
  */
 
 /**
+ * Category of failure for an evolution cycle.
+ * Enables pattern detection — e.g., "test failures dominate losses."
+ *
+ * - 'build_failure': TypeScript compiler error; pnpm build failed before tests ran.
+ * - 'test_failure': Build succeeded but one or more vitest tests failed.
+ * - 'llm_error': The evolution agent or assessment phase threw an unhandled error.
+ * - 'none': No failure — cycle completed successfully.
+ */
+export type ErrorCategory = "build_failure" | "test_failure" | "llm_error" | "none";
+
+/**
  * Extract a human-readable message from an unknown thrown value.
  * Handles Error instances, strings, objects with a message property, and fallbacks.
  */

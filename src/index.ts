@@ -88,6 +88,11 @@ async function main() {
     evolutionError = err;
     console.error(`\n[error] Evolution failed: ${errorMessage(err)}`);
 
+    // Classify failure if not already set by a sub-phase (e.g. build verification)
+    if (outcome.failureCategory === "none") {
+      outcome.failureCategory = "llm_error";
+    }
+
     // Record the error as a journal entry so it's visible on GitHub Pages
     if (db && cycleCount > 0) {
       try {

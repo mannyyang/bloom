@@ -106,6 +106,17 @@ describe("db", () => {
         migratedDb.close();
         unlinkSync(path);
       });
+
+      it("adds failure_category column when missing", () => {
+        const path = join(tmpdir(), `bloom-migration-test-${Date.now()}-e.db`);
+        createLegacyDb(path);
+        const migratedDb = initDb(path);
+        const cols = migratedDb.prepare("PRAGMA table_info(cycles)").all() as { name: string }[];
+        const colNames = new Set(cols.map(c => c.name));
+        expect(colNames.has("failure_category")).toBe(true);
+        migratedDb.close();
+        unlinkSync(path);
+      });
     });
   });
 
@@ -224,6 +235,16 @@ describe("db", () => {
       expect(row.completed_at).toBeTruthy();
       // Should be a valid ISO timestamp
       expect(new Date(row.completed_at!).getTime()).toBeGreaterThan(0);
+    });
+
+    it("persists failureCategory from outcome", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      updateCycleOutcome(db, makeOutcome({
+        cycleNumber: 1, buildVerificationPassed: false,
+        failureCategory: "test_failure",
+      }));
+      const row = db.prepare("SELECT failure_category FROM cycles WHERE cycle_number = 1").get() as { failure_category: string };
+      expect(row.failure_category).toBe("test_failure");
     });
 
     it("does nothing for non-existent cycle", () => {

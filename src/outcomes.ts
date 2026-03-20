@@ -3,6 +3,8 @@
  * Captures structured success/failure data to answer "how are you measuring success?"
  */
 
+import type { ErrorCategory } from "./errors.js";
+
 export interface CycleOutcome {
   cycleNumber: number;
   preflightPassed: boolean;
@@ -15,6 +17,7 @@ export interface CycleOutcome {
   testTotalBefore: number | null;
   testTotalAfter: number | null;
   durationMs: number | null;
+  failureCategory: ErrorCategory;
 }
 
 /**
@@ -53,6 +56,19 @@ export function parseTestTotal(output: string): number | null {
 }
 
 /**
+ * Classify a build/test failure based on the captured output.
+ * If vitest ran and reported failed tests, it's a test_failure.
+ * Otherwise (TypeScript compiler error, missing module, etc.) it's a build_failure.
+ */
+export function classifyBuildFailure(output: string): ErrorCategory {
+  // Vitest prints "Tests  N failed" or "Tests  N passed | N failed" when tests run and fail
+  if (/Tests\s+.*\d+\s+failed/.test(output)) {
+    return "test_failure";
+  }
+  return "build_failure";
+}
+
+/**
  * Create a default CycleOutcome for a given cycle number.
  * All metrics start at their "not yet determined" defaults.
  */
@@ -69,6 +85,7 @@ export function createOutcome(cycleNumber: number): CycleOutcome {
     testTotalBefore: null,
     testTotalAfter: null,
     durationMs: null,
+    failureCategory: "none",
   };
 }
 
@@ -86,6 +103,10 @@ export function formatOutcomeForJournal(outcome: CycleOutcome): string {
     `- **Build verification**: ${outcome.buildVerificationPassed ? "passed" : "failed"}`,
   );
   lines.push(`- **Push**: ${outcome.pushSucceeded ? "succeeded" : "failed"}`);
+
+  if (outcome.failureCategory !== "none") {
+    lines.push(`- **Failure category**: ${outcome.failureCategory}`);
+  }
 
   if (outcome.testCountBefore !== null && outcome.testCountAfter !== null) {
     const delta = outcome.testCountAfter - outcome.testCountBefore;

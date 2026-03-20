@@ -81,6 +81,7 @@ export function initDb(path: string = DEFAULT_DB_PATH): Database.Database {
       test_total_before        INTEGER,
       test_total_after         INTEGER,
       duration_ms              INTEGER,
+      failure_category         TEXT NOT NULL DEFAULT 'none',
       completed_at             TEXT
     );
 
@@ -150,6 +151,9 @@ export function initDb(path: string = DEFAULT_DB_PATH): Database.Database {
   if (!cycleColNames.has("test_total_after")) {
     db.exec("ALTER TABLE cycles ADD COLUMN test_total_after INTEGER");
   }
+  if (!cycleColNames.has("failure_category")) {
+    db.exec("ALTER TABLE cycles ADD COLUMN failure_category TEXT NOT NULL DEFAULT 'none'");
+  }
 
   return db;
 }
@@ -169,8 +173,8 @@ export function insertCycle(db: Database.Database, outcome: CycleOutcome): void 
       cycle_number, started_at, preflight_passed, improvements_attempted,
       improvements_succeeded, build_verification_passed, push_succeeded,
       test_count_before, test_count_after, test_total_before, test_total_after,
-      duration_ms
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      duration_ms, failure_category
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     outcome.cycleNumber,
     new Date().toISOString(),
@@ -184,6 +188,7 @@ export function insertCycle(db: Database.Database, outcome: CycleOutcome): void 
     outcome.testTotalBefore,
     outcome.testTotalAfter,
     outcome.durationMs,
+    outcome.failureCategory,
   );
 }
 
@@ -204,6 +209,7 @@ export function updateCycleOutcome(db: Database.Database, outcome: CycleOutcome)
       test_total_before = ?,
       test_total_after = ?,
       duration_ms = ?,
+      failure_category = ?,
       completed_at = ?
     WHERE cycle_number = ?
   `).run(
@@ -217,6 +223,7 @@ export function updateCycleOutcome(db: Database.Database, outcome: CycleOutcome)
     outcome.testTotalBefore,
     outcome.testTotalAfter,
     outcome.durationMs,
+    outcome.failureCategory,
     new Date().toISOString(),
     outcome.cycleNumber,
   );

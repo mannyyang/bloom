@@ -39,6 +39,7 @@ function createOutcome(overrides: Partial<CycleOutcome> = {}): CycleOutcome {
     testTotalBefore: null,
     testTotalAfter: null,
     durationMs: null,
+    failureCategory: "none" as const,
     ...overrides,
   };
 }

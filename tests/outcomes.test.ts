@@ -4,6 +4,7 @@ import {
   parseTestTotal,
   createOutcome,
   formatOutcomeForJournal,
+  classifyBuildFailure,
 } from "../src/outcomes.js";
 import { makeOutcome } from "./helpers.js";
 
@@ -220,5 +221,27 @@ describe("formatOutcomeForJournal", () => {
     });
     const result = formatOutcomeForJournal(outcome);
     expect(result).not.toContain("total:");
+  });
+});
+
+describe("classifyBuildFailure", () => {
+  it("returns test_failure when vitest reports failed tests", () => {
+    expect(classifyBuildFailure("Tests  5 failed (5)")).toBe("test_failure");
+  });
+
+  it("returns test_failure for mixed passed/failed vitest output", () => {
+    expect(classifyBuildFailure("Tests  490 passed | 3 failed (493)")).toBe("test_failure");
+  });
+
+  it("returns build_failure for TypeScript compiler output (no test lines)", () => {
+    expect(classifyBuildFailure("src/foo.ts(10,5): error TS2345: Argument of type")).toBe("build_failure");
+  });
+
+  it("returns build_failure for empty output", () => {
+    expect(classifyBuildFailure("")).toBe("build_failure");
+  });
+
+  it("returns build_failure when build output has no vitest failure pattern", () => {
+    expect(classifyBuildFailure("Tests  10 passed (10)")).toBe("build_failure");
   });
 });
