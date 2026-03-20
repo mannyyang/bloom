@@ -7,14 +7,15 @@
   (Moved back from In Progress — no concrete code changes were made toward this goal.)
 
 ## Up Next
-- [ ] Add structured error classification to evolution cycle outcomes
-  Distinguish between build failures, test failures, LLM errors, and tool errors in the
-  outcomes table. Enables pattern detection (e.g., "test failures dominate cycle losses").
 - [ ] Detect and recover stale "In Progress" roadmap items
   Completed in cycle 111: added detectStaleInProgressItems, demoteStaleInProgressItems, and
   parseInProgressSinceCycle to planning.ts; items stuck > 3 cycles auto-demote to Up Next.
 
 ## In Progress
+- [ ] Add structured error classification to evolution cycle outcomes
+  Distinguish between build failures, test failures, LLM errors, and tool errors in the
+  outcomes table. Enables pattern detection (e.g., "test failures dominate cycle losses").
+  [since: 113]
 
 ## Done
 - [x] Track assessment-to-improvement conversion rate
