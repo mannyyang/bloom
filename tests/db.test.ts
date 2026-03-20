@@ -461,7 +461,7 @@ describe("db", () => {
       expect(result).not.toContain("Cycle 1");
     });
 
-    it("includes strategic_context in summary when present", () => {
+    it("excludes strategic_context by default even when present", () => {
       insertCycle(db, makeOutcome({ cycleNumber: 1 }));
       insertJournalEntry(db, 1, "attempted", "Improved tests");
       insertJournalEntry(db, 1, "succeeded", "Tests pass");
@@ -470,6 +470,19 @@ describe("db", () => {
       insertJournalEntry(db, 1, "strategic_context", "Focusing on test coverage and reliability.");
 
       const summary = getRecentJournalSummary(db);
+      expect(summary).not.toContain("### Strategic Context");
+      expect(summary).not.toContain("Focusing on test coverage and reliability.");
+    });
+
+    it("includes strategic_context when includeStrategicContext is true", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertJournalEntry(db, 1, "attempted", "Improved tests");
+      insertJournalEntry(db, 1, "succeeded", "Tests pass");
+      insertJournalEntry(db, 1, "failed", "");
+      insertJournalEntry(db, 1, "learnings", "Testing is good");
+      insertJournalEntry(db, 1, "strategic_context", "Focusing on test coverage and reliability.");
+
+      const summary = getRecentJournalSummary(db, 4000, 5, true);
       expect(summary).toContain("### Strategic Context");
       expect(summary).toContain("Focusing on test coverage and reliability.");
     });
@@ -485,7 +498,7 @@ describe("db", () => {
       expect(summary).not.toContain("Strategic Context");
     });
 
-    it("includes strategic_context section in budget calculation", () => {
+    it("includes strategic_context section in budget calculation when enabled", () => {
       insertCycle(db, makeOutcome({ cycleNumber: 1 }));
       insertCycle(db, makeOutcome({ cycleNumber: 2 }));
       insertJournalEntry(db, 1, "attempted", "Work 1");
@@ -499,7 +512,7 @@ describe("db", () => {
       insertJournalEntry(db, 2, "strategic_context", "X".repeat(200));
 
       // The strategic context adds significant length to cycle 2's section
-      const fullSummary = getRecentJournalSummary(db, 100000);
+      const fullSummary = getRecentJournalSummary(db, 100000, 5, true);
       expect(fullSummary).toContain("Strategic Context");
       expect(fullSummary).toContain("X".repeat(200));
 
@@ -507,7 +520,7 @@ describe("db", () => {
       // but not cycle 1, only cycle 2 should appear
       const cycle2Section = fullSummary.split("---")[0] + "---\n";
       const tightBudget = cycle2Section.length + 5;
-      const truncated = getRecentJournalSummary(db, tightBudget);
+      const truncated = getRecentJournalSummary(db, tightBudget, 5, true);
       expect(truncated).toContain("Cycle 2");
       expect(truncated).not.toContain("Cycle 1");
     });
@@ -540,7 +553,7 @@ describe("db", () => {
       expect(summary).not.toContain("### What failed");
     });
 
-    it("includes all section headers when all fields have content", () => {
+    it("includes all section headers when all fields have content and includeStrategicContext is true", () => {
       insertCycle(db, makeOutcome({ cycleNumber: 1 }));
       insertJournalEntry(db, 1, "attempted", "A");
       insertJournalEntry(db, 1, "succeeded", "B");
@@ -548,12 +561,26 @@ describe("db", () => {
       insertJournalEntry(db, 1, "learnings", "D");
       insertJournalEntry(db, 1, "strategic_context", "E");
 
-      const summary = getRecentJournalSummary(db);
+      const summary = getRecentJournalSummary(db, 4000, 5, true);
       expect(summary).toContain("### What was attempted");
       expect(summary).toContain("### What succeeded");
       expect(summary).toContain("### What failed");
       expect(summary).toContain("### Learnings");
       expect(summary).toContain("### Strategic Context");
+    });
+
+    it("excludes Strategic Context header even when content exists if includeStrategicContext is false", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertJournalEntry(db, 1, "attempted", "A");
+      insertJournalEntry(db, 1, "succeeded", "B");
+      insertJournalEntry(db, 1, "failed", "C");
+      insertJournalEntry(db, 1, "learnings", "D");
+      insertJournalEntry(db, 1, "strategic_context", "E");
+
+      const summary = getRecentJournalSummary(db, 4000, 5, false);
+      expect(summary).toContain("### What was attempted");
+      expect(summary).toContain("### Learnings");
+      expect(summary).not.toContain("### Strategic Context");
     });
 
     it("default maxCycles limits to 5 cycles", () => {
