@@ -7,17 +7,17 @@
   (Moved back from In Progress — no concrete code changes were made toward this goal.)
 
 ## Up Next
-- [ ] Detect and recover stale "In Progress" roadmap items
-  Completed in cycle 111: added detectStaleInProgressItems, demoteStaleInProgressItems, and
-  parseInProgressSinceCycle to planning.ts; items stuck > 3 cycles auto-demote to Up Next.
 
 ## In Progress
-- [ ] Add structured error classification to evolution cycle outcomes
-  Distinguish between build failures, test failures, LLM errors, and tool errors in the
-  outcomes table. Enables pattern detection (e.g., "test failures dominate cycle losses").
-  [since: 113]
 
 ## Done
+- [x] Add structured error classification to evolution cycle outcomes
+  Completed in cycle 114: `failure_category` column stores build_failure/test_failure/llm_error/none
+  per cycle; `getCycleStats` now computes a `failureCategoryBreakdown` and `formatCycleStats`
+  renders it when failures are present — enables pattern detection in the assessment prompt.
+- [x] Detect and recover stale "In Progress" roadmap items
+  Completed in cycle 111: added detectStaleInProgressItems, demoteStaleInProgressItems, and
+  parseInProgressSinceCycle to planning.ts; items stuck > 3 cycles auto-demote to Up Next.
 - [x] Track assessment-to-improvement conversion rate
   Completed in cycle 110: added avgConversionRate to CycleStats — surfaces succeeded/attempted
   ratio in pnpm stats, with null when no attempts have been made.
