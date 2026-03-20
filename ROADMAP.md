@@ -7,14 +7,14 @@
   (Moved back from In Progress — no concrete code changes were made toward this goal.)
 
 ## Up Next
+- [ ] Detect and recover stale "In Progress" roadmap items
+  Completed in cycle 111: added detectStaleInProgressItems, demoteStaleInProgressItems, and
+  parseInProgressSinceCycle to planning.ts; items stuck > 3 cycles auto-demote to Up Next.
+  Moved to Done in cycle 116 (file was never actually updated despite prior cycle claims).
 
 ## In Progress
 
 ## Done
-- [x] Detect and recover stale "In Progress" roadmap items
-  Completed in cycle 111: added detectStaleInProgressItems, demoteStaleInProgressItems, and
-  parseInProgressSinceCycle to planning.ts; items stuck > 3 cycles auto-demote to Up Next.
-  Moved to Done in cycle 116 (file was never actually updated despite prior cycle claims).
 - [x] Add structured error classification to evolution cycle outcomes
   Completed in cycle 114: `failure_category` column stores build_failure/test_failure/llm_error/none
   per cycle; `getCycleStats` now computes a `failureCategoryBreakdown` and `formatCycleStats`
