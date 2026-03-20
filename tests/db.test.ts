@@ -555,6 +555,35 @@ describe("db", () => {
       expect(summary).toContain("### Learnings");
       expect(summary).toContain("### Strategic Context");
     });
+
+    it("default maxCycles limits to 5 cycles", () => {
+      // Insert 8 cycles with journal entries
+      for (let i = 1; i <= 8; i++) {
+        insertCycle(db, makeOutcome({ cycleNumber: i }));
+        insertJournalEntry(db, i, "attempted", `Cycle ${i} work`);
+      }
+      // Default call (maxCycles=5) should include cycles 8..4 but not 3, 2, 1
+      const summary = getRecentJournalSummary(db, 100000);
+      expect(summary).toContain("Cycle 8");
+      expect(summary).toContain("Cycle 4");
+      expect(summary).not.toContain("Cycle 3");
+      expect(summary).not.toContain("Cycle 2");
+      expect(summary).not.toContain("Cycle 1");
+    });
+
+    it("explicit maxCycles overrides the default", () => {
+      // Insert 6 cycles
+      for (let i = 1; i <= 6; i++) {
+        insertCycle(db, makeOutcome({ cycleNumber: i }));
+        insertJournalEntry(db, i, "attempted", `Cycle ${i} work`);
+      }
+      // maxCycles=2 should include only cycles 6 and 5
+      const summary = getRecentJournalSummary(db, 100000, 2);
+      expect(summary).toContain("Cycle 6");
+      expect(summary).toContain("Cycle 5");
+      expect(summary).not.toContain("Cycle 4");
+      expect(summary).not.toContain("Cycle 3");
+    });
   });
 
   describe("insertPhaseUsage", () => {

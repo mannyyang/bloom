@@ -608,8 +608,8 @@ export function getLatestStrategicContext(
   return row?.summary ?? null;
 }
 
-export function getRecentJournalSummary(db: Database.Database, maxChars: number = 4000): string {
-  const entries = exportJournalJson(db, 10);
+export function getRecentJournalSummary(db: Database.Database, maxChars: number = 4000, maxCycles: number = 5): string {
+  const entries = exportJournalJson(db, maxCycles);
   const lines: string[] = [];
   let totalLen = 0;
 
