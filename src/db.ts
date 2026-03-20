@@ -366,6 +366,7 @@ export interface CycleStats {
   avgCostPerCycle: number;
   totalInputTokens: number;
   totalOutputTokens: number;
+  failureCategoryBreakdown: Record<string, number>;
 }
 
 /**
@@ -406,7 +407,7 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
   const rows = validateRows<CycleRow>(rawRows, cycleRowSchema, "getCycleStats");
 
   if (rows.length === 0) {
-    return { totalCycles: 0, successRate: 0, avgImprovements: 0, avgConversionRate: null, testCountTrend: null, recentFailures: 0, avgDurationMinutes: null, totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0 };
+    return { totalCycles: 0, successRate: 0, avgImprovements: 0, avgConversionRate: null, testCountTrend: null, recentFailures: 0, avgDurationMinutes: null, totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0, failureCategoryBreakdown: {} };
   }
 
   const totalCycles = rows.length;
@@ -476,7 +477,20 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
   const totalInputTokens = usageRow.total_input;
   const totalOutputTokens = usageRow.total_output;
 
-  return { totalCycles, successRate, avgImprovements, avgConversionRate, testCountTrend, recentFailures, avgDurationMinutes, totalCostUsd, avgCostPerCycle, totalInputTokens, totalOutputTokens };
+  // Failure category breakdown across all queried cycles (excluding 'none')
+  const failureCategoryRaw = db.prepare(`
+    SELECT failure_category, COUNT(*) as cnt
+    FROM cycles
+    WHERE cycle_number IN (SELECT cycle_number FROM cycles ORDER BY cycle_number DESC LIMIT ?)
+      AND failure_category != 'none'
+    GROUP BY failure_category
+  `).all(limit) as { failure_category: string; cnt: number }[];
+  const failureCategoryBreakdown: Record<string, number> = {};
+  for (const row of failureCategoryRaw) {
+    failureCategoryBreakdown[row.failure_category] = row.cnt;
+  }
+
+  return { totalCycles, successRate, avgImprovements, avgConversionRate, testCountTrend, recentFailures, avgDurationMinutes, totalCostUsd, avgCostPerCycle, totalInputTokens, totalOutputTokens, failureCategoryBreakdown };
 }
 
 /**
@@ -508,6 +522,12 @@ export function formatCycleStats(stats: CycleStats): string {
     lines.push(`- **Total tokens**: ${fmtTokens(stats.totalInputTokens)} in / ${fmtTokens(stats.totalOutputTokens)} out`);
   }
   lines.push(`- **Recent failures** (last 5): ${stats.recentFailures}`);
+  if (stats.recentFailures > 0 && Object.keys(stats.failureCategoryBreakdown).length > 0) {
+    const breakdown = Object.entries(stats.failureCategoryBreakdown)
+      .map(([cat, count]) => `${count} ${cat}`)
+      .join(", ");
+    lines.push(`- **Failure breakdown** (last ${stats.totalCycles}): ${breakdown}`);
+  }
   return lines.join("\n");
 }
 

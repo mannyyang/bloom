@@ -829,6 +829,40 @@ describe("db", () => {
       expect(stats.totalOutputTokens).toBe(0);
     });
 
+    it("returns empty failureCategoryBreakdown when all cycles succeeded", () => {
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
+
+      const stats = getCycleStats(db);
+      expect(stats.failureCategoryBreakdown).toEqual({});
+    });
+
+    it("counts failure categories across cycles", () => {
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, buildVerificationPassed: false, pushSucceeded: false,
+        failureCategory: "test_failure",
+      }));
+      insertCycle(db, makeOutcome({
+        cycleNumber: 2, buildVerificationPassed: false, pushSucceeded: false,
+        failureCategory: "test_failure",
+      }));
+      insertCycle(db, makeOutcome({
+        cycleNumber: 3, buildVerificationPassed: false, pushSucceeded: false,
+        failureCategory: "build_failure",
+      }));
+      insertCycle(db, makeOutcome({
+        cycleNumber: 4, buildVerificationPassed: true, pushSucceeded: true,
+        failureCategory: "none",
+      }));
+
+      const stats = getCycleStats(db);
+      expect(stats.failureCategoryBreakdown["test_failure"]).toBe(2);
+      expect(stats.failureCategoryBreakdown["build_failure"]).toBe(1);
+      expect(stats.failureCategoryBreakdown["none"]).toBeUndefined();
+    });
+
     it("returns null conversion rate when no cycles have attempts", () => {
       insertCycle(db, makeOutcome({
         cycleNumber: 1, improvementsAttempted: 0, improvementsSucceeded: 0,
@@ -889,6 +923,7 @@ describe("db", () => {
         totalCycles: 0, successRate: 0, avgImprovements: 0, avgConversionRate: null,
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
+        failureCategoryBreakdown: {},
       });
       expect(result).toBe("No previous cycle data available.");
     });
@@ -899,6 +934,7 @@ describe("db", () => {
         testCountTrend: 42, recentFailures: 1, avgDurationMinutes: 8.5,
         totalCostUsd: 15.50, avgCostPerCycle: 1.55,
         totalInputTokens: 50000, totalOutputTokens: 25000,
+        failureCategoryBreakdown: {},
       });
       expect(result).toContain("10");
       expect(result).toContain("80%");
@@ -917,6 +953,7 @@ describe("db", () => {
         totalCycles: 3, successRate: 100, avgImprovements: 0, avgConversionRate: null,
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
+        failureCategoryBreakdown: {},
       });
       expect(result).not.toContain("Conversion rate");
     });
@@ -926,6 +963,7 @@ describe("db", () => {
         totalCycles: 5, successRate: 60, avgImprovements: 1, avgConversionRate: null,
         testCountTrend: -7, recentFailures: 2, avgDurationMinutes: null,
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
+        failureCategoryBreakdown: {},
       });
       expect(result).toContain("-7");
       expect(result).not.toContain("+-7");
@@ -936,6 +974,7 @@ describe("db", () => {
         totalCycles: 5, successRate: 100, avgImprovements: 2, avgConversionRate: null,
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
+        failureCategoryBreakdown: {},
       });
       expect(result).not.toContain("duration");
       expect(result).not.toContain("cost");
@@ -946,6 +985,7 @@ describe("db", () => {
         totalCycles: 5, successRate: 100, avgImprovements: 2, avgConversionRate: null,
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
+        failureCategoryBreakdown: {},
       });
       expect(result).not.toContain("tokens");
     });
@@ -956,8 +996,41 @@ describe("db", () => {
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
         totalCostUsd: 0.10, avgCostPerCycle: 0.10,
         totalInputTokens: 500, totalOutputTokens: 200,
+        failureCategoryBreakdown: {},
       });
       expect(result).toContain("500 in / 200 out");
+    });
+
+    it("renders failure breakdown when recentFailures > 0 and breakdown is non-empty", () => {
+      const result = formatCycleStats({
+        totalCycles: 5, successRate: 60, avgImprovements: 1, avgConversionRate: null,
+        testCountTrend: null, recentFailures: 2, avgDurationMinutes: null,
+        totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
+        failureCategoryBreakdown: { test_failure: 3, build_failure: 1 },
+      });
+      expect(result).toContain("Failure breakdown");
+      expect(result).toContain("3 test_failure");
+      expect(result).toContain("1 build_failure");
+    });
+
+    it("omits failure breakdown when recentFailures is 0", () => {
+      const result = formatCycleStats({
+        totalCycles: 5, successRate: 100, avgImprovements: 1, avgConversionRate: null,
+        testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
+        totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
+        failureCategoryBreakdown: { test_failure: 1 },
+      });
+      expect(result).not.toContain("Failure breakdown");
+    });
+
+    it("omits failure breakdown when breakdown is empty", () => {
+      const result = formatCycleStats({
+        totalCycles: 5, successRate: 80, avgImprovements: 1, avgConversionRate: null,
+        testCountTrend: null, recentFailures: 1, avgDurationMinutes: null,
+        totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
+        failureCategoryBreakdown: {},
+      });
+      expect(result).not.toContain("Failure breakdown");
     });
   });
 
