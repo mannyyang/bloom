@@ -1,22 +1,22 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Add structured error classification to evolution cycle outcomes
-  Distinguish between build failures, test failures, LLM errors, and tool errors in the
-  outcomes table. Enables pattern detection (e.g., "test failures dominate cycle losses").
 - [ ] Improve prompt efficiency to reduce average cost per evolution cycle
   Investigate token-heavy phases (assessment, implementation) and find opportunities to
   shrink prompts without losing quality. Target: reduce median cycle cost by ~20%.
   (Moved back from In Progress — no concrete code changes were made toward this goal.)
 
 ## Up Next
-- [ ] Detect and recover stale "In Progress" roadmap items
-  If an item stays "In Progress" for more than 3 cycles without completing, automatically
-  move it back to "Up Next" and log a warning. Prevents roadmap items from getting stuck.
+- [ ] Add structured error classification to evolution cycle outcomes
+  Distinguish between build failures, test failures, LLM errors, and tool errors in the
+  outcomes table. Enables pattern detection (e.g., "test failures dominate cycle losses").
 
 ## In Progress
 
 ## Done
+- [x] Detect and recover stale "In Progress" roadmap items
+  Completed in cycle 111: added detectStaleInProgressItems, demoteStaleInProgressItems, and
+  parseInProgressSinceCycle to planning.ts; items stuck > 3 cycles auto-demote to Up Next.
 - [x] Track assessment-to-improvement conversion rate
   Completed in cycle 110: added avgConversionRate to CycleStats — surfaces succeeded/attempted
   ratio in pnpm stats, with null when no attempts have been made.
