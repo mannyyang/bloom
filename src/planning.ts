@@ -299,11 +299,16 @@ export function updateItemStatus(
     if (status === "Done" && completionNote) {
       item.body = completionNote;
     } else if (status === "In Progress" && sinceCycle !== undefined) {
-      // Strip any existing annotation then append a fresh one
-      const stripped = item.body.replace(/\n?\[since:\s*\d+\]/g, "").trim();
-      item.body = stripped
-        ? `${stripped}\n[since: ${sinceCycle}]`
-        : `[since: ${sinceCycle}]`;
+      // Preserve an existing [since: N] annotation so the staleness clock isn't
+      // reset every cycle. Only stamp a new annotation when none is present yet
+      // (i.e., the item is freshly transitioning into In Progress).
+      const existingAnnotation = item.body.match(/\[since:\s*\d+\]/);
+      if (!existingAnnotation) {
+        const stripped = item.body.replace(/\n?\[since:\s*\d+\]/g, "").trim();
+        item.body = stripped
+          ? `${stripped}\n[since: ${sinceCycle}]`
+          : `[since: ${sinceCycle}]`;
+      }
     }
     return true;
   });

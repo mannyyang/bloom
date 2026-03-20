@@ -342,4 +342,69 @@ describe("updateItemStatus", () => {
     expect(updatedItems[0].status).toBe("Up Next");
     expect(updatedItems[0].body).toBe("Original body");
   });
+
+  it("stamps [since: N] annotation when item first becomes In Progress", () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+- [ ] Fresh task
+
+## Up Next
+
+## In Progress
+
+## Done
+`);
+    const config = makeConfig();
+    const items = getProjectItems(config);
+    updateItemStatus(config, items[0].id, "In Progress", undefined, 50);
+
+    const updated = getProjectItems(config);
+    expect(updated[0].body).toContain("[since: 50]");
+  });
+
+  it("preserves existing [since: N] annotation when item is already In Progress (prevents clock reset)", () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+
+## Up Next
+
+## In Progress
+- [ ] Ongoing task
+  [since: 48]
+
+## Done
+`);
+    const config = makeConfig();
+    const items = getProjectItems(config);
+    // Simulate cycle 50 re-picking the same item — should NOT reset [since: 48] to [since: 50]
+    updateItemStatus(config, items[0].id, "In Progress", undefined, 50);
+
+    const updated = getProjectItems(config);
+    expect(updated[0].body).toContain("[since: 48]");
+    expect(updated[0].body).not.toContain("[since: 50]");
+  });
+
+  it("stamps a new [since: N] annotation when item has no existing annotation", () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+
+## Up Next
+
+## In Progress
+- [ ] Task without annotation
+  Some description
+
+## Done
+`);
+    const config = makeConfig();
+    const items = getProjectItems(config);
+    updateItemStatus(config, items[0].id, "In Progress", undefined, 55);
+
+    const updated = getProjectItems(config);
+    expect(updated[0].body).toContain("[since: 55]");
+    expect(updated[0].body).toContain("Some description");
+  });
 });
