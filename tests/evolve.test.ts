@@ -79,6 +79,15 @@ describe("buildAssessmentPrompt", () => {
     expect(prompt).toContain("Cycle 5");
     expect(prompt).toContain("Some content here");
   });
+
+  it("instructs assessment to stay under 2000 characters for efficiency", () => {
+    const prompt = buildAssessmentPrompt({
+      journalSummary: "",
+      cycleCount: 1,
+    });
+    expect(prompt).toContain("under 2000 characters");
+    expect(prompt).toContain("passed directly into the implementation prompt");
+  });
 });
 
 describe("buildEvolutionPrompt", () => {

@@ -21,7 +21,8 @@ ${ctx.journalSummary}
 ${ctx.cycleStatsText ? `\nYour track record:\n${ctx.cycleStatsText}\n` : ""}${ctx.memoryContext ? `\nYour accumulated knowledge:\n${ctx.memoryContext}\n` : ""}${ctx.planningContext ? `\n${ctx.planningContext}\n` : ""}
 Read all files in src/ and tests/, then provide a structured assessment:
 - What are the top 1-3 improvements to make this cycle?
-- For each: what to change, why, and expected difficulty.`;
+- For each: what to change, why, and expected difficulty.
+Keep your assessment under 2000 characters — it is passed directly into the implementation prompt.`;
 }
 
 interface EvolutionContext {
