@@ -6,14 +6,14 @@
 - [ ] Improve prompt efficiency to reduce average cost per evolution cycle
   Investigate token-heavy phases (assessment, implementation) and find opportunities to
   shrink prompts without losing quality. Target: reduce median cycle cost by ~20%.
+- [ ] Detect and recover stale "In Progress" roadmap items
+  Completed in cycle 111: added detectStaleInProgressItems, demoteStaleInProgressItems, and
+  parseInProgressSinceCycle to planning.ts; items stuck > 3 cycles auto-demote to Up Next.
+  Zombie item recurrence resolved in cycle 120 via direct ROADMAP.md edit.
 
 ## In Progress
 
 ## Done
-- [x] Detect and recover stale "In Progress" roadmap items
-  Completed in cycle 111: added detectStaleInProgressItems, demoteStaleInProgressItems, and
-  parseInProgressSinceCycle to planning.ts; items stuck > 3 cycles auto-demote to Up Next.
-  Zombie item recurrence resolved in cycle 120 via direct ROADMAP.md edit.
 - [x] Add structured error classification to evolution cycle outcomes
   Completed in cycle 114: `failure_category` column stores build_failure/test_failure/llm_error/none
   per cycle; `getCycleStats` now computes a `failureCategoryBreakdown` and `formatCycleStats`
