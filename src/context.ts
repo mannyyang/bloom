@@ -44,7 +44,7 @@ export async function loadEvolutionContext(
   const identity = readFileSync("IDENTITY.md", "utf-8");
   console.log(`[context] Identity loaded (${identity.length} chars)`);
 
-  const journalSummary = getRecentJournalSummary(db, 2000, 3);
+  const journalSummary = getRecentJournalSummary(db, 1500, 2);
   console.log(`[context] Journal summary: ${journalSummary ? `${journalSummary.length} chars` : "empty"}`);
 
   const issues = await fetchCommunityIssues();
