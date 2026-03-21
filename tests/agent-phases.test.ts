@@ -216,7 +216,7 @@ describe("runAssessmentPhase", () => {
     });
   });
 
-  it("includes context fields in the prompt", async () => {
+  it("includes context fields in the prompt and options", async () => {
     const { deps, queryCalls } = createMockDeps([
       createUsageMessage({ result: "assessment" }),
     ]);
@@ -225,7 +225,7 @@ describe("runAssessmentPhase", () => {
 
     await runAssessmentPhase(db, 5, ctx, [], deps);
 
-    expect(queryCalls[0].prompt).toContain("I am Bloom");
+    expect(queryCalls[0].options.systemPrompt).toBe("I am Bloom");
     expect(queryCalls[0].prompt).toContain("cycle 5");
   });
 

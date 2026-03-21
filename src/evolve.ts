@@ -1,5 +1,4 @@
 export interface AssessmentContext {
-  identity: string;
   journalSummary: string;
   cycleCount: number;
   cycleStatsText?: string;
@@ -16,9 +15,6 @@ Read your own source code in src/ and assess what to improve. Consider:
 3. Test coverage gaps
 4. Code clarity improvements
 5. New capabilities aligned with your purpose
-
-Your constitution:
-${ctx.identity}
 
 Recent journal entries:
 ${ctx.journalSummary}

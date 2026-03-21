@@ -71,7 +71,6 @@ export async function runAssessmentPhase(
   let assessmentTurns = 0;
   for await (const msg of deps.queryFn({
     prompt: buildAssessmentPrompt({
-      identity: ctx.identity,
       journalSummary: ctx.journalSummary,
       cycleCount,
       cycleStatsText: ctx.cycleStatsText,
@@ -83,6 +82,7 @@ export async function runAssessmentPhase(
       model: process.env.BLOOM_MODEL ?? "claude-sonnet-4-6",
       allowedTools: ["Read", "Glob", "Grep", "Bash"],
       permissionMode: "dontAsk",
+      systemPrompt: ctx.identity,
       maxTurns: 20,
       maxBudgetUsd: 2.0,
     },

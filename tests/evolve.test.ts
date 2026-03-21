@@ -2,19 +2,16 @@ import { describe, it, expect } from "vitest";
 import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements } from "../src/evolve.js";
 
 describe("buildAssessmentPrompt", () => {
-  it("includes identity and cycle count", () => {
+  it("includes cycle count in prompt", () => {
     const prompt = buildAssessmentPrompt({
-      identity: "I am Bloom",
       journalSummary: "# Journal",
       cycleCount: 5,
     });
     expect(prompt).toContain("evolution cycle 5");
-    expect(prompt).toContain("I am Bloom");
   });
 
   it("references roadmap for community work", () => {
     const prompt = buildAssessmentPrompt({
-      identity: "test",
       journalSummary: "",
       cycleCount: 1,
     });
@@ -23,7 +20,6 @@ describe("buildAssessmentPrompt", () => {
 
   it("includes cycleStatsText in prompt when provided", () => {
     const prompt = buildAssessmentPrompt({
-      identity: "test",
       journalSummary: "",
       cycleCount: 10,
       cycleStatsText: "Total cycles: 9 | Success rate: 78%",
@@ -34,7 +30,6 @@ describe("buildAssessmentPrompt", () => {
 
   it("omits track record section when cycleStatsText is absent", () => {
     const prompt = buildAssessmentPrompt({
-      identity: "test",
       journalSummary: "",
       cycleCount: 10,
     });
@@ -43,7 +38,6 @@ describe("buildAssessmentPrompt", () => {
 
   it("includes memoryContext when provided", () => {
     const prompt = buildAssessmentPrompt({
-      identity: "test",
       journalSummary: "",
       cycleCount: 5,
       memoryContext: "[pattern] Always run tests before committing",
@@ -54,7 +48,6 @@ describe("buildAssessmentPrompt", () => {
 
   it("omits memory section when memoryContext is absent", () => {
     const prompt = buildAssessmentPrompt({
-      identity: "test",
       journalSummary: "",
       cycleCount: 5,
     });
@@ -63,7 +56,6 @@ describe("buildAssessmentPrompt", () => {
 
   it("includes planningContext when provided", () => {
     const prompt = buildAssessmentPrompt({
-      identity: "test",
       journalSummary: "",
       cycleCount: 5,
       planningContext: "Current item: Improve error handling",
@@ -73,7 +65,6 @@ describe("buildAssessmentPrompt", () => {
 
   it("omits planning section when planningContext is absent", () => {
     const prompt = buildAssessmentPrompt({
-      identity: "test",
       journalSummary: "",
       cycleCount: 5,
     });
@@ -82,7 +73,6 @@ describe("buildAssessmentPrompt", () => {
 
   it("includes journal summary in prompt", () => {
     const prompt = buildAssessmentPrompt({
-      identity: "test",
       journalSummary: "## Cycle 5 — 2026-03-06\nSome content here",
       cycleCount: 6,
     });
