@@ -513,13 +513,16 @@ export function formatCycleStats(stats: CycleStats): string {
   if (stats.avgDurationMinutes !== null) {
     lines.push(`- **Avg cycle duration**: ${stats.avgDurationMinutes} min`);
   }
-  if (stats.totalCostUsd > 0) {
-    lines.push(`- **Total cost**: $${stats.totalCostUsd.toFixed(2)}`);
-    lines.push(`- **Avg cost/cycle**: $${stats.avgCostPerCycle.toFixed(2)}`);
-  }
-  if (stats.totalInputTokens > 0 || stats.totalOutputTokens > 0) {
+  if (stats.totalCostUsd > 0 || stats.totalInputTokens > 0 || stats.totalOutputTokens > 0) {
     const fmtTokens = (n: number) => n >= 1000 ? `${Math.round(n / 1000)}k` : `${n}`;
-    lines.push(`- **Total tokens**: ${fmtTokens(stats.totalInputTokens)} in / ${fmtTokens(stats.totalOutputTokens)} out`);
+    const costPart = stats.totalCostUsd > 0
+      ? `$${stats.totalCostUsd.toFixed(2)} total / $${stats.avgCostPerCycle.toFixed(2)} avg`
+      : null;
+    const tokenPart = (stats.totalInputTokens > 0 || stats.totalOutputTokens > 0)
+      ? `${fmtTokens(stats.totalInputTokens)} in / ${fmtTokens(stats.totalOutputTokens)} out tokens`
+      : null;
+    const parts = [costPart, tokenPart].filter(Boolean).join(" · ");
+    lines.push(`- **Cost**: ${parts}`);
   }
   lines.push(`- **Recent failures** (last 5): ${stats.recentFailures}`);
   if (stats.recentFailures > 0 && Object.keys(stats.failureCategoryBreakdown).length > 0) {

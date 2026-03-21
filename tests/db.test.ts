@@ -998,9 +998,8 @@ describe("db", () => {
       expect(result).toContain("75%");
       expect(result).toContain("+42");
       expect(result).toContain("8.5 min");
-      expect(result).toContain("$15.50");
-      expect(result).toContain("$1.55");
-      expect(result).toContain("50k in / 25k out");
+      expect(result).toContain("$15.50 total / $1.55 avg");
+      expect(result).toContain("50k in / 25k out tokens");
       expect(result).toContain("1");
     });
 
@@ -1036,7 +1035,7 @@ describe("db", () => {
       expect(result).not.toContain("cost");
     });
 
-    it("omits tokens line when both are zero", () => {
+    it("omits cost line when cost and tokens are all zero", () => {
       const result = formatCycleStats({
         totalCycles: 5, successRate: 100, avgImprovements: 2, avgConversionRate: null,
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
@@ -1044,6 +1043,7 @@ describe("db", () => {
         failureCategoryBreakdown: {},
       });
       expect(result).not.toContain("tokens");
+      expect(result).not.toContain("Cost");
     });
 
     it("formats small token counts without k suffix", () => {
@@ -1054,7 +1054,7 @@ describe("db", () => {
         totalInputTokens: 500, totalOutputTokens: 200,
         failureCategoryBreakdown: {},
       });
-      expect(result).toContain("500 in / 200 out");
+      expect(result).toContain("500 in / 200 out tokens");
     });
 
     it("renders failure breakdown when recentFailures > 0 and breakdown is non-empty", () => {

@@ -132,7 +132,7 @@ describe("generateStatsOutput", () => {
     });
     const output = generateStatsOutput(db);
     const joined = output.join("\n");
-    expect(joined).toContain("Total cost");
+    expect(joined).toContain("Cost");
     expect(joined).toContain("$1.23");
   });
 
@@ -150,7 +150,7 @@ describe("generateStatsOutput", () => {
     });
     const output = generateStatsOutput(db);
     const joined = output.join("\n");
-    expect(joined).toContain("Total tokens");
+    expect(joined).toContain("tokens");
     expect(joined).toContain("50k in");
     expect(joined).toContain("10k out");
   });
