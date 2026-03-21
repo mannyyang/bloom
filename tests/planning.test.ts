@@ -98,8 +98,9 @@ describe("formatPlanningContext", () => {
     expect(result).toContain("- Backlog A");
     expect(result).toContain("### Up Next");
     expect(result).toContain("- Up Next B");
-    expect(result).toContain("### Done");
-    expect(result).toContain("- Done C");
+    // Done items should be omitted from planning context
+    expect(result).not.toContain("### Done");
+    expect(result).not.toContain("- Done C");
   });
 
   it("includes reaction count when non-zero", () => {
