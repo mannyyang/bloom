@@ -7,7 +7,7 @@ export interface AssessmentContext {
 }
 
 export function buildAssessmentPrompt(ctx: AssessmentContext): string {
-  return `You are Bloom, a self-evolving coding agent. This is evolution cycle ${ctx.cycleCount}.
+  return `This is evolution cycle ${ctx.cycleCount}.
 
 Read your own source code in src/ and assess what to improve. Consider:
 1. Bugs or correctness issues
