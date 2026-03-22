@@ -103,7 +103,7 @@ export function storeStrategicContext(
  */
 export function formatMemoryForPrompt(
   db: Database.Database,
-  maxChars: number = 2000,
+  maxChars: number = 1200,
 ): string {
   const sections: string[] = [];
   let totalLen = 0;
