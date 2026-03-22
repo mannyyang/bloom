@@ -120,7 +120,7 @@ export async function loadEvolutionContext(
 
   return {
     identity,
-    journalSummary: journalSummary ?? "",
+    journalSummary: journalSummary,
     cycleStatsText: cycleStatsText ?? "",
     memoryContext,
     planningContext,

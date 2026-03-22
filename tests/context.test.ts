@@ -84,12 +84,6 @@ describe("loadEvolutionContext", () => {
     expect(ctx.journalSummary).toBe("recent journal");
   });
 
-  it("returns empty string when journal summary is null", async () => {
-    vi.mocked(getRecentJournalSummary).mockReturnValue(null as unknown as string);
-    const ctx = await loadEvolutionContext(fakeDb, 1);
-    expect(ctx.journalSummary).toBe("");
-  });
-
   it("fetches community issues", async () => {
     const issues = [
       { number: 1, title: "Bug", body: "", reactions: 5, labels: [] },
