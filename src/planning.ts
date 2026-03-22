@@ -239,7 +239,7 @@ export function addLinkedItem(
       id: nextItemId(items),
       title,
       status,
-      body: body.slice(0, 300),
+      body: body.slice(0, 200),
       linkedIssueNumber: issueNumber,
       reactions: 0,
     };
@@ -267,7 +267,7 @@ export function addDraftItem(
       id: nextItemId(items),
       title,
       status,
-      body: body.slice(0, 300),
+      body: body.slice(0, 200),
       linkedIssueNumber: null,
       reactions: 0,
     };
