@@ -115,7 +115,7 @@ describe("loadEvolutionContext", () => {
   it("returns memory context from formatMemoryForPrompt", async () => {
     vi.mocked(formatMemoryForPrompt).mockReturnValue("learnings here");
     const ctx = await loadEvolutionContext(fakeDb, 1);
-    expect(formatMemoryForPrompt).toHaveBeenCalledWith(fakeDb, 1500);
+    expect(formatMemoryForPrompt).toHaveBeenCalledWith(fakeDb, 1200);
     expect(ctx.memoryContext).toBe("learnings here");
   });
 

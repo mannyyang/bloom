@@ -58,7 +58,7 @@ export async function loadEvolutionContext(
   console.log(`[context] Cycle stats: ${cycleStatsText ? `${cycleStatsText.length} chars` : "none"}`);
 
   // Memory context (best-effort)
-  const memoryContext = formatMemoryForPrompt(db, 1500);
+  const memoryContext = formatMemoryForPrompt(db, 1200);
   console.log(`[context] Memory context: ${memoryContext ? `${memoryContext.length} chars` : "empty"}`);
 
   // Planning context (best-effort, uses ROADMAP.md)
