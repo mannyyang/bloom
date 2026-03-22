@@ -616,7 +616,7 @@ export function getLatestStrategicContext(
   return row?.summary ?? null;
 }
 
-export function getRecentJournalSummary(db: Database.Database, maxChars: number = 4000, maxCycles: number = 5, includeStrategicContext: boolean = false): string {
+export function getRecentJournalSummary(db: Database.Database, maxChars: number = 4000, maxCycles: number = 5): string {
   const entries = exportJournalJson(db, maxCycles);
   const lines: string[] = [];
   let totalLen = 0;
@@ -627,7 +627,6 @@ export function getRecentJournalSummary(db: Database.Database, maxChars: number 
     if (entry.succeeded) { parts.push("### What succeeded", entry.succeeded, ""); }
     if (entry.failed) { parts.push("### What failed", entry.failed, ""); }
     if (entry.learnings) { parts.push("### Learnings", entry.learnings, ""); }
-    if (includeStrategicContext && entry.strategic_context) { parts.push("### Strategic Context", entry.strategic_context, ""); }
     parts.push("---", "");
     const section = parts.join("\n");
     if (totalLen + section.length > maxChars && lines.length > 0) break;
