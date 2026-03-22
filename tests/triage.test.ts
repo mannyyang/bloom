@@ -100,9 +100,10 @@ describe("buildTriagePrompt", () => {
   it("truncates long issue bodies", () => {
     const longBody = "x".repeat(500);
     const prompt = buildTriagePrompt([makeIssue({ body: longBody })], []);
-    // Body should be truncated to 300 chars
+    // Body should be truncated to 200 chars (aligned with planning.ts cap)
     expect(prompt).not.toContain("x".repeat(500));
-    expect(prompt).toContain("x".repeat(300));
+    expect(prompt).toContain("x".repeat(200));
+    expect(prompt).not.toContain("x".repeat(201));
   });
 
   it("handles issues with empty bodies", () => {

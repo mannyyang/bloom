@@ -31,7 +31,7 @@ export function buildTriagePrompt(
   const issueList = issues
     .map(
       (i) =>
-        `- #${i.number}: "${i.title}" (${i.reactions} reactions)\n  ${i.body.slice(0, 300)}`,
+        `- #${i.number}: "${i.title}" (${i.reactions} reactions)\n  ${i.body.slice(0, 200)}`,
     )
     .join("\n");
 
