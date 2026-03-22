@@ -385,7 +385,7 @@ export function pickNextItem(items: ProjectItem[]): ProjectItem | null {
 export function formatPlanningContext(
   items: ProjectItem[],
   currentItem: ProjectItem | null,
-  maxChars: number = 1500,
+  maxChars: number = 1200,
 ): string {
   if (items.length === 0 && !currentItem) return "";
 
