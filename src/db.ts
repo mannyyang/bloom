@@ -376,7 +376,7 @@ export interface CycleStats {
 export function getCycleStats(db: Database.Database, limit: number = 20): CycleStats {
   const rawRows = db.prepare(`
     SELECT
-      preflight_passed, improvements_attempted, improvements_succeeded,
+      cycle_number, preflight_passed, improvements_attempted, improvements_succeeded,
       build_verification_passed, push_succeeded,
       test_count_before, test_count_after,
       duration_ms, started_at, completed_at
@@ -384,6 +384,7 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
   `).all(limit);
 
   interface CycleRow {
+    cycle_number: number;
     preflight_passed: number;
     improvements_attempted: number;
     improvements_succeeded: number;
@@ -397,7 +398,7 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
   }
 
   const cycleRowSchema: RowSchema = {
-    preflight_passed: "number", improvements_attempted: "number",
+    cycle_number: "number", preflight_passed: "number", improvements_attempted: "number",
     improvements_succeeded: "number", build_verification_passed: "number",
     push_succeeded: "number", test_count_before: "number?",
     test_count_after: "number?", duration_ms: "number?",
@@ -463,12 +464,16 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
     }
   }
 
+  // Build an IN-list from the already-fetched cycle numbers — avoids two redundant subqueries
+  const cycleNumbers = rows.map(r => r.cycle_number);
+  const inPlaceholders = cycleNumbers.map(() => "?").join(",");
+
   // Aggregate cost and token usage from phase_usage for the cycles in scope
   // rows.length > 0 is guaranteed here (early return above handles empty case)
   const usageRow = validateRow<{ total_cost: number; total_input: number; total_output: number }>(
     db.prepare(
-      `SELECT COALESCE(SUM(cost_usd), 0) as total_cost, COALESCE(SUM(input_tokens), 0) as total_input, COALESCE(SUM(output_tokens), 0) as total_output FROM phase_usage WHERE cycle_number IN (SELECT cycle_number FROM cycles ORDER BY cycle_number DESC LIMIT ?)`
-    ).get(limit),
+      `SELECT COALESCE(SUM(cost_usd), 0) as total_cost, COALESCE(SUM(input_tokens), 0) as total_input, COALESCE(SUM(output_tokens), 0) as total_output FROM phase_usage WHERE cycle_number IN (${inPlaceholders})`
+    ).get(...cycleNumbers),
     { total_cost: "number", total_input: "number", total_output: "number" },
     "getCycleStats.usage",
   );
@@ -481,10 +486,10 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
   const failureCategoryRaw = db.prepare(`
     SELECT failure_category, COUNT(*) as cnt
     FROM cycles
-    WHERE cycle_number IN (SELECT cycle_number FROM cycles ORDER BY cycle_number DESC LIMIT ?)
+    WHERE cycle_number IN (${inPlaceholders})
       AND failure_category != 'none'
     GROUP BY failure_category
-  `).all(limit) as { failure_category: string; cnt: number }[];
+  `).all(...cycleNumbers) as { failure_category: string; cnt: number }[];
   const failureCategoryBreakdown: Record<string, number> = {};
   for (const row of failureCategoryRaw) {
     failureCategoryBreakdown[row.failure_category] = row.cnt;
