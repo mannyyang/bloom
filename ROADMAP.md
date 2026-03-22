@@ -3,14 +3,12 @@
 ## Backlog
 
 ## Up Next
-- [ ] Improve prompt efficiency to reduce average cost per evolution cycle
-  Investigate token-heavy phases (assessment, implementation) and find opportunities to
-  shrink prompts without losing quality. Target: reduce median cycle cost by ~20%.
-  [since: 121]
 
 ## In Progress
 
 ## Done
+- [x] Improve prompt efficiency to reduce average cost per evolution cycle
+  Completed in cycle 123: 3/3 improvements succeeded.
 - [x] Detect and recover stale "In Progress" roadmap items
   Completed in cycle 111: added detectStaleInProgressItems, demoteStaleInProgressItems, and
   parseInProgressSinceCycle to planning.ts; items stuck > 3 cycles auto-demote to Up Next.
