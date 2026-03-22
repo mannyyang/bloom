@@ -117,7 +117,7 @@ export function formatMemoryForPrompt(
   }
 
   // Then learnings by category, ranked by relevance
-  const learnings = getRelevantLearnings(db, 30);
+  const learnings = getRelevantLearnings(db, 20);
   if (learnings.length > 0) {
     const grouped = new Map<string, Learning[]>();
     for (const l of learnings) {
