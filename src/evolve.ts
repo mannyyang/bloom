@@ -126,13 +126,11 @@ ${assessment}${usageSection}${outcomeSection}
 
 RULES:
 1. Make ONE change at a time.
-2. After each change, run: pnpm build && pnpm test
-3. If tests PASS: stage and commit with a descriptive message.
-4. If tests FAIL: revert with "git checkout ." and try the next improvement or a different approach.
-5. NEVER modify IDENTITY.md.
-6. Do NOT write to JOURNAL.md — journal entries are now stored in SQLite and managed by the orchestrator.
-7. Keep changes small and incremental.
-8. After completing code changes, update README.md and any other public-facing documentation to accurately reflect the current state of the agent — its features, architecture, and capabilities. Do not leave docs stale.
+2. After each change: \`pnpm build && pnpm test\` — if PASS commit with a descriptive message; if FAIL revert with \`git checkout .\` and continue.
+3. NEVER modify IDENTITY.md.
+4. Do NOT write to JOURNAL.md — journal entries are now stored in SQLite and managed by the orchestrator.
+5. Keep changes small and incremental.
+6. Update README.md and other public-facing documentation if needed.
 
 After all improvements, end your response with a structured summary using EXACTLY this format (no markdown headers, no bold, just the marker followed by a colon):
 

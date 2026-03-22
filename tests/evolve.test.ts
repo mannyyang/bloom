@@ -130,7 +130,7 @@ describe("buildEvolutionPrompt", () => {
 
   it("instructs agent to update README and documentation", () => {
     const prompt = buildEvolutionPrompt("assessment");
-    expect(prompt).toContain("update README.md");
+    expect(prompt).toContain("README.md");
     expect(prompt).toContain("public-facing documentation");
   });
 
