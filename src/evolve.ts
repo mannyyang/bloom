@@ -9,20 +9,11 @@ export interface AssessmentContext {
 export function buildAssessmentPrompt(ctx: AssessmentContext): string {
   return `This is evolution cycle ${ctx.cycleCount}.
 
-Read your own source code in src/ and assess what to improve. Consider:
-1. Bugs or correctness issues
-2. Items on the roadmap (see Evolution Roadmap below)
-3. Test coverage gaps
-4. Code clarity improvements
-5. New capabilities aligned with your purpose
+Read src/ and tests/, then list top 1-3 improvements (bugs, roadmap items, test gaps, clarity, new capabilities) — for each: what/why/difficulty. Keep your assessment under 2000 characters — it is passed directly into the implementation prompt.
 
 Recent journal entries:
 ${ctx.journalSummary}
-${ctx.cycleStatsText ? `\nYour track record:\n${ctx.cycleStatsText}\n` : ""}${ctx.memoryContext ? `\nYour accumulated knowledge:\n${ctx.memoryContext}\n` : ""}${ctx.planningContext ? `\n${ctx.planningContext}\n` : ""}
-Read all files in src/ and tests/, then provide a structured assessment:
-- What are the top 1-3 improvements to make this cycle?
-- For each: what to change, why, and expected difficulty.
-Keep your assessment under 2000 characters — it is passed directly into the implementation prompt.`;
+${ctx.cycleStatsText ? `\nYour track record:\n${ctx.cycleStatsText}\n` : ""}${ctx.memoryContext ? `\nYour accumulated knowledge:\n${ctx.memoryContext}\n` : ""}${ctx.planningContext ? `\n${ctx.planningContext}\n` : ""}`;
 }
 
 interface EvolutionContext {
