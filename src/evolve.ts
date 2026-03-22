@@ -42,30 +42,19 @@ export function parseEvolutionResult(result: string): Record<string, string> {
     "STRATEGIC_CONTEXT": "strategic_context",
   };
 
+  // Single regex handles all header formats:
+  // "ATTEMPTED:", "**ATTEMPTED**:", "**ATTEMPTED:**", "## ATTEMPTED", "## **ATTEMPTED**", "- ATTEMPTED:"
+  const HEADER_RE = /^(?:##\s+|-\s+)?\*{0,2}(ATTEMPTED|SUCCEEDED|FAILED|LEARNINGS|STRATEGIC_CONTEXT)\*{0,2}:?\*{0,2}:?\s*/;
+
   let currentSection = "";
   for (const line of result.split("\n")) {
     const trimmed = line.trim();
-    // Check for section headers in various formats:
-    // "ATTEMPTED:", "**ATTEMPTED**:", "## ATTEMPTED", "## **ATTEMPTED**", "- ATTEMPTED:"
-    let matched = false;
-    for (const [marker, key] of Object.entries(sectionMap)) {
-      const patterns = [
-        `${marker}:`,           // ATTEMPTED:
-        `**${marker}**:`,       // **ATTEMPTED**:
-        `**${marker}:**`,       // **ATTEMPTED:**
-        `## ${marker}`,         // ## ATTEMPTED
-        `## **${marker}**`,     // ## **ATTEMPTED**
-        `- ${marker}:`,         // - ATTEMPTED:
-      ];
-      if (patterns.some(p => trimmed.startsWith(p))) {
-        currentSection = key;
-        const rest = trimmed.replace(/^(?:##\s+|-\s+)?\*{0,2}[A-Z_]+:?\*{0,2}:?\s*/, "");
-        if (rest) sections[currentSection] += rest + "\n";
-        matched = true;
-        break;
-      }
-    }
-    if (currentSection && !matched) {
+    const m = HEADER_RE.exec(trimmed);
+    if (m) {
+      currentSection = sectionMap[m[1]];
+      const rest = trimmed.slice(m[0].length);
+      if (rest) sections[currentSection] += rest + "\n";
+    } else if (currentSection) {
       sections[currentSection] += line + "\n";
     }
   }
