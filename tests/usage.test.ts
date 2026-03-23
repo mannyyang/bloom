@@ -330,6 +330,15 @@ describe("formatCycleUsage", () => {
     const output = formatCycleUsage(cu);
     expect(output).not.toContain("Cache:");
   });
+
+  it("produces just a Total line when there are zero phases", () => {
+    const cu = aggregateUsage([]);
+    const output = formatCycleUsage(cu);
+    const lines = output.split("\n");
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain("[Total]");
+    expect(lines[0]).toContain("$0.0000");
+  });
 });
 
 describe("formatUsageForJournal", () => {
