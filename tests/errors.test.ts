@@ -82,4 +82,8 @@ describe("execSyncOutput", () => {
   it("trims whitespace from combined output", () => {
     expect(execSyncOutput({ stdout: "  out  ", stderr: "  err  " })).toBe("out    err");
   });
+
+  it("returns empty string when both stdout and stderr are whitespace-only", () => {
+    expect(execSyncOutput({ stdout: "  ", stderr: "  " })).toBe("");
+  });
 });
