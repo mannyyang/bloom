@@ -400,6 +400,22 @@ describe("formatUsageForJournal", () => {
     const md = formatUsageForJournal(cu);
     expect(md).not.toContain("cache:");
   });
+
+  it("produces a well-formed markdown block with zero phases", () => {
+    const cu = aggregateUsage([]);
+    const md = formatUsageForJournal(cu);
+    // Header must be present
+    expect(md).toContain("### Resource Usage");
+    // Total line must be present with all-zero cost
+    expect(md).toContain("**Total**");
+    expect(md).toContain("$0.0000");
+    // No individual phase lines should appear
+    const lines = md.split("\n");
+    const phaseLines = lines.filter(
+      (l) => l.startsWith("- **") && !l.includes("**Total**"),
+    );
+    expect(phaseLines).toHaveLength(0);
+  });
 });
 
 describe("formatDurationSec", () => {
