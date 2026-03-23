@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { generateRoadmapOutput } from "../src/roadmap.js";
+import * as planning from "../src/planning.js";
 
 const SAMPLE_ROADMAP = `# Bloom Evolution Roadmap
 
@@ -127,5 +128,29 @@ describe("generateRoadmapOutput", () => {
     expect(joined).not.toContain("x".repeat(130));
     // Should contain the first 120 characters
     expect(joined).toContain("x".repeat(120));
+  });
+
+  it("shows [N ★] suffix for items with reactions > 0", () => {
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Popular feature",
+        status: "Backlog",
+        body: "",
+        linkedIssueNumber: null,
+        reactions: 7,
+      },
+    ]);
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP);
+    const joined = output.join("\n");
+    expect(joined).toContain("[7 ★]");
+    spy.mockRestore();
+  });
+
+  it("omits reaction suffix for items with reactions === 0", () => {
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP);
+    const joined = output.join("\n");
+    // The SAMPLE_ROADMAP items all have 0 reactions (parser default)
+    expect(joined).not.toContain("★");
   });
 });
