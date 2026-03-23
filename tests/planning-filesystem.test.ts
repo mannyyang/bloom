@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { existsSync, readFileSync, writeFileSync, unlinkSync } from "fs";
 import { resolve } from "path";
-import { ensureProject, getProjectItems, addDraftItem, addLinkedItem, updateItemStatus, type ProjectConfig } from "../src/planning.js";
+import { ensureProject, getProjectItems, addDraftItem, addLinkedItem, updateItemStatus, demoteStaleInProgressItems, type ProjectConfig } from "../src/planning.js";
 
 const ROADMAP_PATH = resolve(process.cwd(), "ROADMAP.md");
 
@@ -406,5 +406,138 @@ describe("updateItemStatus", () => {
     const updated = getProjectItems(config);
     expect(updated[0].body).toContain("[since: 55]");
     expect(updated[0].body).toContain("Some description");
+  });
+});
+
+describe("demoteStaleInProgressItems", () => {
+  it("returns empty array when roadmap has no In Progress items", () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+- [ ] Backlog task
+
+## Up Next
+
+## In Progress
+
+## Done
+`);
+    const config = makeConfig();
+    const demoted = demoteStaleInProgressItems(config, 10);
+    expect(demoted).toEqual([]);
+  });
+
+  it("demotes stale In Progress item (no annotation) to Up Next", () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+
+## Up Next
+
+## In Progress
+- [ ] Stuck task
+
+## Done
+`);
+    const config = makeConfig();
+    const demoted = demoteStaleInProgressItems(config, 10);
+
+    expect(demoted).toEqual(["Stuck task"]);
+    const items = getProjectItems(config);
+    expect(items[0].status).toBe("Up Next");
+  });
+
+  it("demotes item stuck beyond threshold and strips [since: N] annotation", () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+
+## Up Next
+
+## In Progress
+- [ ] Long running task
+  [since: 5]
+
+## Done
+`);
+    const config = makeConfig();
+    // currentCycle=10, since=5 → 10-5=5 > threshold=3 → stale
+    const demoted = demoteStaleInProgressItems(config, 10, 3);
+
+    expect(demoted).toEqual(["Long running task"]);
+    const items = getProjectItems(config);
+    expect(items[0].status).toBe("Up Next");
+    expect(items[0].body).not.toContain("[since:");
+  });
+
+  it("does not demote item within staleness threshold", () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+
+## Up Next
+
+## In Progress
+- [ ] Fresh task
+  [since: 8]
+
+## Done
+`);
+    const config = makeConfig();
+    // currentCycle=10, since=8 → 10-8=2 ≤ threshold=3 → fresh
+    const demoted = demoteStaleInProgressItems(config, 10, 3);
+
+    expect(demoted).toEqual([]);
+    const items = getProjectItems(config);
+    expect(items[0].status).toBe("In Progress");
+  });
+
+  it("demotes only the stale items from a mixed In Progress set", () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+
+## Up Next
+
+## In Progress
+- [ ] Fresh item
+  [since: 8]
+- [ ] Stale item
+  [since: 2]
+
+## Done
+`);
+    const config = makeConfig();
+    // currentCycle=10, threshold=3: fresh 10-8=2≤3, stale 10-2=8>3
+    const demoted = demoteStaleInProgressItems(config, 10, 3);
+
+    expect(demoted).toEqual(["Stale item"]);
+    const items = getProjectItems(config);
+    const freshItem = items.find((i) => i.title === "Fresh item");
+    const staleItem = items.find((i) => i.title === "Stale item");
+    expect(freshItem?.status).toBe("In Progress");
+    expect(staleItem?.status).toBe("Up Next");
+  });
+
+  it("preserves non-annotation body text when demoting", () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+
+## Up Next
+
+## In Progress
+- [ ] Task with body
+  Important context
+  [since: 1]
+
+## Done
+`);
+    const config = makeConfig();
+    demoteStaleInProgressItems(config, 10, 3);
+
+    const items = getProjectItems(config);
+    expect(items[0].body).toContain("Important context");
+    expect(items[0].body).not.toContain("[since:");
   });
 });
