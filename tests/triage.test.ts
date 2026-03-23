@@ -106,6 +106,12 @@ describe("buildTriagePrompt", () => {
     expect(prompt).not.toContain("x".repeat(201));
   });
 
+  it("leaves short bodies intact (no truncation under 200 chars)", () => {
+    const shortBody = "x".repeat(100);
+    const prompt = buildTriagePrompt([makeIssue({ body: shortBody })], []);
+    expect(prompt).toContain("x".repeat(100));
+  });
+
   it("handles issues with empty bodies", () => {
     const prompt = buildTriagePrompt([makeIssue({ number: 7, title: "No body", body: "" })], []);
     expect(prompt).toContain("#7");
