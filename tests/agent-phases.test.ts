@@ -136,15 +136,28 @@ describe("runAssessmentPhase", () => {
     expect(result).toBe("My assessment output");
   });
 
-  it("throws when no assessment result is produced", async () => {
-    const { deps } = createMockDeps([
-      { type: "progress", content: "thinking..." },
-    ]);
+  it("throws when 0 turns are produced (SDK returned nothing)", async () => {
+    const { deps } = createMockDeps([]);
     const db = createMockDb();
 
     await expect(
       runAssessmentPhase(db, 1, createEvolutionContext(), [], deps),
-    ).rejects.toThrow("Assessment produced no output");
+    ).rejects.toThrow("Assessment produced no output (0 turns)");
+  });
+
+  it("returns fallback string when turns run but yield no text content", async () => {
+    const { deps } = createMockDeps([
+      { type: "progress", content: "thinking..." },
+    ]);
+    const db = createMockDb();
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const result = await runAssessmentPhase(db, 1, createEvolutionContext(), [], deps);
+
+    expect(result).toContain("assessment phase completed");
+    expect(result).toContain("no readable text output");
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("no text output"));
+    warnSpy.mockRestore();
   });
 
   it("populates phaseUsages from usage messages", async () => {

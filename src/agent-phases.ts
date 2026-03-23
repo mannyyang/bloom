@@ -102,7 +102,15 @@ export async function runAssessmentPhase(
   const assessmentMs = Date.now() - assessmentStart;
 
   if (!assessment) {
-    throw new Error("Assessment produced no output. Aborting.");
+    if (assessmentTurns === 0) {
+      throw new Error("Assessment produced no output (0 turns). Aborting.");
+    }
+    // Turns ran but yielded no text content blocks — use a minimal fallback
+    // so the evolution phase can still run rather than wasting the cycle.
+    console.warn(
+      `[assessment] Warning: ${assessmentTurns} turn(s) completed but produced no text output. Using fallback assessment.`,
+    );
+    assessment = `(The assessment phase completed ${assessmentTurns} turn(s) but produced no readable text output. Please review the codebase independently and suggest small, safe improvements.)`;
   }
 
   console.log(`\n[assessment] Completed in ${formatDurationSec(assessmentMs)} (${assessmentTurns} turns, ${assessment.length} chars)`);
