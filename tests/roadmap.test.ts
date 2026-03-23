@@ -115,4 +115,17 @@ describe("generateRoadmapOutput", () => {
     const joined = output.join("\n");
     expect(joined).toContain("No items on the roadmap yet.");
   });
+
+  it("truncates body descriptions longer than 120 characters", () => {
+    const longBody = "x".repeat(130);
+    const roadmapWithLongBody = `# Bloom Evolution Roadmap\n\n## Backlog\n- [ ] Long body item\n  ${longBody}\n`;
+    const output = generateRoadmapOutput(roadmapWithLongBody);
+    const joined = output.join("\n");
+    // Should contain the ellipsis truncation marker
+    expect(joined).toContain("…");
+    // Should not contain the full 130-char body
+    expect(joined).not.toContain("x".repeat(130));
+    // Should contain the first 120 characters
+    expect(joined).toContain("x".repeat(120));
+  });
 });
