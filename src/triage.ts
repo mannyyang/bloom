@@ -198,6 +198,9 @@ export async function triageIssues(
         result.addedToBacklog.push(issue.number);
       }
 
+      // Close the issue regardless of action. Bloom tracks all work in ROADMAP.md,
+      // not via open GitHub issues — so even "add_to_backlog" issues are closed
+      // with a comment explaining where the work was recorded.
       const wasClosed = await closeIssueWithComment(
         issue.number,
         cycleCount,
