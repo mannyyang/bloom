@@ -4,6 +4,7 @@
  */
 
 import type { ErrorCategory } from "./errors.js";
+import { formatDurationSec } from "./usage.js";
 
 export interface CycleOutcome {
   cycleNumber: number;
@@ -106,6 +107,10 @@ export function formatOutcomeForJournal(outcome: CycleOutcome): string {
 
   if (outcome.failureCategory !== "none") {
     lines.push(`- **Failure category**: ${outcome.failureCategory}`);
+  }
+
+  if (outcome.durationMs !== null) {
+    lines.push(`- **Duration**: ${formatDurationSec(outcome.durationMs)}`);
   }
 
   if (outcome.testCountBefore !== null && outcome.testCountAfter !== null) {

@@ -201,6 +201,18 @@ describe("formatOutcomeForJournal", () => {
     expect(result.startsWith("### Outcome Metrics")).toBe(true);
   });
 
+  it("includes Duration line when durationMs is present", () => {
+    const outcome = makeOutcome({ durationMs: 12345 });
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).toContain("**Duration**: 12.3s");
+  });
+
+  it("omits Duration line when durationMs is null", () => {
+    const outcome = makeOutcome({ durationMs: null });
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).not.toContain("**Duration**");
+  });
+
   it("omits total when testTotalBefore is set but testTotalAfter is null", () => {
     const outcome = makeOutcome({
       cycleNumber: 46, improvementsAttempted: 2, improvementsSucceeded: 2,
