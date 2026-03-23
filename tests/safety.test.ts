@@ -762,4 +762,15 @@ describe("escapeRegex", () => {
     expect(pattern.test(literal)).toBe(true);
     expect(pattern.test("file00.ts")).toBe(false);
   });
+
+  it("round-trips all metacharacters: pattern matches only the literal string", () => {
+    // Every special regex character in a single string
+    const specials = ".*+?^${}()|[]\\";
+    const pattern = new RegExp(escapeRegex(specials));
+    // Must match the literal text exactly
+    expect(pattern.test(specials)).toBe(true);
+    // Without proper escaping these chars would match unintended strings
+    expect(pattern.test("abc")).toBe(false);
+    expect(pattern.test("")).toBe(false);
+  });
 });
