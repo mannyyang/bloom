@@ -347,6 +347,21 @@ describe("closeIssueWithComment", () => {
     );
   });
 
+  it("returns false and logs when githubApiRequest rejects (network error)", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockGithubApiRequest.mockRejectedValueOnce(new Error("ECONNRESET"));
+
+    const result = await closeIssueWithComment(7, 1, "Some comment");
+
+    expect(result).toBe(false);
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[issues] closeIssueWithComment failed for issue #7"),
+    );
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("ECONNRESET"));
+    errorSpy.mockRestore();
+  });
+
   it("uses custom action type for DB idempotency", async () => {
     process.env.GITHUB_REPOSITORY = "owner/repo";
     const db = initDb(":memory:");
