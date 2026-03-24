@@ -199,6 +199,23 @@ STRATEGIC_CONTEXT: Strategic info`;
       expect(processed).toHaveProperty("strategicContextStored");
     });
 
+    it("propagates error when insertJournalEntry throws", async () => {
+      const dbModule = await import("../src/db.js");
+      const spy = vi.spyOn(dbModule, "insertJournalEntry").mockImplementation(() => {
+        throw new Error("simulated DB write failure");
+      });
+
+      const result = `ATTEMPTED: Something
+SUCCEEDED: Something
+FAILED: Nothing
+LEARNINGS: - [pattern] A learning
+STRATEGIC_CONTEXT: Context`;
+
+      expect(() => processEvolutionResult(db, 1, result)).toThrow("simulated DB write failure");
+
+      spy.mockRestore();
+    });
+
     it("still returns correct results when extractLearnings throws", async () => {
       const memoryModule = await import("../src/memory.js");
       const spy = vi.spyOn(memoryModule, "extractLearnings").mockImplementation(() => {
