@@ -1,5 +1,17 @@
-import { describe, it, expect } from "vitest";
-import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, detectStaleInProgressItems, type ProjectItem } from "../src/planning.js";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { readFileSync, writeFileSync, existsSync } from "fs";
+
+vi.mock("fs", () => ({
+  readFileSync: vi.fn(),
+  writeFileSync: vi.fn(),
+  existsSync: vi.fn(),
+}));
+
+const mockReadFileSync = vi.mocked(readFileSync);
+const mockWriteFileSync = vi.mocked(writeFileSync);
+const mockExistsSync = vi.mocked(existsSync);
+
+import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, type ProjectItem } from "../src/planning.js";
 
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
@@ -326,6 +338,171 @@ describe("detectStaleInProgressItems", () => {
     const result = detectStaleInProgressItems([fresh, stale], 5);
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe("b");
+  });
+});
+
+describe("updateItemStatus", () => {
+  const config = { filePath: "" };
+
+  beforeEach(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockExistsSync.mockReturnValue(true as any);
+    mockReadFileSync.mockReset();
+    mockWriteFileSync.mockReset();
+  });
+
+  it("returns true and writes file when item is found and status changes", () => {
+    const items = [makeItem({ id: "item-0", title: "My Task", status: "Backlog" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    const result = updateItemStatus(config, "item-0", "Up Next");
+
+    expect(result).toBe(true);
+    expect(mockWriteFileSync).toHaveBeenCalled();
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].status).toBe("Up Next");
+  });
+
+  it("returns false and does not write when item ID is not found", () => {
+    const items = [makeItem({ id: "item-0", title: "Task", status: "Backlog" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    const result = updateItemStatus(config, "item-999", "Done");
+
+    expect(result).toBe(false);
+    expect(mockWriteFileSync).not.toHaveBeenCalled();
+  });
+
+  it("sets body to completionNote when moving to Done", () => {
+    const items = [makeItem({ id: "item-0", title: "Task", status: "In Progress", body: "old body" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    updateItemStatus(config, "item-0", "Done", "Completed successfully");
+
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].status).toBe("Done");
+    expect(parsed[0].body).toBe("Completed successfully");
+  });
+
+  it("stamps [since: N] annotation when moving to In Progress with sinceCycle", () => {
+    const items = [makeItem({ id: "item-0", title: "Task", status: "Up Next", body: "" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    updateItemStatus(config, "item-0", "In Progress", undefined, 42);
+
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].body).toContain("[since: 42]");
+  });
+
+  it("does not overwrite existing [since: N] annotation when already present", () => {
+    // Start in Backlog with a pre-existing annotation so status change triggers a write
+    const items = [makeItem({ id: "item-0", title: "Task", status: "Backlog", body: "[since: 10]" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    // Moving to In Progress with sinceCycle=99 — but [since: 10] already exists
+    updateItemStatus(config, "item-0", "In Progress", undefined, 99);
+
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    // Original annotation should be preserved, not replaced with 99
+    expect(parsed[0].body).toContain("[since: 10]");
+    expect(parsed[0].body).not.toContain("[since: 99]");
+  });
+});
+
+describe("demoteStaleInProgressItems", () => {
+  const config = { filePath: "" };
+
+  beforeEach(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockExistsSync.mockReturnValue(true as any);
+    mockReadFileSync.mockReset();
+    mockWriteFileSync.mockReset();
+  });
+
+  it("returns empty array when no items are stale", () => {
+    // currentCycle=5, since=3 → 5-3=2 ≤ threshold=3 → fresh
+    const items = [makeItem({ id: "item-0", title: "Active Task", status: "In Progress", body: "[since: 3]" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    const result = demoteStaleInProgressItems(config, 5, 3);
+
+    expect(result).toEqual([]);
+  });
+
+  it("returns title of demoted item when stale", () => {
+    // currentCycle=10, since=1 → 10-1=9 > threshold=3 → stale
+    const items = [makeItem({ id: "item-0", title: "Stuck Task", status: "In Progress", body: "[since: 1]" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    const result = demoteStaleInProgressItems(config, 10, 3);
+
+    expect(result).toEqual(["Stuck Task"]);
+  });
+
+  it("moves stale item to Up Next in written roadmap", () => {
+    const items = [makeItem({ id: "item-0", title: "Stale Task", status: "In Progress", body: "[since: 1]" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    demoteStaleInProgressItems(config, 10, 3);
+
+    expect(mockWriteFileSync).toHaveBeenCalled();
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].status).toBe("Up Next");
+  });
+
+  it("strips [since: N] annotation from demoted item body", () => {
+    const items = [makeItem({ id: "item-0", title: "Task", status: "In Progress", body: "some work\n[since: 1]" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    demoteStaleInProgressItems(config, 10, 3);
+
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].body).not.toMatch(/\[since:/);
+  });
+
+  it("treats item with no [since: N] annotation as always stale", () => {
+    const items = [makeItem({ id: "item-0", title: "Old Task", status: "In Progress", body: "" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    const result = demoteStaleInProgressItems(config, 1, 3);
+
+    expect(result).toEqual(["Old Task"]);
+  });
+
+  it("only demotes stale items from a mixed set", () => {
+    const items = [
+      makeItem({ id: "item-0", title: "Fresh Task", status: "In Progress", body: "[since: 8]" }),
+      makeItem({ id: "item-1", title: "Stale Task", status: "In Progress", body: "[since: 1]" }),
+    ];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    // currentCycle=10, threshold=3: fresh 10-8=2≤3, stale 10-1=9>3
+    const result = demoteStaleInProgressItems(config, 10, 3);
+
+    expect(result).toEqual(["Stale Task"]);
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    const freshItem = parsed.find((i) => i.title === "Fresh Task");
+    const staleItem = parsed.find((i) => i.title === "Stale Task");
+    expect(freshItem?.status).toBe("In Progress");
+    expect(staleItem?.status).toBe("Up Next");
   });
 });
 
