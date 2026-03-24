@@ -263,6 +263,25 @@ describe("runAssessmentPhase", () => {
 
     expect(phaseUsages).toHaveLength(1);
   });
+
+  it("uses BLOOM_MODEL env var as model when set", async () => {
+    const { deps, queryCalls } = createMockDeps([
+      createUsageMessage({ result: "assessment" }),
+    ]);
+    const db = createMockDb();
+    const originalModel = process.env.BLOOM_MODEL;
+    process.env.BLOOM_MODEL = "claude-opus-4";
+    try {
+      await runAssessmentPhase(db, 5, createEvolutionContext(), [], deps);
+    } finally {
+      if (originalModel === undefined) {
+        delete process.env.BLOOM_MODEL;
+      } else {
+        process.env.BLOOM_MODEL = originalModel;
+      }
+    }
+    expect(queryCalls[0].options.model).toBe("claude-opus-4");
+  });
 });
 
 describe("runEvolutionPhase", () => {
@@ -456,6 +475,28 @@ describe("runEvolutionPhase", () => {
     const logCalls = consoleSpy.mock.calls.map((c) => c[0]);
     expect(logCalls.some((msg) => typeof msg === "string" && msg.includes("attempted"))).toBe(true);
     expect(logCalls.some((msg) => typeof msg === "string" && msg.includes("succeeded"))).toBe(true);
+  });
+
+  it("uses BLOOM_MODEL env var as model when set", async () => {
+    const { deps, queryCalls } = createMockDeps([
+      createUsageMessage({ result: "output" }),
+    ]);
+    vi.mocked(deps.processEvolutionResult).mockReturnValue(createProcessedEvolution());
+    const db = createMockDb();
+    const originalModel = process.env.BLOOM_MODEL;
+    process.env.BLOOM_MODEL = "claude-opus-4";
+    try {
+      await runEvolutionPhase(
+        db, 1, createOutcome(), "assessment", "identity", [], deps, createMockSafetyHooks(),
+      );
+    } finally {
+      if (originalModel === undefined) {
+        delete process.env.BLOOM_MODEL;
+      } else {
+        process.env.BLOOM_MODEL = originalModel;
+      }
+    }
+    expect(queryCalls[0].options.model).toBe("claude-opus-4");
   });
 
   it("logs strategic context stored message when strategicContextStored is true", async () => {
