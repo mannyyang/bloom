@@ -11,7 +11,7 @@ const mockReadFileSync = vi.mocked(readFileSync);
 const mockWriteFileSync = vi.mocked(writeFileSync);
 const mockExistsSync = vi.mocked(existsSync);
 
-import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, type ProjectItem } from "../src/planning.js";
+import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, type ProjectItem } from "../src/planning.js";
 
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
@@ -503,6 +503,110 @@ describe("demoteStaleInProgressItems", () => {
     const staleItem = parsed.find((i) => i.title === "Stale Task");
     expect(freshItem?.status).toBe("In Progress");
     expect(staleItem?.status).toBe("Up Next");
+  });
+});
+
+describe("addLinkedItem", () => {
+  const config = { filePath: "" };
+
+  beforeEach(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockExistsSync.mockReturnValue(true as any);
+    mockReadFileSync.mockReset();
+    mockWriteFileSync.mockReset();
+  });
+
+  it("adds a new linked item and returns its id", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap([]) as any);
+    const id = addLinkedItem(config, 5, "My Issue", "Issue body");
+    expect(id).toBe("item-0");
+    expect(mockWriteFileSync).toHaveBeenCalled();
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].linkedIssueNumber).toBe(5);
+    expect(parsed[0].title).toBe("My Issue");
+    expect(parsed[0].status).toBe("Backlog");
+  });
+
+  it("returns existing item id when issue number already exists (no write)", () => {
+    const existing = [makeItem({ id: "item-0", title: "Existing", status: "Backlog", linkedIssueNumber: 5 })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(existing) as any);
+    const id = addLinkedItem(config, 5, "My Issue", "Issue body");
+    expect(id).toBe("item-0");
+    expect(mockWriteFileSync).not.toHaveBeenCalled();
+  });
+
+  it("respects the status parameter when specified", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap([]) as any);
+    addLinkedItem(config, 7, "Urgent Task", "body", "Up Next");
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].status).toBe("Up Next");
+  });
+
+  it("truncates body to 200 characters", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap([]) as any);
+    const longBody = "x".repeat(300);
+    addLinkedItem(config, 9, "Title", longBody);
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].body.length).toBeLessThanOrEqual(200);
+  });
+});
+
+describe("addDraftItem", () => {
+  const config = { filePath: "" };
+
+  beforeEach(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockExistsSync.mockReturnValue(true as any);
+    mockReadFileSync.mockReset();
+    mockWriteFileSync.mockReset();
+  });
+
+  it("adds a new draft item and returns its id", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap([]) as any);
+    const id = addDraftItem(config, "Draft Task", "Some body");
+    expect(id).toBe("item-0");
+    expect(mockWriteFileSync).toHaveBeenCalled();
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].title).toBe("Draft Task");
+    expect(parsed[0].linkedIssueNumber).toBeNull();
+    expect(parsed[0].status).toBe("Backlog");
+  });
+
+  it("returns existing item id when title already exists (no write)", () => {
+    const existing = [makeItem({ id: "item-0", title: "Draft Task", status: "Backlog" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(existing) as any);
+    const id = addDraftItem(config, "Draft Task", "body");
+    expect(id).toBe("item-0");
+    expect(mockWriteFileSync).not.toHaveBeenCalled();
+  });
+
+  it("respects the status parameter when specified", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap([]) as any);
+    addDraftItem(config, "My Task", "body", "Up Next");
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].status).toBe("Up Next");
+  });
+
+  it("truncates body to 200 characters", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap([]) as any);
+    const longBody = "y".repeat(300);
+    addDraftItem(config, "Long Body Task", longBody);
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].body.length).toBeLessThanOrEqual(200);
   });
 });
 
