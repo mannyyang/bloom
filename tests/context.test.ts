@@ -94,6 +94,12 @@ describe("loadEvolutionContext", () => {
     expect(ctx.issues).toEqual(issues);
   });
 
+  it("returns empty issues array when fetchCommunityIssues rejects", async () => {
+    vi.mocked(fetchCommunityIssues).mockRejectedValue(new Error("network timeout"));
+    const ctx = await loadEvolutionContext(fakeDb, 1);
+    expect(ctx.issues).toEqual([]);
+  });
+
   it("returns cycle stats text", async () => {
     vi.mocked(formatCycleStats).mockReturnValue("my stats");
     const ctx = await loadEvolutionContext(fakeDb, 1);

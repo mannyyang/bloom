@@ -47,7 +47,10 @@ export async function loadEvolutionContext(
   const journalSummary = getRecentJournalSummary(db, 1200, 2);
   console.log(`[context] Journal summary: ${journalSummary ? `${journalSummary.length} chars` : "empty"}`);
 
-  const issues = await fetchCommunityIssues();
+  const issues = await fetchCommunityIssues().catch((err: unknown) => {
+    console.error(`[context] Failed to fetch community issues (non-fatal): ${errorMessage(err)}`);
+    return [] as CommunityIssue[];
+  });
   console.log(`[context] Community issues: ${issues.length} open`);
   for (const issue of issues) {
     console.log(`  - #${issue.number}: ${issue.title} (${issue.reactions} reactions)`);
