@@ -4,12 +4,14 @@
  * (e.g., no-op operations like updating a non-existent ID or adding a duplicate).
  */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtempSync, writeFileSync, statSync } from "fs";
+import { mkdtempSync, writeFileSync, readFileSync, statSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 import {
   updateItemStatus,
   addLinkedItem,
+  addDraftItem,
+  parseRoadmap,
   serializeRoadmap,
   type ProjectConfig,
   type ProjectItem,
@@ -98,5 +100,29 @@ describe("withRoadmapItems write-skip optimization", () => {
     const after = statSync(join(tmpDir, "ROADMAP.md")).mtimeMs;
     expect(result).toBe("item-0");
     expect(after).toBeGreaterThan(before);
+  });
+});
+
+describe("body truncation at 200 chars", () => {
+  const longBody = "x".repeat(300);
+
+  it("truncates addLinkedItem body to 200 chars", () => {
+    writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([]), "utf-8");
+
+    addLinkedItem(config, 99, "Truncation test", longBody);
+
+    const written = readFileSync(join(tmpDir, "ROADMAP.md"), "utf-8");
+    const items = parseRoadmap(written);
+    expect(items[0].body.length).toBe(200);
+  });
+
+  it("truncates addDraftItem body to 200 chars", () => {
+    writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([]), "utf-8");
+
+    addDraftItem(config, "Draft truncation test", longBody);
+
+    const written = readFileSync(join(tmpDir, "ROADMAP.md"), "utf-8");
+    const items = parseRoadmap(written);
+    expect(items[0].body.length).toBe(200);
   });
 });
