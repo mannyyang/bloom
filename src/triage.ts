@@ -84,6 +84,7 @@ export function parseTriageResponse(text: string): TriageDecision[] {
         typeof item.reason === "string",
     );
   } catch {
+    console.warn(`[triage] parseTriageResponse: failed to parse JSON, returning empty decisions. Input (first 200 chars): ${jsonStr.slice(0, 200)}`);
     return [];
   }
 }
