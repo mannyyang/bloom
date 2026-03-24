@@ -6,6 +6,12 @@ export interface AssessmentContext {
   planningContext?: string;
 }
 
+/**
+ * Build the prompt for the assessment phase.
+ * Note: `identity` is intentionally absent here — it is passed separately as
+ * a systemPrompt to the SDK (see assess.ts and index.ts), so it does not need
+ * to be embedded in the user-facing prompt text.
+ */
 export function buildAssessmentPrompt(ctx: AssessmentContext): string {
   return `This is evolution cycle ${ctx.cycleCount}.
 
@@ -16,7 +22,8 @@ ${ctx.journalSummary}
 ${ctx.cycleStatsText ? `\nYour track record:\n${ctx.cycleStatsText}\n` : ""}${ctx.memoryContext ? `\nYour accumulated knowledge:\n${ctx.memoryContext}\n` : ""}${ctx.planningContext ? `\n${ctx.planningContext}\n` : ""}`;
 }
 
-interface EvolutionContext {
+/** Options passed to buildEvolutionPrompt for injecting resource-usage and outcome sections. */
+interface EvolutionPromptContext {
   usageContext?: string;
   outcomeContext?: string;
 }
@@ -91,7 +98,7 @@ export function countImprovements(text: string): number {
   return Math.max(lineCount, inlineCount);
 }
 
-export function buildEvolutionPrompt(assessment: string, context?: EvolutionContext): string {
+export function buildEvolutionPrompt(assessment: string, context?: EvolutionPromptContext): string {
   const usageSection = context?.usageContext
     ? `\n\nResource usage so far this cycle:\n${context.usageContext}\n`
     : "";
