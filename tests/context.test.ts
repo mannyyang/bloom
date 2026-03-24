@@ -264,6 +264,53 @@ describe("loadEvolutionContext", () => {
     expect(ctx.identity).toBe("# Identity");
   });
 
+  it("handles getProjectItems throwing gracefully (non-fatal)", async () => {
+    const config = { filePath: "ROADMAP.md" };
+    vi.mocked(ensureProject).mockReturnValue(config);
+    vi.mocked(getProjectItems).mockImplementation(() => {
+      throw new Error("file read error");
+    });
+
+    const ctx = await loadEvolutionContext(fakeDb, 1);
+    expect(ctx.planningContext).toBe("");
+    expect(ctx.currentItem).toBeNull();
+    expect(ctx.identity).toBe("# Identity");
+  });
+
+  it("handles demoteStaleInProgressItems throwing gracefully (non-fatal)", async () => {
+    const config = { filePath: "ROADMAP.md" };
+    const items = [
+      { id: "1", title: "Item", status: "Up Next", body: "", linkedIssueNumber: null, reactions: 0 },
+    ];
+    vi.mocked(ensureProject).mockReturnValue(config);
+    vi.mocked(getProjectItems).mockReturnValue(items);
+    vi.mocked(demoteStaleInProgressItems).mockImplementation(() => {
+      throw new Error("demote failed");
+    });
+
+    const ctx = await loadEvolutionContext(fakeDb, 1);
+    expect(ctx.planningContext).toBe("");
+    expect(ctx.currentItem).toBeNull();
+    expect(ctx.identity).toBe("# Identity");
+  });
+
+  it("handles pickNextItem throwing gracefully (non-fatal)", async () => {
+    const config = { filePath: "ROADMAP.md" };
+    const items = [
+      { id: "1", title: "Item", status: "Up Next", body: "", linkedIssueNumber: null, reactions: 0 },
+    ];
+    vi.mocked(ensureProject).mockReturnValue(config);
+    vi.mocked(getProjectItems).mockReturnValue(items);
+    vi.mocked(pickNextItem).mockImplementation(() => {
+      throw new Error("pick failed");
+    });
+
+    const ctx = await loadEvolutionContext(fakeDb, 1);
+    expect(ctx.planningContext).toBe("");
+    expect(ctx.currentItem).toBeNull();
+    expect(ctx.identity).toBe("# Identity");
+  });
+
   it("handles triage errors gracefully within planning try-catch", async () => {
     const config = { filePath: "ROADMAP.md" };
     const issues = [{ number: 1, title: "Bug", body: "", reactions: 0, labels: [] }];
