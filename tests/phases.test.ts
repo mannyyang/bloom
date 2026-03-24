@@ -185,6 +185,16 @@ describe("pushChangesPhase", () => {
     expect(outcome.pushSucceeded).toBe(false);
   });
 
+  it("logs error message to console.error when push fails", () => {
+    vi.mocked(pushChanges).mockReturnValue(false);
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const outcome = createOutcome();
+    pushChangesPhase(outcome);
+
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("Push failed"));
+    errorSpy.mockRestore();
+  });
+
   it("always starts with pushSucceeded false before calling pushChanges", () => {
     vi.mocked(pushChanges).mockImplementation(() => {
       // At the point pushChanges is called, outcome should be false
