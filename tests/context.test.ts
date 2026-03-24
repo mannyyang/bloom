@@ -72,6 +72,15 @@ describe("loadEvolutionContext", () => {
     setupDefaults();
   });
 
+  it("throws a descriptive error when IDENTITY.md is missing", async () => {
+    vi.mocked(readFileSync).mockImplementation(() => {
+      throw new Error("ENOENT: no such file or directory");
+    });
+    await expect(loadEvolutionContext(fakeDb, 1)).rejects.toThrow(
+      "IDENTITY.md missing — cannot start cycle",
+    );
+  });
+
   it("returns identity from IDENTITY.md", async () => {
     const ctx = await loadEvolutionContext(fakeDb, 1);
     expect(readFileSync).toHaveBeenCalledWith("IDENTITY.md", "utf-8");

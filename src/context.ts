@@ -41,7 +41,12 @@ export async function loadEvolutionContext(
   cycleCount: number,
 ): Promise<EvolutionContext> {
   console.log("\n[context] Loading evolution context...");
-  const identity = readFileSync("IDENTITY.md", "utf-8");
+  let identity: string;
+  try {
+    identity = readFileSync("IDENTITY.md", "utf-8");
+  } catch (err) {
+    throw new Error(`IDENTITY.md missing — cannot start cycle: ${errorMessage(err)}`);
+  }
   console.log(`[context] Identity loaded (${identity.length} chars)`);
 
   const journalSummary = getRecentJournalSummary(db, 1200, 2);
