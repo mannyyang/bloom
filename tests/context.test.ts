@@ -388,4 +388,32 @@ describe("loadEvolutionContext", () => {
     await loadEvolutionContext(fakeDb, 1);
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("(5 reactions)"));
   });
+
+  it("re-fetches project items after demotion and passes post-demotion list to pickNextItem", async () => {
+    const config = { filePath: "ROADMAP.md" };
+    const itemsBefore = [
+      { id: "1", title: "Stale Item", status: "In Progress", body: "", linkedIssueNumber: null, reactions: 0 },
+    ];
+    const itemsAfter = [
+      { id: "1", title: "Stale Item", status: "Up Next", body: "", linkedIssueNumber: null, reactions: 0 },
+    ];
+
+    vi.mocked(ensureProject).mockReturnValue(config);
+    // First call returns pre-demotion list; second call (after demotion) returns updated list
+    vi.mocked(getProjectItems)
+      .mockReturnValueOnce(itemsBefore)
+      .mockReturnValueOnce(itemsAfter);
+    vi.mocked(fetchCommunityIssues).mockResolvedValue([]);
+    vi.mocked(demoteStaleInProgressItems).mockReturnValue(["Stale Item"]);
+    vi.mocked(pickNextItem).mockReturnValue(null);
+    vi.mocked(formatPlanningContext).mockReturnValue("");
+
+    await loadEvolutionContext(fakeDb, 1);
+
+    // getProjectItems should be called twice: initial load + post-demotion refresh
+    expect(getProjectItems).toHaveBeenCalledTimes(2);
+    // pickNextItem and formatPlanningContext should receive the refreshed post-demotion list
+    expect(pickNextItem).toHaveBeenCalledWith(itemsAfter);
+    expect(formatPlanningContext).toHaveBeenCalledWith(itemsAfter, null);
+  });
 });
