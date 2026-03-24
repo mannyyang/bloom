@@ -426,6 +426,32 @@ describe("lifecycle helpers", () => {
       expect(() => runBuildVerification(42, 3)).toThrow();
     });
 
+    it("skips revert and hard-resets immediately when maxAttempts=1", () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      mockedExecSync.mockImplementation(() => { throw new Error("build failed"); });
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+
+      const result = runBuildVerification(42, 1);
+
+      expect(result.passed).toBe(false);
+      // No revert (checkout/clean) since there are no retries with maxAttempts=1
+      const checkoutCount = mockedExecFileSync.mock.calls.filter(
+        (args) => args[0] === "git" && Array.isArray(args[1]) && (args[1] as string[])[0] === "checkout",
+      ).length;
+      expect(checkoutCount).toBe(0);
+      const cleanCount = mockedExecFileSync.mock.calls.filter(
+        (args) => args[0] === "git" && Array.isArray(args[1]) && (args[1] as string[])[0] === "clean",
+      ).length;
+      expect(cleanCount).toBe(0);
+      // Hard reset IS still called after the single failed attempt
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["reset", "--hard", "pre-evolution-cycle-42"],
+        expect.objectContaining({ timeout: GIT_REVERT_TIMEOUT_MS }),
+      );
+      errorSpy.mockRestore();
+    });
+
     it("respects custom maxAttempts parameter", () => {
       let buildCallCount = 0;
       mockedExecSync.mockImplementation((cmd: unknown) => {
