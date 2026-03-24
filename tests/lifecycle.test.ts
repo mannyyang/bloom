@@ -365,6 +365,7 @@ describe("lifecycle helpers", () => {
     });
 
     it("retries and returns passed=true when build passes on second attempt", () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       mockedExecSync
         .mockImplementationOnce(() => { throw new Error("build failed"); }) // attempt 1: verifyBuild fails
         .mockReturnValueOnce("Tests  522 passed\n"); // attempt 2: verifyBuild passes
@@ -372,6 +373,8 @@ describe("lifecycle helpers", () => {
       const result = runBuildVerification(42);
       expect(result.passed).toBe(true);
       expect(result.output).toBe("Tests  522 passed\n");
+      expect(errorSpy).toHaveBeenCalledWith("Build verification failed (attempt 1/3)");
+      expect(errorSpy).toHaveBeenCalledTimes(1);
     });
 
     it("reverts between attempts but not after last attempt", () => {
@@ -395,6 +398,7 @@ describe("lifecycle helpers", () => {
     });
 
     it("hard resets and returns passed=false when all attempts fail", () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       mockedExecSync.mockImplementation((cmd: unknown) => {
         if (String(cmd).includes("pnpm")) throw new Error("build failed");
         return Buffer.from("");
@@ -407,6 +411,10 @@ describe("lifecycle helpers", () => {
         ["reset", "--hard", "pre-evolution-cycle-42"],
         expect.objectContaining({ timeout: GIT_REVERT_TIMEOUT_MS }),
       );
+      expect(errorSpy).toHaveBeenCalledWith("Build verification failed (attempt 1/3)");
+      expect(errorSpy).toHaveBeenCalledWith("Build verification failed (attempt 2/3)");
+      expect(errorSpy).toHaveBeenCalledWith("Build verification failed (attempt 3/3)");
+      expect(errorSpy).toHaveBeenCalledWith("Build broken after all attempts. Reverting to pre-evolution state.");
     });
 
     it("throws when hard reset fails (manual intervention needed)", () => {
