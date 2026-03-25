@@ -175,6 +175,16 @@ describe("db", () => {
       const all = getJournalEntries(db);
       expect(all).toHaveLength(4);
     });
+
+    it("directly persists failureCategory in the inserted row", () => {
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, buildVerificationPassed: false, pushSucceeded: false,
+        failureCategory: "build_failure",
+      }));
+
+      const row = db.prepare("SELECT failure_category FROM cycles WHERE cycle_number = 1").get() as { failure_category: string };
+      expect(row.failure_category).toBe("build_failure");
+    });
   });
 
   describe("updateCycleOutcome", () => {
