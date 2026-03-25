@@ -105,6 +105,7 @@ describe("createOutcome", () => {
     expect(outcome.testTotalBefore).toBeNull();
     expect(outcome.testTotalAfter).toBeNull();
     expect(outcome.durationMs).toBeNull();
+    expect(outcome.failureCategory).toBe("none");
   });
 });
 
