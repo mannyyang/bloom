@@ -1086,6 +1086,10 @@ describe("db", () => {
       expect(validateOptionalRow(undefined, { id: "number" }, "test")).toBeUndefined();
     });
 
+    it("validateOptionalRow throws for primitive (non-object) input", () => {
+      expect(() => validateOptionalRow(42, {}, "test")).toThrow("got number");
+    });
+
     it("validateOptionalRow validates nullable number fields", () => {
       const row = { val: null };
       const result = validateOptionalRow<{ val: number | null }>(row, { val: "number?" }, "test");
