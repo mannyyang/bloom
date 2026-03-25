@@ -770,6 +770,33 @@ describe("db", () => {
       expect(stats.avgDurationMinutes).toBeNull();
     });
 
+    it("averages duration across mixed duration_ms and timestamp sources", () => {
+      // Cycle 1: 10 minutes via duration_ms
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+        durationMs: 600000, // 10 minutes
+      }));
+      updateCycleOutcome(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+        durationMs: 600000,
+      }));
+      // Cycle 2: 20 minutes via timestamp subtraction (no duration_ms)
+      insertCycle(db, makeOutcome({
+        cycleNumber: 2, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
+      db.prepare("UPDATE cycles SET started_at = ?, completed_at = ? WHERE cycle_number = 2").run(
+        "2026-01-01T00:00:00.000Z",
+        "2026-01-01T00:20:00.000Z",
+      );
+
+      const stats = getCycleStats(db);
+      // (10 + 20) / 2 = 15 minutes average
+      expect(stats.avgDurationMinutes).toBe(15);
+    });
+
     it("respects limit parameter", () => {
       for (let i = 1; i <= 10; i++) {
         insertCycle(db, makeOutcome({
