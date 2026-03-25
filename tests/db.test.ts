@@ -1025,6 +1025,28 @@ describe("db", () => {
       expect(result).not.toContain("Failure breakdown");
     });
 
+    it("renders cost-only line when tokens are zero", () => {
+      const result = formatCycleStats({
+        totalCycles: 3, successRate: 100, avgImprovements: 1, avgConversionRate: null,
+        testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
+        totalCostUsd: 2.50, avgCostPerCycle: 0.83, totalInputTokens: 0, totalOutputTokens: 0,
+        failureCategoryBreakdown: {},
+      });
+      expect(result).toContain("$2.50 total / $0.83 avg");
+      expect(result).not.toContain("tokens");
+    });
+
+    it("renders tokens-only line when cost is zero", () => {
+      const result = formatCycleStats({
+        totalCycles: 3, successRate: 100, avgImprovements: 1, avgConversionRate: null,
+        testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
+        totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 500, totalOutputTokens: 200,
+        failureCategoryBreakdown: {},
+      });
+      expect(result).toContain("500 in / 200 out tokens");
+      expect(result).not.toContain("$");
+    });
+
     it("omits failure breakdown when breakdown is empty", () => {
       const result = formatCycleStats({
         totalCycles: 5, successRate: 80, avgImprovements: 1, avgConversionRate: null,
