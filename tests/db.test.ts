@@ -957,6 +957,23 @@ describe("db", () => {
       expect(stats.avgConversionRate).toBeNull();
     });
 
+    it("returns null conversion rate when multiple cycles all have zero attempts", () => {
+      // Both cycles have 0 improvements_attempted — the cyclesWithAttempts
+      // filter should exclude all of them, yielding null (not 0 or NaN).
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 0, improvementsSucceeded: 0,
+        buildVerificationPassed: false, pushSucceeded: false,
+      }));
+      insertCycle(db, makeOutcome({
+        cycleNumber: 2, improvementsAttempted: 0, improvementsSucceeded: 0,
+        buildVerificationPassed: false, pushSucceeded: false,
+      }));
+
+      const stats = getCycleStats(db);
+      expect(stats.totalCycles).toBe(2);
+      expect(stats.avgConversionRate).toBeNull();
+    });
+
     it("computes 100% conversion rate when all attempted improvements succeed", () => {
       insertCycle(db, makeOutcome({
         cycleNumber: 1, improvementsAttempted: 2, improvementsSucceeded: 2,
