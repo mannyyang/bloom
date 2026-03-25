@@ -66,6 +66,7 @@ describe("runBuildVerificationPhase", () => {
     expect(outcome.buildVerificationPassed).toBe(false);
     expect(outcome.testCountAfter).toBe(3);
     expect(outcome.testTotalAfter).toBe(5);
+    expect(outcome.failureCategory).toBe("test_failure");
   });
 
   it("handles missing test counts gracefully", () => {
