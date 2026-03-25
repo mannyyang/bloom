@@ -1172,5 +1172,11 @@ describe("db", () => {
     it("validateRows returns empty array for empty input", () => {
       expect(validateRows([], { id: "number" }, "test")).toEqual([]);
     });
+
+    it("throws on unrecognised field spec instead of silently passing", () => {
+      // "boolean" is not a valid FieldType; the default branch must catch it
+      expect(() => validateRow({ flag: true }, { flag: "boolean" as never }, "test"))
+        .toThrow('unknown field spec "boolean" for key "flag"');
+    });
   });
 });

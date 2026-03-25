@@ -24,6 +24,8 @@ function checkField(row: Record<string, unknown>, key: string, spec: FieldType, 
     case "string?":
       if (val !== null && typeof val !== "string") throw new Error(`${label}: expected "${key}" to be string|null, got ${typeof val}`);
       break;
+    default:
+      throw new Error(`${label}: unknown field spec "${spec}" for key "${key}"`);
   }
 }
 
