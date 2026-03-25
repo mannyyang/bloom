@@ -688,6 +688,30 @@ describe("db", () => {
       expect(stats.testCountTrend).toBe(8);
     });
 
+    it("returns null testCountTrend when single cycle has null test_count_before", () => {
+      // Row is excluded by the both-non-null filter, so no cycle qualifies
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+        testCountBefore: null, testCountAfter: 58,
+      }));
+
+      const stats = getCycleStats(db);
+      expect(stats.testCountTrend).toBeNull();
+    });
+
+    it("returns null testCountTrend when single cycle has null test_count_after", () => {
+      // Row is excluded by the both-non-null filter, so no cycle qualifies
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+        testCountBefore: 50, testCountAfter: null,
+      }));
+
+      const stats = getCycleStats(db);
+      expect(stats.testCountTrend).toBeNull();
+    });
+
     it("computes avgDurationMinutes from duration_ms when available", () => {
       insertCycle(db, makeOutcome({
         cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
