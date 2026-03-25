@@ -666,6 +666,7 @@ describe("db", () => {
       expect(stats.totalCycles).toBe(3);
       expect(stats.successRate).toBe(67);
       expect(stats.avgImprovements).toBe(1.7); // (2+0+3)/3 = 1.666... rounds to 1.7
+      expect(stats.avgConversionRate).toBe(83); // (2+0+3)/(2+1+3) = 5/6 = 83%
       expect(stats.recentFailures).toBe(1);
     });
 
