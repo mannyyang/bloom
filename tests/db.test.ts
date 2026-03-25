@@ -1071,6 +1071,28 @@ describe("db", () => {
       expect(result).not.toContain("$");
     });
 
+    it("renders token line when only input tokens are non-zero", () => {
+      const result = formatCycleStats({
+        totalCycles: 2, successRate: 100, avgImprovements: 1, avgConversionRate: null,
+        testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
+        totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 400, totalOutputTokens: 0,
+        failureCategoryBreakdown: {},
+      });
+      expect(result).toContain("400 in / 0 out tokens");
+      expect(result).not.toContain("$");
+    });
+
+    it("renders token line when only output tokens are non-zero", () => {
+      const result = formatCycleStats({
+        totalCycles: 2, successRate: 100, avgImprovements: 1, avgConversionRate: null,
+        testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
+        totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 300,
+        failureCategoryBreakdown: {},
+      });
+      expect(result).toContain("0 in / 300 out tokens");
+      expect(result).not.toContain("$");
+    });
+
     it("omits failure breakdown when breakdown is empty", () => {
       const result = formatCycleStats({
         totalCycles: 5, successRate: 80, avgImprovements: 1, avgConversionRate: null,
