@@ -130,6 +130,24 @@ describe("generateRoadmapOutput", () => {
     expect(joined).toContain("x".repeat(120));
   });
 
+  it("renders multi-line body as separate indented lines", () => {
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Multi-line item",
+        status: "Backlog",
+        body: "line1\nline2",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP);
+    const joined = output.join("\n");
+    expect(joined).toContain("      line1");
+    expect(joined).toContain("      line2");
+    spy.mockRestore();
+  });
+
   it("shows [N ★] suffix for items with reactions > 0", () => {
     const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
       {
