@@ -916,6 +916,26 @@ describe("db", () => {
       expect(stats.failureCategoryBreakdown["none"]).toBeUndefined();
     });
 
+    it("recentFailures does not count failing cycles outside the newest 5", () => {
+      // Cycles 1–2 fail (oldest), cycles 3–7 all pass (newest 5)
+      for (let i = 1; i <= 2; i++) {
+        insertCycle(db, makeOutcome({
+          cycleNumber: i, buildVerificationPassed: false, pushSucceeded: false,
+          failureCategory: "build_failure",
+        }));
+      }
+      for (let i = 3; i <= 7; i++) {
+        insertCycle(db, makeOutcome({
+          cycleNumber: i, improvementsAttempted: 1, improvementsSucceeded: 1,
+          buildVerificationPassed: true, pushSucceeded: true,
+        }));
+      }
+
+      const stats = getCycleStats(db);
+      // The 5 most recent cycles (3–7) all passed, so recentFailures must be 0
+      expect(stats.recentFailures).toBe(0);
+    });
+
     it("returns null conversion rate when no cycles have attempts", () => {
       insertCycle(db, makeOutcome({
         cycleNumber: 1, improvementsAttempted: 0, improvementsSucceeded: 0,
