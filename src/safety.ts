@@ -114,10 +114,11 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bpnpm\s+exec\b/, category: "untrusted-package-execution" },
   { pattern: /\bpnpm\s+dlx\s/, category: "untrusted-package-execution" },
   { pattern: /\byarn\s+dlx\s/, category: "untrusted-package-execution" },
-  // Git ref destruction — force-delete branches, delete reflog, prune objects
+  // Git ref destruction — force-delete branches, delete reflog, prune objects, delete tags
   { pattern: /git\s+branch\s+(-D|--delete\s+--force)\b/, category: "git-ref-destruction" },
   { pattern: /git\s+reflog\s+delete\b/, category: "git-ref-destruction" },
   { pattern: /git\s+gc\s+.*--prune=(now|all)\b/, category: "git-ref-destruction" },
+  { pattern: /git\s+tag\s+(?:-d|--delete)\b/, category: "git-ref-destruction" },
   // Git internals tampering — changing permissions/ownership of .git/
   { pattern: /\bchmod\s+.*\.git\//, category: "git-internals-tampering" },
   { pattern: /\bchown\s+.*\.git\//, category: "git-internals-tampering" },
