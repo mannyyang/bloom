@@ -415,6 +415,9 @@ describe("isDangerousRm", () => {
     ["rm -rf . (bare dot)", "rm -rf ."],
     ["rm -rf ./ (dot-slash)", "rm -rf ./"],
     ["rm -rf . at end of compound command", "rm -rf ./dist && rm -rf ."],
+    // Parent directory — wipes the entire parent of the project tree
+    ["rm -rf .. (bare double-dot)", "rm -rf .."],
+    ["rm -rf ../ (double-dot-slash)", "rm -rf ../"],
     // Critical system directories
     ["rm -rf /etc", "rm -rf /etc"],
     ["rm -rf /usr", "rm -rf /usr"],
@@ -438,6 +441,7 @@ describe("isDangerousRm", () => {
     ["rm somefile (no flags)", "rm somefile"],
     ["rm -rf path containing critical dir as substring", "rm -rf /home/user/etc-notes"],
     ["rm -rf /usr/local/share/myapp (deep subpath)", "rm -rf /usr/local/share/myapp"],
+    ["rm -rf ../specific-dir (sibling with path)", "rm -rf ../specific-dir"],
   ])("allows %s", (_desc, command) => {
     expect(isDangerousRm(command)).toBe(false);
   });
