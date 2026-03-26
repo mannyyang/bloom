@@ -129,8 +129,9 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bwipefs\b/, category: "disk-destruction" },
   { pattern: /\bfdisk\b/, category: "disk-destruction" },
   { pattern: /\bparted\b/, category: "disk-destruction" },
-  // Git working tree destruction — force-clean untracked files
+  // Git working tree destruction — force-clean untracked files; force-remove linked worktrees with uncommitted changes
   { pattern: /git\s+clean\s+.*(-f|--force)/, category: "git-working-tree-destruction" },
+  { pattern: /git\s+worktree\s+remove\s+(?:.*\s)?(-f\b|--force\b)/, category: "git-working-tree-destruction" },
   // Git history rewriting — filter-branch and filter-repo both rewrite/remove files from history
   { pattern: /git\s+filter-branch\b/, category: "git-history-rewriting" },
   { pattern: /git\s+filter-repo\b/, category: "git-history-rewriting" },

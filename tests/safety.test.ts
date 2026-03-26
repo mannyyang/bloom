@@ -231,6 +231,10 @@ describe("blockDangerousCommands", () => {
     ["wipefs", "wipefs -a /dev/sda"],
     ["fdisk", "fdisk /dev/sda"],
     ["parted", "parted /dev/sda mklabel gpt"],
+    // Git worktree force remove
+    ["git worktree remove --force", "git worktree remove --force my-worktree"],
+    ["git worktree remove -f", "git worktree remove -f my-worktree"],
+    ["git worktree remove --force path", "git worktree remove --force /path/to/worktree"],
     // Git clean with force
     ["git clean -fd", "git clean -fd"],
     ["git clean -fdx", "git clean -fdx"],
@@ -333,6 +337,7 @@ describe("blockDangerousCommands", () => {
   // --- Allowed commands (table-driven) ---
   it.each([
     ["git push origin main (no force)", "git push origin main"],
+    ["git worktree remove (no force)", "git worktree remove my-worktree"],
     ["git rebase main (non-interactive)", "git rebase main"],
     ["git rebase origin/main (non-interactive)", "git rebase origin/main"],
     ["git reset --hard HEAD", "git reset --hard HEAD"],
