@@ -85,8 +85,8 @@ interface DangerousPattern {
 }
 
 export const DANGEROUS_PATTERNS: DangerousPattern[] = [
-  // Git history destruction — force push overwrites remote history
-  { pattern: /git\s+push\s+.*(-f\b|--force\b|--force-with-lease\b|--force-if-includes\b)/, category: "git-history-destruction" },
+  // Git history destruction — force push or mirror push overwrites/destroys remote history
+  { pattern: /git\s+push\s+.*(-f\b|--force\b|--force-with-lease\b|--force-if-includes\b|--mirror\b)/, category: "git-history-destruction" },
   // Git history destruction — hard reset to arbitrary ref loses uncommitted work
   { pattern: /git\s+reset\s+--hard\s+(?!HEAD(?:\s*$|\s*[;&|]))/, category: "git-history-destruction" },
   // Remote code execution — piping downloaded content into a shell
