@@ -25,6 +25,7 @@ import {
   formatPlanningContext,
 } from "./planning.js";
 import { extractResultText, formatDurationSec } from "./usage.js";
+import { resolveModel } from "./agent-phases.js";
 
 async function main() {
   const startTime = Date.now();
@@ -79,7 +80,7 @@ async function main() {
     prompt,
     options: {
       cwd: process.cwd(),
-      model: process.env.BLOOM_MODEL ?? "claude-sonnet-4-6",
+      model: resolveModel(),
       allowedTools: ["Read", "Glob", "Grep", "Bash"],
       permissionMode: "dontAsk",
       systemPrompt: identity,

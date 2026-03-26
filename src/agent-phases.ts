@@ -22,6 +22,17 @@ import type { EvolutionContext } from "./context.js";
 import type { CycleOutcome } from "./outcomes.js";
 import type { HookCallback } from "@anthropic-ai/claude-agent-sdk";
 
+/** The default Claude model used when BLOOM_MODEL env var is not set. */
+export const DEFAULT_BLOOM_MODEL = "claude-sonnet-4-6";
+
+/**
+ * Resolve the model to use for LLM calls.
+ * Reads BLOOM_MODEL at call time so tests can override it via process.env.
+ */
+export function resolveModel(): string {
+  return process.env.BLOOM_MODEL ?? DEFAULT_BLOOM_MODEL;
+}
+
 /**
  * Type for the SDK query function. Accepts prompt + options and returns
  * an async iterable of opaque messages. Using `unknown` for messages
@@ -79,7 +90,7 @@ export async function runAssessmentPhase(
     }),
     options: {
       cwd: process.cwd(),
-      model: process.env.BLOOM_MODEL ?? "claude-sonnet-4-6",
+      model: resolveModel(),
       allowedTools: ["Read", "Glob", "Grep", "Bash"],
       permissionMode: "dontAsk",
       systemPrompt: ctx.identity,
@@ -153,7 +164,7 @@ export async function runEvolutionPhase(
     prompt: buildEvolutionPrompt(assessment, { usageContext, outcomeContext }),
     options: {
       cwd: process.cwd(),
-      model: process.env.BLOOM_MODEL ?? "claude-sonnet-4-6",
+      model: resolveModel(),
       allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
       permissionMode: "acceptEdits",
       systemPrompt: identity,

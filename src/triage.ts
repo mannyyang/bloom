@@ -6,6 +6,7 @@ import { errorMessage } from "./errors.js";
 import { addLinkedItem, type ProjectConfig, type ProjectItem } from "./planning.js";
 import { detectRepo, isValidRepo } from "./issues.js";
 import type { QueryFn } from "./agent-phases.js";
+import { resolveModel } from "./agent-phases.js";
 import { extractResultText } from "./usage.js";
 
 // --- Types ---
@@ -161,7 +162,7 @@ export async function triageIssues(
     for await (const msg of queryFn({
       prompt,
       options: {
-        model: process.env.BLOOM_MODEL ?? "claude-sonnet-4-6",
+        model: resolveModel(),
         maxTurns: 3,
         maxBudgetUsd: 0.5,
         permissionMode: "dontAsk",
