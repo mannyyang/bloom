@@ -118,6 +118,7 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /git\s+branch\s+(-D|--delete\s+--force)\b/, category: "git-ref-destruction" },
   { pattern: /git\s+push\s+(?:.*\s)?(?:-d\b|--delete\b)/, category: "git-ref-destruction" },
   { pattern: /git\s+reflog\s+delete\b/, category: "git-ref-destruction" },
+  { pattern: /git\s+reflog\s+expire\b/, category: "git-ref-destruction" },
   { pattern: /git\s+gc\s+.*--prune=(now|all)\b/, category: "git-ref-destruction" },
   { pattern: /git\s+tag\s+(?:-d|--delete)\b/, category: "git-ref-destruction" },
   // Git internals tampering — changing permissions/ownership of .git/

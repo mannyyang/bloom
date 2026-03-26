@@ -215,6 +215,9 @@ describe("blockDangerousCommands", () => {
     ["git branch -D main", "git branch -D main"],
     ["git branch --delete --force main", "git branch --delete --force main"],
     ["git reflog delete", "git reflog delete HEAD@{0}"],
+    ["git reflog expire --expire=now --all", "git reflog expire --expire=now --all"],
+    ["git reflog expire --expire-unreachable=now", "git reflog expire --expire-unreachable=now"],
+    ["git reflog expire bare", "git reflog expire"],
     ["git gc --prune=now", "git gc --prune=now"],
     ["git gc --prune=all", "git gc --prune=all"],
     ["git tag -d v1.0.0", "git tag -d v1.0.0"],
@@ -338,6 +341,7 @@ describe("blockDangerousCommands", () => {
   it.each([
     ["git push origin main (no force)", "git push origin main"],
     ["git worktree remove (no force)", "git worktree remove my-worktree"],
+    ["git reflog show (read-only)", "git reflog show HEAD"],
     ["git rebase main (non-interactive)", "git rebase main"],
     ["git rebase origin/main (non-interactive)", "git rebase origin/main"],
     ["git reset --hard HEAD", "git reset --hard HEAD"],
