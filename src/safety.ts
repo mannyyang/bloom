@@ -138,6 +138,9 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // xargs command execution bypass — xargs can invoke dangerous commands from stdin
   { pattern: /\bxargs\s+.*(?:[\w./]*\/)?(?:ba|z|da|k)?sh\b/, category: "xargs-command-execution" },
   { pattern: /\bxargs\s+.*\brm\s/, category: "xargs-command-execution" },
+  // Git stash destruction — clear destroys all stashes; drop destroys a named stash entry
+  { pattern: /git\s+stash\s+clear\b/, category: "git-stash-destruction" },
+  { pattern: /git\s+stash\s+drop\b/, category: "git-stash-destruction" },
   // Untrusted package installation — adding deps pulls arbitrary code
   { pattern: /\bpnpm\s+add\b/, category: "untrusted-package-installation" },
   { pattern: /\bpnpm\s+(?:install|i)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
