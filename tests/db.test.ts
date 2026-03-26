@@ -723,6 +723,23 @@ describe("db", () => {
       expect(stats.testCountTrend).toBeNull();
     });
 
+    it("returns null testCountTrend when multiple cycles all have null test counts", () => {
+      // Both cycles are excluded by the both-non-null filter → withCounts.length === 0 → null
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+        testCountBefore: null, testCountAfter: null,
+      }));
+      insertCycle(db, makeOutcome({
+        cycleNumber: 2, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+        testCountBefore: null, testCountAfter: null,
+      }));
+
+      const stats = getCycleStats(db);
+      expect(stats.testCountTrend).toBeNull();
+    });
+
     it("computes avgDurationMinutes from duration_ms when available", () => {
       insertCycle(db, makeOutcome({
         cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
