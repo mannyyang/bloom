@@ -456,6 +456,8 @@ describe("isDangerousCommand", () => {
     ["yarn dlx", "yarn dlx malicious", "untrusted-package-execution"],
     ["git filter-branch with args", "git filter-branch --tree-filter 'rm -f secret.txt' HEAD", "git-history-rewriting"],
     ["bare git filter-branch", "git filter-branch", "git-history-rewriting"],
+    ["git filter-repo with args", "git filter-repo --path secret.txt --invert-paths", "git-history-rewriting"],
+    ["bare git filter-repo", "git filter-repo", "git-history-rewriting"],
     ["xargs piped to shell", 'echo "cmd" | xargs sh', "xargs-command-execution"],
     ["xargs with bash", "cat cmds.txt | xargs bash", "xargs-command-execution"],
     ["xargs rm", "find . | xargs rm -rf", "xargs-command-execution"],
