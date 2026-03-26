@@ -212,6 +212,10 @@ describe("blockDangerousCommands", () => {
     ["git push origin --delete main", "git push origin --delete main"],
     ["git push --delete origin v1.0", "git push --delete origin v1.0"],
     ["git push -d feature-branch", "git push -d feature-branch"],
+    // Git ref destruction — colon-prefix delete syntax
+    ["git push origin :feature-branch (colon-delete)", "git push origin :feature-branch"],
+    ["git push origin :refs/heads/main (colon-delete full ref)", "git push origin :refs/heads/main"],
+    ["git push origin :v1.0.0 (colon-delete tag)", "git push origin :v1.0.0"],
     ["git branch -D main", "git branch -D main"],
     ["git branch --delete --force main", "git branch --delete --force main"],
     ["git reflog delete", "git reflog delete HEAD@{0}"],
@@ -353,6 +357,9 @@ describe("blockDangerousCommands", () => {
   // --- Allowed commands (table-driven) ---
   it.each([
     ["git push origin main (no force)", "git push origin main"],
+    ["git push origin main:main (local:remote mapping)", "git push origin main:main"],
+    ["git push origin HEAD:main (HEAD to main mapping)", "git push origin HEAD:main"],
+    ["git push origin feature:refs/heads/feature (full refspec)", "git push origin feature:refs/heads/feature"],
     ["git worktree remove (no force)", "git worktree remove my-worktree"],
     ["git reflog show (read-only)", "git reflog show HEAD"],
     ["git rebase main (non-interactive)", "git rebase main"],
