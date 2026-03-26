@@ -411,6 +411,10 @@ describe("isDangerousRm", () => {
     ["rm --no-preserve-root /", "rm -rf --no-preserve-root /"],
     ["rm --no-preserve-root on any path", "rm -rf --no-preserve-root /some/path"],
     ["rm --no-preserve-root without other flags", "rm --no-preserve-root /"],
+    // Current directory — wipes the entire project tree
+    ["rm -rf . (bare dot)", "rm -rf ."],
+    ["rm -rf ./ (dot-slash)", "rm -rf ./"],
+    ["rm -rf . at end of compound command", "rm -rf ./dist && rm -rf ."],
     // Critical system directories
     ["rm -rf /etc", "rm -rf /etc"],
     ["rm -rf /usr", "rm -rf /usr"],

@@ -57,7 +57,8 @@ export const protectJournal: HookCallback = async (input) => {
 
 export function isDangerousRm(command: string): boolean {
   // Match `rm` followed by flags that include both -r (or --recursive) and -f (or --force)
-  // targeting / or ~ . Handles: rm -rf /, rm -r -f /, rm -f -r /, rm -fr /, rm --recursive --force /, etc.
+  // targeting /, ~, . (current dir), or critical system dirs.
+  // Handles: rm -rf /, rm -r -f /, rm -f -r /, rm -fr /, rm --recursive --force /, rm -rf ., etc.
   const rmMatch = command.match(/\brm\s+(.*)/);
   if (!rmMatch) return false;
   const rest = rmMatch[1];
@@ -67,7 +68,9 @@ export function isDangerousRm(command: string): boolean {
 
   const hasRecursive = /(?:^|\s)--recursive(?:\s|$)/.test(rest) || /(?:^|\s)-\w*r/.test(rest);
   const hasForce = /(?:^|\s)--force(?:\s|$)/.test(rest) || /(?:^|\s)-\w*f/.test(rest);
-  const hasDangerousPath = /(?:^|\s)\/(?:\s|$|\*)/.test(rest) || /(?:^|\s)~\/?(?:\s|$|\*)/.test(rest);
+  // Block root (/), home (~), and bare current directory (. or ./) — all wipe entire trees.
+  // Intentionally allows specific subdirectory paths like ./dist or ./build.
+  const hasDangerousPath = /(?:^|\s)\/(?:\s|$|\*)/.test(rest) || /(?:^|\s)~\/?(?:\s|$|\*)/.test(rest) || /(?:^|\s)\.(?:\/)?(?:\s|$)/.test(rest);
 
   // Critical system directories — no legitimate use in Bloom's context
   const CRITICAL_DIRS = /(?:^|\s)\/(?:etc|usr|var|boot|bin|sbin|lib|proc|sys)(?:\/?\s|\/?\*|\/?\||\/?;|\/?&|\/?$)/;
