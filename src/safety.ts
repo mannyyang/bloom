@@ -138,6 +138,8 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /git\s+filter-repo\b/, category: "git-history-rewriting" },
   // Git history rewriting — interactive rebase can drop, squash, edit, and reorder commits
   { pattern: /git\s+rebase\s+(?:.*\s)?(?:-i|--interactive)\b/, category: "git-history-rewriting" },
+  // Git history rewriting — amend rewrites the most recent commit in place
+  { pattern: /git\s+commit\s+(?:.*\s)?--amend\b/, category: "git-history-rewriting" },
   // Data exfiltration — curl/wget sending data to external servers
   { pattern: /\bcurl\s+.*(-d\b|--data\b|--data-binary\b|--data-raw\b|--data-urlencode\b|--upload-file\b|-F\b|--form\b|--json\b)/, category: "data-exfiltration" },
   { pattern: /\bwget\s+.*--post-(data|file)\b/, category: "data-exfiltration" },
