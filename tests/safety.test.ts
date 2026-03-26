@@ -207,6 +207,11 @@ describe("blockDangerousCommands", () => {
     ["pnpm dlx malicious-package", "pnpm dlx malicious-package"],
     ["yarn dlx malicious-package", "yarn dlx malicious-package"],
     // Git ref destruction
+    ["git push -d origin main", "git push -d origin main"],
+    ["git push --delete origin main", "git push --delete origin main"],
+    ["git push origin --delete main", "git push origin --delete main"],
+    ["git push --delete origin v1.0", "git push --delete origin v1.0"],
+    ["git push -d feature-branch", "git push -d feature-branch"],
     ["git branch -D main", "git branch -D main"],
     ["git branch --delete --force main", "git branch --delete --force main"],
     ["git reflog delete", "git reflog delete HEAD@{0}"],
