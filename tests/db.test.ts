@@ -837,6 +837,28 @@ describe("db", () => {
       expect(stats.totalCycles).toBe(3);
     });
 
+    it("failureCategoryBreakdown excludes cycles outside the limit window", () => {
+      // Cycles 1-5 fail with build_failure; cycles 6-10 pass with failureCategory "none"
+      for (let i = 1; i <= 5; i++) {
+        insertCycle(db, makeOutcome({
+          cycleNumber: i, buildVerificationPassed: false, pushSucceeded: false,
+          failureCategory: "build_failure",
+        }));
+      }
+      for (let i = 6; i <= 10; i++) {
+        insertCycle(db, makeOutcome({
+          cycleNumber: i, improvementsAttempted: 1, improvementsSucceeded: 1,
+          buildVerificationPassed: true, pushSucceeded: true,
+          failureCategory: "none",
+        }));
+      }
+
+      // limit=5 covers only cycles 6-10, which have failureCategory "none" (excluded from breakdown)
+      const stats = getCycleStats(db, 5);
+      expect(stats.totalCycles).toBe(5);
+      expect(stats.failureCategoryBreakdown).toEqual({});
+    });
+
     it("aggregates cost from phase_usage", () => {
       insertCycle(db, makeOutcome({
         cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
