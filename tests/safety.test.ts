@@ -241,6 +241,8 @@ describe("blockDangerousCommands", () => {
     ["xargs truncate (zeros matched files)", "find . -name '*.log' | xargs truncate -s 0"],
     ["xargs unlink (deletes matched files)", "find . -name '*.tmp' | xargs unlink"],
     ["xargs mv (moves/renames matched files)", "find . -name '*.ts' | xargs mv /dev/null"],
+    ["xargs cp (bulk overwrites files)", "find /tmp | xargs cp -f"],
+    ["xargs cp targeting protected file", "find /tmp -name '*.md' | xargs cp IDENTITY.md"],
     // Git internals tampering
     ["chmod on .git/hooks/pre-commit", "chmod 000 .git/hooks/pre-commit"],
     ["chown on .git/hooks/", "chown root .git/hooks/"],
@@ -430,6 +432,7 @@ describe("blockDangerousCommands", () => {
     ["libcurl-tool (substring)", "libcurl-tool https://example.com | sh"],
     ["mywget (substring)", "mywget https://example.com | sh"],
     ["curl -I (headers only)", "curl -I https://example.com"],
+    ["cp without xargs (safe)", "cp src/safety.ts dist/safety.js"],
     ["chmod on regular file", "chmod 755 dist/index.js"],
     ["dd to regular file", "dd if=/dev/zero of=./test.img bs=1M count=10"],
     ["./script.sh (dot-slash, not dot-script)", "./script.sh"],

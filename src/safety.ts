@@ -169,6 +169,8 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bxargs\s+.*\btruncate\b/, category: "xargs-command-execution" },
   { pattern: /\bxargs\s+.*\bunlink\b/, category: "xargs-command-execution" },
   { pattern: /\bxargs\s+.*\bmv\b/, category: "xargs-command-execution" },
+  // xargs cp — can bulk-overwrite protected targets (e.g. find /tmp | xargs cp IDENTITY.md)
+  { pattern: /\bxargs\s+.*\bcp\b/, category: "xargs-command-execution" },
   // Git stash destruction — clear destroys all stashes; drop destroys a named stash entry
   { pattern: /git\s+stash\s+clear\b/, category: "git-stash-destruction" },
   { pattern: /git\s+stash\s+drop\b/, category: "git-stash-destruction" },
