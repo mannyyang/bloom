@@ -2,6 +2,7 @@ import { readFileSync } from "fs";
 import { createSign } from "crypto";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+import { validateRow } from "./db.js";
 
 const APP_ID = "3021184";
 const INSTALLATION_ID = "114372557";
@@ -63,18 +64,11 @@ export async function getInstallationToken(): Promise<string> {
       throw new Error(`Failed to get installation token: ${res.status} ${await res.text()}`);
     }
 
-    const data: unknown = await res.json();
-    if (
-      typeof data !== "object" ||
-      data === null ||
-      typeof (data as Record<string, unknown>).token !== "string" ||
-      typeof (data as Record<string, unknown>).expires_at !== "string"
-    ) {
-      throw new Error(
-        `Unexpected installation token response shape: ${JSON.stringify(data).slice(0, 200)}`,
-      );
-    }
-    const { token, expires_at } = data as { token: string; expires_at: string };
+    const { token, expires_at } = validateRow<{ token: string; expires_at: string }>(
+      await res.json(),
+      { token: "string", expires_at: "string" },
+      "getInstallationToken",
+    );
     cachedToken = {
       token,
       expiresAt: new Date(expires_at).getTime() - 60_000,

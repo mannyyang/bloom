@@ -234,7 +234,7 @@ describe("github-app", () => {
 
       const { getInstallationToken } = await loadModule();
       await expect(getInstallationToken()).rejects.toThrow(
-        /Unexpected installation token response shape/,
+        /getInstallationToken:/,
       );
     });
 
@@ -246,7 +246,7 @@ describe("github-app", () => {
 
       const { getInstallationToken } = await loadModule();
       await expect(getInstallationToken()).rejects.toThrow(
-        /Unexpected installation token response shape/,
+        /getInstallationToken:/,
       );
     });
 
@@ -258,7 +258,7 @@ describe("github-app", () => {
 
       const { getInstallationToken } = await loadModule();
       await expect(getInstallationToken()).rejects.toThrow(
-        /Unexpected installation token response shape/,
+        /getInstallationToken:/,
       );
     });
 
