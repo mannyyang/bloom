@@ -205,9 +205,9 @@ export function buildProtectedFilePatterns(filename: string, opts?: { allowAppen
     opts?.allowAppend
       ? new RegExp(`(?:^|[^>])>\\s*(?:\\S*\\/)?${escaped}`)
       : new RegExp(`(?:>|>>)\\s*(?:\\S*\\/)?${escaped}`),
-    // tee: for append-allowed files, allow tee -a; otherwise block all tee
+    // tee: for append-allowed files, allow tee -a / tee --append; otherwise block all tee
     opts?.allowAppend
-      ? new RegExp(`\\btee\\s+(?!.*-\\w*a)(?:.*\\s)?(?:\\S*\\/)?${escaped}`)
+      ? new RegExp(`\\btee\\s+(?!.*(?:-\\w*a\\b|--append\\b))(?:.*\\s)?(?:\\S*\\/)?${escaped}`)
       : new RegExp(`\\btee\\s+(?:.*\\s)?(?:\\S*\\/)?${escaped}`),
     new RegExp(`\\bcp\\s+(?:.*\\s)?(?:\\S*\\/)?${escaped}(?:\\s|$|;|&|\\|)`),
     new RegExp(`\\bmv\\s+(?:.*\\s)?(?:\\S*\\/)?${escaped}(?:\\s|$|;|&|\\|)`),

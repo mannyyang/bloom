@@ -329,6 +329,7 @@ describe("blockDangerousCommands", () => {
     ["cp from IDENTITY.md", "cp IDENTITY.md backup.md"],
     ["sed -i on IDENTITY.md", "sed -i 's/foo/bar/' IDENTITY.md"],
     ["tee to IDENTITY.md", "echo x | tee IDENTITY.md"],
+    ["tee --append to IDENTITY.md (no allowAppend)", "echo x | tee --append IDENTITY.md"],
     ["chmod on IDENTITY.md", "chmod 777 IDENTITY.md"],
     ["redirect to absolute path IDENTITY.md", "echo x > /repo/IDENTITY.md"],
     ["cp to IDENTITY.md in chain", "cp other.md IDENTITY.md && echo done"],
@@ -442,6 +443,7 @@ describe("blockDangerousCommands", () => {
     ["bare npm i", "npm i"],
     ["append redirect to JOURNAL.md", 'echo "entry" >> JOURNAL.md'],
     ["tee -a to JOURNAL.md", "echo x | tee -a JOURNAL.md"],
+    ["tee --append to JOURNAL.md", "echo x | tee --append JOURNAL.md"],
     ["cat JOURNAL.md", "cat JOURNAL.md"],
     ["grep on JOURNAL.md", "grep something JOURNAL.md"],
   ])("allows %s", async (_desc, command) => {
@@ -679,6 +681,15 @@ describe("buildProtectedFilePatterns", () => {
 
     it("allows tee -a", () => {
       expect(matchesAny(patterns, "echo x | tee -a CUSTOM.txt")).toBe(false);
+    });
+
+    it("allows tee --append", () => {
+      expect(matchesAny(patterns, "echo x | tee --append CUSTOM.txt")).toBe(false);
+    });
+
+    it("blocks tee --append without allowAppend (IDENTITY.md-style)", () => {
+      const patternsNoAppend = buildProtectedFilePatterns("CUSTOM.txt");
+      expect(matchesAny(patternsNoAppend, "echo x | tee --append CUSTOM.txt")).toBe(true);
     });
   });
 
