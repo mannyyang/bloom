@@ -264,6 +264,9 @@ describe("blockDangerousCommands", () => {
     // Git filter-branch
     ["git filter-branch with args", "git filter-branch --tree-filter 'rm secret' HEAD"],
     ["bare git filter-branch", "git filter-branch"],
+    // Git filter-repo (integration coverage via blockDangerousCommands)
+    ["git filter-repo bare", "git filter-repo"],
+    ["git filter-repo with args", "git filter-repo --path secret.txt --invert-paths"],
     // Git interactive rebase (history rewriting)
     ["git rebase -i", "git rebase -i"],
     ["git rebase --interactive", "git rebase --interactive"],
