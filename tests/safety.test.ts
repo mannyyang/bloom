@@ -620,6 +620,8 @@ describe("buildProtectedFilePatterns", () => {
       ["mv (source)", "mv IDENTITY.md IDENTITY.md.bak"],
       ["cp (source)", "cp IDENTITY.md backup.md"],
       ["sed -i", "sed -i 's/a/b/' IDENTITY.md"],
+      ["sed --in-place", "sed --in-place 's/a/b/' IDENTITY.md"],
+      ["sed --in-place=SUFFIX", "sed --in-place=.bak 's/a/b/' IDENTITY.md"],
       ["truncate", "truncate -s 0 IDENTITY.md"],
       ["dd", "dd if=/dev/null of=IDENTITY.md"],
       ["chmod", "chmod 000 IDENTITY.md"],
@@ -648,6 +650,8 @@ describe("buildProtectedFilePatterns", () => {
       ["cp", "cp foo.txt CUSTOM.txt"],
       ["mv", "mv foo.txt CUSTOM.txt"],
       ["sed -i", "sed -i 's/a/b/' CUSTOM.txt"],
+      ["sed --in-place", "sed --in-place 's/a/b/' CUSTOM.txt"],
+      ["sed --in-place=SUFFIX", "sed --in-place=.bak 's/a/b/' CUSTOM.txt"],
       ["truncate", "truncate -s 0 CUSTOM.txt"],
       ["dd", "dd if=/dev/null of=CUSTOM.txt"],
       ["chmod", "chmod 644 CUSTOM.txt"],
@@ -730,6 +734,7 @@ describe("buildProtectedFilePatterns", () => {
       ["cat IDENTITY.md (read-only)", "cat IDENTITY.md"],
       ["grep in IDENTITY.md", "grep -n 'safety' IDENTITY.md"],
       ["echo without redirect", "echo IDENTITY.md"],
+      ["sed --in-place on unrelated file", "sed --in-place 's/a/b/' README.md"],
     ])("allows %s", (_desc, command) => {
       expect(matchesAny(patterns, command)).toBe(false);
     });

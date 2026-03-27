@@ -216,7 +216,7 @@ export function buildProtectedFilePatterns(filename: string, opts?: { allowAppen
       : new RegExp(`\\btee\\s+(?:.*\\s)?(?:\\S*\\/)?${escaped}`),
     new RegExp(`\\bcp\\s+(?:.*\\s)?(?:\\S*\\/)?${escaped}(?:\\s|$|;|&|\\|)`),
     new RegExp(`\\bmv\\s+(?:.*\\s)?(?:\\S*\\/)?${escaped}(?:\\s|$|;|&|\\|)`),
-    new RegExp(`\\bsed\\s+-i\\b.*${escaped}`),
+    new RegExp(`\\bsed\\s+(?:-i\\b|--in-place\\b|--in-place=\\S+).*${escaped}`),
     new RegExp(`\\btruncate\\s+.*${escaped}`),
     new RegExp(`\\bdd\\s+.*of=(?:\\S*\\/)?${escaped}`),
     new RegExp(`\\bchmod\\s+.*${escaped}`),
