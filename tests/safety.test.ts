@@ -254,6 +254,9 @@ describe("blockDangerousCommands", () => {
     ["git restore ./ (dot-slash)", "git restore ./"],
     ["git restore .. (parent)", "git restore .."],
     ["git restore --staged . (staged discard)", "git restore --staged ."],
+    // Git switch --discard-changes (working tree destruction)
+    ["git switch --discard-changes main", "git switch --discard-changes main"],
+    ["git switch --discard-changes .", "git switch --discard-changes ."],
     // Git clean with force
     ["git clean -fd", "git clean -fd"],
     ["git clean -fdx", "git clean -fdx"],
@@ -379,6 +382,8 @@ describe("blockDangerousCommands", () => {
     ["git checkout -- ./src/index.ts (relative path)", "git checkout -- ./src/index.ts"],
     ["git restore src/index.ts (targeted restore)", "git restore src/index.ts"],
     ["git restore ./src/ (specific subdir)", "git restore ./src/"],
+    ["git switch main (safe)", "git switch main"],
+    ["git switch -c new-branch (create)", "git switch -c new-branch"],
     ["git branch -d (safe delete)", "git branch -d feature-branch"],
     ["git tag v1.0.0 (create tag)", "git tag v1.0.0"],
     ["git tag -a v1.0.0 -m msg (annotated tag)", "git tag -a v1.0.0 -m 'release'"],

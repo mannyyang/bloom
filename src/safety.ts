@@ -138,6 +138,8 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Git working tree destruction — broad discard of tracked changes (. or .. wipes entire tree or parent)
   { pattern: /git\s+checkout\s+(?:.*\s)?--\s+\.\.?(?:\/)?(?:\s|$)/, category: "git-working-tree-destruction" },
   { pattern: /git\s+restore\s+(?:.*\s)?\.\.?(?:\/)?(?:\s|$)/, category: "git-working-tree-destruction" },
+  // Git working tree destruction — switch --discard-changes silently drops all local working-tree changes
+  { pattern: /git\s+switch\s+(?:.*\s)?--discard-changes\b/, category: "git-working-tree-destruction" },
   // Git history rewriting — filter-branch and filter-repo both rewrite/remove files from history
   { pattern: /git\s+filter-branch\b/, category: "git-history-rewriting" },
   { pattern: /git\s+filter-repo\b/, category: "git-history-rewriting" },
