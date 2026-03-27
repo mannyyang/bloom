@@ -159,6 +159,7 @@ describe("blockDangerousCommands", () => {
     ["git push --tags --force", "git push --tags --force"],
     ["git push --tags -f", "git push --tags -f"],
     ["git push origin --tags --force", "git push origin --tags --force"],
+    ["git push -fu origin main (combined force+set-upstream)", "git push -fu origin main"],
     ["git push --mirror", "git push --mirror"],
     ["git push --mirror origin", "git push --mirror origin"],
     ["git push origin --mirror", "git push origin --mirror"],
@@ -253,6 +254,7 @@ describe("blockDangerousCommands", () => {
     ["git worktree remove --force", "git worktree remove --force my-worktree"],
     ["git worktree remove -f", "git worktree remove -f my-worktree"],
     ["git worktree remove --force path", "git worktree remove --force /path/to/worktree"],
+    ["git worktree remove -fd (combined force+delete)", "git worktree remove -fd my-worktree"],
     // Git checkout/restore broad discard (working tree destruction)
     ["git checkout -- . (bare dot)", "git checkout -- ."],
     ["git checkout -- ./ (dot-slash)", "git checkout -- ./"],
@@ -269,6 +271,7 @@ describe("blockDangerousCommands", () => {
     ["git switch -f main", "git switch -f main"],
     ["git switch --force main", "git switch --force main"],
     ["git switch --force .", "git switch --force ."],
+    ["git switch -fc branch (combined force+create)", "git switch -fc new-branch"],
     // Git clean with force
     ["git clean -fd", "git clean -fd"],
     ["git clean -fdx", "git clean -fdx"],

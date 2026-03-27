@@ -86,7 +86,9 @@ interface DangerousPattern {
 
 export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Git history destruction — force push or mirror push overwrites/destroys remote history
-  { pattern: /git\s+push\s+.*(-f\b|--force\b|--force-with-lease\b|--force-if-includes\b|--mirror\b)/, category: "git-history-destruction" },
+  // (?<!\w)-[a-zA-Z]*f[a-zA-Z]*\b catches both bare -f and combined short flags like -fu (force+upstream)
+  // while avoiding false positives on branch names like feature-fix (where - is preceded by a word char)
+  { pattern: /git\s+push\s+.*((?<!\w)-[a-zA-Z]*f[a-zA-Z]*\b|--force\b|--force-with-lease\b|--force-if-includes\b|--mirror\b)/, category: "git-history-destruction" },
   // Git history destruction — hard reset to arbitrary ref loses uncommitted work
   { pattern: /git\s+reset\s+--hard\s+(?!HEAD(?:\s*$|\s*[;&|]))/, category: "git-history-destruction" },
   // Remote code execution — piping downloaded content into a shell
@@ -136,14 +138,16 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bparted\b/, category: "disk-destruction" },
   // Git working tree destruction — force-clean untracked files; force-remove linked worktrees with uncommitted changes
   { pattern: /git\s+clean\s+.*(-f|--force)/, category: "git-working-tree-destruction" },
-  { pattern: /git\s+worktree\s+remove\s+(?:.*\s)?(-f\b|--force\b)/, category: "git-working-tree-destruction" },
+  // (?<!\w)-[a-zA-Z]*f[a-zA-Z]*\b catches both bare -f and combined short flags like -fd (force+delete)
+  { pattern: /git\s+worktree\s+remove\s+(?:.*\s)?((?<!\w)-[a-zA-Z]*f[a-zA-Z]*\b|--force\b)/, category: "git-working-tree-destruction" },
   // Git working tree destruction — broad discard of tracked changes (. or .. wipes entire tree or parent)
   { pattern: /git\s+checkout\s+(?:.*\s)?--\s+\.\.?(?:\/)?(?:\s|$)/, category: "git-working-tree-destruction" },
   { pattern: /git\s+restore\s+(?:.*\s)?\.\.?(?:\/)?(?:\s|$)/, category: "git-working-tree-destruction" },
   // Git working tree destruction — switch --discard-changes silently drops all local working-tree changes
   { pattern: /git\s+switch\s+(?:.*\s)?--discard-changes\b/, category: "git-working-tree-destruction" },
   // Git working tree destruction — switch -f/--force also silently discards local working-tree changes
-  { pattern: /git\s+switch\s+(?:.*\s)?(?:-f\b|--force\b)/, category: "git-working-tree-destruction" },
+  // (?<!\w)-[a-zA-Z]*f[a-zA-Z]*\b catches both bare -f and combined short flags like -fc (force+create)
+  { pattern: /git\s+switch\s+(?:.*\s)?(?:(?<!\w)-[a-zA-Z]*f[a-zA-Z]*\b|--force\b)/, category: "git-working-tree-destruction" },
   // Git history rewriting — filter-branch and filter-repo both rewrite/remove files from history
   { pattern: /git\s+filter-branch\b/, category: "git-history-rewriting" },
   { pattern: /git\s+filter-repo\b/, category: "git-history-rewriting" },
