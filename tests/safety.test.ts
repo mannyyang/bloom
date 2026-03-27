@@ -236,6 +236,11 @@ describe("blockDangerousCommands", () => {
     ["xargs chown (bypasses .git pattern)", "find .git -type f | xargs chown root"],
     ["xargs chmod on arbitrary files", "find . -name '*.sh' | xargs chmod +x"],
     ["xargs chown on arbitrary files", "find . | xargs chown user:group"],
+    // xargs with file-destroying commands
+    ["xargs dd (wipes matched files)", "find . -name '*.ts' | xargs dd if=/dev/zero"],
+    ["xargs truncate (zeros matched files)", "find . -name '*.log' | xargs truncate -s 0"],
+    ["xargs unlink (deletes matched files)", "find . -name '*.tmp' | xargs unlink"],
+    ["xargs mv (moves/renames matched files)", "find . -name '*.ts' | xargs mv /dev/null"],
     // Git internals tampering
     ["chmod on .git/hooks/pre-commit", "chmod 000 .git/hooks/pre-commit"],
     ["chown on .git/hooks/", "chown root .git/hooks/"],
@@ -579,6 +584,8 @@ describe("isDangerousCommand", () => {
     ["git rebase (non-interactive)", "git rebase main"],
     ["xargs grep (safe)", "find . -name '*.ts' | xargs grep TODO"],
     ["xargs echo (safe)", "echo foo | xargs echo"],
+    ["xargs wc (safe)", "find . -name '*.ts' | xargs wc -l"],
+    ["xargs cat (safe)", "find . -name '*.log' | xargs cat"],
     ["git stash push (safe)", "git stash push -m 'WIP'"],
     ["git stash list (safe)", "git stash list"],
     ["git stash pop (safe)", "git stash pop"],
