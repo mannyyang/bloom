@@ -243,6 +243,12 @@ describe("blockDangerousCommands", () => {
     ["xargs mv (moves/renames matched files)", "find . -name '*.ts' | xargs mv /dev/null"],
     ["xargs cp (bulk overwrites files)", "find /tmp | xargs cp -f"],
     ["xargs cp targeting protected file", "find /tmp -name '*.md' | xargs cp IDENTITY.md"],
+    ["xargs tee (overwrites files via stdin paths)", "find . | xargs tee output.txt"],
+    ["xargs tee targeting protected file", "find /tmp | xargs tee IDENTITY.md"],
+    // install(1) — copies files with arbitrary permissions
+    ["install -m 777 (world-writable)", "install -m 777 src dst"],
+    ["install -m 755 to system path", "install -m 755 dist/index.js /usr/local/bin/bloom"],
+    ["install -Dm 644 (combined flags)", "install -Dm 644 bloom.service /etc/systemd/system/"],
     // Git internals tampering
     ["chmod on .git/hooks/pre-commit", "chmod 000 .git/hooks/pre-commit"],
     ["chown on .git/hooks/", "chown root .git/hooks/"],
@@ -578,6 +584,8 @@ describe("isDangerousCommand", () => {
     ["pnpm add", "pnpm add malicious-pkg", "untrusted-package-installation"],
     ["git stash clear", "git stash clear", "git-stash-destruction"],
     ["git stash drop", "git stash drop stash@{0}", "git-stash-destruction"],
+    ["xargs tee", "find . | xargs tee output.txt", "xargs-command-execution"],
+    ["install -m", "install -m 777 src dst", "file-permission-tampering"],
   ])("detects %s → %s", (_desc, command, category) => {
     expect(isDangerousCommand(command)).toBe(category);
   });

@@ -171,9 +171,13 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bxargs\s+.*\bmv\b/, category: "xargs-command-execution" },
   // xargs cp — can bulk-overwrite protected targets (e.g. find /tmp | xargs cp IDENTITY.md)
   { pattern: /\bxargs\s+.*\bcp\b/, category: "xargs-command-execution" },
+  // xargs tee — overwrites target files when fed paths from find (same risk as xargs cp)
+  { pattern: /\bxargs\s+.*\btee\b/, category: "xargs-command-execution" },
   // Git stash destruction — clear destroys all stashes; drop destroys a named stash entry
   { pattern: /git\s+stash\s+clear\b/, category: "git-stash-destruction" },
   { pattern: /git\s+stash\s+drop\b/, category: "git-stash-destruction" },
+  // install(1) — Unix install utility copies files and sets arbitrary permissions with -m
+  { pattern: /\binstall\s+(?:.*\s)?-[a-zA-Z]*m\b/, category: "file-permission-tampering" },
   // Untrusted package installation — adding deps pulls arbitrary code
   { pattern: /\bpnpm\s+add\b/, category: "untrusted-package-installation" },
   { pattern: /\bpnpm\s+(?:install|i)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
