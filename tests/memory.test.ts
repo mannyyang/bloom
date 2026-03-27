@@ -305,6 +305,27 @@ describe("storeStrategicContext", () => {
     storeStrategicContext(db, 2, "New focus.");
     expect(getLatestStrategicContext(db)).toBe("New focus.");
   });
+
+  it("formatMemoryForPrompt reflects only the latest strategic context", () => {
+    storeStrategicContext(db, 1, "Initial strategy.");
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    storeStrategicContext(db, 2, "Updated strategy.");
+    const result = formatMemoryForPrompt(db);
+    expect(result).toContain("Updated strategy.");
+    expect(result).not.toContain("Initial strategy.");
+  });
+
+  it("formatMemoryForPrompt shows newest context after three overwrites", () => {
+    storeStrategicContext(db, 1, "First context.");
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    storeStrategicContext(db, 2, "Second context.");
+    insertCycle(db, makeOutcome({ cycleNumber: 3 }));
+    storeStrategicContext(db, 3, "Third context.");
+    const result = formatMemoryForPrompt(db);
+    expect(result).toContain("Third context.");
+    expect(result).not.toContain("First context.");
+    expect(result).not.toContain("Second context.");
+  });
 });
 
 describe("DB functions for memory", () => {
