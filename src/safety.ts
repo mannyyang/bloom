@@ -123,6 +123,8 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /git\s+reflog\s+expire\b/, category: "git-ref-destruction" },
   { pattern: /git\s+gc\s+.*--prune=(now|all)\b/, category: "git-ref-destruction" },
   { pattern: /git\s+tag\s+(?:-d|--delete)\b/, category: "git-ref-destruction" },
+  // Git ref destruction — switch -C force-creates or resets an existing branch to HEAD (ref destruction)
+  { pattern: /git\s+switch\s+(?:.*\s)?-C\b/, category: "git-ref-destruction" },
   // Git internals tampering — changing permissions/ownership of .git/ or bare .git dir
   { pattern: /\bchmod\s+.*\.git(?:\/|\s|$|;|&|\|)/, category: "git-internals-tampering" },
   { pattern: /\bchown\s+.*\.git(?:\/|\s|$|;|&|\|)/, category: "git-internals-tampering" },

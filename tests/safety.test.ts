@@ -227,6 +227,9 @@ describe("blockDangerousCommands", () => {
     ["git tag -d v1.0.0", "git tag -d v1.0.0"],
     ["git tag --delete v1.0.0", "git tag --delete v1.0.0"],
     ["git tag -d multiple tags", "git tag -d v1.0.0 v1.0.1"],
+    // Git switch -C (force-reset branch — ref destruction)
+    ["git switch -C existing-branch", "git switch -C existing-branch"],
+    ["git switch -C branch origin/branch", "git switch -C branch origin/branch"],
     // Git internals tampering
     ["chmod on .git/hooks/pre-commit", "chmod 000 .git/hooks/pre-commit"],
     ["chown on .git/hooks/", "chown root .git/hooks/"],
@@ -392,6 +395,7 @@ describe("blockDangerousCommands", () => {
     ["git switch main (safe)", "git switch main"],
     ["git switch -c new-branch (create)", "git switch -c new-branch"],
     ["git switch -c new-branch with args (create, not force)", "git switch -c new-branch origin/main"],
+    ["git switch -c (lowercase, safe create)", "git switch -c fresh-branch"],
     ["git branch -d (safe delete)", "git branch -d feature-branch"],
     ["git tag v1.0.0 (create tag)", "git tag v1.0.0"],
     ["git tag -a v1.0.0 -m msg (annotated tag)", "git tag -a v1.0.0 -m 'release'"],
@@ -540,6 +544,7 @@ describe("isDangerousCommand", () => {
     ["node -e", "node -e 'process.exit(1)'", "inline-code-execution"],
     ["source", "source /tmp/evil.sh", "shell-script-execution"],
     ["git branch -D", "git branch -D feature", "git-ref-destruction"],
+    ["git switch -C", "git switch -C existing-branch", "git-ref-destruction"],
     ["git tag -d", "git tag -d v1.0.0", "git-ref-destruction"],
     ["git tag --delete", "git tag --delete v1.0.0", "git-ref-destruction"],
     ["chmod .git/", "chmod 777 .git/config", "git-internals-tampering"],
