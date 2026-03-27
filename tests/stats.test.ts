@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
-import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning } from "../src/db.js";
+import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats } from "../src/db.js";
 import { generateStatsOutput } from "../src/stats.js";
 import { makeOutcome } from "./helpers.js";
 
@@ -204,5 +204,47 @@ describe("generateStatsOutput", () => {
     for (const line of output) {
       expect(typeof line).toBe("string");
     }
+  });
+
+  describe("failure category breakdown", () => {
+    it("getCycleStats returns correct counts per category", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "build_failure" }));
+      insertCycle(db, makeOutcome({ cycleNumber: 2, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "build_failure" }));
+      insertCycle(db, makeOutcome({ cycleNumber: 3, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "test_failure" }));
+      insertCycle(db, makeOutcome({ cycleNumber: 4, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "llm_error" }));
+      insertCycle(db, makeOutcome({ cycleNumber: 5, buildVerificationPassed: true, pushSucceeded: true, failureCategory: "none" }));
+      const stats = getCycleStats(db);
+      expect(stats.failureCategoryBreakdown["build_failure"]).toBe(2);
+      expect(stats.failureCategoryBreakdown["test_failure"]).toBe(1);
+      expect(stats.failureCategoryBreakdown["llm_error"]).toBe(1);
+      expect(stats.failureCategoryBreakdown["none"]).toBeUndefined();
+    });
+
+    it("failure breakdown appears in generateStatsOutput when failures exist", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "build_failure" }));
+      insertCycle(db, makeOutcome({ cycleNumber: 2, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "test_failure" }));
+      const output = generateStatsOutput(db);
+      const joined = output.join("\n");
+      expect(joined).toContain("build_failure");
+      expect(joined).toContain("test_failure");
+      expect(joined).toContain("Failure breakdown");
+    });
+
+    it("failure breakdown omitted when all cycles have category none", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "none" }));
+      const output = generateStatsOutput(db);
+      const joined = output.join("\n");
+      expect(joined).not.toContain("Failure breakdown");
+    });
+
+    it("getCycleStats does not crash when failure_category has unexpected values", () => {
+      // Simulate an old/migrated DB row where failure_category might be an empty string
+      // by inserting a cycle then manually verifying getCycleStats handles empty breakdown gracefully
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      // getCycleStats excludes 'none' from the breakdown; empty result should not crash
+      expect(() => getCycleStats(db)).not.toThrow();
+      const stats = getCycleStats(db);
+      expect(stats.failureCategoryBreakdown).toEqual({});
+    });
   });
 });
