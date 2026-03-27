@@ -230,6 +230,11 @@ describe("blockDangerousCommands", () => {
     // Git switch -C (force-reset branch — ref destruction)
     ["git switch -C existing-branch", "git switch -C existing-branch"],
     ["git switch -C branch origin/branch", "git switch -C branch origin/branch"],
+    // xargs chmod/chown bypass
+    ["xargs chmod (bypasses .git pattern)", "find .git -type f | xargs chmod 777"],
+    ["xargs chown (bypasses .git pattern)", "find .git -type f | xargs chown root"],
+    ["xargs chmod on arbitrary files", "find . -name '*.sh' | xargs chmod +x"],
+    ["xargs chown on arbitrary files", "find . | xargs chown user:group"],
     // Git internals tampering
     ["chmod on .git/hooks/pre-commit", "chmod 000 .git/hooks/pre-commit"],
     ["chown on .git/hooks/", "chown root .git/hooks/"],
@@ -540,6 +545,8 @@ describe("isDangerousCommand", () => {
     ["xargs with bash", "cat cmds.txt | xargs bash", "xargs-command-execution"],
     ["xargs rm", "find . | xargs rm -rf", "xargs-command-execution"],
     ["xargs with full path to shell", "xargs /bin/sh", "xargs-command-execution"],
+    ["xargs chmod", "find .git -type f | xargs chmod 777", "xargs-command-execution"],
+    ["xargs chown", "find .git -type f | xargs chown root", "xargs-command-execution"],
     ["python -c", "python -c 'import os; os.system(\"id\")'", "inline-code-execution"],
     ["node -e", "node -e 'process.exit(1)'", "inline-code-execution"],
     ["source", "source /tmp/evil.sh", "shell-script-execution"],
