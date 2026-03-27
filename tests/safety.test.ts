@@ -231,6 +231,9 @@ describe("blockDangerousCommands", () => {
     ["chmod on .git/hooks/pre-commit", "chmod 000 .git/hooks/pre-commit"],
     ["chown on .git/hooks/", "chown root .git/hooks/"],
     ["chmod +x on .git/hooks script", "chmod +x .git/hooks/post-commit"],
+    ["chmod on bare .git (no trailing slash)", "chmod 777 .git"],
+    ["chmod -R on bare .git", "chmod -R 000 .git"],
+    ["chown on bare .git (no trailing slash)", "chown root .git"],
     // Disk destruction
     ["dd to /dev/sda", "dd if=/dev/zero of=/dev/sda bs=1M"],
     ["dd to /dev/nvme0n1", "dd if=/dev/urandom of=/dev/nvme0n1"],
