@@ -247,4 +247,19 @@ describe("generateStatsOutput", () => {
       expect(stats.failureCategoryBreakdown).toEqual({});
     });
   });
+
+  describe("getCycleStats with zero cycles", () => {
+    it("returns default stats on a freshly-initialised DB without throwing", () => {
+      expect(() => getCycleStats(db)).not.toThrow();
+      const stats = getCycleStats(db);
+      expect(stats.totalCycles).toBe(0);
+      expect(stats.successRate).toBe(0);
+      expect(stats.avgImprovements).toBe(0);
+      expect(stats.totalCostUsd).toBe(0);
+      expect(stats.avgCostPerCycle).toBe(0);
+      expect(stats.totalInputTokens).toBe(0);
+      expect(stats.totalOutputTokens).toBe(0);
+      expect(stats.failureCategoryBreakdown).toEqual({});
+    });
+  });
 });
