@@ -265,6 +265,8 @@ describe("blockDangerousCommands", () => {
     ["git checkout -- ./ (dot-slash)", "git checkout -- ./"],
     ["git checkout HEAD -- . (with ref)", "git checkout HEAD -- ."],
     ["git checkout -- .. (parent)", "git checkout -- .."],
+    ["git checkout -f -- . (force+discard)", "git checkout -f -- ."],
+    ["git checkout -f -- .. (force+parent)", "git checkout -f -- .."],
     ["git restore . (bare dot)", "git restore ."],
     ["git restore ./ (dot-slash)", "git restore ./"],
     ["git restore .. (parent)", "git restore .."],
