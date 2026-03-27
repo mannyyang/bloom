@@ -138,7 +138,11 @@ export function initDb(path: string = DEFAULT_DB_PATH): Database.Database {
   `);
 
   // --- Migrations: add columns that may be missing from older databases ---
-  const cycleColumns = db.prepare("PRAGMA table_info(cycles)").all() as { name: string }[];
+  const cycleColumns = validateRows<{ name: string }>(
+    db.prepare("PRAGMA table_info(cycles)").all(),
+    { name: "string" },
+    "PRAGMA.table_info(cycles)",
+  );
   const cycleColNames = new Set(cycleColumns.map(c => c.name));
 
   if (!cycleColNames.has("duration_ms")) {
@@ -485,13 +489,17 @@ export function getCycleStats(db: Database.Database, limit: number = 20): CycleS
   const totalOutputTokens = usageRow.total_output;
 
   // Failure category breakdown across all queried cycles (excluding 'none')
-  const failureCategoryRaw = db.prepare(`
-    SELECT failure_category, COUNT(*) as cnt
-    FROM cycles
-    WHERE cycle_number IN (${inPlaceholders})
-      AND failure_category != 'none'
-    GROUP BY failure_category
-  `).all(...cycleNumbers) as { failure_category: string; cnt: number }[];
+  const failureCategoryRaw = validateRows<{ failure_category: string; cnt: number }>(
+    db.prepare(`
+      SELECT failure_category, COUNT(*) as cnt
+      FROM cycles
+      WHERE cycle_number IN (${inPlaceholders})
+        AND failure_category != 'none'
+      GROUP BY failure_category
+    `).all(...cycleNumbers),
+    { failure_category: "string", cnt: "number" },
+    "getCycleStats.failureCategory",
+  );
   const failureCategoryBreakdown: Record<string, number> = {};
   for (const row of failureCategoryRaw) {
     failureCategoryBreakdown[row.failure_category] = row.cnt;
