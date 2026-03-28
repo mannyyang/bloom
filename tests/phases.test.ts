@@ -42,6 +42,7 @@ describe("runBuildVerificationPhase", () => {
   });
 
   it("sets outcome fields on successful build", () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     vi.mocked(runBuildVerification).mockReturnValue({
       passed: true,
       output: "Tests  745 passed (745)",
@@ -52,6 +53,8 @@ describe("runBuildVerificationPhase", () => {
     expect(outcome.buildVerificationPassed).toBe(true);
     expect(outcome.testCountAfter).toBe(745);
     expect(outcome.testTotalAfter).toBe(745);
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("[build] PASSED"));
+    logSpy.mockRestore();
   });
 
   it("throws on failed build and sets outcome", () => {
