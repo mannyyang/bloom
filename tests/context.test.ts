@@ -295,10 +295,13 @@ describe("loadEvolutionContext", () => {
       throw new Error("file read error");
     });
 
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const ctx = await loadEvolutionContext(fakeDb, 1);
     expect(ctx.planningContext).toBe("");
     expect(ctx.currentItem).toBeNull();
     expect(ctx.identity).toBe("# Identity");
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("[planning] Failed (non-fatal)"));
+    errorSpy.mockRestore();
   });
 
   it("handles demoteStaleInProgressItems throwing gracefully (non-fatal)", async () => {
@@ -312,10 +315,13 @@ describe("loadEvolutionContext", () => {
       throw new Error("demote failed");
     });
 
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const ctx = await loadEvolutionContext(fakeDb, 1);
     expect(ctx.planningContext).toBe("");
     expect(ctx.currentItem).toBeNull();
     expect(ctx.identity).toBe("# Identity");
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("[planning] Failed (non-fatal)"));
+    errorSpy.mockRestore();
   });
 
   it("handles pickNextItem throwing gracefully (non-fatal)", async () => {
@@ -329,10 +335,13 @@ describe("loadEvolutionContext", () => {
       throw new Error("pick failed");
     });
 
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const ctx = await loadEvolutionContext(fakeDb, 1);
     expect(ctx.planningContext).toBe("");
     expect(ctx.currentItem).toBeNull();
     expect(ctx.identity).toBe("# Identity");
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("[planning] Failed (non-fatal)"));
+    errorSpy.mockRestore();
   });
 
   it("handles triage errors gracefully within planning try-catch", async () => {
