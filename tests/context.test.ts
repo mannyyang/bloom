@@ -241,12 +241,14 @@ describe("loadEvolutionContext", () => {
     vi.mocked(pickNextItem).mockReturnValue(null);
     vi.mocked(formatPlanningContext).mockReturnValue("");
 
+    const consoleSpy = vi.spyOn(console, "log");
     await loadEvolutionContext(fakeDb, 1);
 
     // getProjectItems should be called twice: before and after triage
     expect(getProjectItems).toHaveBeenCalledTimes(2);
     // formatPlanningContext should receive the post-triage items
     expect(formatPlanningContext).toHaveBeenCalledWith(itemsAfter, null);
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("2 items on roadmap (post-triage)"));
   });
 
   it("skips triage when no issues exist", async () => {
