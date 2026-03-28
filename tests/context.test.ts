@@ -272,6 +272,7 @@ describe("loadEvolutionContext", () => {
       throw new Error("roadmap parse failed");
     });
 
+    const errorSpy = vi.spyOn(console, "error");
     const ctx = await loadEvolutionContext(fakeDb, 1);
     // Should not throw, should return empty planning context
     expect(ctx.projectConfig).toBeNull();
@@ -279,6 +280,7 @@ describe("loadEvolutionContext", () => {
     expect(ctx.planningContext).toBe("");
     // Other fields should still be populated
     expect(ctx.identity).toBe("# Identity");
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("Failed (non-fatal)"));
   });
 
   it("handles getProjectItems throwing gracefully (non-fatal)", async () => {
