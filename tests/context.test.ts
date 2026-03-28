@@ -351,6 +351,28 @@ describe("loadEvolutionContext", () => {
     expect(triageIssues).toHaveBeenCalledWith(issues, [], 42, config, fakeDb);
   });
 
+  it("logs issue numbers when triage adds items to backlog", async () => {
+    const config = { filePath: "ROADMAP.md" };
+    const issues = [
+      { number: 7, title: "Feature Request", body: "", reactions: 0, labels: [] },
+      { number: 8, title: "Enhancement", body: "", reactions: 0, labels: [] },
+    ];
+    vi.mocked(ensureProject).mockReturnValue(config);
+    vi.mocked(getProjectItems).mockReturnValue([]);
+    vi.mocked(fetchCommunityIssues).mockResolvedValue(issues);
+    vi.mocked(triageIssues).mockResolvedValue({
+      decisions: [],
+      addedToBacklog: [7, 8],
+      closed: [],
+    });
+    vi.mocked(pickNextItem).mockReturnValue(null);
+    vi.mocked(formatPlanningContext).mockReturnValue("");
+
+    const consoleSpy = vi.spyOn(console, "log");
+    await loadEvolutionContext(fakeDb, 1);
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Added to backlog: #7, #8"));
+  });
+
   it("logs closed issue numbers when triage closes issues", async () => {
     const config = { filePath: "ROADMAP.md" };
     const issues = [
