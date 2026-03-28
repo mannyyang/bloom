@@ -165,7 +165,7 @@ export function serializeRoadmap(items: ProjectItem[]): string {
 /**
  * Ensure the ROADMAP.md file exists, creating it with default structure if not.
  */
-export function ensureProject(): ProjectConfig | null {
+export function ensureProject(): ProjectConfig {
   const filePath = getRoadmapPath();
   if (!existsSync(filePath)) {
     writeRoadmap(serializeRoadmap([]));

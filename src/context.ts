@@ -76,52 +76,50 @@ export async function loadEvolutionContext(
   try {
     console.log("[planning] Loading roadmap...");
     projectConfig = ensureProject();
-    if (projectConfig) {
-      console.log(`[planning] Roadmap: ${projectConfig.filePath}`);
-      let projectItems = getProjectItems(projectConfig);
-      console.log(`[planning] ${projectItems.length} items on roadmap`);
-      for (const item of projectItems) {
-        console.log(`  - [${item.status ?? "No Status"}] ${item.title}${item.reactions > 0 ? ` (${item.reactions} reactions)` : ""}`);
-      }
-
-      // Triage community issues against the roadmap
-      if (issues.length > 0) {
-        console.log(`\n[triage] Triaging ${issues.length} community issues against roadmap...`);
-        const triageResult = await triageIssues(issues, projectItems, cycleCount, projectConfig, db);
-        if (triageResult.addedToBacklog.length > 0) {
-          console.log(`[triage] Added to backlog: ${triageResult.addedToBacklog.map(n => `#${n}`).join(", ")}`);
-        }
-        if (triageResult.closed.length > 0) {
-          console.log(`[triage] Closed: ${triageResult.closed.map(n => `#${n}`).join(", ")}`);
-        }
-        for (const d of triageResult.decisions) {
-          console.log(`  - #${d.issueNumber}: ${d.action} — ${d.reason.slice(0, 100)}`);
-        }
-        // Re-fetch items since triage may have added new ones
-        projectItems = getProjectItems(projectConfig);
-        console.log(`[planning] ${projectItems.length} items on roadmap (post-triage)`);
-      }
-
-      // Demote any stale "In Progress" items before picking the next one
-      const demoted = demoteStaleInProgressItems(projectConfig, cycleCount);
-      if (demoted.length > 0) {
-        console.log(`[planning] Demoted ${demoted.length} stale In Progress item(s) back to Up Next: ${demoted.join(", ")}`);
-        projectItems = getProjectItems(projectConfig);
-      }
-
-      currentItem = pickNextItem(projectItems);
-      if (currentItem) {
-        const markedInProgress = updateItemStatus(projectConfig, currentItem.id, "In Progress", undefined, cycleCount);
-        if (markedInProgress) {
-          console.log(`[planning] Selected: "${currentItem.title}" → marked In Progress (since cycle ${cycleCount})`);
-        } else {
-          console.error(`[planning] Could not mark "${currentItem.title}" In Progress — item not found in roadmap.`);
-        }
-      } else {
-        console.log("[planning] No actionable items found");
-      }
-      planningContext = formatPlanningContext(projectItems, currentItem);
+    console.log(`[planning] Roadmap: ${projectConfig.filePath}`);
+    let projectItems = getProjectItems(projectConfig);
+    console.log(`[planning] ${projectItems.length} items on roadmap`);
+    for (const item of projectItems) {
+      console.log(`  - [${item.status ?? "No Status"}] ${item.title}${item.reactions > 0 ? ` (${item.reactions} reactions)` : ""}`);
     }
+
+    // Triage community issues against the roadmap
+    if (issues.length > 0) {
+      console.log(`\n[triage] Triaging ${issues.length} community issues against roadmap...`);
+      const triageResult = await triageIssues(issues, projectItems, cycleCount, projectConfig, db);
+      if (triageResult.addedToBacklog.length > 0) {
+        console.log(`[triage] Added to backlog: ${triageResult.addedToBacklog.map(n => `#${n}`).join(", ")}`);
+      }
+      if (triageResult.closed.length > 0) {
+        console.log(`[triage] Closed: ${triageResult.closed.map(n => `#${n}`).join(", ")}`);
+      }
+      for (const d of triageResult.decisions) {
+        console.log(`  - #${d.issueNumber}: ${d.action} — ${d.reason.slice(0, 100)}`);
+      }
+      // Re-fetch items since triage may have added new ones
+      projectItems = getProjectItems(projectConfig);
+      console.log(`[planning] ${projectItems.length} items on roadmap (post-triage)`);
+    }
+
+    // Demote any stale "In Progress" items before picking the next one
+    const demoted = demoteStaleInProgressItems(projectConfig, cycleCount);
+    if (demoted.length > 0) {
+      console.log(`[planning] Demoted ${demoted.length} stale In Progress item(s) back to Up Next: ${demoted.join(", ")}`);
+      projectItems = getProjectItems(projectConfig);
+    }
+
+    currentItem = pickNextItem(projectItems);
+    if (currentItem) {
+      const markedInProgress = updateItemStatus(projectConfig, currentItem.id, "In Progress", undefined, cycleCount);
+      if (markedInProgress) {
+        console.log(`[planning] Selected: "${currentItem.title}" → marked In Progress (since cycle ${cycleCount})`);
+      } else {
+        console.error(`[planning] Could not mark "${currentItem.title}" In Progress — item not found in roadmap.`);
+      }
+    } else {
+      console.log("[planning] No actionable items found");
+    }
+    planningContext = formatPlanningContext(projectItems, currentItem);
   } catch (err) {
     console.error(`[planning] Failed (non-fatal): ${errorMessage(err)}`);
   }

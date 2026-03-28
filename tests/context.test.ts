@@ -62,7 +62,7 @@ function setupDefaults() {
   vi.mocked(getCycleStats).mockReturnValue({} as ReturnType<typeof getCycleStats>);
   vi.mocked(formatCycleStats).mockReturnValue("stats text");
   vi.mocked(formatMemoryForPrompt).mockReturnValue("memory context");
-  vi.mocked(ensureProject).mockReturnValue(null);
+  vi.mocked(ensureProject).mockImplementation(() => { throw new Error("no roadmap"); });
   vi.mocked(demoteStaleInProgressItems).mockReturnValue([]);
 }
 
@@ -130,8 +130,8 @@ describe("loadEvolutionContext", () => {
     expect(ctx.memoryContext).toBe("learnings here");
   });
 
-  it("returns null projectConfig and currentItem when ensureProject returns null", async () => {
-    vi.mocked(ensureProject).mockReturnValue(null);
+  it("returns null projectConfig and currentItem when ensureProject throws", async () => {
+    vi.mocked(ensureProject).mockImplementation(() => { throw new Error("no roadmap"); });
     const ctx = await loadEvolutionContext(fakeDb, 1);
     expect(ctx.projectConfig).toBeNull();
     expect(ctx.currentItem).toBeNull();

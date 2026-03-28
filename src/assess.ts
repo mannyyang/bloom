@@ -52,11 +52,9 @@ async function main() {
   let planningContext = "";
   try {
     const projectConfig = ensureProject();
-    if (projectConfig) {
-      const projectItems = getProjectItems(projectConfig);
-      planningContext = formatPlanningContext(projectItems, null);
-      console.log(`[assess] Roadmap items: ${projectItems.length}`);
-    }
+    const projectItems = getProjectItems(projectConfig);
+    planningContext = formatPlanningContext(projectItems, null);
+    console.log(`[assess] Roadmap items: ${projectItems.length}`);
   } catch (err) {
     console.error(`[assess] Planning context unavailable (non-fatal): ${errorMessage(err)}`);
   }
