@@ -378,6 +378,7 @@ describe("lifecycle helpers", () => {
     });
 
     it("reverts between attempts but not after last attempt", () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       mockedExecSync.mockImplementation(() => {
         throw new Error("build failed");
       });
@@ -395,6 +396,9 @@ describe("lifecycle helpers", () => {
         (args) => args[0] === "git" && Array.isArray(args[1]) && (args[1] as string[])[0] === "clean"
       ).length;
       expect(cleanCount).toBe(2);
+      expect(errorSpy).toHaveBeenCalledWith("Build verification failed (attempt 1/3)");
+      expect(errorSpy).toHaveBeenCalledWith("Build broken after all attempts. Reverting to pre-evolution state.");
+      errorSpy.mockRestore();
     });
 
     it("hard resets and returns passed=false when all attempts fail", () => {
