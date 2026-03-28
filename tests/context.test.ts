@@ -107,8 +107,13 @@ describe("loadEvolutionContext", () => {
 
   it("returns empty issues array when fetchCommunityIssues rejects", async () => {
     vi.mocked(fetchCommunityIssues).mockRejectedValue(new Error("network timeout"));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const ctx = await loadEvolutionContext(fakeDb, 1);
     expect(ctx.issues).toEqual([]);
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[context] Failed to fetch community issues (non-fatal)"),
+    );
+    errorSpy.mockRestore();
   });
 
   it("returns cycle stats text", async () => {
