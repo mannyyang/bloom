@@ -99,8 +99,10 @@ describe("loadEvolutionContext", () => {
       { number: 2, title: "Feature", body: "", reactions: 2, labels: [] },
     ];
     vi.mocked(fetchCommunityIssues).mockResolvedValue(issues);
+    const consoleSpy = vi.spyOn(console, "log");
     const ctx = await loadEvolutionContext(fakeDb, 1);
     expect(ctx.issues).toEqual(issues);
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Community issues: 2 open"));
   });
 
   it("returns empty issues array when fetchCommunityIssues rejects", async () => {
