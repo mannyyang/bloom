@@ -430,6 +430,7 @@ describe("loadEvolutionContext", () => {
     vi.mocked(pickNextItem).mockReturnValue(null);
     vi.mocked(formatPlanningContext).mockReturnValue("");
 
+    const consoleSpy = vi.spyOn(console, "log");
     await loadEvolutionContext(fakeDb, 1);
 
     // getProjectItems should be called twice: initial load + post-demotion refresh
@@ -437,5 +438,9 @@ describe("loadEvolutionContext", () => {
     // pickNextItem and formatPlanningContext should receive the refreshed post-demotion list
     expect(pickNextItem).toHaveBeenCalledWith(itemsAfter);
     expect(formatPlanningContext).toHaveBeenCalledWith(itemsAfter, null);
+    // demotion log message should be emitted
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Demoted 1 stale In Progress item(s) back to Up Next: Stale Item"),
+    );
   });
 });
