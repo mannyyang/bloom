@@ -148,10 +148,12 @@ describe("loadEvolutionContext", () => {
     vi.mocked(pickNextItem).mockReturnValue(items[0]);
     vi.mocked(formatPlanningContext).mockReturnValue("planning output");
 
+    const consoleSpy = vi.spyOn(console, "log");
     const ctx = await loadEvolutionContext(fakeDb, 1);
     expect(ctx.projectConfig).toEqual(config);
     expect(ctx.currentItem).toEqual(items[0]);
     expect(ctx.planningContext).toBe("planning output");
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("1 items on roadmap"));
   });
 
   it("marks selected item as In Progress", async () => {
