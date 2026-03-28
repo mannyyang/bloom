@@ -189,9 +189,11 @@ describe("loadEvolutionContext", () => {
     vi.mocked(pickNextItem).mockReturnValue(null);
     vi.mocked(formatPlanningContext).mockReturnValue("");
 
+    const consoleSpy = vi.spyOn(console, "log");
     const ctx = await loadEvolutionContext(fakeDb, 1);
     expect(updateItemStatus).not.toHaveBeenCalled();
     expect(ctx.currentItem).toBeNull();
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("No actionable items found"));
   });
 
   it("triages issues when roadmap and issues both exist", async () => {
