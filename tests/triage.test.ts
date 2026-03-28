@@ -152,7 +152,12 @@ describe("parseTriageResponse", () => {
   });
 
   it("returns empty array for invalid JSON", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     expect(parseTriageResponse("not json at all")).toEqual([]);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[triage] parseTriageResponse: failed to parse JSON"),
+    );
+    warnSpy.mockRestore();
   });
 
   it("emits a console.warn when JSON.parse throws (unparseable output)", () => {
