@@ -172,6 +172,21 @@ describe("fetchCommunityIssues", () => {
     expect(result).toEqual([]);
   });
 
+  it("logs console.error with message when githubApiRequest throws", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest.mockRejectedValueOnce(new Error("connection timeout"));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await fetchCommunityIssues();
+
+    expect(result).toEqual([]);
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[issues] fetchCommunityIssues failed (non-fatal)"),
+    );
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("connection timeout"));
+    errorSpy.mockRestore();
+  });
+
   it("returns empty array when API returns a non-array (rate-limit object)", async () => {
     process.env.GITHUB_REPOSITORY = "owner/repo";
     mockGithubApiRequest.mockResolvedValueOnce({
