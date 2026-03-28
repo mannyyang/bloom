@@ -243,6 +243,33 @@ STRATEGIC_CONTEXT: Focus on testing`;
       consoleSpy.mockRestore();
     });
 
+    it("logs console.error and returns 0 learnings when storeLearnings throws", async () => {
+      const memoryModule = await import("../src/memory.js");
+      const storeSpy = vi.spyOn(memoryModule, "storeLearnings").mockImplementation(() => {
+        throw new Error("simulated store failure");
+      });
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      const result = `ATTEMPTED: - Improvement A
+SUCCEEDED: - Improvement A
+FAILED: Nothing
+LEARNINGS: - [pattern] A learning
+STRATEGIC_CONTEXT: Focus on testing`;
+
+      const processed = processEvolutionResult(db, 1, result);
+
+      expect(processed.learningsStored).toBe(0);
+      expect(processed.improvementsAttempted).toBe(1);
+      expect(processed.improvementsSucceeded).toBe(1);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("[orchestrator] Failed to store learnings (non-fatal)"),
+      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("simulated store failure"));
+
+      storeSpy.mockRestore();
+      consoleSpy.mockRestore();
+    });
+
     it("still returns correct results when storeStrategicContext throws", async () => {
       const memoryModule = await import("../src/memory.js");
       const spy = vi.spyOn(memoryModule, "storeStrategicContext").mockImplementation(() => {
