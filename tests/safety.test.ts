@@ -761,16 +761,12 @@ describe("parseHookInput (direct)", () => {
       tool_input: {
         file_path: "/tmp/test.ts",
         command: "echo hi",
-        old_string: "old",
-        new_string: "new",
       },
     });
     expect(result).toEqual({
       toolName: "Edit",
       filePath: "/tmp/test.ts",
       command: "echo hi",
-      oldString: "old",
-      newString: "new",
     });
   });
 
@@ -780,8 +776,6 @@ describe("parseHookInput (direct)", () => {
       toolName: "Bash",
       filePath: "",
       command: "",
-      oldString: "",
-      newString: "",
     });
   });
 
@@ -797,10 +791,9 @@ describe("parseHookInput (direct)", () => {
   it("coerces null fields to empty strings", () => {
     const result = parseHookInput({
       tool_name: "Write",
-      tool_input: { file_path: null, old_string: null },
+      tool_input: { file_path: null },
     });
     expect(result.filePath).toBe("");
-    expect(result.oldString).toBe("");
   });
 
   it("returns empty toolName when tool_name is missing", () => {
@@ -814,8 +807,6 @@ describe("parseHookInput (direct)", () => {
       toolName: "",
       filePath: "",
       command: "",
-      oldString: "",
-      newString: "",
     });
   });
 
@@ -825,8 +816,6 @@ describe("parseHookInput (direct)", () => {
       toolName: "",
       filePath: "",
       command: "",
-      oldString: "",
-      newString: "",
     });
   });
 
@@ -836,8 +825,6 @@ describe("parseHookInput (direct)", () => {
       toolName: "",
       filePath: "",
       command: "",
-      oldString: "",
-      newString: "",
     });
   });
 

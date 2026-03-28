@@ -4,8 +4,6 @@ export interface ParsedHookInput {
   toolName: string;
   filePath: string;
   command: string;
-  oldString: string;
-  newString: string;
 }
 
 export function denyResult(reason: string) {
@@ -32,8 +30,6 @@ export function parseHookInput(input: unknown): ParsedHookInput {
     toolName: String(record.tool_name ?? ""),
     filePath: String(toolInput?.file_path ?? ""),
     command: String(toolInput?.command ?? ""),
-    oldString: String(toolInput?.old_string ?? ""),
-    newString: String(toolInput?.new_string ?? ""),
   };
 }
 
