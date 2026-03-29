@@ -82,6 +82,21 @@ describe("storeLearnings", () => {
     expect(getRelevantLearnings(db, 10)).toHaveLength(0);
   });
 
+  it("does not decay existing learnings when new learnings list is empty", () => {
+    // Insert an existing learning with default relevance 1.0
+    insertLearning(db, 1, "domain", "Existing learning");
+    const before = getRelevantLearnings(db, 10);
+    expect(before[0].relevance).toBe(1.0);
+
+    // Call storeLearnings with an empty list — decay must NOT be applied
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    storeLearnings(db, 2, { learnings: [] });
+
+    const after = getRelevantLearnings(db, 10);
+    expect(after).toHaveLength(1);
+    expect(after[0].relevance).toBe(1.0);
+  });
+
   it("applies decay to existing learnings before inserting new ones", () => {
     insertLearning(db, 1, "domain", "Old learning");
 
