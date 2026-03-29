@@ -201,7 +201,22 @@ export async function runEvolutionPhase(
 
   // Process evolution result: parse journal, store learnings, close resolved issues
   console.log("\n[journal] Processing evolution result...");
-  const processed = deps.processEvolutionResult(db, cycleCount, evolutionResult);
+  let processed: ProcessedEvolution;
+  try {
+    processed = deps.processEvolutionResult(db, cycleCount, evolutionResult);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[journal] processEvolutionResult failed (non-fatal): ${msg}`);
+    console.error(`[journal] Continuing with partial data — journal/learnings may be incomplete for this cycle.`);
+    // Return a minimal ProcessedEvolution so the caller can continue
+    return {
+      journalSections: { attempted: "", succeeded: "", failed: "", learnings: "", strategic_context: "" },
+      learningsStored: 0,
+      strategicContextStored: false,
+      improvementsAttempted: outcome.improvementsAttempted,
+      improvementsSucceeded: outcome.improvementsSucceeded,
+    };
+  }
   for (const [section, content] of Object.entries(processed.journalSections)) {
     if (content) {
       console.log(`[journal] Stored section "${section}" (${content.length} chars)`);
