@@ -136,6 +136,20 @@ describe("formatPlanningContext", () => {
     expect(result).toContain("...");
   });
 
+  it("truncation does not cut mid-line", () => {
+    const items = [
+      makeItem({ id: "a", title: "Long Item A Title Here", status: "Backlog" }),
+      makeItem({ id: "b", title: "Long Item B Title Here", status: "Backlog" }),
+    ];
+    // Pick a maxChars that falls mid-way through the second item line
+    const maxChars = "## Evolution Roadmap\n\n### Backlog\n- Long Item A Title Here\n- Long".length;
+    const result = formatPlanningContext(items, null, maxChars);
+    // Line-aware truncation: stops before the partial line B, not mid-word
+    expect(result).toMatch(/\n\.\.\.$/);
+    expect(result).toContain("- Long Item A Title Here");
+    expect(result).not.toContain("- Long Item B");
+  });
+
   it("limits to 5 items per status", () => {
     const items = Array.from({ length: 10 }, (_, i) =>
       makeItem({ id: `item-${i}`, title: `Item ${i}`, status: "Backlog" }),
