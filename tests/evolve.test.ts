@@ -303,6 +303,21 @@ STRATEGIC_CONTEXT: Focusing on parsing robustness.`;
     expect(result.learnings).toContain("[pattern] Always test with underscores");
     expect(result.strategic_context).toBe("Focusing on parsing robustness.");
   });
+
+  it("correctly parses all fields when sections appear in non-standard order", () => {
+    // Sections shuffled: LEARNINGS first, then FAILED, STRATEGIC_CONTEXT, SUCCEEDED, ATTEMPTED last
+    const input = `LEARNINGS: Key insight first
+FAILED: One thing broke
+STRATEGIC_CONTEXT: Focused on stability.
+SUCCEEDED: Two things worked
+ATTEMPTED: Three improvements tried`;
+    const result = parseEvolutionResult(input);
+    expect(result.learnings).toContain("Key insight first");
+    expect(result.failed).toContain("One thing broke");
+    expect(result.strategic_context).toContain("Focused on stability.");
+    expect(result.succeeded).toContain("Two things worked");
+    expect(result.attempted).toContain("Three improvements tried");
+  });
 });
 
 describe("countImprovements", () => {
