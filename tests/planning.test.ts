@@ -158,6 +158,16 @@ describe("formatPlanningContext", () => {
     const backlogMatches = result.match(/^- Item \d+$/gm);
     expect(backlogMatches!.length).toBe(5);
   });
+
+  it("uses truncated string as-is when no newline found (single long line)", () => {
+    // A single item whose title is long enough to exceed maxChars, with no
+    // embedded newline, so lastNewline is -1 — exercises the fallback branch.
+    const longTitle = "A".repeat(200);
+    const items = [makeItem({ title: longTitle, status: "Backlog" })];
+    const result = formatPlanningContext(items, null, 50);
+    expect(result).toContain("...");
+    expect(result.length).toBeLessThanOrEqual(55);
+  });
 });
 
 describe("parseRoadmap", () => {
