@@ -1,7 +1,7 @@
 import type Database from "better-sqlite3";
 import { insertJournalEntry } from "./db.js";
 import { errorMessage } from "./errors.js";
-import { parseEvolutionResult, countImprovements } from "./evolve.js";
+import { parseEvolutionResult, countImprovements, type EvolutionSections } from "./evolve.js";
 import { extractLearnings, storeLearnings, storeStrategicContext } from "./memory.js";
 import type { CycleOutcome } from "./outcomes.js";
 import { formatDurationSec } from "./usage.js";
@@ -10,7 +10,7 @@ import { formatDurationSec } from "./usage.js";
  * Result returned by processEvolutionResult with parsed data and applied side-effects.
  */
 export interface ProcessedEvolution {
-  journalSections: Record<string, string>;
+  journalSections: EvolutionSections;
   improvementsAttempted: number;
   improvementsSucceeded: number;
   learningsStored: number;

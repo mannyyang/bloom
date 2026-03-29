@@ -29,10 +29,23 @@ interface EvolutionPromptContext {
 }
 
 /**
- * Parse the structured summary from an evolution result.
- * Extracts ATTEMPTED, SUCCEEDED, FAILED, and LEARNINGS sections.
+ * Strongly-typed structure for the five sections parsed from an evolution result.
  */
-export function parseEvolutionResult(result: string): Record<string, string> {
+export interface EvolutionSections {
+  attempted: string;
+  succeeded: string;
+  failed: string;
+  learnings: string;
+  strategic_context: string;
+}
+
+/**
+ * Parse the structured summary from an evolution result.
+ * Extracts ATTEMPTED, SUCCEEDED, FAILED, LEARNINGS, and STRATEGIC_CONTEXT sections.
+ */
+export function parseEvolutionResult(result: string): EvolutionSections {
+  // Use a plain Record internally to allow dynamic string indexing, then
+  // cast to EvolutionSections on return (all five keys are always present).
   const sections: Record<string, string> = {
     attempted: "",
     succeeded: "",
@@ -71,7 +84,7 @@ export function parseEvolutionResult(result: string): Record<string, string> {
     sections[key] = sections[key].trim();
   }
 
-  return sections;
+  return sections as unknown as EvolutionSections;
 }
 
 /**
