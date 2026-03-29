@@ -637,4 +637,13 @@ describe("nextItemId", () => {
     const items = [makeItem({ id: "item-7" })];
     expect(nextItemId(items)).toBe("item-8");
   });
+
+  it("skips items with malformed IDs and still returns next ID after valid ones", () => {
+    const items = [
+      makeItem({ id: "item-abc" }),
+      makeItem({ id: "invalid" }),
+      makeItem({ id: "item-5" }),
+    ];
+    expect(nextItemId(items)).toBe("item-6");
+  });
 });
