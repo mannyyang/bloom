@@ -49,6 +49,7 @@ import {
   updateItemStatus,
   demoteStaleInProgressItems,
   formatPlanningContext,
+  type ProjectItem,
 } from "../src/planning.js";
 import { loadEvolutionContext } from "../src/context.js";
 
@@ -145,7 +146,7 @@ describe("loadEvolutionContext", () => {
 
   it("loads planning context when roadmap exists", async () => {
     const config = { filePath: "ROADMAP.md" };
-    const items = [
+    const items: ProjectItem[] = [
       { id: "1", title: "Item 1", status: "Up Next", body: "", linkedIssueNumber: null, reactions: 0 },
     ];
     vi.mocked(ensureProject).mockReturnValue(config);
@@ -163,7 +164,7 @@ describe("loadEvolutionContext", () => {
 
   it("marks selected item as In Progress", async () => {
     const config = { filePath: "ROADMAP.md" };
-    const item = { id: "42", title: "Do thing", status: "Up Next", body: "", linkedIssueNumber: null, reactions: 0 };
+    const item: ProjectItem = { id: "42", title: "Do thing", status: "Up Next", body: "", linkedIssueNumber: null, reactions: 0 };
     vi.mocked(ensureProject).mockReturnValue(config);
     vi.mocked(getProjectItems).mockReturnValue([item]);
     vi.mocked(pickNextItem).mockReturnValue(item);
@@ -178,7 +179,7 @@ describe("loadEvolutionContext", () => {
 
   it("logs error when updateItemStatus returns false for In Progress mark", async () => {
     const config = { filePath: "ROADMAP.md" };
-    const item = { id: "99", title: "Missing item", status: "Up Next", body: "", linkedIssueNumber: null, reactions: 0 };
+    const item: ProjectItem = { id: "99", title: "Missing item", status: "Up Next", body: "", linkedIssueNumber: null, reactions: 0 };
     vi.mocked(ensureProject).mockReturnValue(config);
     vi.mocked(getProjectItems).mockReturnValue([item]);
     vi.mocked(pickNextItem).mockReturnValue(item);
@@ -207,7 +208,7 @@ describe("loadEvolutionContext", () => {
 
   it("triages issues when roadmap and issues both exist", async () => {
     const config = { filePath: "ROADMAP.md" };
-    const items = [
+    const items: ProjectItem[] = [
       { id: "1", title: "Item", status: "Up Next", body: "", linkedIssueNumber: null, reactions: 0 },
     ];
     const issues = [{ number: 10, title: "Bug", body: "", reactions: 3, labels: [] }];
@@ -228,10 +229,10 @@ describe("loadEvolutionContext", () => {
 
   it("re-fetches project items after triage adds new ones", async () => {
     const config = { filePath: "ROADMAP.md" };
-    const itemsBefore = [
+    const itemsBefore: ProjectItem[] = [
       { id: "1", title: "Old", status: "Up Next", body: "", linkedIssueNumber: null, reactions: 0 },
     ];
-    const itemsAfter = [
+    const itemsAfter: ProjectItem[] = [
       ...itemsBefore,
       { id: "2", title: "New from triage", status: "Backlog", body: "", linkedIssueNumber: 10, reactions: 3 },
     ];
@@ -306,7 +307,7 @@ describe("loadEvolutionContext", () => {
 
   it("handles demoteStaleInProgressItems throwing gracefully (non-fatal)", async () => {
     const config = { filePath: "ROADMAP.md" };
-    const items = [
+    const items: ProjectItem[] = [
       { id: "1", title: "Item", status: "Up Next", body: "", linkedIssueNumber: null, reactions: 0 },
     ];
     vi.mocked(ensureProject).mockReturnValue(config);
@@ -326,7 +327,7 @@ describe("loadEvolutionContext", () => {
 
   it("handles pickNextItem throwing gracefully (non-fatal)", async () => {
     const config = { filePath: "ROADMAP.md" };
-    const items = [
+    const items: ProjectItem[] = [
       { id: "1", title: "Item", status: "Up Next", body: "", linkedIssueNumber: null, reactions: 0 },
     ];
     vi.mocked(ensureProject).mockReturnValue(config);
@@ -421,7 +422,7 @@ describe("loadEvolutionContext", () => {
 
   it("logs reaction count for roadmap items with reactions > 0", async () => {
     const config = { filePath: "ROADMAP.md" };
-    const items = [
+    const items: ProjectItem[] = [
       { id: "1", title: "Popular Item", status: "Up Next", body: "", linkedIssueNumber: null, reactions: 5 },
     ];
     vi.mocked(ensureProject).mockReturnValue(config);
@@ -437,10 +438,10 @@ describe("loadEvolutionContext", () => {
 
   it("re-fetches project items after demotion and passes post-demotion list to pickNextItem", async () => {
     const config = { filePath: "ROADMAP.md" };
-    const itemsBefore = [
+    const itemsBefore: ProjectItem[] = [
       { id: "1", title: "Stale Item", status: "In Progress", body: "", linkedIssueNumber: null, reactions: 0 },
     ];
-    const itemsAfter = [
+    const itemsAfter: ProjectItem[] = [
       { id: "1", title: "Stale Item", status: "Up Next", body: "", linkedIssueNumber: null, reactions: 0 },
     ];
 

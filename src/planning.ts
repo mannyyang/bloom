@@ -6,7 +6,7 @@ import { resolve } from "path";
 export interface ProjectItem {
   id: string;
   title: string;
-  status: string | null;
+  status: StatusColumn | null;
   body: string;
   linkedIssueNumber: number | null;
   reactions: number;
@@ -56,7 +56,7 @@ function writeRoadmap(content: string): void {
  */
 export function parseRoadmap(content: string): ProjectItem[] {
   const items: ProjectItem[] = [];
-  let currentStatus: string | null = null;
+  let currentStatus: StatusColumn | null = null;
   let currentItem: Partial<ProjectItem> | null = null;
   let idCounter = 0;
 
@@ -71,7 +71,7 @@ export function parseRoadmap(content: string): ProjectItem[] {
       currentItem = null;
       const heading = headingMatch[1].trim();
       currentStatus = STATUS_COLUMNS.includes(heading as StatusColumn)
-        ? heading
+        ? (heading as StatusColumn)
         : null;
       continue;
     }
