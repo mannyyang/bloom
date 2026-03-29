@@ -56,7 +56,7 @@ describe("extractLearnings", () => {
     const result = extractLearnings(text);
     expect(result.learnings).toHaveLength(1);
     expect(result.learnings[0].category).toBe("domain");
-    expect(result.learnings[0].content).toBe("[unknown] Some insight");
+    expect(result.learnings[0].content).toBe("Some insight");
   });
 });
 
