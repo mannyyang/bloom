@@ -412,6 +412,30 @@ describe("triageIssues with injected deps", () => {
     errorSpy.mockRestore();
   });
 
+  it("does not close issues or call addLinkedItem when LLM throws before yielding", async () => {
+    // Verifies that a pre-yield throw leaves all side-effects untouched:
+    // no issues are closed and no roadmap items are created.
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const issues = [
+      makeIssue({ number: 5, title: "Feature X" }),
+      makeIssue({ number: 6, title: "Feature Y" }),
+    ];
+    const deps = makeFailingDeps(new Error("Network error before first yield"));
+
+    const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+
+    // Core result is empty — no decisions reached
+    expect(result.decisions).toEqual([]);
+    expect(result.addedToBacklog).toEqual([]);
+    expect(result.closed).toEqual([]);
+
+    // Side-effect guards: nothing was closed and nothing was added to the roadmap
+    expect(mockCloseIssue).not.toHaveBeenCalled();
+    expect(vi.mocked(addLinkedItem)).not.toHaveBeenCalled();
+
+    errorSpy.mockRestore();
+  });
+
   it("handles mixed actions across multiple issues", async () => {
     const issues = [
       makeIssue({ number: 1, title: "Feature A" }),
