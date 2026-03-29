@@ -128,6 +128,13 @@ describe("updatePlanningStatus", () => {
     );
   });
 
+  it("commits roadmap when item is moved to Up Next", () => {
+    vi.mocked(updateItemStatus).mockReturnValue(true);
+    const processed = { improvementsSucceeded: 0, improvementsAttempted: 2 };
+    updatePlanningStatus(10, projectConfig, currentItem, processed);
+    expect(commitRoadmap).toHaveBeenCalledWith(10);
+  });
+
   it("logs error and skips commitRoadmap when updateItemStatus returns false", () => {
     vi.mocked(updateItemStatus).mockReturnValue(false);
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
