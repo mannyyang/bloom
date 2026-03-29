@@ -416,5 +416,8 @@ export function formatPlanningContext(
   }
 
   const result = lines.join("\n");
-  return result.length > maxChars ? result.slice(0, maxChars) + "\n..." : result;
+  if (result.length <= maxChars) return result;
+  const truncated = result.slice(0, maxChars);
+  const lastNewline = truncated.lastIndexOf("\n");
+  return (lastNewline > 0 ? truncated.slice(0, lastNewline) : truncated) + "\n...";
 }
