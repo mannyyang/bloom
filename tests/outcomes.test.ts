@@ -89,6 +89,10 @@ describe("parseTestTotal", () => {
   it("returns null for empty string", () => {
     expect(parseTestTotal("")).toBeNull();
   });
+
+  it("parses total from passed/skipped output", () => {
+    expect(parseTestTotal("Tests  3 passed | 1 skipped (4)")).toBe(4);
+  });
 });
 
 describe("createOutcome", () => {
