@@ -440,6 +440,18 @@ describe("updateItemStatus", () => {
     expect(parsed[0].body).toContain("[since: 10]");
     expect(parsed[0].body).not.toContain("[since: 99]");
   });
+
+  it("does not write file when new status matches current status (no-op)", () => {
+    // Item is already "Up Next" — calling updateItemStatus with same status should be a no-op
+    const items = [makeItem({ id: "item-0", title: "Task", status: "Up Next" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    const result = updateItemStatus(config, "item-0", "Up Next");
+
+    expect(result).toBe(true); // item was found
+    expect(mockWriteFileSync).not.toHaveBeenCalled(); // no change → no write
+  });
 });
 
 describe("demoteStaleInProgressItems", () => {
