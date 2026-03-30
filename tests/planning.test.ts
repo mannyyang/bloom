@@ -293,6 +293,17 @@ describe("serializeRoadmap", () => {
     expect(parsed[2].status).toBe("Done");
     expect(parsed[2].linkedIssueNumber).toBe(5);
   });
+
+  it("roundtrips multi-line body losslessly through serialize and parse", () => {
+    const original: ProjectItem[] = [
+      makeItem({ id: "item-0", title: "Multi", status: "Backlog", body: "Line one\nLine two" }),
+    ];
+    const serialized = serializeRoadmap(original);
+    const parsed = parseRoadmap(serialized);
+
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].body).toBe("Line one\nLine two");
+  });
 });
 
 describe("parseInProgressSinceCycle", () => {
