@@ -515,6 +515,34 @@ describe("runEvolutionPhase", () => {
     const logCalls = consoleSpy.mock.calls.map((c) => c[0]);
     expect(logCalls.some((msg) => typeof msg === "string" && msg.includes("Stored strategic context"))).toBe(true);
   });
+
+  it("returns minimal fallback ProcessedEvolution when processEvolutionResult throws", async () => {
+    const { deps } = createMockDeps([
+      createUsageMessage({ result: "evolution output" }),
+    ]);
+    vi.mocked(deps.processEvolutionResult).mockImplementation(() => {
+      throw new Error("DB write failure");
+    });
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const db = createMockDb();
+    const outcome = createOutcome({ improvementsAttempted: 2, improvementsSucceeded: 1 });
+
+    const result = await runEvolutionPhase(
+      db, 1, outcome, "assessment", "identity", [], deps, createMockSafetyHooks(),
+    );
+
+    // Should return a minimal fallback, not throw
+    expect(result.journalSections.attempted).toBe("");
+    expect(result.journalSections.succeeded).toBe("");
+    expect(result.learningsStored).toBe(0);
+    expect(result.strategicContextStored).toBe(false);
+    // Improvement counts from outcome should be preserved
+    expect(result.improvementsAttempted).toBe(2);
+    expect(result.improvementsSucceeded).toBe(1);
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("processEvolutionResult failed"));
+
+    consoleSpy.mockRestore();
+  });
 });
 
 describe("createDefaultDeps", () => {
