@@ -54,6 +54,7 @@ describe("runBuildVerificationPhase", () => {
     expect(outcome.testCountAfter).toBe(745);
     expect(outcome.testTotalAfter).toBe(745);
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("[build] PASSED"));
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("(745/745 tests)"));
     logSpy.mockRestore();
   });
 
