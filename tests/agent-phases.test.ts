@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type Database from "better-sqlite3";
-import { runAssessmentPhase, runEvolutionPhase, createDefaultDeps, type QueryFn, type PhaseDeps, type SafetyHooks } from "../src/agent-phases.js";
+import { runAssessmentPhase, runEvolutionPhase, createDefaultDeps, resolveModel, DEFAULT_BLOOM_MODEL, type QueryFn, type PhaseDeps, type SafetyHooks } from "../src/agent-phases.js";
 import type { PhaseUsage } from "../src/usage.js";
 import type { EvolutionContext } from "../src/context.js";
 import type { CycleOutcome } from "../src/outcomes.js";
@@ -553,5 +553,32 @@ describe("createDefaultDeps", () => {
     expect(deps.queryFn).toBe(queryFn);
     expect(typeof deps.insertPhaseUsage).toBe("function");
     expect(typeof deps.processEvolutionResult).toBe("function");
+  });
+});
+
+describe("resolveModel", () => {
+  const originalModel = process.env.BLOOM_MODEL;
+
+  afterEach(() => {
+    if (originalModel === undefined) {
+      delete process.env.BLOOM_MODEL;
+    } else {
+      process.env.BLOOM_MODEL = originalModel;
+    }
+  });
+
+  it("returns DEFAULT_BLOOM_MODEL when BLOOM_MODEL env var is not set", () => {
+    delete process.env.BLOOM_MODEL;
+    expect(resolveModel()).toBe(DEFAULT_BLOOM_MODEL);
+  });
+
+  it("returns the BLOOM_MODEL env var value when set", () => {
+    process.env.BLOOM_MODEL = "claude-opus-4";
+    expect(resolveModel()).toBe("claude-opus-4");
+  });
+
+  it("DEFAULT_BLOOM_MODEL is a non-empty string", () => {
+    expect(typeof DEFAULT_BLOOM_MODEL).toBe("string");
+    expect(DEFAULT_BLOOM_MODEL.length).toBeGreaterThan(0);
   });
 });
