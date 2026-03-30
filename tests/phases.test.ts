@@ -73,6 +73,7 @@ describe("runBuildVerificationPhase", () => {
   });
 
   it("handles missing test counts gracefully", () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     vi.mocked(runBuildVerification).mockReturnValue({
       passed: true,
       output: "no parseable output",
@@ -83,6 +84,8 @@ describe("runBuildVerificationPhase", () => {
     expect(outcome.buildVerificationPassed).toBe(true);
     expect(outcome.testCountAfter).toBeNull();
     expect(outcome.testTotalAfter).toBeNull();
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("?/? tests"));
+    logSpy.mockRestore();
   });
 });
 
