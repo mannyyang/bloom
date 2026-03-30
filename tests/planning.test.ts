@@ -465,6 +465,23 @@ describe("updateItemStatus", () => {
     expect(parsed[0].body).not.toContain("[since: 99]");
   });
 
+  it("preserves body unchanged when two [since: N] annotations are present (no overwrite)", () => {
+    // Body has two [since:] tags — the first is found by .match(), preventing a new stamp.
+    // Both annotations survive because the body is left untouched.
+    const items = [makeItem({ id: "item-0", title: "Task", status: "Up Next", body: "work done\n[since: 10]\n[since: 20]" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    updateItemStatus(config, "item-0", "In Progress", undefined, 99);
+
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    // existingAnnotation finds the first [since: 10], so body is NOT modified
+    expect(parsed[0].body).toContain("[since: 10]");
+    expect(parsed[0].body).toContain("[since: 20]");
+    expect(parsed[0].body).not.toContain("[since: 99]");
+  });
+
   it("does not write file when new status matches current status (no-op)", () => {
     // Item is already "Up Next" — calling updateItemStatus with same status should be a no-op
     const items = [makeItem({ id: "item-0", title: "Task", status: "Up Next" })];
