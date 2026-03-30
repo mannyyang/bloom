@@ -413,6 +413,19 @@ describe("updateItemStatus", () => {
     expect(parsed[0].body).toBe("Completed successfully");
   });
 
+  it("preserves old body when moving to Done without a completionNote", () => {
+    const items = [makeItem({ id: "item-0", title: "Task", status: "In Progress", body: "original body" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    updateItemStatus(config, "item-0", "Done");
+
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].status).toBe("Done");
+    expect(parsed[0].body).toBe("original body");
+  });
+
   it("stamps [since: N] annotation when moving to In Progress with sinceCycle", () => {
     const items = [makeItem({ id: "item-0", title: "Task", status: "Up Next", body: "" })];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
