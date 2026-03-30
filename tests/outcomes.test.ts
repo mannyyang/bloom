@@ -239,6 +239,24 @@ describe("formatOutcomeForJournal", () => {
     const result = formatOutcomeForJournal(outcome);
     expect(result).not.toContain("total:");
   });
+
+  it("includes failure category line when failureCategory is build_failure", () => {
+    const outcome = makeOutcome({ failureCategory: "build_failure" });
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).toContain("**Failure category**: build_failure");
+  });
+
+  it("includes failure category line when failureCategory is test_failure", () => {
+    const outcome = makeOutcome({ failureCategory: "test_failure" });
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).toContain("**Failure category**: test_failure");
+  });
+
+  it("omits failure category line when failureCategory is none", () => {
+    const outcome = makeOutcome({ failureCategory: "none" });
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).not.toContain("**Failure category**");
+  });
 });
 
 describe("classifyBuildFailure", () => {
