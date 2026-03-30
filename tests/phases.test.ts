@@ -114,7 +114,7 @@ describe("updatePlanningStatus", () => {
       projectConfig,
       "item-1",
       "Done",
-      expect.stringContaining("cycle 10"),
+      expect.stringContaining("cycle 10: 2/3 improvements succeeded"),
     );
     expect(commitRoadmap).toHaveBeenCalledWith(10);
   });
