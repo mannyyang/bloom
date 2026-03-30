@@ -399,6 +399,30 @@ STRATEGIC_CONTEXT: Focus on testing`;
       const summary = formatCycleSummaryWithDuration(1, outcome, null, 600000);
       expect(summary).toContain("600.0s");
     });
+
+    it("includes failure category line when failureCategory is not none", () => {
+      const outcome = makeOutcome({ failureCategory: "build_failure" });
+      const summary = formatCycleSummaryWithDuration(1, outcome, new Error("build broke"), 5000);
+      expect(summary).toContain("Failure: build_failure");
+    });
+
+    it("includes test_failure category in summary", () => {
+      const outcome = makeOutcome({ failureCategory: "test_failure" });
+      const summary = formatCycleSummaryWithDuration(1, outcome, new Error("tests failed"), 5000);
+      expect(summary).toContain("Failure: test_failure");
+    });
+
+    it("includes llm_error category in summary", () => {
+      const outcome = makeOutcome({ failureCategory: "llm_error" });
+      const summary = formatCycleSummaryWithDuration(1, outcome, new Error("LLM failed"), 5000);
+      expect(summary).toContain("Failure: llm_error");
+    });
+
+    it("omits failure category line when failureCategory is none", () => {
+      const outcome = makeOutcome({ failureCategory: "none" });
+      const summary = formatCycleSummaryWithDuration(1, outcome, null, 5000);
+      expect(summary).not.toContain("Failure:");
+    });
   });
 
 });

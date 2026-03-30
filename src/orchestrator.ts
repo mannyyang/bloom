@@ -88,6 +88,7 @@ export function formatCycleSummaryWithDuration(
     `  Improvements: ${outcome.improvementsSucceeded}/${outcome.improvementsAttempted}`,
     `  Tests: ${outcome.testCountBefore ?? "?"} → ${outcome.testCountAfter ?? "?"}`,
     `  Build: ${outcome.buildVerificationPassed ? "PASSED" : "FAILED"}`,
+    ...(outcome.failureCategory !== "none" ? [`  Failure: ${outcome.failureCategory}`] : []),
     `  Push: ${outcome.pushSucceeded ? "OK" : "FAILED"}`,
     `========================================`,
   ];
