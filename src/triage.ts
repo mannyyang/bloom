@@ -184,7 +184,12 @@ export async function triageIssues(
   const untriagedNumbers = new Set(untriaged.map((i) => i.number));
 
   for (const decision of decisions) {
-    if (!untriagedNumbers.has(decision.issueNumber)) continue;
+    if (!untriagedNumbers.has(decision.issueNumber)) {
+      console.warn(
+        `[triage] Ignoring LLM decision for issue #${decision.issueNumber} (action=${decision.action}) — not in the untriaged input set`,
+      );
+      continue;
+    }
     const issue = untriaged.find((i) => i.number === decision.issueNumber);
     if (!issue) continue;
 

@@ -387,6 +387,7 @@ describe("triageIssues with injected deps", () => {
   });
 
   it("ignores LLM decisions for issue numbers not in the untriaged set", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const issues = [makeIssue({ number: 1, title: "Real issue" })];
     const deps = makeDeps([
       { issueNumber: 1, action: "not_applicable", reason: "OK" },
@@ -399,6 +400,9 @@ describe("triageIssues with injected deps", () => {
 
     expect(result.closed).toEqual([1]);
     expect(result.addedToBacklog).toEqual([]);
+    // Hallucinated issue number should produce a warning, not silently vanish
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("#999"));
+    warnSpy.mockRestore();
   });
 
   it("returns early with empty result when LLM call fails", async () => {
