@@ -66,12 +66,18 @@ export function commitDb(cycleCount: number, label?: string): boolean {
 }
 
 /**
- * Stage and commit the ROADMAP.md file. Returns true on success, false if
+ * Stage and commit the ROADMAP.md file (and regenerate docs/index.html if
+ * the generate-pages script is available). Returns true on success, false if
  * the commit fails (e.g. nothing to commit).
  */
 export function commitRoadmap(cycleCount: number): boolean {
   try {
     execFileSync("git", ["add", "ROADMAP.md"], { stdio: "inherit", timeout: GIT_OP_TIMEOUT_MS });
+    // Regenerate the GitHub Pages viewer so it stays in sync; non-fatal if unavailable.
+    try {
+      execFileSync("pnpm", ["generate-pages"], { stdio: "inherit", timeout: GIT_OP_TIMEOUT_MS });
+      execFileSync("git", ["add", "docs/index.html"], { stdio: "ignore", timeout: GIT_OP_TIMEOUT_MS });
+    } catch { /* non-fatal: script may not exist or docs/index.html may be unchanged */ }
     execFileSync("git", ["commit", "-m", `cycle ${cycleCount}: update roadmap`], { stdio: "inherit", timeout: GIT_OP_TIMEOUT_MS });
     return true;
   } catch {

@@ -189,6 +189,34 @@ describe("lifecycle helpers", () => {
       );
     });
 
+    it("invokes pnpm generate-pages and stages docs/index.html on success", () => {
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+      commitRoadmap(42);
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "pnpm",
+        ["generate-pages"],
+        expect.objectContaining({ timeout: GIT_OP_TIMEOUT_MS }),
+      );
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["add", "docs/index.html"],
+        expect.objectContaining({ timeout: GIT_OP_TIMEOUT_MS }),
+      );
+    });
+
+    it("still commits ROADMAP.md when pnpm generate-pages fails (non-fatal)", () => {
+      mockedExecFileSync
+        .mockReturnValueOnce(Buffer.from(""))          // git add ROADMAP.md
+        .mockImplementationOnce(() => { throw new Error("generate-pages not found"); }) // pnpm generate-pages (non-fatal)
+        .mockReturnValue(Buffer.from(""));             // git commit and any other calls
+      expect(commitRoadmap(42)).toBe(true);
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["commit", "-m", "cycle 42: update roadmap"],
+        expect.anything(),
+      );
+    });
+
     it("returns false when git add fails", () => {
       mockedExecFileSync.mockImplementation(() => { throw new Error("add failed"); });
       expect(commitRoadmap(42)).toBe(false);
@@ -196,8 +224,10 @@ describe("lifecycle helpers", () => {
 
     it("returns false when git commit fails", () => {
       mockedExecFileSync
-        .mockReturnValueOnce(Buffer.from(""))
-        .mockImplementationOnce(() => { throw new Error("nothing to commit"); });
+        .mockReturnValueOnce(Buffer.from(""))  // git add ROADMAP.md
+        .mockReturnValueOnce(Buffer.from(""))  // pnpm generate-pages
+        .mockReturnValueOnce(Buffer.from(""))  // git add docs/index.html
+        .mockImplementationOnce(() => { throw new Error("nothing to commit"); }); // git commit
       expect(commitRoadmap(42)).toBe(false);
     });
   });
