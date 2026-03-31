@@ -527,6 +527,24 @@ describe("triageIssues with injected deps", () => {
     );
   });
 
+  it("pins add_to_backlog comment text for behavior locking", async () => {
+    const issues = [makeIssue({ number: 11, title: "New feature request" })];
+    const deps = makeDeps([{ issueNumber: 11, action: "add_to_backlog", reason: "Valid idea." }]);
+
+    mockCloseIssue.mockResolvedValue(true);
+
+    await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+
+    expect(mockCloseIssue).toHaveBeenCalledWith(
+      11,
+      5,
+      expect.stringContaining("Added to Bloom Evolution Roadmap backlog (cycle 5)."),
+      undefined,
+      "triaged",
+      "test-owner/test-repo",
+    );
+  });
+
   it("posts honest already_done comment inviting reopen if needed", async () => {
     const issues = [makeIssue({ number: 15, title: "Feature already done" })];
     const deps = makeDeps([{ issueNumber: 15, action: "already_done", reason: "This was implemented in cycle 100." }]);
