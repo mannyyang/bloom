@@ -536,6 +536,7 @@ describe("triageIssues with injected deps", () => {
     );
   });
 
+
   it("does not close add_to_backlog issues at triage time (they stay open until Done)", async () => {
     const issues = [makeIssue({ number: 11, title: "New feature request" })];
     const deps = makeDeps([{ issueNumber: 11, action: "add_to_backlog", reason: "Valid idea." }]);

@@ -208,7 +208,7 @@ export async function triageIssues(
 
       const commentMap: Record<TriageDecision["action"], string> = {
         add_to_backlog: `Added to Bloom Evolution Roadmap backlog (cycle ${cycleCount}).`,
-        already_done: `This may already be addressed — please reopen if not resolved (cycle ${cycleCount}).`,
+        already_done: `Resolved — tracked as Done on the roadmap (cycle ${cycleCount}).`,
         not_applicable: `Closing — not applicable or out of scope (cycle ${cycleCount}).`,
       };
 
