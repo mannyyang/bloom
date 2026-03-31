@@ -43,11 +43,24 @@ export function updatePlanningStatus(
   cycleCount: number,
   projectConfig: ProjectConfig | null,
   currentItem: ProjectItem | null,
-  processed: { improvementsSucceeded: number; improvementsAttempted: number },
+  processed: { improvementsSucceeded: number; improvementsAttempted: number; succeededSummary?: string },
 ): void {
   try {
     if (projectConfig && currentItem) {
-      const succeeded = processed.improvementsSucceeded > 0;
+      let succeeded = processed.improvementsSucceeded > 0;
+      // Guard against spurious Done-promotion: if the item is linked to a specific
+      // issue, verify the issue number appears in the succeeded summary.  This
+      // catches cycles where the LLM reports improvements but worked on something
+      // unrelated to the linked issue.
+      if (succeeded && currentItem.linkedIssueNumber !== null) {
+        const summary = processed.succeededSummary ?? "";
+        if (summary && !summary.includes(String(currentItem.linkedIssueNumber))) {
+          console.warn(
+            `[planning] Issue #${currentItem.linkedIssueNumber} not mentioned in succeeded summary — keeping "${currentItem.title}" as "Up Next"`,
+          );
+          succeeded = false;
+        }
+      }
       const newStatus = succeeded ? "Done" : "Up Next";
       const completionNote = succeeded
         ? `Completed in cycle ${cycleCount}: ${processed.improvementsSucceeded}/${processed.improvementsAttempted} improvements succeeded.`

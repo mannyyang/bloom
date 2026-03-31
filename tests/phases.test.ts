@@ -166,6 +166,68 @@ describe("updatePlanningStatus", () => {
     expect(updateItemStatus).not.toHaveBeenCalled();
   });
 
+  it("does not promote to Done when linkedIssueNumber is not mentioned in succeeded summary", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.mocked(updateItemStatus).mockReturnValue(true);
+    const itemWithLinkedIssue: ProjectItem = {
+      ...currentItem,
+      linkedIssueNumber: 42,
+    };
+    const processed = {
+      improvementsSucceeded: 1,
+      improvementsAttempted: 1,
+      succeededSummary: "Fixed a bug in the parser unrelated to any roadmap item.",
+    };
+    updatePlanningStatus(10, projectConfig, itemWithLinkedIssue, processed);
+
+    expect(updateItemStatus).toHaveBeenCalledWith(
+      projectConfig,
+      "item-1",
+      "Up Next",
+      undefined,
+    );
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("#42"));
+    warnSpy.mockRestore();
+  });
+
+  it("promotes to Done when linkedIssueNumber is mentioned in succeeded summary", () => {
+    vi.mocked(updateItemStatus).mockReturnValue(true);
+    const itemWithLinkedIssue: ProjectItem = {
+      ...currentItem,
+      linkedIssueNumber: 42,
+    };
+    const processed = {
+      improvementsSucceeded: 1,
+      improvementsAttempted: 1,
+      succeededSummary: "Fixed issue #42: improved error handling in parser.",
+    };
+    updatePlanningStatus(10, projectConfig, itemWithLinkedIssue, processed);
+
+    expect(updateItemStatus).toHaveBeenCalledWith(
+      projectConfig,
+      "item-1",
+      "Done",
+      expect.stringContaining("cycle 10"),
+    );
+  });
+
+  it("promotes to Done when linkedIssueNumber is null (no issue to validate)", () => {
+    vi.mocked(updateItemStatus).mockReturnValue(true);
+    const processed = {
+      improvementsSucceeded: 1,
+      improvementsAttempted: 1,
+      succeededSummary: "Improved overall code quality.",
+    };
+    updatePlanningStatus(10, projectConfig, currentItem, processed);
+
+    expect(updateItemStatus).toHaveBeenCalledWith(
+      projectConfig,
+      "item-1",
+      "Done",
+      expect.stringContaining("cycle 10"),
+    );
+  });
+
   it("swallows errors from updateItemStatus (non-fatal)", () => {
     vi.mocked(updateItemStatus).mockImplementation(() => {
       throw new Error("write failed");
