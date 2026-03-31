@@ -14,9 +14,17 @@ vi.mock("../src/planning.js", () => ({
   updateItemStatus: vi.fn(),
 }));
 
+// Mock issues module
+vi.mock("../src/issues.js", () => ({
+  closeIssueWithComment: vi.fn().mockResolvedValue(true),
+  detectRepo: vi.fn().mockReturnValue("test-owner/test-repo"),
+  isValidRepo: vi.fn().mockReturnValue(true),
+}));
+
 import { runBuildVerificationPhase, updatePlanningStatus, pushChangesPhase } from "../src/phases.js";
 import { runBuildVerification, pushChanges, commitRoadmap } from "../src/lifecycle.js";
 import { updateItemStatus } from "../src/planning.js";
+import { closeIssueWithComment } from "../src/issues.js";
 
 function createOutcome(overrides: Partial<CycleOutcome> = {}): CycleOutcome {
   return {
@@ -105,10 +113,10 @@ describe("updatePlanningStatus", () => {
     reactions: 0,
   };
 
-  it("marks item Done when improvements succeeded", () => {
+  it("marks item Done when improvements succeeded", async () => {
     vi.mocked(updateItemStatus).mockReturnValue(true);
     const processed = { improvementsSucceeded: 2, improvementsAttempted: 3 };
-    updatePlanningStatus(10, projectConfig, currentItem, processed);
+    await updatePlanningStatus(10, projectConfig, currentItem, processed);
 
     expect(updateItemStatus).toHaveBeenCalledWith(
       projectConfig,
@@ -119,10 +127,10 @@ describe("updatePlanningStatus", () => {
     expect(commitRoadmap).toHaveBeenCalledWith(10);
   });
 
-  it("marks item Up Next when no improvements succeeded", () => {
+  it("marks item Up Next when no improvements succeeded", async () => {
     vi.mocked(updateItemStatus).mockReturnValue(true);
     const processed = { improvementsSucceeded: 0, improvementsAttempted: 2 };
-    updatePlanningStatus(10, projectConfig, currentItem, processed);
+    await updatePlanningStatus(10, projectConfig, currentItem, processed);
 
     expect(updateItemStatus).toHaveBeenCalledWith(
       projectConfig,
@@ -132,41 +140,41 @@ describe("updatePlanningStatus", () => {
     );
   });
 
-  it("commits roadmap when item is moved to Up Next", () => {
+  it("commits roadmap when item is moved to Up Next", async () => {
     vi.mocked(updateItemStatus).mockReturnValue(true);
     const processed = { improvementsSucceeded: 0, improvementsAttempted: 2 };
-    updatePlanningStatus(10, projectConfig, currentItem, processed);
+    await updatePlanningStatus(10, projectConfig, currentItem, processed);
     expect(commitRoadmap).toHaveBeenCalledWith(10);
   });
 
-  it("logs error and skips commitRoadmap when updateItemStatus returns false", () => {
+  it("logs error and skips commitRoadmap when updateItemStatus returns false", async () => {
     vi.mocked(updateItemStatus).mockReturnValue(false);
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const processed = { improvementsSucceeded: 1, improvementsAttempted: 1 };
 
-    updatePlanningStatus(10, projectConfig, currentItem, processed);
+    await updatePlanningStatus(10, projectConfig, currentItem, processed);
 
     expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("not found in roadmap"));
     expect(commitRoadmap).not.toHaveBeenCalled();
     errorSpy.mockRestore();
   });
 
-  it("does nothing when projectConfig is null", () => {
+  it("does nothing when projectConfig is null", async () => {
     const processed = { improvementsSucceeded: 1, improvementsAttempted: 1 };
-    updatePlanningStatus(10, null, currentItem, processed);
+    await updatePlanningStatus(10, null, currentItem, processed);
 
     expect(updateItemStatus).not.toHaveBeenCalled();
     expect(commitRoadmap).not.toHaveBeenCalled();
   });
 
-  it("does nothing when currentItem is null", () => {
+  it("does nothing when currentItem is null", async () => {
     const processed = { improvementsSucceeded: 1, improvementsAttempted: 1 };
-    updatePlanningStatus(10, projectConfig, null, processed);
+    await updatePlanningStatus(10, projectConfig, null, processed);
 
     expect(updateItemStatus).not.toHaveBeenCalled();
   });
 
-  it("does not promote to Done when linkedIssueNumber is not mentioned in succeeded summary", () => {
+  it("does not promote to Done when linkedIssueNumber is not mentioned in succeeded summary", async () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     vi.mocked(updateItemStatus).mockReturnValue(true);
     const itemWithLinkedIssue: ProjectItem = {
@@ -178,7 +186,7 @@ describe("updatePlanningStatus", () => {
       improvementsAttempted: 1,
       succeededSummary: "Fixed a bug in the parser unrelated to any roadmap item.",
     };
-    updatePlanningStatus(10, projectConfig, itemWithLinkedIssue, processed);
+    await updatePlanningStatus(10, projectConfig, itemWithLinkedIssue, processed);
 
     expect(updateItemStatus).toHaveBeenCalledWith(
       projectConfig,
@@ -190,7 +198,7 @@ describe("updatePlanningStatus", () => {
     warnSpy.mockRestore();
   });
 
-  it("promotes to Done when linkedIssueNumber is mentioned in succeeded summary", () => {
+  it("promotes to Done when linkedIssueNumber is mentioned in succeeded summary", async () => {
     vi.mocked(updateItemStatus).mockReturnValue(true);
     const itemWithLinkedIssue: ProjectItem = {
       ...currentItem,
@@ -201,7 +209,7 @@ describe("updatePlanningStatus", () => {
       improvementsAttempted: 1,
       succeededSummary: "Fixed issue #42: improved error handling in parser.",
     };
-    updatePlanningStatus(10, projectConfig, itemWithLinkedIssue, processed);
+    await updatePlanningStatus(10, projectConfig, itemWithLinkedIssue, processed);
 
     expect(updateItemStatus).toHaveBeenCalledWith(
       projectConfig,
@@ -211,14 +219,14 @@ describe("updatePlanningStatus", () => {
     );
   });
 
-  it("promotes to Done when linkedIssueNumber is null (no issue to validate)", () => {
+  it("promotes to Done when linkedIssueNumber is null (no issue to validate)", async () => {
     vi.mocked(updateItemStatus).mockReturnValue(true);
     const processed = {
       improvementsSucceeded: 1,
       improvementsAttempted: 1,
       succeededSummary: "Improved overall code quality.",
     };
-    updatePlanningStatus(10, projectConfig, currentItem, processed);
+    await updatePlanningStatus(10, projectConfig, currentItem, processed);
 
     expect(updateItemStatus).toHaveBeenCalledWith(
       projectConfig,
@@ -228,16 +236,63 @@ describe("updatePlanningStatus", () => {
     );
   });
 
-  it("swallows errors from updateItemStatus (non-fatal)", () => {
+  it("closes linked GitHub issue when item transitions to Done", async () => {
+    vi.mocked(updateItemStatus).mockReturnValue(true);
+    const itemWithLinkedIssue: ProjectItem = {
+      ...currentItem,
+      linkedIssueNumber: 22,
+    };
+    const processed = {
+      improvementsSucceeded: 1,
+      improvementsAttempted: 1,
+      succeededSummary: "Fixed issue #22: resolved the problem.",
+    };
+    await updatePlanningStatus(10, projectConfig, itemWithLinkedIssue, processed);
+
+    expect(vi.mocked(closeIssueWithComment)).toHaveBeenCalledWith(
+      22,
+      10,
+      expect.stringContaining("Completed in cycle 10"),
+      undefined,
+      "completed",
+    );
+  });
+
+  it("does not close GitHub issue when item transitions to Up Next", async () => {
+    vi.mocked(updateItemStatus).mockReturnValue(true);
+    const itemWithLinkedIssue: ProjectItem = {
+      ...currentItem,
+      linkedIssueNumber: 22,
+    };
+    const processed = { improvementsSucceeded: 0, improvementsAttempted: 1 };
+    await updatePlanningStatus(10, projectConfig, itemWithLinkedIssue, processed);
+
+    expect(vi.mocked(closeIssueWithComment)).not.toHaveBeenCalled();
+  });
+
+  it("does not close GitHub issue when item has no linkedIssueNumber", async () => {
+    vi.mocked(updateItemStatus).mockReturnValue(true);
+    const processed = {
+      improvementsSucceeded: 1,
+      improvementsAttempted: 1,
+      succeededSummary: "Improved overall code quality.",
+    };
+    // currentItem.linkedIssueNumber is null
+    await updatePlanningStatus(10, projectConfig, currentItem, processed);
+
+    expect(vi.mocked(closeIssueWithComment)).not.toHaveBeenCalled();
+  });
+
+  it("swallows errors from updateItemStatus (non-fatal)", async () => {
     vi.mocked(updateItemStatus).mockImplementation(() => {
       throw new Error("write failed");
     });
     const processed = { improvementsSucceeded: 1, improvementsAttempted: 1 };
 
     // Should not throw
-    expect(() =>
+    await expect(
       updatePlanningStatus(10, projectConfig, currentItem, processed),
-    ).not.toThrow();
+    ).resolves.not.toThrow();
   });
 });
 

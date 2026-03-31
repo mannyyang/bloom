@@ -12,6 +12,8 @@ import { errorMessage } from "./errors.js";
 import { formatDurationSec } from "./usage.js";
 import { updateItemStatus, type ProjectConfig, type ProjectItem } from "./planning.js";
 import type { CycleOutcome } from "./outcomes.js";
+import { closeIssueWithComment } from "./issues.js";
+import type Database from "better-sqlite3";
 
 /**
  * Run post-evolution build verification. Throws if verification fails.
@@ -38,13 +40,16 @@ export function runBuildVerificationPhase(
 
 /**
  * Update the roadmap planning status based on evolution results (best-effort).
+ * When an item transitions to "Done" and has a linked GitHub issue, the issue
+ * is closed with a completion comment as proof of resolution.
  */
-export function updatePlanningStatus(
+export async function updatePlanningStatus(
   cycleCount: number,
   projectConfig: ProjectConfig | null,
   currentItem: ProjectItem | null,
   processed: { improvementsSucceeded: number; improvementsAttempted: number; succeededSummary?: string },
-): void {
+  db?: Database.Database,
+): Promise<void> {
   try {
     if (projectConfig && currentItem) {
       let succeeded = processed.improvementsSucceeded > 0;
@@ -69,6 +74,18 @@ export function updatePlanningStatus(
       if (updated) {
         console.log(`[planning] Updated "${currentItem.title}" → ${newStatus}`);
         commitRoadmap(cycleCount);
+        // Close the linked GitHub issue now that work is confirmed Done, providing
+        // proof of resolution rather than closing prematurely at triage time.
+        if (newStatus === "Done" && currentItem.linkedIssueNumber !== null) {
+          const closeComment = `${completionNote}\n\nThis issue has been resolved — the linked roadmap item is now marked Done.`;
+          await closeIssueWithComment(
+            currentItem.linkedIssueNumber,
+            cycleCount,
+            closeComment,
+            db,
+            "completed",
+          );
+        }
       } else {
         console.error(`[planning] Item "${currentItem.title}" (id=${currentItem.id}) not found in roadmap — skipping commit.`);
       }
