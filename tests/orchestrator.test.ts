@@ -423,6 +423,26 @@ STRATEGIC_CONTEXT: Focus on testing`;
       const summary = formatCycleSummaryWithDuration(1, outcome, null, 5000);
       expect(summary).not.toContain("Failure:");
     });
+
+    it("contains all expected field labels in the output", () => {
+      const outcome = makeOutcome({
+        cycleNumber: 10,
+        improvementsAttempted: 2,
+        improvementsSucceeded: 1,
+        buildVerificationPassed: true,
+        pushSucceeded: true,
+        testCountBefore: 100,
+        testCountAfter: 105,
+      });
+
+      const summary = formatCycleSummaryWithDuration(10, outcome, null, 30000);
+
+      expect(summary).toContain("Duration:");
+      expect(summary).toContain("Improvements:");
+      expect(summary).toContain("Tests:");
+      expect(summary).toContain("Build:");
+      expect(summary).toContain("Push:");
+    });
   });
 
 });
