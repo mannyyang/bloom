@@ -527,6 +527,24 @@ describe("triageIssues with injected deps", () => {
     );
   });
 
+  it("posts honest already_done comment inviting reopen if needed", async () => {
+    const issues = [makeIssue({ number: 15, title: "Feature already done" })];
+    const deps = makeDeps([{ issueNumber: 15, action: "already_done", reason: "This was implemented in cycle 100." }]);
+
+    mockCloseIssue.mockResolvedValue(true);
+
+    await triageIssues(issues, [], 9, projectConfig, undefined, deps);
+
+    expect(mockCloseIssue).toHaveBeenCalledWith(
+      15,
+      9,
+      expect.stringContaining("please reopen if not resolved"),
+      undefined,
+      "triaged",
+      "test-owner/test-repo",
+    );
+  });
+
   it("uses BLOOM_MODEL env var when set", async () => {
     const capturedOptions: unknown[] = [];
     const issues = [makeIssue({ number: 1 })];
