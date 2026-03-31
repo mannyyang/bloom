@@ -50,7 +50,7 @@ export function buildTriagePrompt(
 
 For each issue below, decide one of:
 - "add_to_backlog": Valid work request — add to the roadmap backlog for future cycles.
-- "already_done": This capability/fix already exists in the codebase or board.
+- "already_done": This is already explicitly tracked on the roadmap board above.
 - "not_applicable": Not relevant, not actionable, or out of scope.
 
 ## New issues to triage:
