@@ -292,7 +292,7 @@ describe("triageIssues error resilience", () => {
 
     const issues = [makeIssue({ number: 42, title: "Failing issue" })];
     makeQueryResult([
-      { issueNumber: 42, action: "already_done", reason: "Done" },
+      { issueNumber: 42, action: "not_applicable", reason: "Out of scope" },
     ]);
     mockCloseIssue.mockRejectedValueOnce(new Error("Connection timeout"));
 
@@ -350,7 +350,7 @@ describe("triageIssues with injected deps", () => {
     const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
 
     expect(result.addedToBacklog).toContain(7);
-    expect(result.closed).toContain(7);
+    expect(result.closed).not.toContain(7);
     expect(mockAddLinkedItem).toHaveBeenCalledWith(
       projectConfig, 7, "Add caching", "Please add caching",
     );
@@ -366,9 +366,9 @@ describe("triageIssues with injected deps", () => {
 
     const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
 
-    // Downgraded: added to backlog, not treated as already_done
+    // Downgraded: added to backlog, not treated as already_done. Not closed yet.
     expect(result.addedToBacklog).toContain(8);
-    expect(result.closed).toContain(8);
+    expect(result.closed).not.toContain(8);
     expect(mockAddLinkedItem).toHaveBeenCalled();
   });
 
@@ -461,8 +461,9 @@ describe("triageIssues with injected deps", () => {
 
     expect(result.decisions).toHaveLength(3);
     // Issue #2's already_done is downgraded to add_to_backlog (Done-gate: no linked Done item)
+    // add_to_backlog issues (#1, #2) stay open; only not_applicable (#3) is closed immediately
     expect(result.addedToBacklog).toEqual([1, 2]);
-    expect(result.closed).toEqual([1, 2, 3]);
+    expect(result.closed).toEqual([3]);
   });
 
   it("Guard A: skips closing an alreadyOnBoard issue when db records it as already triaged", async () => {
@@ -513,8 +514,8 @@ describe("triageIssues with injected deps", () => {
 
     // addLinkedItem should not be called because repo is null
     expect(mockAddLinkedItem).not.toHaveBeenCalled();
-    // But the issue should still be closed
-    expect(result.closed).toContain(1);
+    // add_to_backlog issues are not closed at triage time
+    expect(result.closed).toEqual([]);
   });
 
   it("passes correct comment text for each action type", async () => {
@@ -535,41 +536,28 @@ describe("triageIssues with injected deps", () => {
     );
   });
 
-  it("pins add_to_backlog comment text for behavior locking", async () => {
+  it("does not close add_to_backlog issues at triage time (they stay open until Done)", async () => {
     const issues = [makeIssue({ number: 11, title: "New feature request" })];
     const deps = makeDeps([{ issueNumber: 11, action: "add_to_backlog", reason: "Valid idea." }]);
 
-    mockCloseIssue.mockResolvedValue(true);
+    const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
 
-    await triageIssues(issues, [], 5, projectConfig, undefined, deps);
-
-    expect(mockCloseIssue).toHaveBeenCalledWith(
-      11,
-      5,
-      expect.stringContaining("Added to Bloom Evolution Roadmap backlog (cycle 5)."),
-      undefined,
-      "triaged",
-      "test-owner/test-repo",
-    );
+    // add_to_backlog issues must NOT be closed — they will be closed when the roadmap item is Done
+    expect(mockCloseIssue).not.toHaveBeenCalled();
+    expect(result.closed).not.toContain(11);
   });
 
-  it("posts add_to_backlog comment when LLM already_done is downgraded by Done-gate", async () => {
+  it("does not close issue when LLM already_done is downgraded to add_to_backlog by Done-gate", async () => {
     // LLM claims already_done but no Done board item links to #15 → downgraded to add_to_backlog
+    // add_to_backlog issues stay open until the roadmap item is Done.
     const issues = [makeIssue({ number: 15, title: "Feature already done" })];
     const deps = makeDeps([{ issueNumber: 15, action: "already_done", reason: "This was implemented in cycle 100." }]);
 
-    mockCloseIssue.mockResolvedValue(true);
+    const result = await triageIssues(issues, [], 9, projectConfig, undefined, deps);
 
-    await triageIssues(issues, [], 9, projectConfig, undefined, deps);
-
-    expect(mockCloseIssue).toHaveBeenCalledWith(
-      15,
-      9,
-      expect.stringContaining("Added to Bloom Evolution Roadmap backlog"),
-      undefined,
-      "triaged",
-      "test-owner/test-repo",
-    );
+    // Downgraded to add_to_backlog — issue must NOT be closed at triage time
+    expect(mockCloseIssue).not.toHaveBeenCalled();
+    expect(result.addedToBacklog).toContain(15);
   });
 
   it("downgrades already_done to add_to_backlog when no Done board item is linked", async () => {
@@ -588,15 +576,8 @@ describe("triageIssues with injected deps", () => {
     // Issue #22 should be downgraded to add_to_backlog — no Done evidence for it
     expect(result.addedToBacklog).toContain(22);
     expect(mockAddLinkedItem).toHaveBeenCalled();
-    // Issue should still be closed with add_to_backlog comment, not already_done comment
-    expect(mockCloseIssue).toHaveBeenCalledWith(
-      22,
-      5,
-      expect.stringContaining("Added to Bloom Evolution Roadmap backlog"),
-      undefined,
-      "triaged",
-      "test-owner/test-repo",
-    );
+    // add_to_backlog issues stay open — NOT closed at triage time
+    expect(mockCloseIssue).not.toHaveBeenCalled();
   });
 
   it("uses BLOOM_MODEL env var when set", async () => {

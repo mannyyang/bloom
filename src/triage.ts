@@ -217,18 +217,20 @@ export async function triageIssues(
         result.addedToBacklog.push(issue.number);
       }
 
-      // Close the issue regardless of action. Bloom tracks all work in ROADMAP.md,
-      // not via open GitHub issues — so even "add_to_backlog" issues are closed
-      // with a comment explaining where the work was recorded.
-      const wasClosed = await closeIssueWithComment(
-        issue.number,
-        cycleCount,
-        `${commentMap[effectiveAction]}\n\n${decision.reason}`,
-        db,
-        "triaged",
-        repo ?? undefined,
-      );
-      if (wasClosed) result.closed.push(issue.number);
+      // add_to_backlog issues stay open — they will be closed once the linked
+      // roadmap item reaches "Done", providing a clear resolution trail.
+      // already_done and not_applicable issues are closed immediately.
+      if (effectiveAction !== "add_to_backlog") {
+        const wasClosed = await closeIssueWithComment(
+          issue.number,
+          cycleCount,
+          `${commentMap[effectiveAction]}\n\n${decision.reason}`,
+          db,
+          "triaged",
+          repo ?? undefined,
+        );
+        if (wasClosed) result.closed.push(issue.number);
+      }
     } catch (err) {
       // Best-effort: don't let a single issue failure block others
       console.error(`[triage] Failed to process issue #${decision.issueNumber} (action=${decision.action}): ${errorMessage(err)}`);
