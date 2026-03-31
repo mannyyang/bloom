@@ -8,10 +8,10 @@
 - [ ] Issues are being closed without being validated (#22)
   github issue suggestions are getting closed regardless if the issue was fixed or not. only close once you can confirm the issue is resolved and respond with what was fixed on the issue
   [since: 178]
-
-## In Progress
 - [ ] update github pages so roadmap from sqlite is publicly viewable (#21)
   [since: 180]
+
+## In Progress
 
 ## Done
 - [x] Improve prompt efficiency to reduce average cost per evolution cycle
