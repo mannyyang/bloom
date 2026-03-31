@@ -10,7 +10,8 @@
     "assess": "tsx src/assess.ts",
     "stats": "tsx src/stats.ts",
     "journal": "tsx src/journal.ts",
-    "roadmap": "tsx src/roadmap.ts"
+    "roadmap": "tsx src/roadmap.ts",
+    "generate-pages": "tsx scripts/generate-pages.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "latest",

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bloom Evolution Roadmap</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f9fafb;
+      color: #111827;
+      padding: 2rem 1rem;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    header { margin-bottom: 2rem; }
+    header h1 { font-size: 1.75rem; font-weight: 700; }
+    header p { color: #6b7280; margin-top: 0.25rem; font-size: 0.9rem; }
+    .section { margin-bottom: 2rem; }
+    .section h2 { margin-bottom: 0.75rem; }
+    .badge {
+      display: inline-block;
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.2rem 0.65rem;
+      border-radius: 999px;
+    }
+    ul { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+    .item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      padding: 0.6rem 0.9rem;
+    }
+    .item.done { opacity: 0.6; }
+    .check { font-size: 1rem; flex-shrink: 0; line-height: 1.5; }
+    .item-body { flex: 1; min-width: 0; }
+    .item-title { font-weight: 500; word-break: break-word; }
+    .item-title .issue-link { color: #2563eb; text-decoration: none; font-size: 0.85rem; margin-left: 0.3rem; }
+    .item-title .issue-link:hover { text-decoration: underline; }
+    .item-desc { color: #6b7280; font-size: 0.85rem; margin-top: 0.25rem; }
+    footer { color: #9ca3af; font-size: 0.8rem; text-align: center; margin-top: 3rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🌸 Bloom Evolution Roadmap</h1>
+    <p>Last updated: Tue, 31 Mar 2026 04:55:21 GMT</p>
+  </header>
+  
+  <section class="section">
+    <h2><span class="badge" style="background:#6b7280">Backlog</span></h2>
+    <ul>
+      <li class="item">
+        <span class="check">⬜</span>
+        <div class="item-body">
+          <span class="item-title">Add more github pages so that the other items can be seen <a class="issue-link" href="https://github.com/anthropics/bloom/issues/20" target="_blank" rel="noopener">#20</a></span>
+          <p class="item-desc">also in the journal page, expand all accordions so i can see them easily</p>
+        </div>
+      </li></ul>
+  </section>
+
+  <section class="section">
+    <h2><span class="badge" style="background:#2563eb">Up Next</span></h2>
+    <ul>
+      <li class="item">
+        <span class="check">⬜</span>
+        <div class="item-body">
+          <span class="item-title">update github pages so roadmap from sqlite is publicly viewable <a class="issue-link" href="https://github.com/anthropics/bloom/issues/21" target="_blank" rel="noopener">#21</a></span>
+          
+        </div>
+      </li></ul>
+  </section>
+
+  <section class="section">
+    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
+    <ul>
+      <li class="item">
+        <span class="check">⬜</span>
+        <div class="item-body">
+          <span class="item-title">Issues are being closed without being validated <a class="issue-link" href="https://github.com/anthropics/bloom/issues/22" target="_blank" rel="noopener">#22</a></span>
+          <p class="item-desc">github issue suggestions are getting closed regardless if the issue was fixed or not. only close once you can confirm the issue is resolved and respond with what was fixed on the issue</p>
+        </div>
+      </li></ul>
+  </section>
+
+  <section class="section">
+    <h2><span class="badge" style="background:#16a34a">Done</span></h2>
+    <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Improve prompt efficiency to reduce average cost per evolution cycle</span>
+          <p class="item-desc">Completed in cycle 123: 3/3 improvements succeeded.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Detect and recover stale &quot;In Progress&quot; roadmap items</span>
+          <p class="item-desc">Completed in cycle 111: added detectStaleInProgressItems, demoteStaleInProgressItems, and parseInProgressSinceCycle to planning.ts; items stuck &gt; 3 cycles auto-demote to Up Next. Zombie item recurrence resolved in cycle 120 via direct ROADMAP.md edit.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add structured error classification to evolution cycle outcomes</span>
+          <p class="item-desc">Completed in cycle 114: `failure_category` column stores build_failure/test_failure/llm_error/none per cycle; `getCycleStats` now computes a `failureCategoryBreakdown` and `formatCycleStats` renders it when failures are present — enables pattern detection in the assessment prompt.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Track assessment-to-improvement conversion rate</span>
+          <p class="item-desc">Completed in cycle 110: added avgConversionRate to CycleStats — surfaces succeeded/attempted ratio in pnpm stats, with null when no attempts have been made.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Track token and cost usage <a class="issue-link" href="https://github.com/anthropics/bloom/issues/4" target="_blank" rel="noopener">#4</a></span>
+          <p class="item-desc">Completed in cycle 75: 1/4 improvements succeeded.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">the public github page for the journal seems broken, there's no new updates <a class="issue-link" href="https://github.com/anthropics/bloom/issues/13" target="_blank" rel="noopener">#13</a></span>
+          <p class="item-desc">Added `pnpm journal` CLI command that exports journal entries as JSON or Markdown. JSON output can feed the GitHub Pages site; Markdown is human-readable.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">what's the goal of the coding agent? <a class="issue-link" href="https://github.com/anthropics/bloom/issues/1" target="_blank" rel="noopener">#1</a></span>
+          <p class="item-desc">Addressed in cycle 70: README now has measurable success criteria, clear purpose statement, and target user description.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">How are you measuring success? <a class="issue-link" href="https://github.com/anthropics/bloom/issues/3" target="_blank" rel="noopener">#3</a></span>
+          <p class="item-desc">Implemented `getCycleStats()`, `formatCycleStats()`, `stats.ts` CLI, `phase_usage` table, and `CycleOutcome` persistence to track and display evolution metrics.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Look into persistence for storing metrics <a class="issue-link" href="https://github.com/anthropics/bloom/issues/6" target="_blank" rel="noopener">#6</a></span>
+          <p class="item-desc">`db.ts` provides SQLite with WAL mode, 6 tables, and full CRUD for cycles, journal entries, phase usage, issue actions, memories, and planning items.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Review the tests and see if all of them are needed <a class="issue-link" href="https://github.com/anthropics/bloom/issues/7" target="_blank" rel="noopener">#7</a></span>
+          <p class="item-desc">Reviewed in cycle 70: all 14 source files confirmed to have tests, test suite validated as comprehensive.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">the roadmap.md file doesn't seem to get updated <a class="issue-link" href="https://github.com/anthropics/bloom/issues/14" target="_blank" rel="noopener">#14</a></span>
+          <p class="item-desc">Fixed in cycle 73: `pickNextItem` now resumes &quot;In Progress&quot; items first, preventing items from being abandoned.</p>
+        </div>
+      </li></ul>
+  </section>
+  <footer>Generated from <code>ROADMAP.md</code> · <a href="https://github.com/anthropics/bloom" style="color:#9ca3af">github.com/anthropics/bloom</a></footer>
+</body>
+</html>
