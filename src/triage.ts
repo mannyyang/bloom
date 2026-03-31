@@ -189,13 +189,25 @@ export async function triageIssues(
     if (!issue) continue;
 
     try {
+      // Done-gate: if LLM says already_done but no "Done" board item is linked
+      // to this issue, downgrade to add_to_backlog as a second line of defense.
+      const effectiveAction: TriageDecision["action"] =
+        decision.action === "already_done" &&
+        !boardItems.some(
+          (item) =>
+            item.status === "Done" &&
+            item.linkedIssueNumber === decision.issueNumber,
+        )
+          ? "add_to_backlog"
+          : decision.action;
+
       const commentMap: Record<TriageDecision["action"], string> = {
         add_to_backlog: `Added to Bloom Evolution Roadmap backlog (cycle ${cycleCount}).`,
         already_done: `This may already be addressed — please reopen if not resolved (cycle ${cycleCount}).`,
         not_applicable: `Closing — not applicable or out of scope (cycle ${cycleCount}).`,
       };
 
-      if (decision.action === "add_to_backlog" && repo && isValidRepo(repo)) {
+      if (effectiveAction === "add_to_backlog" && repo && isValidRepo(repo)) {
         addLinkedItem(projectConfig, issue.number, issue.title, issue.body);
         result.addedToBacklog.push(issue.number);
       }
@@ -206,7 +218,7 @@ export async function triageIssues(
       const wasClosed = await closeIssueWithComment(
         issue.number,
         cycleCount,
-        `${commentMap[decision.action]}\n\n${decision.reason}`,
+        `${commentMap[effectiveAction]}\n\n${decision.reason}`,
         db,
         "triaged",
         repo ?? undefined,

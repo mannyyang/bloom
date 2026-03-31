@@ -356,7 +356,9 @@ describe("triageIssues with injected deps", () => {
     );
   });
 
-  it("closes already_done issues without adding to backlog", async () => {
+  it("downgrades already_done to add_to_backlog when no Done board item is linked (LLM path)", async () => {
+    // LLM returns already_done for issue #8, but no Done board item is linked to #8.
+    // The Done-gate should downgrade it to add_to_backlog.
     const issues = [makeIssue({ number: 8, title: "Already done" })];
     const deps = makeDeps([{ issueNumber: 8, action: "already_done", reason: "Already exists" }]);
 
@@ -364,9 +366,10 @@ describe("triageIssues with injected deps", () => {
 
     const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
 
-    expect(result.addedToBacklog).toEqual([]);
+    // Downgraded: added to backlog, not treated as already_done
+    expect(result.addedToBacklog).toContain(8);
     expect(result.closed).toContain(8);
-    expect(mockAddLinkedItem).not.toHaveBeenCalled();
+    expect(mockAddLinkedItem).toHaveBeenCalled();
   });
 
   it("skips issues already on the board by linkedIssueNumber", async () => {
@@ -453,7 +456,8 @@ describe("triageIssues with injected deps", () => {
     const result = await triageIssues(issues, [], 10, projectConfig, undefined, deps);
 
     expect(result.decisions).toHaveLength(3);
-    expect(result.addedToBacklog).toEqual([1]);
+    // Issue #2's already_done is downgraded to add_to_backlog (Done-gate: no linked Done item)
+    expect(result.addedToBacklog).toEqual([1, 2]);
     expect(result.closed).toEqual([1, 2, 3]);
   });
 
@@ -545,7 +549,8 @@ describe("triageIssues with injected deps", () => {
     );
   });
 
-  it("posts honest already_done comment inviting reopen if needed", async () => {
+  it("posts add_to_backlog comment when LLM already_done is downgraded by Done-gate", async () => {
+    // LLM claims already_done but no Done board item links to #15 → downgraded to add_to_backlog
     const issues = [makeIssue({ number: 15, title: "Feature already done" })];
     const deps = makeDeps([{ issueNumber: 15, action: "already_done", reason: "This was implemented in cycle 100." }]);
 
@@ -556,7 +561,34 @@ describe("triageIssues with injected deps", () => {
     expect(mockCloseIssue).toHaveBeenCalledWith(
       15,
       9,
-      expect.stringContaining("please reopen if not resolved"),
+      expect.stringContaining("Added to Bloom Evolution Roadmap backlog"),
+      undefined,
+      "triaged",
+      "test-owner/test-repo",
+    );
+  });
+
+  it("downgrades already_done to add_to_backlog when no Done board item is linked", async () => {
+    // LLM returns already_done but no board item has status "Done" linked to this issue.
+    // The board has a Done item for #99 (different issue) — not evidence for #22.
+    const issues = [makeIssue({ number: 22, title: "Issue 22" })];
+    const boardItems = [
+      makeBoardItem({ status: "Done", linkedIssueNumber: 99 }), // Done item for a different issue
+    ];
+    const deps = makeDeps([{ issueNumber: 22, action: "already_done", reason: "Seems done" }]);
+
+    mockCloseIssue.mockResolvedValue(true);
+
+    const result = await triageIssues(issues, boardItems, 5, projectConfig, undefined, deps);
+
+    // Issue #22 should be downgraded to add_to_backlog — no Done evidence for it
+    expect(result.addedToBacklog).toContain(22);
+    expect(mockAddLinkedItem).toHaveBeenCalled();
+    // Issue should still be closed with add_to_backlog comment, not already_done comment
+    expect(mockCloseIssue).toHaveBeenCalledWith(
+      22,
+      5,
+      expect.stringContaining("Added to Bloom Evolution Roadmap backlog"),
       undefined,
       "triaged",
       "test-owner/test-repo",
