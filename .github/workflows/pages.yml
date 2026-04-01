@@ -3,7 +3,7 @@ name: Deploy Journal to GitHub Pages
 on:
   push:
     branches: [main]
-    paths: [bloom.db, ROADMAP.md]
+    paths: [bloom.db]
   workflow_dispatch:
 
 permissions:
@@ -35,7 +35,6 @@ jobs:
       - name: Export journal and build site
         run: |
           npx tsx scripts/export-journal.ts
-          npx tsx scripts/export-roadmap.ts
           cp .github/pages/index.html _site/index.html
 
       - uses: actions/upload-pages-artifact@v3
