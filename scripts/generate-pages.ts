@@ -196,10 +196,8 @@ interface JournalEntry {
   learnings: string;
 }
 
-function renderJournalSection(entries: JournalEntry[]): string {
-  if (entries.length === 0) return "";
-
-  const cards = entries.map((entry) => {
+function renderJournalCards(entries: JournalEntry[]): string {
+  return entries.map((entry) => {
     const parts: string[] = [];
     if (entry.attempted) {
       parts.push(`<div class="journal-field"><span class="journal-label">Attempted</span><p>${escapeHtml(entry.attempted)}</p></div>`);
@@ -225,13 +223,100 @@ function renderJournalSection(entries: JournalEntry[]): string {
       </div>
     </details>`;
   }).join("\n");
+}
+
+function renderJournalSection(entries: JournalEntry[]): string {
+  if (entries.length === 0) return "";
+
+  const cards = renderJournalCards(entries);
 
   return `
   <section class="section">
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
-    <p class="stats-note">Latest evolution cycle summaries (click to expand).</p>
+    <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     ${cards}
   </section>`;
+}
+
+function generateJournalHtml(entries: JournalEntry[], generatedAt: string): string {
+  const cards = entries.length > 0 ? renderJournalCards(entries) : "<p>No journal entries yet.</p>";
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bloom Full Journal</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f9fafb;
+      color: #111827;
+      padding: 2rem 1rem;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    header { margin-bottom: 2rem; }
+    header h1 { font-size: 1.75rem; font-weight: 700; }
+    header p { color: #6b7280; margin-top: 0.25rem; font-size: 0.9rem; }
+    .back-link { display: inline-block; margin-bottom: 1.5rem; color: #2563eb; text-decoration: none; font-size: 0.9rem; }
+    .back-link:hover { text-decoration: underline; }
+    .badge {
+      display: inline-block;
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.2rem 0.65rem;
+      border-radius: 999px;
+    }
+    .stats-note { color: #6b7280; font-size: 0.85rem; margin-bottom: 0.75rem; }
+    .journal-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      margin-bottom: 0.5rem;
+      overflow: hidden;
+    }
+    .journal-card summary {
+      cursor: pointer;
+      padding: 0.6rem 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      user-select: none;
+    }
+    .journal-card summary:hover { background: #f9fafb; }
+    .cycle-badge {
+      background: #0891b2;
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+    }
+    .cycle-date { color: #6b7280; font-size: 0.85rem; }
+    .journal-body { padding: 0.75rem 0.9rem; border-top: 1px solid #f3f4f6; display: flex; flex-direction: column; gap: 0.6rem; }
+    .journal-field p { font-size: 0.85rem; color: #374151; margin-top: 0.2rem; white-space: pre-wrap; word-break: break-word; }
+    .journal-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; }
+    .succeeded-label { color: #16a34a; }
+    .failed-label { color: #dc2626; }
+    footer { color: #9ca3af; font-size: 0.8rem; text-align: center; margin-top: 3rem; }
+  </style>
+</head>
+<body>
+  <a class="back-link" href="index.html">← Roadmap</a>
+  <header>
+    <h1>📓 Bloom Full Journal</h1>
+    <p>Last updated: ${escapeHtml(generatedAt)}</p>
+  </header>
+  <section>
+    <p class="stats-note">All recorded evolution cycle summaries.</p>
+    ${cards}
+  </section>
+  <footer>Generated from <code>bloom.db</code> · <a href="https://github.com/anthropics/bloom" style="color:#9ca3af">github.com/anthropics/bloom</a></footer>
+</body>
+</html>
+`;
 }
 
 // ---------------------------------------------------------------------------
@@ -363,6 +448,10 @@ const content = readFileSync(roadmapPath, "utf-8");
 const sections = parseRoadmapSections(content);
 const generatedAt = new Date().toUTCString();
 
+// Ensure docs/ directory exists early so both files can be written
+const docsDir = resolve(repoRoot, "docs");
+if (!existsSync(docsDir)) mkdirSync(docsDir, { recursive: true });
+
 // Load SQLite data if the database exists
 let statsSection = "";
 let journalSection = "";
@@ -376,10 +465,17 @@ if (existsSync(dbPath)) {
       statsSection = renderStatsSection(stats);
     }
     const journalEntries = exportJournalJson(db, 5);
+    const allJournalEntries = exportJournalJson(db, 100);
     if (journalEntries.length > 0) {
       journalSection = renderJournalSection(journalEntries);
     }
-    console.log(`[generate-pages] Loaded ${stats.totalCycles} cycles and ${journalEntries.length} journal entries from bloom.db`);
+    console.log(`[generate-pages] Loaded ${stats.totalCycles} cycles and ${allJournalEntries.length} journal entries from bloom.db`);
+
+    // Write docs/journal.html with full history
+    const journalHtml = generateJournalHtml(allJournalEntries, generatedAt);
+    const journalOutPath = resolve(docsDir, "journal.html");
+    writeFileSync(journalOutPath, journalHtml, "utf-8");
+    console.log(`[generate-pages] Wrote ${journalOutPath}`);
   } catch (err) {
     console.warn(`[generate-pages] Could not read bloom.db: ${err}`);
   }
@@ -388,9 +484,6 @@ if (existsSync(dbPath)) {
 }
 
 const html = generateHtml(sections, generatedAt, statsSection, journalSection);
-
-const docsDir = resolve(repoRoot, "docs");
-if (!existsSync(docsDir)) mkdirSync(docsDir, { recursive: true });
 
 const outPath = resolve(docsDir, "index.html");
 writeFileSync(outPath, html, "utf-8");
