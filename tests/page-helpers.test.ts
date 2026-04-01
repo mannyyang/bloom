@@ -6,6 +6,10 @@ import {
   renderStatsSection,
   renderJournalSection,
   renderJournalCards,
+  renderNav,
+  generateHtml,
+  generateJournalHtml,
+  generateStatsHtml,
 } from "../src/page-helpers.js";
 import type { DbStats, JournalEntry, RoadmapSection } from "../src/page-helpers.js";
 
@@ -330,5 +334,168 @@ describe("renderJournalSection", () => {
     const html = renderJournalSection([sampleEntry, entry2]);
     expect(html).toContain("Cycle 42");
     expect(html).toContain("Cycle 43");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// renderNav
+// ---------------------------------------------------------------------------
+
+describe("renderNav", () => {
+  it("renders links to all three pages", () => {
+    const html = renderNav("index");
+    expect(html).toContain("index.html");
+    expect(html).toContain("journal.html");
+    expect(html).toContain("stats.html");
+  });
+
+  it("bolds the active page link (no text-decoration + font-weight:700)", () => {
+    const html = renderNav("journal");
+    expect(html).toContain("font-weight:700");
+  });
+
+  it("active page link does not point to same href as a plain link", () => {
+    // The active page should use font-weight:700 style; the others use color:#2563eb
+    const html = renderNav("stats");
+    expect(html).toContain("color:#2563eb");   // non-active links
+    expect(html).toContain("font-weight:700"); // active link
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateHtml
+// ---------------------------------------------------------------------------
+
+describe("generateHtml", () => {
+  const section: RoadmapSection = {
+    heading: "Backlog",
+    items: [{ done: false, title: "Task A", issueNumber: null, description: "" }],
+  };
+
+  it("contains the page title", () => {
+    const html = generateHtml([section], "now", "", "");
+    expect(html).toContain("<title>Bloom Evolution Roadmap</title>");
+  });
+
+  it("contains the generatedAt timestamp", () => {
+    const html = generateHtml([section], "2025-01-01T00:00:00Z", "", "");
+    expect(html).toContain("2025-01-01T00:00:00Z");
+  });
+
+  it("renders roadmap section content", () => {
+    const html = generateHtml([section], "now", "", "");
+    expect(html).toContain("Task A");
+    expect(html).toContain("Backlog");
+  });
+
+  it("includes nav bar", () => {
+    const html = generateHtml([section], "now", "", "");
+    expect(html).toContain("journal.html");
+    expect(html).toContain("stats.html");
+  });
+
+  it("includes optional statsSection when provided", () => {
+    const html = generateHtml([], "now", "<p>my-stats</p>", "");
+    expect(html).toContain("my-stats");
+  });
+
+  it("includes optional journalSection when provided", () => {
+    const html = generateHtml([], "now", "", "<p>my-journal</p>");
+    expect(html).toContain("my-journal");
+  });
+
+  it("returns a complete HTML document", () => {
+    const html = generateHtml([], "now", "", "");
+    expect(html).toContain("<!DOCTYPE html>");
+    expect(html).toContain("</html>");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateJournalHtml
+// ---------------------------------------------------------------------------
+
+describe("generateJournalHtml", () => {
+  it("contains the journal page title", () => {
+    const html = generateJournalHtml([], "now");
+    expect(html).toContain("<title>Bloom Full Journal</title>");
+  });
+
+  it("shows no-entries message when array is empty", () => {
+    const html = generateJournalHtml([], "now");
+    expect(html).toContain("No journal entries yet.");
+  });
+
+  it("renders entries when provided", () => {
+    const html = generateJournalHtml([sampleEntry], "now");
+    expect(html).toContain("Cycle 42");
+    expect(html).toContain("Fix bug");
+  });
+
+  it("includes nav bar with links to other pages", () => {
+    const html = generateJournalHtml([], "now");
+    expect(html).toContain("index.html");
+    expect(html).toContain("stats.html");
+  });
+
+  it("contains the generatedAt timestamp", () => {
+    const html = generateJournalHtml([], "2025-06-15");
+    expect(html).toContain("2025-06-15");
+  });
+
+  it("returns a complete HTML document", () => {
+    const html = generateJournalHtml([], "now");
+    expect(html).toContain("<!DOCTYPE html>");
+    expect(html).toContain("</html>");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateStatsHtml
+// ---------------------------------------------------------------------------
+
+const sampleStats: DbStats = {
+  totalCycles: 100,
+  successRate: 75,
+  avgImprovements: 1.8,
+  avgConversionRate: 90,
+  recentFailures: 2,
+  avgDurationMinutes: 15,
+  totalCostUsd: 4.5,
+};
+
+describe("generateStatsHtml", () => {
+  it("contains the stats page title", () => {
+    const html = generateStatsHtml(null, "now");
+    expect(html).toContain("<title>Bloom Cycle Stats</title>");
+  });
+
+  it("shows placeholder message when stats is null", () => {
+    const html = generateStatsHtml(null, "now");
+    expect(html).toContain("No stats available yet.");
+  });
+
+  it("renders stats table when stats provided", () => {
+    const html = generateStatsHtml(sampleStats, "now");
+    expect(html).toContain("100");     // totalCycles
+    expect(html).toContain("75%");     // successRate
+    expect(html).toContain("$4.50");   // totalCostUsd
+  });
+
+  it("includes nav bar with links to other pages", () => {
+    const html = generateStatsHtml(null, "now");
+    expect(html).toContain("index.html");
+    expect(html).toContain("journal.html");
+  });
+
+  it("contains the generatedAt timestamp", () => {
+    const html = generateStatsHtml(null, "2025-09-01");
+    expect(html).toContain("2025-09-01");
+  });
+
+  it("returns a complete HTML document", () => {
+    const html = generateStatsHtml(null, "now");
+    expect(html).toContain("<!DOCTYPE html>");
+    expect(html).toContain("</html>");
   });
 });
