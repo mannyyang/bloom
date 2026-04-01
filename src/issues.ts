@@ -3,6 +3,7 @@ import type Database from "better-sqlite3";
 import { errorMessage } from "./errors.js";
 import { githubApiRequest } from "./github-app.js";
 import { insertIssueAction, hasIssueAction } from "./db.js";
+import type { ProjectItem } from "./planning.js";
 
 export interface CommunityIssue {
   number: number;
@@ -110,4 +111,50 @@ export async function closeIssueWithComment(
     console.error(`[issues] closeIssueWithComment failed for issue #${issueNumber} (non-fatal): ${errorMessage(err)}`);
     return false;
   }
+}
+
+/**
+ * Fetch +1 reaction counts from GitHub for roadmap items that have a linked
+ * issue number, and return a new array with the reactions field populated.
+ * Items without a linked issue are returned unchanged.
+ * Best-effort — any per-issue failure is silently skipped.
+ */
+export async function syncReactionsToItems(items: ProjectItem[]): Promise<ProjectItem[]> {
+  const repo = detectRepo();
+  if (!repo || !isValidRepo(repo)) return items;
+
+  const linked = items.filter((i) => i.linkedIssueNumber !== null);
+  if (linked.length === 0) return items;
+
+  const reactionMap = new Map<number, number>();
+
+  for (const item of linked) {
+    const issueNumber = item.linkedIssueNumber!;
+    try {
+      const res = await githubApiRequest("GET", `/repos/${repo}/issues/${issueNumber}`);
+      if (!res.ok) continue;
+      const data: unknown = await res.json();
+      if (
+        typeof data === "object" &&
+        data !== null &&
+        "reactions" in data &&
+        typeof (data as Record<string, unknown>).reactions === "object" &&
+        (data as Record<string, unknown>).reactions !== null
+      ) {
+        const reactions = (data as Record<string, unknown>).reactions as Record<string, unknown>;
+        const plusOne = typeof reactions["+1"] === "number" ? reactions["+1"] : 0;
+        reactionMap.set(issueNumber, plusOne);
+      }
+    } catch {
+      // Best-effort: skip this issue
+    }
+  }
+
+  if (reactionMap.size === 0) return items;
+
+  return items.map((item) =>
+    item.linkedIssueNumber !== null && reactionMap.has(item.linkedIssueNumber)
+      ? { ...item, reactions: reactionMap.get(item.linkedIssueNumber)! }
+      : item,
+  );
 }

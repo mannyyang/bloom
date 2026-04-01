@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { execFileSync } from "child_process";
-import { fetchCommunityIssues, closeIssueWithComment, isValidRepo, isSafeIssueNumber, detectRepo } from "../src/issues.js";
+import { fetchCommunityIssues, closeIssueWithComment, isValidRepo, isSafeIssueNumber, detectRepo, syncReactionsToItems } from "../src/issues.js";
 import { githubApiRequest } from "../src/github-app.js";
 import { initDb, hasIssueAction } from "../src/db.js";
+import type { ProjectItem } from "../src/planning.js";
 
 vi.mock("../src/github-app.js", () => ({
   githubApiRequest: vi.fn(),
@@ -328,6 +329,119 @@ describe("isSafeIssueNumber", () => {
 
   it("rejects floats", () => {
     expect(isSafeIssueNumber(1.5)).toBe(false);
+  });
+});
+
+function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
+  return {
+    id: "item-1",
+    title: "Test item",
+    status: "Backlog",
+    body: "",
+    linkedIssueNumber: null,
+    reactions: 0,
+    ...overrides,
+  };
+}
+
+describe("syncReactionsToItems", () => {
+  const originalEnv = process.env.GITHUB_REPOSITORY;
+
+  afterEach(() => {
+    mockGithubApiRequest.mockReset();
+    if (originalEnv !== undefined) {
+      process.env.GITHUB_REPOSITORY = originalEnv;
+    } else {
+      delete process.env.GITHUB_REPOSITORY;
+    }
+  });
+
+  it("returns items unchanged when repo is invalid", async () => {
+    process.env.GITHUB_REPOSITORY = "not-valid";
+    const items = [makeItem({ linkedIssueNumber: 5, reactions: 0 })];
+    const result = await syncReactionsToItems(items);
+    expect(result).toEqual(items);
+    expect(mockGithubApiRequest).not.toHaveBeenCalled();
+  });
+
+  it("returns items unchanged when no items have linked issues", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    const items = [makeItem({ linkedIssueNumber: null })];
+    const result = await syncReactionsToItems(items);
+    expect(result).toEqual(items);
+    expect(mockGithubApiRequest).not.toHaveBeenCalled();
+  });
+
+  it("fetches +1 reactions and updates items with linked issues", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ number: 5, title: "Issue", reactions: { "+1": 7, "-1": 1, total_count: 8 } }),
+    } as unknown as Response);
+
+    const items = [
+      makeItem({ linkedIssueNumber: 5, reactions: 0 }),
+      makeItem({ id: "item-2", linkedIssueNumber: null, reactions: 0 }),
+    ];
+    const result = await syncReactionsToItems(items);
+
+    expect(result[0].reactions).toBe(7);
+    expect(result[1].reactions).toBe(0); // unlinked item unchanged
+    expect(mockGithubApiRequest).toHaveBeenCalledWith("GET", "/repos/owner/repo/issues/5");
+  });
+
+  it("returns original items when API returns non-ok response", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: false } as Response);
+
+    const items = [makeItem({ linkedIssueNumber: 3, reactions: 0 })];
+    const result = await syncReactionsToItems(items);
+    expect(result).toEqual(items);
+  });
+
+  it("skips issue silently when API call throws", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest.mockRejectedValueOnce(new Error("network error"));
+
+    const items = [makeItem({ linkedIssueNumber: 9, reactions: 0 })];
+    const result = await syncReactionsToItems(items);
+    expect(result).toEqual(items);
+  });
+
+  it("defaults to 0 reactions when +1 field is missing from response", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ number: 5, reactions: { total_count: 3 } }), // no "+1" field
+    } as unknown as Response);
+
+    const items = [makeItem({ linkedIssueNumber: 5, reactions: 0 })];
+    const result = await syncReactionsToItems(items);
+    // reactionMap gets 0 — no change from original (0 → 0)
+    expect(result[0].reactions).toBe(0);
+  });
+
+  it("handles multiple linked items with individual API calls", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ number: 1, reactions: { "+1": 3 } }),
+      } as unknown as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ number: 2, reactions: { "+1": 10 } }),
+      } as unknown as Response);
+
+    const items = [
+      makeItem({ id: "item-1", linkedIssueNumber: 1, reactions: 0 }),
+      makeItem({ id: "item-2", linkedIssueNumber: 2, reactions: 0 }),
+    ];
+    const result = await syncReactionsToItems(items);
+
+    expect(result[0].reactions).toBe(3);
+    expect(result[1].reactions).toBe(10);
+    expect(mockGithubApiRequest).toHaveBeenCalledTimes(2);
   });
 });
 

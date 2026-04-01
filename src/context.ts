@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import type Database from "better-sqlite3";
 import { getRecentJournalSummary, getCycleStats, formatCycleStats } from "./db.js";
-import { fetchCommunityIssues } from "./issues.js";
+import { fetchCommunityIssues, syncReactionsToItems } from "./issues.js";
 import { triageIssues } from "./triage.js";
 import { errorMessage } from "./errors.js";
 import { formatMemoryForPrompt } from "./memory.js";
@@ -100,6 +100,12 @@ export async function loadEvolutionContext(
       projectItems = getProjectItems(projectConfig);
       console.log(`[planning] ${projectItems.length} items on roadmap (post-triage)`);
     }
+
+    // Sync +1 reactions from GitHub so prioritisation uses real community signal
+    projectItems = await syncReactionsToItems(projectItems).catch((err: unknown) => {
+      console.error(`[context] Failed to sync reactions (non-fatal): ${errorMessage(err)}`);
+      return projectItems;
+    });
 
     // Demote any stale "In Progress" items before picking the next one
     const demoted = demoteStaleInProgressItems(projectConfig, cycleCount);

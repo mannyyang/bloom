@@ -14,6 +14,7 @@ vi.mock("../src/db.js", () => ({
 
 vi.mock("../src/issues.js", () => ({
   fetchCommunityIssues: vi.fn(),
+  syncReactionsToItems: vi.fn().mockImplementation((items: unknown[]) => Promise.resolve(items)),
 }));
 
 vi.mock("../src/triage.js", () => ({
@@ -39,7 +40,7 @@ vi.mock("../src/errors.js", () => ({
 
 import { readFileSync } from "fs";
 import { getRecentJournalSummary, getCycleStats, formatCycleStats } from "../src/db.js";
-import { fetchCommunityIssues } from "../src/issues.js";
+import { fetchCommunityIssues, syncReactionsToItems } from "../src/issues.js";
 import { triageIssues } from "../src/triage.js";
 import { formatMemoryForPrompt } from "../src/memory.js";
 import {
@@ -60,6 +61,7 @@ function setupDefaults() {
   vi.mocked(readFileSync).mockReturnValue("# Identity");
   vi.mocked(getRecentJournalSummary).mockReturnValue("journal summary");
   vi.mocked(fetchCommunityIssues).mockResolvedValue([]);
+  vi.mocked(syncReactionsToItems).mockImplementation((items) => Promise.resolve(items));
   vi.mocked(getCycleStats).mockReturnValue({} as ReturnType<typeof getCycleStats>);
   vi.mocked(formatCycleStats).mockReturnValue("stats text");
   vi.mocked(formatMemoryForPrompt).mockReturnValue("memory context");
