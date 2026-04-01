@@ -7,6 +7,7 @@
  *
  * Usage: pnpm assess
  */
+import { fileURLToPath } from "url";
 import { readFileSync } from "fs";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import {
@@ -27,7 +28,7 @@ import {
 import { extractResultText, formatDurationSec } from "./usage.js";
 import { resolveModel } from "./agent-phases.js";
 
-async function main() {
+export async function main() {
   const startTime = Date.now();
   console.log("\n========================================");
   console.log("  Bloom Assessment (read-only)");
@@ -101,7 +102,10 @@ async function main() {
   console.log(assessment || "(no output produced)");
 }
 
-main().catch((err) => {
-  console.error("Assessment failed:", errorMessage(err));
-  process.exit(1);
-});
+// Only auto-run when executed directly (not when imported by tests).
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((err) => {
+    console.error("Assessment failed:", errorMessage(err));
+    process.exit(1);
+  });
+}
