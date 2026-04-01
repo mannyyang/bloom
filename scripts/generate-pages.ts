@@ -215,7 +215,7 @@ function renderJournalSection(entries: JournalEntry[]): string {
     }
 
     return `
-    <details class="journal-card">
+    <details class="journal-card" open>
       <summary>
         <span class="cycle-badge">Cycle ${entry.cycleNumber}</span>
         <span class="cycle-date">${escapeHtml(entry.date)}</span>
