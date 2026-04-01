@@ -5,11 +5,13 @@
   also in the journal page, expand all accordions so i can see them easily
 
 ## Up Next
-- [ ] update github pages so roadmap from sqlite is publicly viewable (#21)
 
 ## In Progress
 
 ## Done
+- [x] update github pages so roadmap from sqlite is publicly viewable (#21)
+  Completed in cycle 186: generate-pages.ts renders roadmap sections (with status badges),
+  live SQLite cycle stats, and recent journal entries into docs/index.html for GitHub Pages.
 - [x] Issues are being closed without being validated (#22)
   Completed in cycle 185: 4/3 improvements succeeded.
 - [x] Improve prompt efficiency to reduce average cost per evolution cycle
