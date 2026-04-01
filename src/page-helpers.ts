@@ -40,6 +40,29 @@ export interface DbStats {
 }
 
 // ---------------------------------------------------------------------------
+// Cross-page navigation
+// ---------------------------------------------------------------------------
+
+export type NavPage = "index" | "journal" | "stats";
+
+export function renderNav(active: NavPage): string {
+  const links: Array<{ id: NavPage; href: string; label: string }> = [
+    { id: "index",   href: "index.html",   label: "🌸 Roadmap" },
+    { id: "journal", href: "journal.html", label: "📓 Journal" },
+    { id: "stats",   href: "stats.html",   label: "📊 Stats"   },
+  ];
+  const items = links
+    .map(({ id, href, label }) => {
+      const style = id === active
+        ? 'style="color:#111827;font-weight:700;text-decoration:none;"'
+        : 'style="color:#2563eb;text-decoration:none;"';
+      return `<a href="${href}" ${style}>${escapeHtml(label)}</a>`;
+    })
+    .join(" · ");
+  return `<nav style="margin-bottom:1.5rem;font-size:0.9rem;">${items}</nav>`;
+}
+
+// ---------------------------------------------------------------------------
 // HTML escaping
 // ---------------------------------------------------------------------------
 

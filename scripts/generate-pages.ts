@@ -16,8 +16,10 @@ import {
   renderStatsSection,
   renderJournalSection,
   renderJournalCards,
+  renderNav,
   escapeHtml,
 } from "../src/page-helpers.js";
+import type { DbStats } from "../src/page-helpers.js";
 
 // ---------------------------------------------------------------------------
 // Full HTML pages
@@ -118,6 +120,7 @@ function generateHtml(
   </style>
 </head>
 <body>
+  ${renderNav("index")}
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
     <p>Last updated: ${escapeHtml(generatedAt)}</p>
@@ -200,7 +203,7 @@ function generateJournalHtml(
   </style>
 </head>
 <body>
-  <a class="back-link" href="index.html">← Roadmap</a>
+  ${renderNav("journal")}
   <header>
     <h1>📓 Bloom Full Journal</h1>
     <p>Last updated: ${escapeHtml(generatedAt)}</p>
@@ -209,6 +212,60 @@ function generateJournalHtml(
     <p class="stats-note">All recorded evolution cycle summaries.</p>
     ${cards}
   </section>
+  <footer>Generated from <code>bloom.db</code> · <a href="https://github.com/anthropics/bloom" style="color:#9ca3af">github.com/anthropics/bloom</a></footer>
+</body>
+</html>
+`;
+}
+
+function generateStatsHtml(stats: DbStats | null, generatedAt: string): string {
+  const statsContent = stats
+    ? renderStatsSection(stats)
+    : `<section class="section"><p class="stats-note">No stats available yet.</p></section>`;
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bloom Cycle Stats</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f9fafb;
+      color: #111827;
+      padding: 2rem 1rem;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    header { margin-bottom: 2rem; }
+    header h1 { font-size: 1.75rem; font-weight: 700; }
+    header p { color: #6b7280; margin-top: 0.25rem; font-size: 0.9rem; }
+    .badge {
+      display: inline-block;
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.2rem 0.65rem;
+      border-radius: 999px;
+    }
+    .section { margin-bottom: 2rem; }
+    .section h2 { margin-bottom: 0.75rem; }
+    .stats-note { color: #6b7280; font-size: 0.85rem; margin-bottom: 0.75rem; }
+    .stats-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden; }
+    .stats-table td { padding: 0.5rem 0.9rem; font-size: 0.9rem; border-bottom: 1px solid #f3f4f6; }
+    .stats-table tr:last-child td { border-bottom: none; }
+    .stats-table td:first-child { color: #6b7280; width: 60%; }
+    footer { color: #9ca3af; font-size: 0.8rem; text-align: center; margin-top: 3rem; }
+  </style>
+</head>
+<body>
+  ${renderNav("stats")}
+  <header>
+    <h1>📊 Bloom Cycle Stats</h1>
+    <p>Last updated: ${escapeHtml(generatedAt)}</p>
+  </header>
+  ${statsContent}
   <footer>Generated from <code>bloom.db</code> · <a href="https://github.com/anthropics/bloom" style="color:#9ca3af">github.com/anthropics/bloom</a></footer>
 </body>
 </html>
@@ -239,6 +296,7 @@ if (!existsSync(docsDir)) mkdirSync(docsDir, { recursive: true });
 // Load SQLite data if the database exists
 let statsSection = "";
 let journalSection = "";
+let dbStats: DbStats | null = null;
 
 const dbPath = resolve(repoRoot, "bloom.db");
 if (existsSync(dbPath)) {
@@ -246,6 +304,7 @@ if (existsSync(dbPath)) {
     const db = initDb(dbPath);
     const stats = getCycleStats(db, 20);
     if (stats.totalCycles > 0) {
+      dbStats = stats;
       statsSection = renderStatsSection(stats);
     }
     const journalEntries = exportJournalJson(db, 5);
@@ -266,6 +325,12 @@ if (existsSync(dbPath)) {
 } else {
   console.log("[generate-pages] bloom.db not found — skipping stats and journal sections");
 }
+
+// Write docs/stats.html with full metrics table
+const statsHtml = generateStatsHtml(dbStats, generatedAt);
+const statsOutPath = resolve(docsDir, "stats.html");
+writeFileSync(statsOutPath, statsHtml, "utf-8");
+console.log(`[generate-pages] Wrote ${statsOutPath}`);
 
 const html = generateHtml(sections, generatedAt, statsSection, journalSection);
 
