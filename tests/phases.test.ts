@@ -284,6 +284,13 @@ describe("updatePlanningStatus", () => {
       undefined,
       "completed",
     );
+    expect(vi.mocked(closeIssueWithComment)).toHaveBeenCalledWith(
+      22,
+      10,
+      expect.stringContaining("has been resolved — the linked roadmap item is now marked Done"),
+      undefined,
+      "completed",
+    );
   });
 
   it("does not close GitHub issue when item transitions to Up Next", async () => {
