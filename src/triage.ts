@@ -128,15 +128,20 @@ export async function triageIssues(
   const alreadyOnBoard = issues.filter((i) => boardIssueNumbers.has(i.number));
   for (const issue of alreadyOnBoard) {
     if (db && hasIssueAction(db, issue.number, "triaged")) continue;
-    const wasClosed = await closeIssueWithComment(
-      issue.number,
-      cycleCount,
-      "This issue is already tracked on the Bloom Evolution Roadmap.",
-      db,
-      "triaged",
-      repo ?? undefined,
-    );
-    if (wasClosed) result.closed.push(issue.number);
+    try {
+      const wasClosed = await closeIssueWithComment(
+        issue.number,
+        cycleCount,
+        "This issue is already tracked on the Bloom Evolution Roadmap.",
+        db,
+        "triaged",
+        repo ?? undefined,
+      );
+      if (wasClosed) result.closed.push(issue.number);
+    } catch (err) {
+      // Issue may have been closed externally between filter and close call
+      console.warn(`[triage] Could not close already-on-board issue #${issue.number} (non-fatal): ${errorMessage(err)}`);
+    }
   }
 
   // New issues that need triage

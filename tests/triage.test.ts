@@ -656,4 +656,24 @@ describe("triageIssues with injected deps", () => {
 
     expect(capturedOptions[0]).toMatchObject({ model: "claude-sonnet-4-6" });
   });
+
+  it("logs a warning (not crash) when alreadyOnBoard closeIssueWithComment throws", async () => {
+    // Issue #10 is on the board; closeIssueWithComment throws unexpectedly
+    // (e.g. issue was closed externally between the filter and the close call)
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const issues = [makeIssue({ number: 10, title: "On board" })];
+    const boardItems = [makeBoardItem({ linkedIssueNumber: 10 })];
+    const deps = makeDeps([]);
+
+    mockCloseIssue.mockRejectedValueOnce(new Error("422 Unprocessable Entity"));
+
+    // Should not throw — the catch block handles it gracefully
+    const result = await triageIssues(issues, boardItems, 5, projectConfig, undefined, deps);
+
+    expect(result.closed).toEqual([]);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[triage] Could not close already-on-board issue #10"),
+    );
+    warnSpy.mockRestore();
+  });
 });
