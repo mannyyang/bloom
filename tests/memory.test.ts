@@ -341,6 +341,19 @@ describe("storeStrategicContext", () => {
     expect(result).not.toContain("First context.");
     expect(result).not.toContain("Second context.");
   });
+
+  it("prunes old strategic context rows to keep only the most recent 20", () => {
+    // Insert 25 contexts across 25 cycles
+    for (let i = 1; i <= 25; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+      storeStrategicContext(db, i, `Context for cycle ${i}`);
+    }
+    // Only 20 rows should remain after pruning
+    const count = (db.prepare("SELECT COUNT(*) as cnt FROM strategic_context").get() as { cnt: number }).cnt;
+    expect(count).toBeLessThanOrEqual(20);
+    // Latest context must still be accessible
+    expect(getLatestStrategicContext(db)).toBe("Context for cycle 25");
+  });
 });
 
 describe("DB functions for memory", () => {

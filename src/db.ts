@@ -626,6 +626,22 @@ export function getLatestStrategicContext(
   return row?.summary ?? null;
 }
 
+/**
+ * Prune old strategic context rows, keeping only the most recent `keepLast` entries.
+ * Prevents unbounded growth of the strategic_context table over many cycles.
+ */
+export function pruneStrategicContext(
+  db: Database.Database,
+  keepLast: number = 20,
+): void {
+  db.prepare(`
+    DELETE FROM strategic_context
+    WHERE id NOT IN (
+      SELECT id FROM strategic_context ORDER BY id DESC LIMIT ?
+    )
+  `).run(keepLast);
+}
+
 export function getRecentJournalSummary(db: Database.Database, maxChars: number = 4000, maxCycles: number = 5): string {
   const entries = exportJournalJson(db, maxCycles);
   const lines: string[] = [];

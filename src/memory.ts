@@ -5,6 +5,7 @@ import {
   decayLearningRelevance,
   insertStrategicContext,
   getLatestStrategicContext,
+  pruneStrategicContext,
   type Learning,
 } from "./db.js";
 
@@ -89,6 +90,8 @@ export function storeLearnings(
 
 /**
  * Store strategic context for a cycle.
+ * Prunes old entries after inserting, keeping only the last 20 cycles' worth
+ * to prevent unbounded table growth without losing meaningful recent history.
  */
 export function storeStrategicContext(
   db: Database.Database,
@@ -96,6 +99,7 @@ export function storeStrategicContext(
   context: string,
 ): void {
   insertStrategicContext(db, cycleNumber, context);
+  pruneStrategicContext(db, 20);
 }
 
 // --- Formatting for Prompt Injection ---
