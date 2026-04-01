@@ -1,6 +1,6 @@
 /**
  * generate-pages.ts
- * Reads ROADMAP.md and writes docs/index.html for GitHub Pages.
+ * Reads ROADMAP.md and bloom.db, then writes docs/index.html for GitHub Pages.
  *
  * Usage:  tsx scripts/generate-pages.ts
  */
@@ -8,9 +8,10 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+import { initDb, getCycleStats, exportJournalJson } from "../src/db.js";
 
 // ---------------------------------------------------------------------------
-// Minimal types (inlined to avoid a src/ import in a script)
+// Minimal types (inlined to avoid extra src/ imports in a script)
 // ---------------------------------------------------------------------------
 
 interface RoadmapSection {
@@ -87,7 +88,7 @@ function parseRoadmapSections(content: string): RoadmapSection[] {
 }
 
 // ---------------------------------------------------------------------------
-// HTML generation
+// HTML helpers
 // ---------------------------------------------------------------------------
 
 const STATUS_COLORS: Record<string, string> = {
@@ -139,7 +140,110 @@ function renderSection(section: RoadmapSection): string {
   </section>`;
 }
 
-function generateHtml(sections: RoadmapSection[], generatedAt: string): string {
+// ---------------------------------------------------------------------------
+// Cycle stats section (from SQLite)
+// ---------------------------------------------------------------------------
+
+interface DbStats {
+  totalCycles: number;
+  successRate: number;
+  avgImprovements: number;
+  avgConversionRate: number | null;
+  recentFailures: number;
+  avgDurationMinutes: number | null;
+  totalCostUsd: number;
+}
+
+function renderStatsSection(stats: DbStats): string {
+  const rows: string[] = [
+    `<tr><td>Total cycles</td><td><strong>${stats.totalCycles}</strong></td></tr>`,
+    `<tr><td>Success rate</td><td><strong>${stats.successRate}%</strong></td></tr>`,
+    `<tr><td>Avg improvements / cycle</td><td><strong>${stats.avgImprovements}</strong></td></tr>`,
+  ];
+  if (stats.avgConversionRate !== null) {
+    rows.push(`<tr><td>Improvement conversion rate</td><td><strong>${stats.avgConversionRate}%</strong></td></tr>`);
+  }
+  if (stats.avgDurationMinutes !== null) {
+    rows.push(`<tr><td>Avg cycle duration</td><td><strong>${stats.avgDurationMinutes} min</strong></td></tr>`);
+  }
+  if (stats.totalCostUsd > 0) {
+    rows.push(`<tr><td>Total cost (last 20 cycles)</td><td><strong>$${stats.totalCostUsd.toFixed(2)}</strong></td></tr>`);
+  }
+  rows.push(`<tr><td>Recent failures (last 5 cycles)</td><td><strong>${stats.recentFailures}</strong></td></tr>`);
+
+  return `
+  <section class="section">
+    <h2><span class="badge" style="background:#7c3aed">📊 Cycle Stats</span></h2>
+    <p class="stats-note">Live metrics from the last 20 evolution cycles.</p>
+    <table class="stats-table">
+      <tbody>
+        ${rows.join("\n        ")}
+      </tbody>
+    </table>
+  </section>`;
+}
+
+// ---------------------------------------------------------------------------
+// Recent journal section (from SQLite)
+// ---------------------------------------------------------------------------
+
+interface JournalEntry {
+  cycleNumber: number;
+  date: string;
+  attempted: string;
+  succeeded: string;
+  failed: string;
+  learnings: string;
+}
+
+function renderJournalSection(entries: JournalEntry[]): string {
+  if (entries.length === 0) return "";
+
+  const cards = entries.map((entry) => {
+    const parts: string[] = [];
+    if (entry.attempted) {
+      parts.push(`<div class="journal-field"><span class="journal-label">Attempted</span><p>${escapeHtml(entry.attempted)}</p></div>`);
+    }
+    if (entry.succeeded) {
+      parts.push(`<div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>${escapeHtml(entry.succeeded)}</p></div>`);
+    }
+    if (entry.failed) {
+      parts.push(`<div class="journal-field"><span class="journal-label failed-label">Failed</span><p>${escapeHtml(entry.failed)}</p></div>`);
+    }
+    if (entry.learnings) {
+      parts.push(`<div class="journal-field"><span class="journal-label">Learnings</span><p>${escapeHtml(entry.learnings)}</p></div>`);
+    }
+
+    return `
+    <details class="journal-card">
+      <summary>
+        <span class="cycle-badge">Cycle ${entry.cycleNumber}</span>
+        <span class="cycle-date">${escapeHtml(entry.date)}</span>
+      </summary>
+      <div class="journal-body">
+        ${parts.join("\n        ")}
+      </div>
+    </details>`;
+  }).join("\n");
+
+  return `
+  <section class="section">
+    <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
+    <p class="stats-note">Latest evolution cycle summaries (click to expand).</p>
+    ${cards}
+  </section>`;
+}
+
+// ---------------------------------------------------------------------------
+// Full HTML page
+// ---------------------------------------------------------------------------
+
+function generateHtml(
+  sections: RoadmapSection[],
+  generatedAt: string,
+  statsSection: string,
+  journalSection: string,
+): string {
   const sectionsHtml = sections.map(renderSection).join("\n");
 
   return `<!DOCTYPE html>
@@ -188,6 +292,43 @@ function generateHtml(sections: RoadmapSection[], generatedAt: string): string {
     .item-title .issue-link { color: #2563eb; text-decoration: none; font-size: 0.85rem; margin-left: 0.3rem; }
     .item-title .issue-link:hover { text-decoration: underline; }
     .item-desc { color: #6b7280; font-size: 0.85rem; margin-top: 0.25rem; }
+    /* Stats table */
+    .stats-note { color: #6b7280; font-size: 0.85rem; margin-bottom: 0.75rem; }
+    .stats-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden; }
+    .stats-table td { padding: 0.5rem 0.9rem; font-size: 0.9rem; border-bottom: 1px solid #f3f4f6; }
+    .stats-table tr:last-child td { border-bottom: none; }
+    .stats-table td:first-child { color: #6b7280; width: 60%; }
+    /* Journal */
+    .journal-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      margin-bottom: 0.5rem;
+      overflow: hidden;
+    }
+    .journal-card summary {
+      cursor: pointer;
+      padding: 0.6rem 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      user-select: none;
+    }
+    .journal-card summary:hover { background: #f9fafb; }
+    .cycle-badge {
+      background: #0891b2;
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+    }
+    .cycle-date { color: #6b7280; font-size: 0.85rem; }
+    .journal-body { padding: 0.75rem 0.9rem; border-top: 1px solid #f3f4f6; display: flex; flex-direction: column; gap: 0.6rem; }
+    .journal-field p { font-size: 0.85rem; color: #374151; margin-top: 0.2rem; white-space: pre-wrap; word-break: break-word; }
+    .journal-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; }
+    .succeeded-label { color: #16a34a; }
+    .failed-label { color: #dc2626; }
     footer { color: #9ca3af; font-size: 0.8rem; text-align: center; margin-top: 3rem; }
   </style>
 </head>
@@ -197,7 +338,9 @@ function generateHtml(sections: RoadmapSection[], generatedAt: string): string {
     <p>Last updated: ${escapeHtml(generatedAt)}</p>
   </header>
   ${sectionsHtml}
-  <footer>Generated from <code>ROADMAP.md</code> · <a href="https://github.com/anthropics/bloom" style="color:#9ca3af">github.com/anthropics/bloom</a></footer>
+  ${statsSection}
+  ${journalSection}
+  <footer>Generated from <code>ROADMAP.md</code> + <code>bloom.db</code> · <a href="https://github.com/anthropics/bloom" style="color:#9ca3af">github.com/anthropics/bloom</a></footer>
 </body>
 </html>
 `;
@@ -219,7 +362,32 @@ if (!existsSync(roadmapPath)) {
 const content = readFileSync(roadmapPath, "utf-8");
 const sections = parseRoadmapSections(content);
 const generatedAt = new Date().toUTCString();
-const html = generateHtml(sections, generatedAt);
+
+// Load SQLite data if the database exists
+let statsSection = "";
+let journalSection = "";
+
+const dbPath = resolve(repoRoot, "bloom.db");
+if (existsSync(dbPath)) {
+  try {
+    const db = initDb(dbPath);
+    const stats = getCycleStats(db, 20);
+    if (stats.totalCycles > 0) {
+      statsSection = renderStatsSection(stats);
+    }
+    const journalEntries = exportJournalJson(db, 5);
+    if (journalEntries.length > 0) {
+      journalSection = renderJournalSection(journalEntries);
+    }
+    console.log(`[generate-pages] Loaded ${stats.totalCycles} cycles and ${journalEntries.length} journal entries from bloom.db`);
+  } catch (err) {
+    console.warn(`[generate-pages] Could not read bloom.db: ${err}`);
+  }
+} else {
+  console.log("[generate-pages] bloom.db not found — skipping stats and journal sections");
+}
+
+const html = generateHtml(sections, generatedAt, statsSection, journalSection);
 
 const docsDir = resolve(repoRoot, "docs");
 if (!existsSync(docsDir)) mkdirSync(docsDir, { recursive: true });

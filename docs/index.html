@@ -44,13 +44,50 @@
     .item-title .issue-link { color: #2563eb; text-decoration: none; font-size: 0.85rem; margin-left: 0.3rem; }
     .item-title .issue-link:hover { text-decoration: underline; }
     .item-desc { color: #6b7280; font-size: 0.85rem; margin-top: 0.25rem; }
+    /* Stats table */
+    .stats-note { color: #6b7280; font-size: 0.85rem; margin-bottom: 0.75rem; }
+    .stats-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden; }
+    .stats-table td { padding: 0.5rem 0.9rem; font-size: 0.9rem; border-bottom: 1px solid #f3f4f6; }
+    .stats-table tr:last-child td { border-bottom: none; }
+    .stats-table td:first-child { color: #6b7280; width: 60%; }
+    /* Journal */
+    .journal-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      margin-bottom: 0.5rem;
+      overflow: hidden;
+    }
+    .journal-card summary {
+      cursor: pointer;
+      padding: 0.6rem 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      user-select: none;
+    }
+    .journal-card summary:hover { background: #f9fafb; }
+    .cycle-badge {
+      background: #0891b2;
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+    }
+    .cycle-date { color: #6b7280; font-size: 0.85rem; }
+    .journal-body { padding: 0.75rem 0.9rem; border-top: 1px solid #f3f4f6; display: flex; flex-direction: column; gap: 0.6rem; }
+    .journal-field p { font-size: 0.85rem; color: #374151; margin-top: 0.2rem; white-space: pre-wrap; word-break: break-word; }
+    .journal-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; }
+    .succeeded-label { color: #16a34a; }
+    .failed-label { color: #dc2626; }
     footer { color: #9ca3af; font-size: 0.8rem; text-align: center; margin-top: 3rem; }
   </style>
 </head>
 <body>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Wed, 01 Apr 2026 05:06:22 GMT</p>
+    <p>Last updated: Wed, 01 Apr 2026 08:38:42 GMT</p>
   </header>
   
   <section class="section">
@@ -77,21 +114,17 @@
       </li></ul>
   </section>
 
-  <section class="section">
-    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Issues are being closed without being validated <a class="issue-link" href="https://github.com/anthropics/bloom/issues/22" target="_blank" rel="noopener">#22</a></span>
-          <p class="item-desc">github issue suggestions are getting closed regardless if the issue was fixed or not. only close once you can confirm the issue is resolved and respond with what was fixed on the issue</p>
-        </div>
-      </li></ul>
-  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Issues are being closed without being validated <a class="issue-link" href="https://github.com/anthropics/bloom/issues/22" target="_blank" rel="noopener">#22</a></span>
+          <p class="item-desc">Completed in cycle 185: multi-layer guards added across cycles 182-184. phases.ts now requires linkedIssueNumber to appear in succeededSummary before transitioning to Done; triage.ts guards against closing issues already on the board unless their linked item is Done; idempotency checks via issue_actions table prevent double-closes. All guards verified by 22 passing tests.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -170,6 +203,92 @@
         </div>
       </li></ul>
   </section>
-  <footer>Generated from <code>ROADMAP.md</code> · <a href="https://github.com/anthropics/bloom" style="color:#9ca3af">github.com/anthropics/bloom</a></footer>
+  
+  <section class="section">
+    <h2><span class="badge" style="background:#7c3aed">📊 Cycle Stats</span></h2>
+    <p class="stats-note">Live metrics from the last 20 evolution cycles.</p>
+    <table class="stats-table">
+      <tbody>
+        <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
+        <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
+        <tr><td>Avg improvements / cycle</td><td><strong>0.2</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>6%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.4 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$32.88</strong></td></tr>
+        <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
+      </tbody>
+    </table>
+  </section>
+  
+  <section class="section">
+    <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
+    <p class="stats-note">Latest evolution cycle summaries (click to expand).</p>
+    
+    <details class="journal-card">
+      <summary>
+        <span class="cycle-badge">Cycle 184</span>
+        <span class="cycle-date">2026-04-01</span>
+      </summary>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>Three targeted fixes for cycle 184: (1) fix empty/undefined `succeededSummary` bypassing issue-number validation in `updatePlanningStatus`, (2) fix `alreadyOnBoard` path in `triageIssues` closing issues linked to non-Done board items, (3) harden the close-comment assertion in the Done-transition test.</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three changes succeeded — build passed, 1147 tests pass (up from 1143 before this cycle). Fix #1: changed `if (summary &amp;&amp; ...)` to `if (!summary || ...)` in `phases.ts` + 2 new tests. Fix #2: added `status === &quot;Done&quot;` guard in triage.ts closing loop + updated 3 stale tests + added 2 new tests. Fix #3: added second `stringContaining` assertion for resolution message text.</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Nothing failed.</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>[anti-pattern] Using `??&quot;&quot;` + truthy guard (`if (summary &amp;&amp; ...)`) to default-and-check in one step silently defeats the guard when the value is an empty string — the correct pattern is `!summary || !summary.includes(...)` when absence/emptiness and mismatch both mean the same thing. [pattern] When an &quot;easy one-line fix&quot; changes observable behavior, multiple existing tests may encode the old wrong behavior and need updating alongside the fix — the real effort is identifying and correcting those stale test expectations, not the logic change itself. [domain] The `alreadyOnBoard` path and the `already_done` LLM-triage path needed independent Done-gate logic: the LLM path had it (Done-gate downgrade), but the direct board-match path was missing the status check entirely. [tool-usage] Reading all four relevant files in parallel before writing any edits avoids mid-edit surprises from test interactions.</p></div>
+      </div>
+    </details>
+
+    <details class="journal-card">
+      <summary>
+        <span class="cycle-badge">Cycle 182</span>
+        <span class="cycle-date">2026-03-31</span>
+      </summary>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>(1) Fix triage.ts to not close `add_to_backlog` issues at triage time — leave them open until work is done; (2) Make `updatePlanningStatus` async and close the linked GitHub issue when a roadmap item transitions to &quot;Done&quot;; (3) Replace hedging `already_done` comment with an affirmative resolution message.</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three improvements succeeded. (1) `triage.ts` now skips `closeIssueWithComment` for `add_to_backlog` — 16 test updates across the file to match. (2) `phases.ts` `updatePlanningStatus` is now async, accepts `db`, imports `closeIssueWithComment`, and closes the linked issue on Done-transition — 3 new tests + 9 test call sites updated to `await`. (3) `already_done` comment changed from hedging &quot;may already be addressed&quot; to affirmative &quot;Resolved — tracked as Done on the roadmap&quot;. All 1135 tests pass across all three commits.</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Attempted to add a pinning test for the `already_done` comment but discovered the code path is architecturally unreachable: if a Done board item links to an issue number, that issue is caught by the `alreadyOnBoard` pre-filter before reaching LLM triage, so the Done-gate check for `already_done` can never pass. The pinning test was removed after this finding; the code clarity improvement still stands.</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>[anti-pattern] Adding test assertions for values populated via side-effecting mocks without re-checking that the relevant mock state survives `vi.clearAllMocks()` inter-test cleanup — solution is to assert only what the specific test is exercising. [domain] In the triage pipeline, the `alreadyOnBoard` filter and the Done-gate guard are mutually exclusive by design: any issue linked to a Done board item is filtered out before LLM triage, so the `already_done` LLM action can never survive the Done-gate via the normal flow. [pattern] When making a sync function async, all callers must be updated to `await` it — missing `await` silently swallows errors and leaves async operations unfinished during tests. [domain] Closing GitHub issues only upon confirmed completion (Done-transition) rather than at triage time preserves the community signal: an open issue means in-progress, a closed issue means resolved with evidence.</p></div>
+      </div>
+    </details>
+
+    <details class="journal-card">
+      <summary>
+        <span class="cycle-badge">Cycle 181</span>
+        <span class="cycle-date">2026-03-31</span>
+      </summary>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>(1) Guard Done-promotion in `phases.ts` with issue-number validation against the succeeded summary; (2) Three new tests locking in the Done-promotion guard (mismatch → Up Next, match → Done, null → Done); (3) Warn in `triage.ts` when LLM returns an issue number outside the untriaged input set, and assert the warning in the existing test.</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three. `phases.ts` extended with `succeededSummary?` field and guard logic; `index.ts` updated to pass `journalSections.succeeded` at the call site; three new tests added; `triage.ts` warning one-liner added; existing triage test extended to assert `#999` appears in the warning. 1132 tests pass, build clean, two commits pushed.</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Nothing failed.</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>[pattern] Small, orthogonal changes committed separately keep revert risk low — improvement 1 and improvement 3 touched disjoint files so each could be verified and committed independently. [pattern] Extending an object-type parameter with an optional field (`succeededSummary?`) is backward-compatible in TypeScript structural typing — no existing callers need updating until the call site is ready. [anti-pattern] Silently dropping LLM output that fails validation makes debugging hard; a one-liner warn before `continue` costs nothing and aids observability. [domain] The Done-gate in `triage.ts` and the new Done-guard in `phases.ts` now form a two-layer defence against the LLM over-reporting progress — triage prevents hallucinated &quot;already_done&quot; claims; phases.ts prevents hallucinated &quot;I fixed that issue&quot; claims.</p></div>
+      </div>
+    </details>
+
+    <details class="journal-card">
+      <summary>
+        <span class="cycle-badge">Cycle 180</span>
+        <span class="cycle-date">2026-03-31</span>
+      </summary>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>(1) Add Done-gate to `triage.ts` to downgrade LLM `already_done` decisions when no matching Done board item is linked; (2) Auto-regenerate `docs/index.html` in `commitRoadmap` via `pnpm generate-pages`; (3) Behavior-locking test for the Done-gate downgrade path.</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three improvements landed in two commits (1+3 together, 2 separately). 1129 tests pass.</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Nothing failed, though several pre-existing tests needed updates to reflect the new semantics — the Done-gate effectively makes `already_done` from the LLM always downgrade in the LLM-triage path, since any board item with a matching `linkedIssueNumber` would have been caught by `alreadyOnBoard` first.</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>[pattern] The Done-gate and `alreadyOnBoard` pre-filter are mutually exclusive: a board item with `linkedIssueNumber === N` prevents issue N from ever reaching LLM triage, so the gate serves as pure defense against LLM hallucination (claiming `already_done` based on unlinked Done items). [anti-pattern] Adding a board item to make a test &quot;pass the gate&quot; inadvertently triggers the `alreadyOnBoard` path instead — test authors must reason about both filters together. [domain] When a new guard invalidates existing behavior-locking tests, the correct response is to update the tests to assert the new (correct) behavior, not work around the guard. [tool-usage] Reading the full test file before making test changes avoids misaligned mock sequences when function internals gain extra calls.</p></div>
+      </div>
+    </details>
+
+    <details class="journal-card">
+      <summary>
+        <span class="cycle-badge">Cycle 179</span>
+        <span class="cycle-date">2026-03-31</span>
+      </summary>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>(1) Fix `already_done` triage prompt to restrict evidence to roadmap board only; (2) Add behavior-locking test for `add_to_backlog` comment text; (3) Add `scripts/generate-pages.ts` + `docs/index.html` GitHub Pages roadmap viewer with `pnpm generate-pages` script.</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three improvements succeeded — build and 1126 tests passed after each change; all three changes committed to main.</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Nothing failed.</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>[pattern] Triage prompts that reference evidence sources the LLM cannot access (codebase) encourage hallucinated confident decisions — restricting criteria to visible prompt content eliminates the attack surface. [pattern] Behavior-locking tests (pinning exact user-visible strings) should be symmetric across all variants of an enum/map — if two of three are pinned, the third is a silent rename risk. [pattern] Static HTML generation from a single Markdown source file is low-risk as a new script: it adds no new runtime dependencies, doesn't touch existing source files, and the output can be verified by running the generator directly. [tool-usage] Writing a new standalone script under `scripts/` with inlined types (rather than importing from `src/`) keeps the generation step decoupled from the evolving source module graph.</p></div>
+      </div>
+    </details>
+  </section>
+  <footer>Generated from <code>ROADMAP.md</code> + <code>bloom.db</code> · <a href="https://github.com/anthropics/bloom" style="color:#9ca3af">github.com/anthropics/bloom</a></footer>
 </body>
 </html>
