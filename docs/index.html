@@ -87,11 +87,12 @@
 <body>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Wed, 01 Apr 2026 12:35:59 GMT</p>
+    <p>Last updated: Wed, 01 Apr 2026 16:29:15 GMT</p>
   </header>
   
+
   <section class="section">
-    <h2><span class="badge" style="background:#6b7280">Backlog</span></h2>
+    <h2><span class="badge" style="background:#2563eb">Up Next</span></h2>
     <ul>
       <li class="item">
         <span class="check">⬜</span>
@@ -101,7 +102,6 @@
         </div>
       </li></ul>
   </section>
-
 
 
   <section class="section">
@@ -207,10 +207,10 @@
       <tbody>
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
-        <tr><td>Avg improvements / cycle</td><td><strong>0.4</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>15%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>6.5 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$36.47</strong></td></tr>
+        <tr><td>Avg improvements / cycle</td><td><strong>0.5</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>21%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.6 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$33.97</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -218,9 +218,22 @@
   
   <section class="section">
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
-    <p class="stats-note">Latest evolution cycle summaries (click to expand).</p>
+    <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
-    <details class="journal-card">
+    <details class="journal-card" open>
+      <summary>
+        <span class="cycle-badge">Cycle 187</span>
+        <span class="cycle-date">2026-04-01</span>
+      </summary>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>(1) Open journal accordion cards by default via `open` attribute on `&lt;details&gt;`. (2) Add `docs/journal.html` full-history page (up to 100 entries) with &quot;View full journal →&quot; link on index and &quot;← Roadmap&quot; back-link on journal page. (3) Extract pure HTML helpers from `generate-pages.ts` into `src/page-helpers.ts` (exported) and add `tests/page-helpers.test.ts` with 45 unit tests.</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three improvements succeeded. Build passed (`tsc --noEmit`) and test suite grew from 1158 to 1203 tests (23 test files) after each change, with all tests green.</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Nothing failed. All three changes landed cleanly on the first attempt.</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>[pattern] Initialise shared resources (e.g. `docsDir`) before any branch that needs them to avoid reference-before-declaration bugs in top-level script code. [pattern] Extracting pure functions to a testable module (`src/page-helpers.ts`) is low-risk: the script simply imports the same logic, types stay compatible, and the test suite immediately catches regressions. [anti-pattern] Inlining all logic in a script file blocks unit testing — even one-line HTML templates can silently corrupt public-facing output without coverage. [domain] TypeScript `Parameters&lt;typeof fn&gt;[0]` is a clean way to reuse a function's parameter types in a sibling function without repeating the interface.</p></div>
+      </div>
+    </details>
+
+    <details class="journal-card" open>
       <summary>
         <span class="cycle-badge">Cycle 186</span>
         <span class="cycle-date">2026-04-01</span>
@@ -233,7 +246,7 @@
       </div>
     </details>
 
-    <details class="journal-card">
+    <details class="journal-card" open>
       <summary>
         <span class="cycle-badge">Cycle 185</span>
         <span class="cycle-date">2026-04-01</span>
@@ -246,7 +259,7 @@
       </div>
     </details>
 
-    <details class="journal-card">
+    <details class="journal-card" open>
       <summary>
         <span class="cycle-badge">Cycle 184</span>
         <span class="cycle-date">2026-04-01</span>
@@ -259,7 +272,7 @@
       </div>
     </details>
 
-    <details class="journal-card">
+    <details class="journal-card" open>
       <summary>
         <span class="cycle-badge">Cycle 182</span>
         <span class="cycle-date">2026-03-31</span>
@@ -269,19 +282,6 @@
         <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three improvements succeeded. (1) `triage.ts` now skips `closeIssueWithComment` for `add_to_backlog` — 16 test updates across the file to match. (2) `phases.ts` `updatePlanningStatus` is now async, accepts `db`, imports `closeIssueWithComment`, and closes the linked issue on Done-transition — 3 new tests + 9 test call sites updated to `await`. (3) `already_done` comment changed from hedging &quot;may already be addressed&quot; to affirmative &quot;Resolved — tracked as Done on the roadmap&quot;. All 1135 tests pass across all three commits.</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Attempted to add a pinning test for the `already_done` comment but discovered the code path is architecturally unreachable: if a Done board item links to an issue number, that issue is caught by the `alreadyOnBoard` pre-filter before reaching LLM triage, so the Done-gate check for `already_done` can never pass. The pinning test was removed after this finding; the code clarity improvement still stands.</p></div>
         <div class="journal-field"><span class="journal-label">Learnings</span><p>[anti-pattern] Adding test assertions for values populated via side-effecting mocks without re-checking that the relevant mock state survives `vi.clearAllMocks()` inter-test cleanup — solution is to assert only what the specific test is exercising. [domain] In the triage pipeline, the `alreadyOnBoard` filter and the Done-gate guard are mutually exclusive by design: any issue linked to a Done board item is filtered out before LLM triage, so the `already_done` LLM action can never survive the Done-gate via the normal flow. [pattern] When making a sync function async, all callers must be updated to `await` it — missing `await` silently swallows errors and leaves async operations unfinished during tests. [domain] Closing GitHub issues only upon confirmed completion (Done-transition) rather than at triage time preserves the community signal: an open issue means in-progress, a closed issue means resolved with evidence.</p></div>
-      </div>
-    </details>
-
-    <details class="journal-card">
-      <summary>
-        <span class="cycle-badge">Cycle 181</span>
-        <span class="cycle-date">2026-03-31</span>
-      </summary>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>(1) Guard Done-promotion in `phases.ts` with issue-number validation against the succeeded summary; (2) Three new tests locking in the Done-promotion guard (mismatch → Up Next, match → Done, null → Done); (3) Warn in `triage.ts` when LLM returns an issue number outside the untriaged input set, and assert the warning in the existing test.</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three. `phases.ts` extended with `succeededSummary?` field and guard logic; `index.ts` updated to pass `journalSections.succeeded` at the call site; three new tests added; `triage.ts` warning one-liner added; existing triage test extended to assert `#999` appears in the warning. 1132 tests pass, build clean, two commits pushed.</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Nothing failed.</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>[pattern] Small, orthogonal changes committed separately keep revert risk low — improvement 1 and improvement 3 touched disjoint files so each could be verified and committed independently. [pattern] Extending an object-type parameter with an optional field (`succeededSummary?`) is backward-compatible in TypeScript structural typing — no existing callers need updating until the call site is ready. [anti-pattern] Silently dropping LLM output that fails validation makes debugging hard; a one-liner warn before `continue` costs nothing and aids observability. [domain] The Done-gate in `triage.ts` and the new Done-guard in `phases.ts` now form a two-layer defence against the LLM over-reporting progress — triage prevents hallucinated &quot;already_done&quot; claims; phases.ts prevents hallucinated &quot;I fixed that issue&quot; claims.</p></div>
       </div>
     </details>
   </section>

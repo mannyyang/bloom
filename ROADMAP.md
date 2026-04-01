@@ -1,10 +1,11 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Add more github pages so that the other items can be seen (#20)
-  also in the journal page, expand all accordions so i can see them easily
 
 ## Up Next
+- [ ] Add more github pages so that the other items can be seen (#20)
+  also in the journal page, expand all accordions so i can see them easily
+  [since: 187]
 
 ## In Progress
 
