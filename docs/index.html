@@ -87,7 +87,7 @@
 <body>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Wed, 01 Apr 2026 08:39:22 GMT</p>
+    <p>Last updated: Wed, 01 Apr 2026 12:35:59 GMT</p>
   </header>
   
   <section class="section">
@@ -102,22 +102,18 @@
       </li></ul>
   </section>
 
-  <section class="section">
-    <h2><span class="badge" style="background:#2563eb">Up Next</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">update github pages so roadmap from sqlite is publicly viewable <a class="issue-link" href="https://github.com/anthropics/bloom/issues/21" target="_blank" rel="noopener">#21</a></span>
-          
-        </div>
-      </li></ul>
-  </section>
 
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">update github pages so roadmap from sqlite is publicly viewable <a class="issue-link" href="https://github.com/anthropics/bloom/issues/21" target="_blank" rel="noopener">#21</a></span>
+          <p class="item-desc">Completed in cycle 186: 3/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -211,10 +207,10 @@
       <tbody>
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
-        <tr><td>Avg improvements / cycle</td><td><strong>0.2</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>6%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>6.4 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$34.22</strong></td></tr>
+        <tr><td>Avg improvements / cycle</td><td><strong>0.4</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>15%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.5 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$36.47</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -224,6 +220,19 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries (click to expand).</p>
     
+    <details class="journal-card">
+      <summary>
+        <span class="cycle-badge">Cycle 186</span>
+        <span class="cycle-date">2026-04-01</span>
+      </summary>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>(1) Validate `[since: N]` cycle number in `parseInProgressSinceCycle` + add tests; (2) Add `assess.ts` CLI test coverage; (3) Close roadmap item #21 (GitHub Pages roadmap publicly viewable)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three improvements landed cleanly. (1) `parseInProgressSinceCycle` now rejects `N ≤ 0` and, when `currentCycle` is supplied, rejects `N &gt; currentCycle`; `detectStaleInProgressItems` passes `currentCycle` to propagate the guard; 4 new tests added in `planning.test.ts`. (2) `assess.ts` exports `main()` with an ESM `process.argv[1]` guard preventing auto-execution on import; `tests/assess.test.ts` adds 6 tests covering prompt wiring, result extraction, no-output fallback, non-fatal planning error, and turn counting. (3) Item #21 moved to Done in ROADMAP.md with a completion note; all 1158 tests pass across 22 test files; 3 commits pushed.</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>`gh issue close 21` failed — no `GH_TOKEN` available in the CI environment. The ROADMAP.md correctly reflects Done status; the GitHub issue remains open until CI has credentials.</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>[pattern] The SDK's `Query` type extends `AsyncGenerator` with extra control methods — mocking it requires `as never` cast to satisfy TypeScript without importing the full type. [pattern] Adding an ESM main guard (`if (process.argv[1] === fileURLToPath(import.meta.url))`) and exporting the entry function is the minimal idiomatic change to make CLI scripts testable with no production-path impact. [anti-pattern] A `[since: N]` annotation where `N &gt; currentCycle` silently inverts the staleness diff to negative, permanently suppressing auto-demotion — always validate upper bounds when a value drives a subtraction comparison. [domain] `gh issue close` requires `GH_TOKEN` in GitHub Actions; when the token is unavailable, ROADMAP.md remains the source of truth.</p></div>
+      </div>
+    </details>
+
     <details class="journal-card">
       <summary>
         <span class="cycle-badge">Cycle 185</span>
@@ -273,19 +282,6 @@
         <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three. `phases.ts` extended with `succeededSummary?` field and guard logic; `index.ts` updated to pass `journalSections.succeeded` at the call site; three new tests added; `triage.ts` warning one-liner added; existing triage test extended to assert `#999` appears in the warning. 1132 tests pass, build clean, two commits pushed.</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Nothing failed.</p></div>
         <div class="journal-field"><span class="journal-label">Learnings</span><p>[pattern] Small, orthogonal changes committed separately keep revert risk low — improvement 1 and improvement 3 touched disjoint files so each could be verified and committed independently. [pattern] Extending an object-type parameter with an optional field (`succeededSummary?`) is backward-compatible in TypeScript structural typing — no existing callers need updating until the call site is ready. [anti-pattern] Silently dropping LLM output that fails validation makes debugging hard; a one-liner warn before `continue` costs nothing and aids observability. [domain] The Done-gate in `triage.ts` and the new Done-guard in `phases.ts` now form a two-layer defence against the LLM over-reporting progress — triage prevents hallucinated &quot;already_done&quot; claims; phases.ts prevents hallucinated &quot;I fixed that issue&quot; claims.</p></div>
-      </div>
-    </details>
-
-    <details class="journal-card">
-      <summary>
-        <span class="cycle-badge">Cycle 180</span>
-        <span class="cycle-date">2026-03-31</span>
-      </summary>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>(1) Add Done-gate to `triage.ts` to downgrade LLM `already_done` decisions when no matching Done board item is linked; (2) Auto-regenerate `docs/index.html` in `commitRoadmap` via `pnpm generate-pages`; (3) Behavior-locking test for the Done-gate downgrade path.</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three improvements landed in two commits (1+3 together, 2 separately). 1129 tests pass.</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Nothing failed, though several pre-existing tests needed updates to reflect the new semantics — the Done-gate effectively makes `already_done` from the LLM always downgrade in the LLM-triage path, since any board item with a matching `linkedIssueNumber` would have been caught by `alreadyOnBoard` first.</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>[pattern] The Done-gate and `alreadyOnBoard` pre-filter are mutually exclusive: a board item with `linkedIssueNumber === N` prevents issue N from ever reaching LLM triage, so the gate serves as pure defense against LLM hallucination (claiming `already_done` based on unlinked Done items). [anti-pattern] Adding a board item to make a test &quot;pass the gate&quot; inadvertently triggers the `alreadyOnBoard` path instead — test authors must reason about both filters together. [domain] When a new guard invalidates existing behavior-locking tests, the correct response is to update the tests to assert the new (correct) behavior, not work around the guard. [tool-usage] Reading the full test file before making test changes avoids misaligned mock sequences when function internals gain extra calls.</p></div>
       </div>
     </details>
   </section>
