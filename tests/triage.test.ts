@@ -372,17 +372,42 @@ describe("triageIssues with injected deps", () => {
     expect(mockAddLinkedItem).toHaveBeenCalled();
   });
 
-  it("skips issues already on the board by linkedIssueNumber", async () => {
+  it("skips LLM triage for issues already on the board by linkedIssueNumber", async () => {
     const issues = [makeIssue({ number: 10, title: "On board" })];
-    const boardItems = [makeBoardItem({ linkedIssueNumber: 10 })];
+    // Board item is Backlog (not Done) — issue should NOT be closed at triage time
+    const boardItems = [makeBoardItem({ linkedIssueNumber: 10, status: "Backlog" })];
+    const deps = makeDeps([]);
+
+    const result = await triageIssues(issues, boardItems, 5, projectConfig, undefined, deps);
+
+    // LLM triage is skipped (decisions empty), issue is left open until work is Done
+    expect(result.closed).not.toContain(10);
+    expect(result.decisions).toEqual([]);
+    expect(mockCloseIssue).not.toHaveBeenCalled();
+  });
+
+  it("closes alreadyOnBoard issue when linked board item is Done", async () => {
+    const issues = [makeIssue({ number: 10, title: "On board and Done" })];
+    const boardItems = [makeBoardItem({ linkedIssueNumber: 10, status: "Done" })];
     const deps = makeDeps([]);
 
     mockCloseIssue.mockResolvedValueOnce(true);
 
     const result = await triageIssues(issues, boardItems, 5, projectConfig, undefined, deps);
 
-    // Issue was closed as already on board, not through LLM triage
     expect(result.closed).toContain(10);
+    expect(result.decisions).toEqual([]);
+  });
+
+  it("does not close alreadyOnBoard issue when linked board item is In Progress", async () => {
+    const issues = [makeIssue({ number: 11, title: "In progress" })];
+    const boardItems = [makeBoardItem({ linkedIssueNumber: 11, status: "In Progress" })];
+    const deps = makeDeps([]);
+
+    const result = await triageIssues(issues, boardItems, 5, projectConfig, undefined, deps);
+
+    expect(mockCloseIssue).not.toHaveBeenCalled();
+    expect(result.closed).not.toContain(11);
     expect(result.decisions).toEqual([]);
   });
 
@@ -604,9 +629,9 @@ describe("triageIssues with injected deps", () => {
   });
 
   it("does not add to result.closed when alreadyOnBoard closeIssueWithComment returns false", async () => {
-    // Issue #10 is already on the board — alreadyOnBoard path
-    const issues = [makeIssue({ number: 10, title: "On board" })];
-    const boardItems = [makeBoardItem({ linkedIssueNumber: 10 })];
+    // Issue #10 is already on the board with status Done — alreadyOnBoard path
+    const issues = [makeIssue({ number: 10, title: "On board Done" })];
+    const boardItems = [makeBoardItem({ linkedIssueNumber: 10, status: "Done" })];
     const deps = makeDeps([]);
 
     // closeIssueWithComment returns false (soft failure — e.g. already closed externally)
@@ -658,11 +683,11 @@ describe("triageIssues with injected deps", () => {
   });
 
   it("logs a warning (not crash) when alreadyOnBoard closeIssueWithComment throws", async () => {
-    // Issue #10 is on the board; closeIssueWithComment throws unexpectedly
+    // Issue #10 is on the board with status Done; closeIssueWithComment throws unexpectedly
     // (e.g. issue was closed externally between the filter and the close call)
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const issues = [makeIssue({ number: 10, title: "On board" })];
-    const boardItems = [makeBoardItem({ linkedIssueNumber: 10 })];
+    const issues = [makeIssue({ number: 10, title: "On board Done" })];
+    const boardItems = [makeBoardItem({ linkedIssueNumber: 10, status: "Done" })];
     const deps = makeDeps([]);
 
     mockCloseIssue.mockRejectedValueOnce(new Error("422 Unprocessable Entity"));

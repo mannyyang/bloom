@@ -124,9 +124,12 @@ export async function triageIssues(
       .filter((n): n is number => n !== null),
   );
 
-  // Close any issues that are already on the board but still open
+  // Close issues already on the board only when the linked item is Done —
+  // work must be confirmed complete before closing the community issue.
   const alreadyOnBoard = issues.filter((i) => boardIssueNumbers.has(i.number));
   for (const issue of alreadyOnBoard) {
+    const linkedItem = boardItems.find((item) => item.linkedIssueNumber === issue.number);
+    if (!linkedItem || linkedItem.status !== "Done") continue;
     if (db && hasIssueAction(db, issue.number, "triaged")) continue;
     try {
       const wasClosed = await closeIssueWithComment(
