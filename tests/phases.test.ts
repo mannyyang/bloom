@@ -174,6 +174,34 @@ describe("updatePlanningStatus", () => {
     expect(updateItemStatus).not.toHaveBeenCalled();
   });
 
+  it("does not promote to Done when linkedIssueNumber is set but succeededSummary is empty", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.mocked(updateItemStatus).mockReturnValue(true);
+    const itemWithLinkedIssue: ProjectItem = { ...currentItem, linkedIssueNumber: 55 };
+    await updatePlanningStatus(10, projectConfig, itemWithLinkedIssue, {
+      improvementsSucceeded: 1,
+      improvementsAttempted: 1,
+      succeededSummary: "",
+    });
+    expect(updateItemStatus).toHaveBeenCalledWith(projectConfig, "item-1", "Up Next", undefined);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("#55"));
+    warnSpy.mockRestore();
+  });
+
+  it("does not promote to Done when linkedIssueNumber is set but succeededSummary is undefined", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.mocked(updateItemStatus).mockReturnValue(true);
+    const itemWithLinkedIssue: ProjectItem = { ...currentItem, linkedIssueNumber: 55 };
+    await updatePlanningStatus(10, projectConfig, itemWithLinkedIssue, {
+      improvementsSucceeded: 1,
+      improvementsAttempted: 1,
+      // succeededSummary intentionally omitted
+    });
+    expect(updateItemStatus).toHaveBeenCalledWith(projectConfig, "item-1", "Up Next", undefined);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("#55"));
+    warnSpy.mockRestore();
+  });
+
   it("does not promote to Done when linkedIssueNumber is not mentioned in succeeded summary", async () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     vi.mocked(updateItemStatus).mockReturnValue(true);
