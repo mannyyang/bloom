@@ -327,6 +327,22 @@ describe("parseInProgressSinceCycle", () => {
     expect(parseInProgressSinceCycle("[since:5]")).toBe(5);
     expect(parseInProgressSinceCycle("[since:  100]")).toBe(100);
   });
+
+  it("returns null for [since: 0] (cycle zero is invalid)", () => {
+    expect(parseInProgressSinceCycle("[since: 0]")).toBeNull();
+  });
+
+  it("returns null when N exceeds currentCycle (future annotation disables stale detection)", () => {
+    expect(parseInProgressSinceCycle("[since: 99999]", 186)).toBeNull();
+  });
+
+  it("returns N when annotation is valid and within currentCycle", () => {
+    expect(parseInProgressSinceCycle("[since: 100]", 186)).toBe(100);
+  });
+
+  it("returns N when currentCycle is not provided (no upper-bound validation)", () => {
+    expect(parseInProgressSinceCycle("[since: 99999]")).toBe(99999);
+  });
 });
 
 describe("detectStaleInProgressItems", () => {

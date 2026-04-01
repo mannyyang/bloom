@@ -319,10 +319,19 @@ export function updateItemStatus(
 /**
  * Parse the [since: N] annotation from an item body.
  * Returns the cycle number N, or null if no annotation is present.
+ *
+ * Validates that N is a positive integer. If an optional `currentCycle` is
+ * provided, also rejects values where N > currentCycle (a future-cycle
+ * annotation would silently disable stale detection by making the difference
+ * negative, so we treat it as invalid and return null instead).
  */
-export function parseInProgressSinceCycle(body: string): number | null {
+export function parseInProgressSinceCycle(body: string, currentCycle?: number): number | null {
   const match = body.match(/\[since:\s*(\d+)\]/);
-  return match ? parseInt(match[1], 10) : null;
+  if (!match) return null;
+  const n = parseInt(match[1], 10);
+  if (n <= 0) return null;
+  if (currentCycle !== undefined && n > currentCycle) return null;
+  return n;
 }
 
 /**
@@ -337,8 +346,8 @@ export function detectStaleInProgressItems(
 ): ProjectItem[] {
   return items.filter((item) => {
     if (item.status !== "In Progress") return false;
-    const since = parseInProgressSinceCycle(item.body);
-    if (since === null) return true; // no annotation → always stale
+    const since = parseInProgressSinceCycle(item.body, currentCycle);
+    if (since === null) return true; // no annotation (or invalid) → always stale
     return currentCycle - since > threshold;
   });
 }
