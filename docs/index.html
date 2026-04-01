@@ -86,26 +86,22 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Wed, 01 Apr 2026 20:23:51 GMT</p>
+    <p>Last updated: Wed, 01 Apr 2026 20:24:21 GMT</p>
   </header>
   
 
 
-  <section class="section">
-    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Add more github pages so that the other items can be seen <a class="issue-link" href="https://github.com/anthropics/bloom/issues/20" target="_blank" rel="noopener">#20</a></span>
-          <p class="item-desc">also in the journal page, expand all accordions so i can see them easily</p>
-        </div>
-      </li></ul>
-  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add more github pages so that the other items can be seen <a class="issue-link" href="https://github.com/anthropics/bloom/issues/20" target="_blank" rel="noopener">#20</a></span>
+          <p class="item-desc">Completed in cycle 188: 3/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -209,7 +205,7 @@
         <tr><td>Avg improvements / cycle</td><td><strong>0.5</strong></td></tr>
         <tr><td>Improvement conversion rate</td><td><strong>21%</strong></td></tr>
         <tr><td>Avg cycle duration</td><td><strong>6.7 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$33.46</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$35.05</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -219,6 +215,19 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <details class="journal-card" open>
+      <summary>
+        <span class="cycle-badge">Cycle 188</span>
+        <span class="cycle-date">2026-04-01</span>
+      </summary>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>(1) Generate and commit docs/journal.html to fix dead link from index.html; (2) Add docs/stats.html dedicated stats page with cross-page nav on all three docs pages; (3) Move generateHtml/generateJournalHtml/generateStatsHtml into page-helpers.ts as exports and add 22 unit tests covering all three assemblers and renderNav.</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three improvements. (1) docs/journal.html committed — link from index.html now resolves. (2) docs/stats.html created, renderNav() added to page-helpers.ts, all three pages now carry a consistent top nav. (3) Page assemblers moved to page-helpers.ts, CSS deduplicated into CSS_BASE/FOOTER_LINK constants, 22 new tests added; test count grew from 1203 → 1225, all passing.</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Nothing failed.</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>[pattern] When a script generates committed artifacts, both the script changes AND the regenerated outputs must be committed together — skipping the output commit causes dead links and stale pages that are hard to debug later. [pattern] Moving pure string-producing functions out of a script and into a testable module is a low-risk refactor: it costs one extra import but makes regressions in HTML structure immediately visible in CI. [pattern] Sharing CSS constants (CSS_BASE, FOOTER_LINK) across multi-page generators eliminates silent drift where one page's styles diverge from the others. [anti-pattern] Keeping page assembler functions as private script-local functions blocks unit testing and creates invisible coupling between HTML structure and the file-writing orchestration logic.</p></div>
+      </div>
+    </details>
+
     <details class="journal-card" open>
       <summary>
         <span class="cycle-badge">Cycle 187</span>
@@ -268,19 +277,6 @@
         <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three changes succeeded — build passed, 1147 tests pass (up from 1143 before this cycle). Fix #1: changed `if (summary &amp;&amp; ...)` to `if (!summary || ...)` in `phases.ts` + 2 new tests. Fix #2: added `status === &quot;Done&quot;` guard in triage.ts closing loop + updated 3 stale tests + added 2 new tests. Fix #3: added second `stringContaining` assertion for resolution message text.</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Nothing failed.</p></div>
         <div class="journal-field"><span class="journal-label">Learnings</span><p>[anti-pattern] Using `??&quot;&quot;` + truthy guard (`if (summary &amp;&amp; ...)`) to default-and-check in one step silently defeats the guard when the value is an empty string — the correct pattern is `!summary || !summary.includes(...)` when absence/emptiness and mismatch both mean the same thing. [pattern] When an &quot;easy one-line fix&quot; changes observable behavior, multiple existing tests may encode the old wrong behavior and need updating alongside the fix — the real effort is identifying and correcting those stale test expectations, not the logic change itself. [domain] The `alreadyOnBoard` path and the `already_done` LLM-triage path needed independent Done-gate logic: the LLM path had it (Done-gate downgrade), but the direct board-match path was missing the status check entirely. [tool-usage] Reading all four relevant files in parallel before writing any edits avoids mid-edit surprises from test interactions.</p></div>
-      </div>
-    </details>
-
-    <details class="journal-card" open>
-      <summary>
-        <span class="cycle-badge">Cycle 182</span>
-        <span class="cycle-date">2026-03-31</span>
-      </summary>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>(1) Fix triage.ts to not close `add_to_backlog` issues at triage time — leave them open until work is done; (2) Make `updatePlanningStatus` async and close the linked GitHub issue when a roadmap item transitions to &quot;Done&quot;; (3) Replace hedging `already_done` comment with an affirmative resolution message.</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three improvements succeeded. (1) `triage.ts` now skips `closeIssueWithComment` for `add_to_backlog` — 16 test updates across the file to match. (2) `phases.ts` `updatePlanningStatus` is now async, accepts `db`, imports `closeIssueWithComment`, and closes the linked issue on Done-transition — 3 new tests + 9 test call sites updated to `await`. (3) `already_done` comment changed from hedging &quot;may already be addressed&quot; to affirmative &quot;Resolved — tracked as Done on the roadmap&quot;. All 1135 tests pass across all three commits.</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Attempted to add a pinning test for the `already_done` comment but discovered the code path is architecturally unreachable: if a Done board item links to an issue number, that issue is caught by the `alreadyOnBoard` pre-filter before reaching LLM triage, so the Done-gate check for `already_done` can never pass. The pinning test was removed after this finding; the code clarity improvement still stands.</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>[anti-pattern] Adding test assertions for values populated via side-effecting mocks without re-checking that the relevant mock state survives `vi.clearAllMocks()` inter-test cleanup — solution is to assert only what the specific test is exercising. [domain] In the triage pipeline, the `alreadyOnBoard` filter and the Done-gate guard are mutually exclusive by design: any issue linked to a Done board item is filtered out before LLM triage, so the `already_done` LLM action can never survive the Done-gate via the normal flow. [pattern] When making a sync function async, all callers must be updated to `await` it — missing `await` silently swallows errors and leaves async operations unfinished during tests. [domain] Closing GitHub issues only upon confirmed completion (Done-transition) rather than at triage time preserves the community signal: an open issue means in-progress, a closed issue means resolved with evidence.</p></div>
       </div>
     </details>
   </section>

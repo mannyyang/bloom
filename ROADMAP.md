@@ -3,13 +3,12 @@
 ## Backlog
 
 ## Up Next
-- [ ] Add more github pages so that the other items can be seen (#20)
-  also in the journal page, expand all accordions so i can see them easily
-  [since: 187]
 
 ## In Progress
 
 ## Done
+- [x] Add more github pages so that the other items can be seen (#20)
+  Completed in cycle 188: 3/3 improvements succeeded.
 - [x] update github pages so roadmap from sqlite is publicly viewable (#21)
   Completed in cycle 186: 3/3 improvements succeeded.
 - [x] Issues are being closed without being validated (#22)
