@@ -11,10 +11,7 @@
 
 ## Done
 - [x] Issues are being closed without being validated (#22)
-  Completed in cycle 185: multi-layer guards added across cycles 182-184. phases.ts now requires
-  linkedIssueNumber to appear in succeededSummary before transitioning to Done; triage.ts guards
-  against closing issues already on the board unless their linked item is Done; idempotency checks
-  via issue_actions table prevent double-closes. All guards verified by 22 passing tests.
+  Completed in cycle 185: 4/3 improvements succeeded.
 - [x] Improve prompt efficiency to reduce average cost per evolution cycle
   Completed in cycle 123: 3/3 improvements succeeded.
 - [x] Detect and recover stale "In Progress" roadmap items

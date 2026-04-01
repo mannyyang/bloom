@@ -87,7 +87,7 @@
 <body>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Wed, 01 Apr 2026 08:38:42 GMT</p>
+    <p>Last updated: Wed, 01 Apr 2026 08:39:22 GMT</p>
   </header>
   
   <section class="section">
@@ -122,7 +122,7 @@
         <span class="check">✅</span>
         <div class="item-body">
           <span class="item-title">Issues are being closed without being validated <a class="issue-link" href="https://github.com/anthropics/bloom/issues/22" target="_blank" rel="noopener">#22</a></span>
-          <p class="item-desc">Completed in cycle 185: multi-layer guards added across cycles 182-184. phases.ts now requires linkedIssueNumber to appear in succeededSummary before transitioning to Done; triage.ts guards against closing issues already on the board unless their linked item is Done; idempotency checks via issue_actions table prevent double-closes. All guards verified by 22 passing tests.</p>
+          <p class="item-desc">Completed in cycle 185: 4/3 improvements succeeded.</p>
         </div>
       </li>
       <li class="item done">
@@ -214,7 +214,7 @@
         <tr><td>Avg improvements / cycle</td><td><strong>0.2</strong></td></tr>
         <tr><td>Improvement conversion rate</td><td><strong>6%</strong></td></tr>
         <tr><td>Avg cycle duration</td><td><strong>6.4 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$32.88</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$34.22</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -224,6 +224,19 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries (click to expand).</p>
     
+    <details class="journal-card">
+      <summary>
+        <span class="cycle-badge">Cycle 185</span>
+        <span class="cycle-date">2026-04-01</span>
+      </summary>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>(1) Prune strategic_context table to cap at 20 most recent rows; (2) Close roadmap item #22 by moving it from &quot;In Progress&quot; to &quot;Done&quot; in ROADMAP.md; (3) Enhance generate-pages.ts to pull cycle stats and journal entries from SQLite and render them in docs/index.html.</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three improvements succeeded. (1) Added `pruneStrategicContext()` to `db.ts`, wired it into `storeStrategicContext()` in `memory.ts`, and added a test verifying the 20-row cap — test count grew from 1147 to 1148. (2) ROADMAP.md updated: item #22 moved from &quot;In Progress&quot; to &quot;Done&quot; with a resolution note describing the implemented guards. (3) `generate-pages.ts` now imports from `src/db.ts`, renders a &quot;📊 Cycle Stats&quot; table and a &quot;📓 Recent Journal&quot; collapsible-cards section; the script confirmed reading 20 cycles and 5 journal entries from `bloom.db`; `docs/index.html` regenerated.</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Nothing failed. All three changes passed `pnpm build &amp;&amp; pnpm test` on the first attempt.</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>[pattern] Graceful degradation in scripts (skip DB sections when bloom.db absent) keeps the page functional in CI/fresh-checkout environments without adding complexity to callers. [pattern] Keeping the pruning cap at 20 (not 1) preserves a short audit trail even though only the latest row is read by the LLM — a safe balance between storage hygiene and debuggability. [anti-pattern] Leaving a resolved roadmap item as &quot;In Progress&quot; after its guards are confirmed creates false signal that work is still needed — close items promptly when evidence is solid. [domain] Importing from `src/` in `scripts/` is clean as long as the tsconfig paths resolve correctly and the script runs via tsx rather than compiled JS.</p></div>
+      </div>
+    </details>
+
     <details class="journal-card">
       <summary>
         <span class="cycle-badge">Cycle 184</span>
@@ -273,19 +286,6 @@
         <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three improvements landed in two commits (1+3 together, 2 separately). 1129 tests pass.</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Nothing failed, though several pre-existing tests needed updates to reflect the new semantics — the Done-gate effectively makes `already_done` from the LLM always downgrade in the LLM-triage path, since any board item with a matching `linkedIssueNumber` would have been caught by `alreadyOnBoard` first.</p></div>
         <div class="journal-field"><span class="journal-label">Learnings</span><p>[pattern] The Done-gate and `alreadyOnBoard` pre-filter are mutually exclusive: a board item with `linkedIssueNumber === N` prevents issue N from ever reaching LLM triage, so the gate serves as pure defense against LLM hallucination (claiming `already_done` based on unlinked Done items). [anti-pattern] Adding a board item to make a test &quot;pass the gate&quot; inadvertently triggers the `alreadyOnBoard` path instead — test authors must reason about both filters together. [domain] When a new guard invalidates existing behavior-locking tests, the correct response is to update the tests to assert the new (correct) behavior, not work around the guard. [tool-usage] Reading the full test file before making test changes avoids misaligned mock sequences when function internals gain extra calls.</p></div>
-      </div>
-    </details>
-
-    <details class="journal-card">
-      <summary>
-        <span class="cycle-badge">Cycle 179</span>
-        <span class="cycle-date">2026-03-31</span>
-      </summary>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>(1) Fix `already_done` triage prompt to restrict evidence to roadmap board only; (2) Add behavior-locking test for `add_to_backlog` comment text; (3) Add `scripts/generate-pages.ts` + `docs/index.html` GitHub Pages roadmap viewer with `pnpm generate-pages` script.</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three improvements succeeded — build and 1126 tests passed after each change; all three changes committed to main.</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Nothing failed.</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>[pattern] Triage prompts that reference evidence sources the LLM cannot access (codebase) encourage hallucinated confident decisions — restricting criteria to visible prompt content eliminates the attack surface. [pattern] Behavior-locking tests (pinning exact user-visible strings) should be symmetric across all variants of an enum/map — if two of three are pinned, the third is a silent rename risk. [pattern] Static HTML generation from a single Markdown source file is low-risk as a new script: it adds no new runtime dependencies, doesn't touch existing source files, and the output can be verified by running the generator directly. [tool-usage] Writing a new standalone script under `scripts/` with inlined types (rather than importing from `src/`) keeps the generation step decoupled from the evolving source module graph.</p></div>
       </div>
     </details>
   </section>
