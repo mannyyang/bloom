@@ -3,44 +3,191 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bloom Evolution Journal</title>
+  <title>Bloom — Evolution Journal & Roadmap</title>
   <style>
     :root { color-scheme: light dark; }
     body {
-      max-width: 48rem;
+      max-width: 52rem;
       margin: 2rem auto;
       padding: 0 1rem;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
       line-height: 1.6;
       color: #1f2328;
     }
-    @media (prefers-color-scheme: dark) {
-      body { color: #e6edf3; }
+    @media (prefers-color-scheme: dark) { body { color: #e6edf3; background: #0d1117; } }
+    h1 { text-align: center; margin-bottom: 0.25rem; }
+    .subtitle { text-align: center; color: #656d76; font-size: 0.9rem; margin-bottom: 2rem; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 0.5rem; border-bottom: 2px solid #d0d7de; margin-bottom: 2rem; }
+    @media (prefers-color-scheme: dark) { .tabs { border-bottom-color: #3d444d; } }
+    .tab-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 1rem;
+      color: #656d76;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
     }
-    h1 { text-align: center; }
+    .tab-btn.active { color: #0969da; border-bottom-color: #0969da; font-weight: 600; }
+    @media (prefers-color-scheme: dark) {
+      .tab-btn.active { color: #58a6ff; border-bottom-color: #58a6ff; }
+      .tab-btn { color: #8b949e; }
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Journal styles */
     .cycle { margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid #d0d7de; }
-    @media (prefers-color-scheme: dark) {
-      .cycle { border-bottom-color: #3d444d; }
-    }
+    @media (prefers-color-scheme: dark) { .cycle { border-bottom-color: #3d444d; } }
     .cycle-header { color: #0969da; margin-bottom: 0.5rem; }
-    @media (prefers-color-scheme: dark) {
-      .cycle-header { color: #58a6ff; }
-    }
+    @media (prefers-color-scheme: dark) { .cycle-header { color: #58a6ff; } }
     .cycle-date { color: #656d76; font-size: 0.9rem; margin-bottom: 1rem; }
     details { margin-bottom: 0.5rem; }
     summary { cursor: pointer; font-weight: 600; padding: 0.25rem 0; }
     .section-content { padding: 0.5rem 1rem; white-space: pre-wrap; }
+
+    /* Roadmap styles */
+    .status-section { margin-bottom: 2rem; }
+    .status-badge {
+      display: inline-block;
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.2rem 0.65rem;
+      border-radius: 999px;
+      margin-bottom: 0.75rem;
+    }
+    .roadmap-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+    .roadmap-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      padding: 0.6rem 0.9rem;
+    }
+    @media (prefers-color-scheme: dark) {
+      .roadmap-item { background: #161b22; border-color: #3d444d; }
+    }
+    .roadmap-item.done { opacity: 0.6; }
+    .item-check { font-size: 1rem; flex-shrink: 0; line-height: 1.5; }
+    .item-body { flex: 1; min-width: 0; }
+    .item-title { font-weight: 500; word-break: break-word; }
+    .item-title a { color: #2563eb; text-decoration: none; font-size: 0.85rem; margin-left: 0.3rem; }
+    .item-title a:hover { text-decoration: underline; }
+    .item-desc { color: #656d76; font-size: 0.85rem; margin-top: 0.25rem; }
+    .item-reactions { color: #9ca3af; font-size: 0.8rem; margin-top: 0.2rem; }
+
     .empty { color: #656d76; text-align: center; padding: 4rem 0; }
+    footer { color: #9ca3af; font-size: 0.8rem; text-align: center; margin-top: 3rem; }
   </style>
 </head>
 <body>
-  <h1>Bloom Evolution Journal</h1>
-  <div id="content"><p class="empty">Loading...</p></div>
+  <h1>🌸 Bloom</h1>
+  <p class="subtitle">A self-evolving TypeScript coding agent</p>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="roadmap">Roadmap</button>
+    <button class="tab-btn" data-tab="journal">Evolution Journal</button>
+  </nav>
+
+  <div id="roadmap" class="tab-panel active">
+    <div id="roadmap-content"><p class="empty">Loading roadmap…</p></div>
+  </div>
+
+  <div id="journal" class="tab-panel">
+    <div id="journal-content"><p class="empty">Loading journal…</p></div>
+  </div>
+
+  <footer>
+    <a href="https://github.com/anthropics/bloom" style="color:#9ca3af">github.com/anthropics/bloom</a>
+  </footer>
+
   <script>
+    // --- Tab switching ---
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = s || '(none)';
+      return d.innerHTML;
+    }
+
+    const STATUS_ORDER = ['In Progress', 'Up Next', 'Backlog', 'Done'];
+    const STATUS_COLORS = {
+      'In Progress': '#d97706',
+      'Up Next': '#2563eb',
+      'Backlog': '#6b7280',
+      'Done': '#16a34a',
+    };
+
+    // --- Load roadmap ---
+    fetch('roadmap.json')
+      .then(r => r.json())
+      .then(items => {
+        const el = document.getElementById('roadmap-content');
+        if (!items.length) {
+          el.innerHTML = '<p class="empty">No roadmap items yet.</p>';
+          return;
+        }
+        const byStatus = {};
+        for (const item of items) {
+          const s = item.status || 'Backlog';
+          if (!byStatus[s]) byStatus[s] = [];
+          byStatus[s].push(item);
+        }
+        let html = '';
+        for (const status of STATUS_ORDER) {
+          const group = byStatus[status];
+          if (!group || !group.length) continue;
+          const color = STATUS_COLORS[status] || '#6b7280';
+          html += `<div class="status-section">
+            <span class="status-badge" style="background:${color}">${esc(status)}</span>
+            <ul class="roadmap-list">`;
+          for (const item of group) {
+            const isDone = item.status === 'Done';
+            const check = isDone ? '✅' : '⬜';
+            const issueLink = item.linkedIssueNumber
+              ? `<a href="https://github.com/anthropics/bloom/issues/${item.linkedIssueNumber}" target="_blank" rel="noopener">#${item.linkedIssueNumber}</a>`
+              : '';
+            const desc = item.body
+              ? `<p class="item-desc">${esc(item.body.slice(0, 200))}</p>`
+              : '';
+            const reactions = item.reactions > 0
+              ? `<p class="item-reactions">👍 ${item.reactions}</p>`
+              : '';
+            html += `<li class="roadmap-item${isDone ? ' done' : ''}">
+              <span class="item-check">${check}</span>
+              <div class="item-body">
+                <span class="item-title">${esc(item.title)}${issueLink}</span>
+                ${desc}${reactions}
+              </div>
+            </li>`;
+          }
+          html += '</ul></div>';
+        }
+        el.innerHTML = html;
+      })
+      .catch(() => {
+        document.getElementById('roadmap-content').innerHTML = '<p class="empty">Failed to load roadmap.</p>';
+      });
+
+    // --- Load journal ---
     fetch('journal.json')
       .then(r => r.json())
       .then(entries => {
-        const el = document.getElementById('content');
+        const el = document.getElementById('journal-content');
         if (!entries.length) {
           el.innerHTML = '<p class="empty">No journal entries yet.</p>';
           return;
@@ -69,14 +216,8 @@
         `).join('');
       })
       .catch(() => {
-        document.getElementById('content').innerHTML = '<p class="empty">Failed to load journal.</p>';
+        document.getElementById('journal-content').innerHTML = '<p class="empty">Failed to load journal.</p>';
       });
-
-    function esc(s) {
-      const d = document.createElement('div');
-      d.textContent = s || '(none)';
-      return d.innerHTML;
-    }
   </script>
 </body>
 </html>
