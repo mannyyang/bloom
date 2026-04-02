@@ -18,6 +18,14 @@ describe("buildAssessmentPrompt", () => {
     expect(prompt).toContain("roadmap");
   });
 
+  it("always includes 'Recent journal entries:' header even with empty summary", () => {
+    const prompt = buildAssessmentPrompt({
+      journalSummary: "",
+      cycleCount: 1,
+    });
+    expect(prompt).toContain("Recent journal entries:");
+  });
+
   it("includes cycleStatsText in prompt when provided", () => {
     const prompt = buildAssessmentPrompt({
       journalSummary: "",
