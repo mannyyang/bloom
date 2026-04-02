@@ -366,5 +366,10 @@ describe("countImprovements", () => {
     expect(countImprovements("---\nSome text\n---")).toBe(0);
     expect(countImprovements("-something without space")).toBe(0);
   });
+
+  it("returns 0 for whitespace-only string", () => {
+    expect(countImprovements("   ")).toBe(0);
+    expect(countImprovements("   \n  ")).toBe(0);
+  });
 });
 
