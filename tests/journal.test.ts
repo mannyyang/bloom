@@ -95,6 +95,35 @@ describe("formatJournalMarkdown", () => {
     expect(output).not.toContain("### What succeeded");
     expect(output).not.toContain("### What failed");
   });
+
+  it("renders multiple entries with separators and correct cycle headers", () => {
+    const entries = [
+      {
+        cycleNumber: 1,
+        date: "2025-01-01",
+        attempted: "First attempt",
+        succeeded: "",
+        failed: "",
+        learnings: "",
+        strategic_context: "",
+      },
+      {
+        cycleNumber: 2,
+        date: "2025-01-02",
+        attempted: "Second attempt",
+        succeeded: "It worked",
+        failed: "",
+        learnings: "",
+        strategic_context: "",
+      },
+    ];
+    const output = formatJournalMarkdown(entries);
+    expect(output).toContain("## Cycle 1 — 2025-01-01");
+    expect(output).toContain("## Cycle 2 — 2025-01-02");
+    expect(output).toContain("First attempt");
+    expect(output).toContain("Second attempt");
+    expect(output).toContain("---");
+  });
 });
 
 describe("parseArgs", () => {
