@@ -125,8 +125,17 @@ describe("assess.ts main()", () => {
       throw new Error("ROADMAP.md not found");
     });
 
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
     // Should not throw — the try/catch in main() makes it non-fatal
     await expect(main()).resolves.toBeUndefined();
+
+    // The error must be surfaced via console.error, not silently swallowed
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Planning context unavailable (non-fatal)")
+    );
+
+    errorSpy.mockRestore();
   });
 
   it("counts message turns from the query generator", async () => {
