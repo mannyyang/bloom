@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type Database from "better-sqlite3";
-import { initDb, insertCycle, insertLearning, getRelevantLearnings, decayLearningRelevance, insertStrategicContext, getLatestStrategicContext } from "../src/db.js";
+import { initDb, insertCycle, insertLearning, getRelevantLearnings, decayLearningRelevance, pruneLowRelevanceLearnings, insertStrategicContext, getLatestStrategicContext } from "../src/db.js";
 import { extractLearnings, storeLearnings, storeStrategicContext, formatMemoryForPrompt } from "../src/memory.js";
 import { makeOutcome } from "./helpers.js";
 
@@ -409,6 +409,46 @@ describe("DB functions for memory", () => {
     decayLearningRelevance(db, 0.5);
     const learnings = getRelevantLearnings(db, 10);
     expect(learnings[0].relevance).toBeCloseTo(0.5);
+  });
+
+  it("pruneLowRelevanceLearnings removes entries below threshold", () => {
+    insertLearning(db, 1, "domain", "Keep me");
+    insertLearning(db, 1, "domain", "Prune me");
+    // Decay once to drop all to 0.95, then once more to drop to ~0.90
+    decayLearningRelevance(db, 0.95);
+    // Now manually decay the second entry further by updating directly
+    // Instead: insert at low relevance by decaying heavily
+    decayLearningRelevance(db, 0.04); // now all are ~0.038 — below 0.05
+    pruneLowRelevanceLearnings(db, 0.05);
+    expect(getRelevantLearnings(db, 10)).toHaveLength(0);
+  });
+
+  it("pruneLowRelevanceLearnings keeps entries at or above threshold", () => {
+    insertLearning(db, 1, "domain", "High relevance");
+    // Default relevance is 1.0 — well above 0.05
+    pruneLowRelevanceLearnings(db, 0.05);
+    const remaining = getRelevantLearnings(db, 10);
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].content).toBe("High relevance");
+  });
+
+  it("pruneLowRelevanceLearnings only removes entries strictly below threshold", () => {
+    insertLearning(db, 1, "domain", "Exactly at threshold");
+    decayLearningRelevance(db, 0.05); // relevance = 0.05 exactly
+    pruneLowRelevanceLearnings(db, 0.05); // threshold is < 0.05, so 0.05 should stay
+    expect(getRelevantLearnings(db, 10)).toHaveLength(1);
+  });
+
+  it("storeLearnings prunes low-relevance entries after decaying", () => {
+    // Insert a learning and decay it far below the prune threshold
+    insertLearning(db, 1, "domain", "Very old learning");
+    decayLearningRelevance(db, 0.01); // relevance = 0.01 — below 0.05
+    // storeLearnings should decay + prune + insert new
+    storeLearnings(db, 2, { learnings: [{ category: "pattern", content: "Fresh learning" }] });
+    const remaining = getRelevantLearnings(db, 10);
+    // Old entry (0.01 * 0.95 = ~0.0095) is pruned; fresh entry has relevance 1.0
+    expect(remaining.every(l => l.content !== "Very old learning")).toBe(true);
+    expect(remaining.some(l => l.content === "Fresh learning")).toBe(true);
   });
 
   it("getLatestStrategicContext returns null when empty", () => {

@@ -3,6 +3,7 @@ import {
   insertLearning,
   getRelevantLearnings,
   decayLearningRelevance,
+  pruneLowRelevanceLearnings,
   insertStrategicContext,
   getLatestStrategicContext,
   pruneStrategicContext,
@@ -81,6 +82,7 @@ export function storeLearnings(
 ): void {
   if (extracted.learnings.length === 0) return;
   decayLearningRelevance(db);
+  pruneLowRelevanceLearnings(db);
   for (const { category, content } of extracted.learnings) {
     insertLearning(db, cycleNumber, category, content);
   }

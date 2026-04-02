@@ -603,6 +603,19 @@ export function decayLearningRelevance(
   db.prepare("UPDATE learnings SET relevance = relevance * ?").run(decayFactor);
 }
 
+/**
+ * Remove learnings whose relevance has decayed below the given threshold.
+ * Prevents unbounded table growth: after ~60 cycles at the default 0.95 decay
+ * factor, relevance drops below 0.05 and the entry no longer meaningfully
+ * influences prompt context.
+ */
+export function pruneLowRelevanceLearnings(
+  db: Database.Database,
+  minRelevance: number = 0.05,
+): void {
+  db.prepare("DELETE FROM learnings WHERE relevance < ?").run(minRelevance);
+}
+
 // --- Strategic Context ---
 
 export function insertStrategicContext(
