@@ -271,6 +271,18 @@ describe("parseRoadmap", () => {
     expect(items).toHaveLength(1);
     expect(items[0].title).toBe("Should be included");
   });
+
+  it("assigns section heading status to [x] checked items under non-Done sections", () => {
+    // A [x] checkbox under ## Backlog should inherit the Backlog status,
+    // not be promoted to Done — the section heading wins over checkbox state.
+    const content = `## Backlog
+- [x] Checked but still Backlog
+`;
+    const items = parseRoadmap(content);
+    expect(items).toHaveLength(1);
+    expect(items[0].title).toBe("Checked but still Backlog");
+    expect(items[0].status).toBe("Backlog");
+  });
 });
 
 describe("serializeRoadmap", () => {
