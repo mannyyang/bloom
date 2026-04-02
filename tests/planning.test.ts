@@ -168,6 +168,23 @@ describe("formatPlanningContext", () => {
     expect(result).toContain("...");
     expect(result.length).toBeLessThanOrEqual(55);
   });
+
+  it("truncated output ends with '\\n...' (positive structural assertion)", () => {
+    // Positive assertion: after line-aware truncation the suffix is exactly "\n..."
+    // This pins the design decision that lastIndexOf("\n") is used to avoid cutting
+    // mid-line, and documents the expected suffix more explicitly than a regex.
+    const items = [
+      makeItem({ id: "a", title: "Alpha Item", status: "Up Next" }),
+      makeItem({ id: "b", title: "Beta Item", status: "Up Next" }),
+      makeItem({ id: "c", title: "Gamma Item", status: "Up Next" }),
+    ];
+    const header = "## Evolution Roadmap\n\n### Up Next\n- Alpha Item\n- Be";
+    const maxChars = header.length; // cuts mid-way through "Beta Item" line
+    const result = formatPlanningContext(items, null, maxChars);
+    expect(result.endsWith("\n...")).toBe(true);
+    expect(result).toContain("- Alpha Item");
+    expect(result).not.toContain("- Beta Item");
+  });
 });
 
 describe("parseRoadmap", () => {
