@@ -532,6 +532,20 @@ describe("updateItemStatus", () => {
     expect(result).toBe(true); // item was found
     expect(mockWriteFileSync).not.toHaveBeenCalled(); // no change → no write
   });
+
+  it("does not add [since: N] annotation when moving to In Progress without sinceCycle", () => {
+    const items = [makeItem({ id: "item-0", title: "Task", status: "Up Next", body: "original" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    updateItemStatus(config, "item-0", "In Progress"); // no sinceCycle argument
+
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].status).toBe("In Progress");
+    expect(parsed[0].body).toBe("original");
+    expect(parsed[0].body).not.toMatch(/\[since:/);
+  });
 });
 
 describe("demoteStaleInProgressItems", () => {
