@@ -191,6 +191,12 @@ export async function triageIssues(
   // Validate decisions against our actual issue set
   const untriagedNumbers = new Set(untriaged.map((i) => i.number));
 
+  const commentMap: Record<TriageDecision["action"], string> = {
+    add_to_backlog: `Added to Bloom Evolution Roadmap backlog (cycle ${cycleCount}).`,
+    already_done: `Resolved — tracked as Done on the roadmap (cycle ${cycleCount}).`,
+    not_applicable: `Closing — not applicable or out of scope (cycle ${cycleCount}).`,
+  };
+
   for (const decision of decisions) {
     if (!untriagedNumbers.has(decision.issueNumber)) {
       console.warn(
@@ -213,12 +219,6 @@ export async function triageIssues(
         )
           ? "add_to_backlog"
           : decision.action;
-
-      const commentMap: Record<TriageDecision["action"], string> = {
-        add_to_backlog: `Added to Bloom Evolution Roadmap backlog (cycle ${cycleCount}).`,
-        already_done: `Resolved — tracked as Done on the roadmap (cycle ${cycleCount}).`,
-        not_applicable: `Closing — not applicable or out of scope (cycle ${cycleCount}).`,
-      };
 
       if (effectiveAction === "add_to_backlog" && repo && isValidRepo(repo)) {
         addLinkedItem(projectConfig, issue.number, issue.title, issue.body);
