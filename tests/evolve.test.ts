@@ -371,5 +371,12 @@ describe("countImprovements", () => {
     expect(countImprovements("   ")).toBe(0);
     expect(countImprovements("   \n  ")).toBe(0);
   });
+
+  it("handles mixed line-based and inline items by returning the max", () => {
+    // lineCount = 2 (lines "1) First" and "2) Second." each start with "N) ")
+    // inlineCount = 3 ("1) ", "2) ", " 3) " all match the inline pattern)
+    // Math.max(2, 3) => 3
+    expect(countImprovements("1) First\n2) Second. 3) Inline")).toBe(3);
+  });
 });
 
