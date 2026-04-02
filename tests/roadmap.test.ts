@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { generateRoadmapOutput } from "../src/roadmap.js";
 import * as planning from "../src/planning.js";
+import { parseRoadmap } from "../src/planning.js";
 
 const SAMPLE_ROADMAP = `# Bloom Evolution Roadmap
 
@@ -170,5 +171,22 @@ describe("generateRoadmapOutput", () => {
     const joined = output.join("\n");
     // The SAMPLE_ROADMAP items all have 0 reactions (parser default)
     expect(joined).not.toContain("★");
+  });
+});
+
+describe("parseRoadmap", () => {
+  it("ignores items that appear before the first ## heading", () => {
+    const content = `# Bloom Evolution Roadmap
+
+- [ ] Orphan item before any heading
+- [ ] Another orphan
+
+## Backlog
+- [ ] Real backlog item
+`;
+    const items = parseRoadmap(content);
+    // Only the item under ## Backlog should be parsed; orphans are silently dropped
+    expect(items).toHaveLength(1);
+    expect(items[0].title).toBe("Real backlog item");
   });
 });
