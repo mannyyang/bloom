@@ -299,6 +299,17 @@ describe("formatMemoryForPrompt", () => {
     expect(result).toContain("Strategic Context");
     expect(result).toContain("Key Learnings");
   });
+
+  it("always includes strategic context even when it alone exceeds maxChars", () => {
+    // Strategic context is priority-0 and is never budget-capped.
+    // This test documents that design decision and prevents a future
+    // "fix" from accidentally applying the budget cap to it.
+    const longContext = "S".repeat(200);
+    insertStrategicContext(db, 1, longContext);
+    const result = formatMemoryForPrompt(db, 5);
+    expect(result).toContain("Strategic Context");
+    expect(result).toContain(longContext);
+  });
 });
 
 describe("storeStrategicContext", () => {
