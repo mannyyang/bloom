@@ -543,6 +543,21 @@ describe("triageIssues with injected deps", () => {
     expect(result.closed).toEqual([]);
   });
 
+  it("does not add to backlog when isValidRepo returns false for a non-null repo", async () => {
+    mockIsValidRepo.mockReturnValueOnce(false);
+    mockDetectRepo.mockReturnValueOnce("owner/repo"); // non-null repo — exercises the isValidRepo guard
+    const issues = [makeIssue({ number: 2, title: "Feature B" })];
+    const deps = makeDeps([{ issueNumber: 2, action: "add_to_backlog", reason: "Looks good" }]);
+
+    mockCloseIssue.mockResolvedValue(true);
+
+    const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+
+    // isValidRepo returned false, so addLinkedItem must not be called even though repo is non-null
+    expect(mockAddLinkedItem).not.toHaveBeenCalled();
+    expect(result.closed).toEqual([]);
+  });
+
   it("passes correct comment text for each action type", async () => {
     const issues = [makeIssue({ number: 1 })];
     const deps = makeDeps([{ issueNumber: 1, action: "not_applicable", reason: "Out of scope" }]);
