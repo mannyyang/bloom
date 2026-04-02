@@ -53,6 +53,28 @@ describe("generateJournalOutput", () => {
     const parsed = JSON.parse(output);
     expect(parsed).toHaveLength(2);
   });
+
+  it("returns all entries when limit is 0", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    insertJournalEntry(db, 1, "attempted", "Entry 1");
+    insertJournalEntry(db, 2, "attempted", "Entry 2");
+
+    const output = generateJournalOutput(db, { limit: 0 });
+    const parsed = JSON.parse(output);
+    expect(parsed).toHaveLength(2);
+  });
+
+  it("returns all entries when limit is negative", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    insertJournalEntry(db, 1, "attempted", "Entry 1");
+    insertJournalEntry(db, 2, "attempted", "Entry 2");
+
+    const output = generateJournalOutput(db, { limit: -1 });
+    const parsed = JSON.parse(output);
+    expect(parsed).toHaveLength(2);
+  });
 });
 
 describe("formatJournalMarkdown", () => {
