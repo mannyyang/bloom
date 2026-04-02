@@ -169,6 +169,12 @@ describe("formatPlanningContext", () => {
     expect(result.length).toBeLessThanOrEqual(55);
   });
 
+  it("silently drops In Progress items when currentItem is null", () => {
+    const items = [makeItem({ title: "Active Work", status: "In Progress" })];
+    const result = formatPlanningContext(items, null);
+    expect(result).not.toContain("Active Work");
+  });
+
   it("truncated output ends with '\\n...' (positive structural assertion)", () => {
     // Positive assertion: after line-aware truncation the suffix is exactly "\n..."
     // This pins the design decision that lastIndexOf("\n") is used to avoid cutting
