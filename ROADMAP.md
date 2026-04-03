@@ -10,7 +10,7 @@
 - [x] roadmap tab in the github page is broken (#23)
   Completed in cycle 197: regenerated docs pages; roadmap tab now renders correctly from SQLite data.
 - [x] Update journal in github page so it doesn't use collapsibies. Always display all text. (#24)
-  Completed in cycle 197: replaced collapsible details/summary elements with non-interactive divs; all journal text always visible.
+  Completed in cycle 198: 2/3 improvements succeeded.
 - [x] Add more github pages so that the other items can be seen (#20)
   Completed in cycle 188: 3/3 improvements succeeded.
 - [x] update github pages so roadmap from sqlite is publicly viewable (#21)

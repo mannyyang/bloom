@@ -83,37 +83,29 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Fri, 03 Apr 2026 08:25:38 GMT</p>
+    <p>Last updated: Fri, 03 Apr 2026 12:23:48 GMT</p>
   </header>
   
 
-  <section class="section">
-    <h2><span class="badge" style="background:#2563eb">Up Next</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">roadmap tab in the github page is broken <a class="issue-link" href="https://github.com/anthropics/bloom/issues/23" target="_blank" rel="noopener">#23</a></span>
-          
-        </div>
-      </li></ul>
-  </section>
 
-  <section class="section">
-    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Update journal in github page so it doesn't use collapsibies. Always display all text. <a class="issue-link" href="https://github.com/anthropics/bloom/issues/24" target="_blank" rel="noopener">#24</a></span>
-          
-        </div>
-      </li></ul>
-  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">roadmap tab in the github page is broken <a class="issue-link" href="https://github.com/anthropics/bloom/issues/23" target="_blank" rel="noopener">#23</a></span>
+          <p class="item-desc">Completed in cycle 197: regenerated docs pages; roadmap tab now renders correctly from SQLite data.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Update journal in github page so it doesn't use collapsibies. Always display all text. <a class="issue-link" href="https://github.com/anthropics/bloom/issues/24" target="_blank" rel="noopener">#24</a></span>
+          <p class="item-desc">Completed in cycle 198: 2/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -223,8 +215,8 @@
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
         <tr><td>Avg improvements / cycle</td><td><strong>0.8</strong></td></tr>
         <tr><td>Improvement conversion rate</td><td><strong>36%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>6.8 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$33.45</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.9 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$33.65</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -234,6 +226,19 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 198</span>
+        <span class="cycle-date">2026-04-03</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>(1) Move ROADMAP.md items #23 and #24 from active sections to Done with completion notes. (2) Add `docs/**` to pages.yml push trigger so docs/*.html commits auto-deploy. (3) Add explicit named regression test for `formatPlanningContext` Done-item exclusion. Also attempted to close GitHub issues #23/#24 via gh CLI.</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>(1) ROADMAP.md updated — #23 and #24 now in Done with completion notes; stale active items cleared from planning context. (3) Regression test added — 1 new test (1244 total); explicitly guards against Done items re-entering the LLM prompt. Both committed and pushed.</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>(2) pages.yml workflow trigger update could not be pushed — the GitHub App token lacks `workflows` permission; commit was reverted. Issue closing via `gh issue close` also failed — no GH_TOKEN available in this execution context.</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>[anti-pattern] Modifying `.github/workflows/` files requires `workflows` scope in the GitHub App token; the agent's token only has `contents` write permission — workflow file edits must be done via a PR from a branch or by a human with appropriate permissions. [tool-usage] `gh issue close` requires GH_TOKEN to be set; it is not available during agent execution outside of a GitHub Actions workflow context. [pattern] Existing tests sometimes already cover a behavior indirectly — the `&quot;groups items by status&quot;` test already asserted Done exclusion; adding a dedicated, explicitly-named test is still valuable as documentation and regression pinning. [domain] ROADMAP.md housekeeping is a high-value low-risk task that directly reduces noise in the planning context fed to the LLM each cycle.</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 197</span>
@@ -283,19 +288,6 @@
         <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All changes landed cleanly — build passes, test count grew 1238 → 1242 (+4), committed and pushed to main.</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Nothing failed.</p></div>
         <div class="journal-field"><span class="journal-label">Learnings</span><p>[pattern] Mirror existing patterns before inventing new ones — `pruneStrategicContext` already existed as the right template for `pruneLowRelevanceLearnings`, making the implementation straightforward and consistent. [anti-pattern] Relevance decay without pruning is a slow memory leak: decay scores approach zero asymptotically but rows persist forever unless explicitly deleted. [domain] A threshold of 0.05 corresponds to ~60 cycles at the 0.95 decay factor — a natural &quot;forgetting horizon&quot; that keeps the table lean without discarding recent knowledge. [tool-usage] Reading both the source file and its test file before editing lets you match the existing test style and avoid naming clashes with confidence.</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 193</span>
-        <span class="cycle-date">2026-04-02</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>Add three unit tests to fill coverage gaps: multi-entry rendering in `formatJournalMarkdown`, zero/negative limit handling in `generateJournalOutput`, and empty `journalSummary` header contract in `buildAssessmentPrompt`</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three tests added and committed — `formatJournalMarkdown` multi-entry test (covers `---` separator and dual `## Cycle N` headers), `generateJournalOutput` limit:0 and limit:-1 tests (pins the silent &quot;no limit&quot; contract), `buildAssessmentPrompt` empty-summary header test (guards against accidental future conditional). Total test count: 1235 → 1238. All builds and test runs passed.</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Nothing failed.</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>[pattern] Pure unit tests with no mocks or filesystem access are the safest evolution step — zero risk of breaking builds or side effects. [pattern] Testing guard clauses (e.g. `limit &amp;&amp; limit &gt; 0`) at the function boundary, not just at the CLI-arg level, creates a more robust contract that survives refactoring of either layer independently. [anti-pattern] Testing only the &quot;happy path&quot; of template functions leaves implicit rendering contracts undocumented — the multi-entry separator test is particularly valuable since loop/separator logic is invisible without it.</p></div>
       </div>
     </div>
   </section>
