@@ -72,7 +72,10 @@ export function parseTriageResponse(text: string): TriageDecision[] {
 
   try {
     const parsed = JSON.parse(jsonStr);
-    if (!Array.isArray(parsed)) return [];
+    if (!Array.isArray(parsed)) {
+      console.warn(`[triage] parseTriageResponse: expected JSON array but got ${typeof parsed}, returning empty decisions.`);
+      return [];
+    }
 
     return parsed.filter(
       (item): item is TriageDecision =>
