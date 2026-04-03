@@ -175,6 +175,19 @@ describe("formatPlanningContext", () => {
     expect(result).not.toContain("Active Work");
   });
 
+  it("excludes Done items from planning context to keep prompt concise", () => {
+    // Regression guard: planning.ts line 411 has `if (status === "Done") continue;`
+    // Done items are intentionally omitted so resolved work never inflates the LLM prompt.
+    const items = [
+      makeItem({ id: "done-1", title: "Resolved Feature", status: "Done", reactions: 10 }),
+      makeItem({ id: "done-2", title: "Old Bug Fix", status: "Done", linkedIssueNumber: 5 }),
+    ];
+    const result = formatPlanningContext(items, null);
+    expect(result).not.toContain("### Done");
+    expect(result).not.toContain("Resolved Feature");
+    expect(result).not.toContain("Old Bug Fix");
+  });
+
   it("truncated output ends with '\\n...' (positive structural assertion)", () => {
     // Positive assertion: after line-aware truncation the suffix is exactly "\n..."
     // This pins the design decision that lastIndexOf("\n") is used to avoid cutting
