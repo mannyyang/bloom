@@ -3,8 +3,11 @@
 ## Backlog
 
 ## Up Next
+- [ ] roadmap tab in the github page is broken (#23)
 
 ## In Progress
+- [ ] Update journal in github page so it doesn't use collapsibies. Always display all text. (#24)
+  [since: 197]
 
 ## Done
 - [x] Add more github pages so that the other items can be seen (#20)

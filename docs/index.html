@@ -83,11 +83,12 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Fri, 03 Apr 2026 08:25:04 GMT</p>
+    <p>Last updated: Fri, 03 Apr 2026 08:25:38 GMT</p>
   </header>
   
+
   <section class="section">
-    <h2><span class="badge" style="background:#6b7280">Backlog</span></h2>
+    <h2><span class="badge" style="background:#2563eb">Up Next</span></h2>
     <ul>
       <li class="item">
         <span class="check">⬜</span>
@@ -97,7 +98,6 @@
         </div>
       </li></ul>
   </section>
-
 
   <section class="section">
     <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
@@ -224,7 +224,7 @@
         <tr><td>Avg improvements / cycle</td><td><strong>0.8</strong></td></tr>
         <tr><td>Improvement conversion rate</td><td><strong>36%</strong></td></tr>
         <tr><td>Avg cycle duration</td><td><strong>6.8 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$33.02</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$33.45</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -234,6 +234,19 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 197</span>
+        <span class="cycle-date">2026-04-03</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>(1) Replace `&lt;details&gt;/&lt;summary&gt;` with `&lt;div&gt;/&lt;div class=&quot;journal-card-header&quot;&gt;` in `renderJournalCards()`, update matching CSS, and update tests to assert non-collapsible structure. (2) Regenerate docs/index.html, docs/journal.html, docs/stats.html to pick up current ROADMAP.md state and the new card structure. (3) Test coverage: assert no `&lt;details&gt;` tags and presence of `journal-card-header` class (folded into improvement #1's test update).</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three — journal cards are now always-visible non-interactive divs; CSS updated (removed cursor/user-select/hover from summary, added `.journal-card-header`); tests updated (replaced accordion assertion with structural no-`&lt;details&gt;` + `journal-card-header` check); docs regenerated showing Backlog and In Progress roadmap sections and non-collapsible journal entries; all 1243 tests pass.</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Nothing failed.</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>[pattern] Bundling the test coverage improvement with the source change it validates (same commit) is cleaner than treating them as separate improvements — fewer build/test cycles and atomic correctness. [pattern] Always re-run `generate-pages` after changing `page-helpers.ts` CSS or HTML templates; the committed HTML must reflect both the latest ROADMAP.md content and the latest rendering logic simultaneously. [anti-pattern] Using `&lt;details open&gt;` for &quot;always expanded&quot; content creates false affordance (cursor:pointer signals interactivity that doesn't serve the user) — a plain `&lt;div&gt;` is the correct semantic element for non-interactive disclosure. [domain] When removing a CSS rule targeting an HTML5 element (`summary`), rename the selector to a class (`journal-card-header`) rather than just deleting — this makes the styling intent explicit and survives any future element changes.</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 196</span>
@@ -283,19 +296,6 @@
         <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three tests added and committed — `formatJournalMarkdown` multi-entry test (covers `---` separator and dual `## Cycle N` headers), `generateJournalOutput` limit:0 and limit:-1 tests (pins the silent &quot;no limit&quot; contract), `buildAssessmentPrompt` empty-summary header test (guards against accidental future conditional). Total test count: 1235 → 1238. All builds and test runs passed.</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Nothing failed.</p></div>
         <div class="journal-field"><span class="journal-label">Learnings</span><p>[pattern] Pure unit tests with no mocks or filesystem access are the safest evolution step — zero risk of breaking builds or side effects. [pattern] Testing guard clauses (e.g. `limit &amp;&amp; limit &gt; 0`) at the function boundary, not just at the CLI-arg level, creates a more robust contract that survives refactoring of either layer independently. [anti-pattern] Testing only the &quot;happy path&quot; of template functions leaves implicit rendering contracts undocumented — the multi-entry separator test is particularly valuable since loop/separator logic is invisible without it.</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 192</span>
-        <span class="cycle-date">2026-04-02</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>Three test-gap improvements in tests/planning.test.ts: (1) pin that formatPlanningContext silently drops In Progress items when currentItem is null, (2) pin that updateItemStatus to In Progress without sinceCycle leaves body unchanged with no [since:] annotation, (3) pin that parseRoadmap assigns section heading status to [x] checked items under non-Done sections</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>All three tests added and passing — test suite grew from 1231 to 1234 tests, all commits clean</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>Nothing failed</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>[pattern] All three improvements were pure contract-pinning tests — no production code changes needed, just documenting existing behavior so regressions become visible. [pattern] Reading the relevant file sections before editing is required by the Edit tool; speculative reads save round-trips. [domain] The planning module has a clear design decision: section heading status wins over checkbox state, and In Progress items are excluded from context rendering unless they are the currentItem — both worth pinning explicitly. [anti-pattern] The &quot;silently drops&quot; framing in improvement #1 is accurate but not a bug — it's intentional design; the test documents intent rather than fixing defects.</p></div>
       </div>
     </div>
   </section>
