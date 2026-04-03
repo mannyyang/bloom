@@ -3,7 +3,7 @@ name: Deploy Journal to GitHub Pages
 on:
   push:
     branches: [main]
-    paths: [bloom.db, "docs/**"]
+    paths: [bloom.db]
   workflow_dispatch:
 
 permissions:
