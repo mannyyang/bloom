@@ -409,7 +409,7 @@ export function formatPlanningContext(
 
   for (const status of STATUS_COLUMNS) {
     if (status === "Done") continue;
-    if (status === "In Progress") continue; // currentItem already rendered above
+    if (status === "In Progress" && currentItem) continue; // currentItem already rendered above
     const statusItems = items.filter((i) => i.status === status);
     if (statusItems.length === 0) continue;
 

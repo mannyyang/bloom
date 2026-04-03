@@ -169,10 +169,11 @@ describe("formatPlanningContext", () => {
     expect(result.length).toBeLessThanOrEqual(55);
   });
 
-  it("silently drops In Progress items when currentItem is null", () => {
+  it("renders In Progress items when currentItem is null (assess mode)", () => {
     const items = [makeItem({ title: "Active Work", status: "In Progress" })];
     const result = formatPlanningContext(items, null);
-    expect(result).not.toContain("Active Work");
+    expect(result).toContain("In Progress");
+    expect(result).toContain("Active Work");
   });
 
   it("excludes Done items from planning context to keep prompt concise", () => {
