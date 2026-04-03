@@ -176,6 +176,20 @@ describe("formatPlanningContext", () => {
     expect(result).toContain("Active Work");
   });
 
+  it("renders all In Progress items not equal to currentItem when currentItem is set", () => {
+    // Regression guard: when currentItem points to one In Progress item, any
+    // additional In Progress items (not equal to currentItem) must still appear
+    // in the rendered context under an "In Progress" section header.
+    const item1 = makeItem({ id: "ip-1", title: "Primary Task", status: "In Progress" });
+    const item2 = makeItem({ id: "ip-2", title: "Secondary Task", status: "In Progress" });
+    const result = formatPlanningContext([item1, item2], item1);
+    // currentItem rendered as **Current focus**
+    expect(result).toContain("Primary Task");
+    // extra In Progress item rendered in its own section
+    expect(result).toContain("In Progress");
+    expect(result).toContain("Secondary Task");
+  });
+
   it("excludes Done items from planning context to keep prompt concise", () => {
     // Regression guard: planning.ts line 411 has `if (status === "Done") continue;`
     // Done items are intentionally omitted so resolved work never inflates the LLM prompt.
