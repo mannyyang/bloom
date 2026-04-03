@@ -382,7 +382,7 @@ export function pickNextItem(items: ProjectItem[]): ProjectItem | null {
   for (const status of statusPriority) {
     const candidates = items
       .filter((i) => i.status === status)
-      .sort((a, b) => b.reactions - a.reactions);
+      .sort((a, b) => b.reactions - a.reactions || a.id.localeCompare(b.id));
     if (candidates.length > 0) return candidates[0];
   }
   return null;
