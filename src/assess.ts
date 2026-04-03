@@ -37,30 +37,38 @@ export async function main() {
 
   // Load context from DB (read-only — no insertions or mutations)
   const db = initDb();
-  const cycleCount = getLatestCycleNumber(db) + 1;
-
-  const identity = readFileSync("IDENTITY.md", "utf-8");
-  const journalSummary = getRecentJournalSummary(db, 1200, 2);
-  const cycleStats = getCycleStats(db);
-  const cycleStatsText = formatCycleStats(cycleStats);
-  const memoryContext = formatMemoryForPrompt(db, 1200);
-
-  console.log(`[assess] Cycle: ${cycleCount}`);
-  console.log(`[assess] Journal: ${journalSummary ? `${journalSummary.length} chars` : "empty"}`);
-  console.log(`[assess] Memory: ${memoryContext ? `${memoryContext.length} chars` : "empty"}`);
-
-  // Load planning context read-only — skip triage and status mutations
+  let cycleCount = 0;
+  let identity = "";
+  let journalSummary: string | null = null;
+  let cycleStatsText = "";
+  let memoryContext = "";
   let planningContext = "";
-  try {
-    const projectConfig = ensureProject();
-    const projectItems = getProjectItems(projectConfig);
-    planningContext = formatPlanningContext(projectItems, null);
-    console.log(`[assess] Roadmap items: ${projectItems.length}`);
-  } catch (err) {
-    console.error(`[assess] Planning context unavailable (non-fatal): ${errorMessage(err)}`);
-  }
 
-  db.close();
+  try {
+    cycleCount = getLatestCycleNumber(db) + 1;
+
+    identity = readFileSync("IDENTITY.md", "utf-8");
+    journalSummary = getRecentJournalSummary(db, 1200, 2);
+    const cycleStats = getCycleStats(db);
+    cycleStatsText = formatCycleStats(cycleStats);
+    memoryContext = formatMemoryForPrompt(db, 1200);
+
+    console.log(`[assess] Cycle: ${cycleCount}`);
+    console.log(`[assess] Journal: ${journalSummary ? `${journalSummary.length} chars` : "empty"}`);
+    console.log(`[assess] Memory: ${memoryContext ? `${memoryContext.length} chars` : "empty"}`);
+
+    // Load planning context read-only — skip triage and status mutations
+    try {
+      const projectConfig = ensureProject();
+      const projectItems = getProjectItems(projectConfig);
+      planningContext = formatPlanningContext(projectItems, null);
+      console.log(`[assess] Roadmap items: ${projectItems.length}`);
+    } catch (err) {
+      console.error(`[assess] Planning context unavailable (non-fatal): ${errorMessage(err)}`);
+    }
+  } finally {
+    db.close();
+  }
 
   const prompt = buildAssessmentPrompt({
     journalSummary,
