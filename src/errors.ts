@@ -40,9 +40,12 @@ export function errorMessage(err: unknown): string {
 export function execSyncOutput(err: unknown): string {
   if (err == null || typeof err !== "object") return "";
   const rec = err as Record<string, unknown>;
-  const stdout =
-    "stdout" in err && typeof rec.stdout === "string" ? rec.stdout : "";
-  const stderr =
-    "stderr" in err && typeof rec.stderr === "string" ? rec.stderr : "";
+  const toStr = (val: unknown): string => {
+    if (typeof val === "string") return val;
+    if (Buffer.isBuffer(val)) return val.toString();
+    return "";
+  };
+  const stdout = "stdout" in err ? toStr(rec.stdout) : "";
+  const stderr = "stderr" in err ? toStr(rec.stderr) : "";
   return (stdout + stderr).trim();
 }

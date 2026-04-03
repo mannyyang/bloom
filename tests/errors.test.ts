@@ -71,8 +71,14 @@ describe("execSyncOutput", () => {
     expect(execSyncOutput(true)).toBe("");
   });
 
-  it("returns empty string when stdout/stderr are not strings", () => {
-    expect(execSyncOutput({ stdout: 123, stderr: Buffer.from("buf") })).toBe("");
+  it("converts Buffer stdout/stderr to string", () => {
+    expect(execSyncOutput({ stdout: Buffer.from("buf") })).toBe("buf");
+    expect(execSyncOutput({ stderr: Buffer.from("err") })).toBe("err");
+    expect(execSyncOutput({ stdout: Buffer.from("out"), stderr: Buffer.from("err") })).toBe("outerr");
+  });
+
+  it("returns empty string when stdout/stderr are non-string non-Buffer types", () => {
+    expect(execSyncOutput({ stdout: 123, stderr: 456 })).toBe("");
   });
 
   it("returns empty string for empty object", () => {
