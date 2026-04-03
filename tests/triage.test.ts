@@ -278,7 +278,8 @@ describe("triageIssues error resilience", () => {
       .mockRejectedValueOnce(new Error("API rate limit"))  // issue #20 throws
       .mockResolvedValueOnce(true);  // issue #30 succeeds
 
-    const result = await triageIssues(issues, [], 81, projectConfig);
+    const mockDb = {} as import("better-sqlite3").Database;
+    const result = await triageIssues(issues, [], 81, projectConfig, mockDb);
 
     // Issues #10 and #30 should be closed despite #20 failing
     expect(result.closed).toContain(10);
@@ -295,8 +296,9 @@ describe("triageIssues error resilience", () => {
       { issueNumber: 42, action: "not_applicable", reason: "Out of scope" },
     ]);
     mockCloseIssue.mockRejectedValueOnce(new Error("Connection timeout"));
+    const mockDb = {} as import("better-sqlite3").Database;
 
-    await triageIssues(issues, [], 81, projectConfig);
+    await triageIssues(issues, [], 81, projectConfig, mockDb);
 
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining("[triage] Failed to process issue #42"),
@@ -344,10 +346,11 @@ describe("triageIssues with injected deps", () => {
   it("adds issue to backlog via addLinkedItem when action is add_to_backlog", async () => {
     const issues = [makeIssue({ number: 7, title: "Add caching", body: "Please add caching" })];
     const deps = makeDeps([{ issueNumber: 7, action: "add_to_backlog", reason: "Good feature request" }]);
+    const mockDb = {} as import("better-sqlite3").Database;
 
     mockCloseIssue.mockResolvedValueOnce(true);
 
-    const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+    const result = await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
 
     expect(result.addedToBacklog).toContain(7);
     expect(result.closed).not.toContain(7);
@@ -361,10 +364,11 @@ describe("triageIssues with injected deps", () => {
     // The Done-gate should downgrade it to add_to_backlog.
     const issues = [makeIssue({ number: 8, title: "Already done" })];
     const deps = makeDeps([{ issueNumber: 8, action: "already_done", reason: "Already exists" }]);
+    const mockDb = {} as import("better-sqlite3").Database;
 
     mockCloseIssue.mockResolvedValueOnce(true);
 
-    const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+    const result = await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
 
     // Downgraded: added to backlog, not treated as already_done. Not closed yet.
     expect(result.addedToBacklog).toContain(8);
@@ -418,10 +422,11 @@ describe("triageIssues with injected deps", () => {
       { issueNumber: 1, action: "not_applicable", reason: "OK" },
       { issueNumber: 999, action: "add_to_backlog", reason: "Hallucinated issue" },
     ]);
+    const mockDb = {} as import("better-sqlite3").Database;
 
     mockCloseIssue.mockResolvedValue(true);
 
-    const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+    const result = await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
 
     expect(result.closed).toEqual([1]);
     expect(result.addedToBacklog).toEqual([]);
@@ -434,8 +439,9 @@ describe("triageIssues with injected deps", () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const issues = [makeIssue({ number: 1, title: "Issue" })];
     const deps = makeFailingDeps(new Error("API timeout"));
+    const mockDb = {} as import("better-sqlite3").Database;
 
-    const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+    const result = await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
 
     expect(result.decisions).toEqual([]);
     expect(result.addedToBacklog).toEqual([]);
@@ -453,8 +459,9 @@ describe("triageIssues with injected deps", () => {
       makeIssue({ number: 6, title: "Feature Y" }),
     ];
     const deps = makeFailingDeps(new Error("Network error before first yield"));
+    const mockDb = {} as import("better-sqlite3").Database;
 
-    const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+    const result = await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
 
     // Core result is empty — no decisions reached
     expect(result.decisions).toEqual([]);
@@ -481,8 +488,9 @@ describe("triageIssues with injected deps", () => {
     ]);
 
     mockCloseIssue.mockResolvedValue(true);
+    const mockDb = {} as import("better-sqlite3").Database;
 
-    const result = await triageIssues(issues, [], 10, projectConfig, undefined, deps);
+    const result = await triageIssues(issues, [], 10, projectConfig, mockDb, deps);
 
     expect(result.decisions).toHaveLength(3);
     // Issue #2's already_done is downgraded to add_to_backlog (Done-gate: no linked Done item)
@@ -527,15 +535,56 @@ describe("triageIssues with injected deps", () => {
     expect(result.decisions).toEqual([]);
   });
 
+  it("Guard B: returns early with warning when db is undefined (prevents duplicate roadmap entries)", async () => {
+    // When no db is provided, triage would re-process every issue on every cycle,
+    // creating duplicate roadmap entries. The function must detect this and skip.
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const issues = [makeIssue({ number: 30, title: "New issue" })];
+    const deps = makeDeps([{ issueNumber: 30, action: "add_to_backlog", reason: "Good idea" }]);
+
+    const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+
+    // Must warn and skip — no LLM calls, no decisions, no roadmap mutations
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("No database available"),
+    );
+    expect(result.decisions).toEqual([]);
+    expect(result.addedToBacklog).toEqual([]);
+    expect(result.closed).toEqual([]);
+    expect(vi.mocked(addLinkedItem)).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it("Guard B: still processes alreadyOnBoard issues when db is undefined", async () => {
+    // Even without a db, issues that are already Done on the board should be closeable.
+    // The early return only skips the new-issue triage section.
+    const issues = [makeIssue({ number: 40, title: "On board Done" })];
+    const boardItems = [makeBoardItem({ linkedIssueNumber: 40, status: "Done" })];
+    const deps = makeDeps([]);
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    mockCloseIssue.mockResolvedValue(true);
+
+    const result = await triageIssues(issues, boardItems, 5, projectConfig, undefined, deps);
+
+    // alreadyOnBoard close should still happen (Done-gate: linkedItem is Done)
+    expect(mockCloseIssue).toHaveBeenCalledTimes(1);
+    expect(result.closed).toContain(40);
+    // But the warning was still issued (no db for new-issue deduplication)
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("No database available"));
+    warnSpy.mockRestore();
+  });
+
   it("does not add to backlog when repo is invalid", async () => {
     mockIsValidRepo.mockReturnValueOnce(false);
     mockDetectRepo.mockReturnValueOnce(null);
     const issues = [makeIssue({ number: 1, title: "Feature" })];
     const deps = makeDeps([{ issueNumber: 1, action: "add_to_backlog", reason: "Good" }]);
+    const mockDb = {} as import("better-sqlite3").Database;
 
     mockCloseIssue.mockResolvedValue(true);
 
-    const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+    const result = await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
 
     // addLinkedItem should not be called because repo is null
     expect(mockAddLinkedItem).not.toHaveBeenCalled();
@@ -548,10 +597,11 @@ describe("triageIssues with injected deps", () => {
     mockDetectRepo.mockReturnValueOnce("owner/repo"); // non-null repo — exercises the isValidRepo guard
     const issues = [makeIssue({ number: 2, title: "Feature B" })];
     const deps = makeDeps([{ issueNumber: 2, action: "add_to_backlog", reason: "Looks good" }]);
+    const mockDb = {} as import("better-sqlite3").Database;
 
     mockCloseIssue.mockResolvedValue(true);
 
-    const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+    const result = await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
 
     // isValidRepo returned false, so addLinkedItem must not be called even though repo is non-null
     expect(mockAddLinkedItem).not.toHaveBeenCalled();
@@ -561,16 +611,17 @@ describe("triageIssues with injected deps", () => {
   it("passes correct comment text for each action type", async () => {
     const issues = [makeIssue({ number: 1 })];
     const deps = makeDeps([{ issueNumber: 1, action: "not_applicable", reason: "Out of scope" }]);
+    const mockDb = {} as import("better-sqlite3").Database;
 
     mockCloseIssue.mockResolvedValue(true);
 
-    await triageIssues(issues, [], 7, projectConfig, undefined, deps);
+    await triageIssues(issues, [], 7, projectConfig, mockDb, deps);
 
     expect(mockCloseIssue).toHaveBeenCalledWith(
       1,
       7,
       expect.stringContaining("not applicable or out of scope"),
-      undefined,
+      mockDb,
       "triaged",
       "test-owner/test-repo",
     );
@@ -580,8 +631,9 @@ describe("triageIssues with injected deps", () => {
   it("does not close add_to_backlog issues at triage time (they stay open until Done)", async () => {
     const issues = [makeIssue({ number: 11, title: "New feature request" })];
     const deps = makeDeps([{ issueNumber: 11, action: "add_to_backlog", reason: "Valid idea." }]);
+    const mockDb = {} as import("better-sqlite3").Database;
 
-    const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+    const result = await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
 
     // add_to_backlog issues must NOT be closed — they will be closed when the roadmap item is Done
     expect(mockCloseIssue).not.toHaveBeenCalled();
@@ -593,8 +645,9 @@ describe("triageIssues with injected deps", () => {
     // add_to_backlog issues stay open until the roadmap item is Done.
     const issues = [makeIssue({ number: 15, title: "Feature already done" })];
     const deps = makeDeps([{ issueNumber: 15, action: "already_done", reason: "This was implemented in cycle 100." }]);
+    const mockDb = {} as import("better-sqlite3").Database;
 
-    const result = await triageIssues(issues, [], 9, projectConfig, undefined, deps);
+    const result = await triageIssues(issues, [], 9, projectConfig, mockDb, deps);
 
     // Downgraded to add_to_backlog — issue must NOT be closed at triage time
     expect(mockCloseIssue).not.toHaveBeenCalled();
@@ -609,10 +662,11 @@ describe("triageIssues with injected deps", () => {
       makeBoardItem({ status: "Done", linkedIssueNumber: 99 }), // Done item for a different issue
     ];
     const deps = makeDeps([{ issueNumber: 22, action: "already_done", reason: "Seems done" }]);
+    const mockDb = {} as import("better-sqlite3").Database;
 
     mockCloseIssue.mockResolvedValue(true);
 
-    const result = await triageIssues(issues, boardItems, 5, projectConfig, undefined, deps);
+    const result = await triageIssues(issues, boardItems, 5, projectConfig, mockDb, deps);
 
     // Issue #22 should be downgraded to add_to_backlog — no Done evidence for it
     expect(result.addedToBacklog).toContain(22);
@@ -629,12 +683,13 @@ describe("triageIssues with injected deps", () => {
       yield { result: JSON.stringify([{ issueNumber: 1, action: "not_applicable", reason: "Test" }]) };
     };
     const deps = { queryFn: customQuery as Parameters<typeof triageIssues>[5] extends undefined ? never : NonNullable<Parameters<typeof triageIssues>[5]>["queryFn"] };
+    const mockDb = {} as import("better-sqlite3").Database;
 
     mockCloseIssue.mockResolvedValue(true);
     const originalModel = process.env.BLOOM_MODEL;
     process.env.BLOOM_MODEL = "claude-test-model";
     try {
-      await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+      await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
     } finally {
       if (originalModel === undefined) delete process.env.BLOOM_MODEL;
       else process.env.BLOOM_MODEL = originalModel;
@@ -648,11 +703,12 @@ describe("triageIssues with injected deps", () => {
     const issues = [makeIssue({ number: 10, title: "On board Done" })];
     const boardItems = [makeBoardItem({ linkedIssueNumber: 10, status: "Done" })];
     const deps = makeDeps([]);
+    const mockDb = {} as import("better-sqlite3").Database;
 
     // closeIssueWithComment returns false (soft failure — e.g. already closed externally)
     mockCloseIssue.mockResolvedValueOnce(false);
 
-    const result = await triageIssues(issues, boardItems, 5, projectConfig, undefined, deps);
+    const result = await triageIssues(issues, boardItems, 5, projectConfig, mockDb, deps);
 
     expect(mockCloseIssue).toHaveBeenCalledTimes(1);
     // wasClosed was false, so the issue must NOT appear in result.closed
@@ -663,11 +719,12 @@ describe("triageIssues with injected deps", () => {
     // Issue #5 goes through LLM triage — decisions loop path
     const issues = [makeIssue({ number: 5, title: "Some issue" })];
     const deps = makeDeps([{ issueNumber: 5, action: "not_applicable", reason: "Out of scope" }]);
+    const mockDb = {} as import("better-sqlite3").Database;
 
     // closeIssueWithComment returns false (soft failure, not a throw)
     mockCloseIssue.mockResolvedValueOnce(false);
 
-    const result = await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+    const result = await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
 
     expect(mockCloseIssue).toHaveBeenCalledTimes(1);
     // wasClosed was false, so the issue must NOT appear in result.closed
@@ -684,12 +741,13 @@ describe("triageIssues with injected deps", () => {
       yield { result: JSON.stringify([{ issueNumber: 1, action: "not_applicable", reason: "Test" }]) };
     };
     const deps = { queryFn: customQuery as Parameters<typeof triageIssues>[5] extends undefined ? never : NonNullable<Parameters<typeof triageIssues>[5]>["queryFn"] };
+    const mockDb = {} as import("better-sqlite3").Database;
 
     mockCloseIssue.mockResolvedValue(true);
     const originalModel = process.env.BLOOM_MODEL;
     delete process.env.BLOOM_MODEL;
     try {
-      await triageIssues(issues, [], 5, projectConfig, undefined, deps);
+      await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
     } finally {
       if (originalModel !== undefined) process.env.BLOOM_MODEL = originalModel;
     }
@@ -704,11 +762,12 @@ describe("triageIssues with injected deps", () => {
     const issues = [makeIssue({ number: 10, title: "On board Done" })];
     const boardItems = [makeBoardItem({ linkedIssueNumber: 10, status: "Done" })];
     const deps = makeDeps([]);
+    const mockDb = {} as import("better-sqlite3").Database;
 
     mockCloseIssue.mockRejectedValueOnce(new Error("422 Unprocessable Entity"));
 
     // Should not throw — the catch block handles it gracefully
-    const result = await triageIssues(issues, boardItems, 5, projectConfig, undefined, deps);
+    const result = await triageIssues(issues, boardItems, 5, projectConfig, mockDb, deps);
 
     expect(result.closed).toEqual([]);
     expect(warnSpy).toHaveBeenCalledWith(

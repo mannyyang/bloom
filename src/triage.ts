@@ -153,9 +153,18 @@ export async function triageIssues(
   // New issues that need triage
   const newIssues = issues.filter((i) => !boardIssueNumbers.has(i.number));
 
-  // Also filter out any issues already triaged in this or a previous cycle
+  // Without a database we cannot deduplicate — skip triage entirely to avoid
+  // creating duplicate roadmap entries on every cycle.
+  if (!db) {
+    console.warn(
+      "[triage] No database available — skipping new-issue triage to prevent duplicate roadmap entries.",
+    );
+    return result;
+  }
+
+  // Filter out any issues already triaged in this or a previous cycle
   const untriaged = newIssues.filter(
-    (i) => !db || !hasIssueAction(db, i.number, "triaged"),
+    (i) => !hasIssueAction(db, i.number, "triaged"),
   );
 
   if (untriaged.length === 0) return result;
