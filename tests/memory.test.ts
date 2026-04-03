@@ -310,6 +310,24 @@ describe("formatMemoryForPrompt", () => {
     expect(result).toContain("Strategic Context");
     expect(result).toContain(longContext);
   });
+
+  it("truncated output always ends on a clean newline boundary (no mid-line cuts)", () => {
+    // Regression guard: budget-aware truncation must stop at whole-line boundaries,
+    // never slicing a learning item mid-text. Each included line ends with \n,
+    // so the final output must end with \n (or be empty).
+    insertStrategicContext(db, 1, "Focus on reliability.");
+    for (let i = 0; i < 30; i++) {
+      insertLearning(db, 1, "pattern", `Pattern item ${i}: important insight about the codebase`);
+    }
+    // Try several tight budgets to cover boundary conditions
+    const budgets = [50, 100, 150, 200, 300, 500];
+    for (const budget of budgets) {
+      const result = formatMemoryForPrompt(db, budget);
+      if (result.length > 0) {
+        expect(result.endsWith("\n"), `Output for budget=${budget} should end with \\n but got: "${result.slice(-20)}"`).toBe(true);
+      }
+    }
+  });
 });
 
 describe("storeStrategicContext", () => {
