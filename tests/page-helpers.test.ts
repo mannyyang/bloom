@@ -308,9 +308,11 @@ describe("renderJournalCards", () => {
     expect(html).not.toContain("<b>");
   });
 
-  it("accordion details element has open attribute", () => {
+  it("renders as non-collapsible div, not details element", () => {
     const html = renderJournalCards([sampleEntry]);
-    expect(html).toContain('<details class="journal-card" open>');
+    expect(html).not.toContain("<details");
+    expect(html).not.toContain("<summary");
+    expect(html).toContain("journal-card-header");
   });
 });
 

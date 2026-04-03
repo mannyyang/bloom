@@ -234,15 +234,15 @@ export function renderJournalCards(entries: JournalEntry[]): string {
     }
 
     return `
-    <details class="journal-card" open>
-      <summary>
+    <div class="journal-card">
+      <div class="journal-card-header">
         <span class="cycle-badge">Cycle ${entry.cycleNumber}</span>
         <span class="cycle-date">${escapeHtml(entry.date)}</span>
-      </summary>
+      </div>
       <div class="journal-body">
         ${parts.join("\n        ")}
       </div>
-    </details>`;
+    </div>`;
   }).join("\n");
 }
 
@@ -316,15 +316,12 @@ const CSS_BASE = `
       margin-bottom: 0.5rem;
       overflow: hidden;
     }
-    .journal-card summary {
-      cursor: pointer;
+    .journal-card-header {
       padding: 0.6rem 0.9rem;
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      user-select: none;
     }
-    .journal-card summary:hover { background: #f9fafb; }
     .cycle-badge {
       background: #0891b2;
       color: #fff;
