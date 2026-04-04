@@ -326,6 +326,19 @@ ATTEMPTED: Three improvements tried`;
     expect(result.succeeded).toContain("Two things worked");
     expect(result.attempted).toContain("Three improvements tried");
   });
+
+  it("does not parse triple-asterisk headers (***ATTEMPTED***) — HEADER_RE only allows 0-2 asterisks", () => {
+    // ***KEYWORD*** is markdown bold+italic; HEADER_RE uses \*{0,2} which intentionally
+    // does not match three asterisks.  Content under such a header is silently skipped
+    // (no section becomes active).  This test documents and locks in that behaviour.
+    const input = `***ATTEMPTED***: tried triple bold+italic header
+Some content here
+***SUCCEEDED***: also triple
+This content too`;
+    const result = parseEvolutionResult(input);
+    expect(result.attempted).toBe("");
+    expect(result.succeeded).toBe("");
+  });
 });
 
 describe("countImprovements", () => {
