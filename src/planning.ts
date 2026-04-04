@@ -231,9 +231,8 @@ export function addLinkedItem(
 ): string | null {
   return withRoadmapItems((items) => {
     // Don't add duplicates
-    if (items.some((i) => i.linkedIssueNumber === issueNumber)) {
-      return items.find((i) => i.linkedIssueNumber === issueNumber)?.id ?? null;
-    }
+    const existing = items.find((i) => i.linkedIssueNumber === issueNumber);
+    if (existing) return existing.id;
 
     const newItem: ProjectItem = {
       id: nextItemId(items),
