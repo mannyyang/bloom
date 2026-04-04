@@ -112,6 +112,14 @@ describe("parseTestTotal", () => {
   it("parses total from passed+skipped+failed output", () => {
     expect(parseTestTotal("Tests  5 passed | 3 skipped | 2 failed (10)")).toBe(10);
   });
+
+  it("returns null for output with no parentheses at all", () => {
+    expect(parseTestTotal("build failed")).toBeNull();
+  });
+
+  it("returns null for parentheses containing non-numeric content", () => {
+    expect(parseTestTotal("Tests  5 passed (abc)")).toBeNull();
+  });
 });
 
 describe("createOutcome", () => {
