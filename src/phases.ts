@@ -59,7 +59,9 @@ export async function updatePlanningStatus(
       // unrelated to the linked issue.
       if (succeeded && currentItem.linkedIssueNumber !== null) {
         const summary = processed.succeededSummary ?? "";
-        if (!summary || !summary.includes(String(currentItem.linkedIssueNumber))) {
+        const n = currentItem.linkedIssueNumber;
+        const mentionsIssue = new RegExp(`(?<![0-9])${n}(?![0-9])`).test(summary);
+        if (!summary || !mentionsIssue) {
           console.warn(
             `[planning] Issue #${currentItem.linkedIssueNumber} not mentioned in succeeded summary — keeping "${currentItem.title}" as "Up Next"`,
           );

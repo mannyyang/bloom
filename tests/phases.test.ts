@@ -226,6 +226,31 @@ describe("updatePlanningStatus", () => {
     warnSpy.mockRestore();
   });
 
+  it("does not promote to Done when summary mentions a longer issue number that starts with the target (false-positive guard)", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.mocked(updateItemStatus).mockReturnValue(true);
+    const itemWithLinkedIssue: ProjectItem = {
+      ...currentItem,
+      linkedIssueNumber: 42,
+    };
+    const processed = {
+      improvementsSucceeded: 1,
+      improvementsAttempted: 1,
+      // Summary mentions #420, which contains "42" as a substring — must NOT match #42
+      succeededSummary: "Resolved issue #420 by refactoring the scheduler.",
+    };
+    await updatePlanningStatus(10, projectConfig, itemWithLinkedIssue, processed);
+
+    expect(updateItemStatus).toHaveBeenCalledWith(
+      projectConfig,
+      "item-1",
+      "Up Next",
+      undefined,
+    );
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("#42"));
+    warnSpy.mockRestore();
+  });
+
   it("promotes to Done when linkedIssueNumber is mentioned in succeeded summary", async () => {
     vi.mocked(updateItemStatus).mockReturnValue(true);
     const itemWithLinkedIssue: ProjectItem = {
