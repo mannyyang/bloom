@@ -60,8 +60,10 @@ export async function updatePlanningStatus(
       if (succeeded && currentItem.linkedIssueNumber !== null) {
         const summary = processed.succeededSummary ?? "";
         const n = currentItem.linkedIssueNumber;
+        // `mentionsIssue` is already false when summary is empty (regex returns false on ""),
+        // so a separate `!summary` guard is redundant and misleading — drop it.
         const mentionsIssue = new RegExp(`(?<![0-9])${n}(?![0-9])`).test(summary);
-        if (!summary || !mentionsIssue) {
+        if (!mentionsIssue) {
           console.warn(
             `[planning] Issue #${currentItem.linkedIssueNumber} not mentioned in succeeded summary — keeping "${currentItem.title}" as "Up Next"`,
           );
