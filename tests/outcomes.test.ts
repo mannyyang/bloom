@@ -58,6 +58,16 @@ describe("parseTestCount", () => {
   it("parses passed count with passed/skipped output", () => {
     expect(parseTestCount("Tests  3 passed | 1 skipped (4)")).toBe(3);
   });
+
+  it("returns null for skipped-only output (no passed token)", () => {
+    // "Tests  3 skipped (3)" has no "passed" token and no "failed" token,
+    // so both regex branches miss and the function returns null.
+    expect(parseTestCount("Tests  3 skipped (3)")).toBeNull();
+  });
+
+  it("parses passed count from passed+skipped+failed output", () => {
+    expect(parseTestCount("Tests  5 passed | 3 skipped | 2 failed (10)")).toBe(5);
+  });
 });
 
 describe("parseTestTotal", () => {
@@ -92,6 +102,15 @@ describe("parseTestTotal", () => {
 
   it("parses total from passed/skipped output", () => {
     expect(parseTestTotal("Tests  3 passed | 1 skipped (4)")).toBe(4);
+  });
+
+  it("parses total from skipped-only output", () => {
+    // "Tests  3 skipped (3)" — the generic regex matches the parenthesised total.
+    expect(parseTestTotal("Tests  3 skipped (3)")).toBe(3);
+  });
+
+  it("parses total from passed+skipped+failed output", () => {
+    expect(parseTestTotal("Tests  5 passed | 3 skipped | 2 failed (10)")).toBe(10);
   });
 });
 
