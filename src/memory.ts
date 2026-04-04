@@ -109,6 +109,9 @@ export function storeStrategicContext(
 /**
  * Format memory (learnings + strategic context) for inclusion in the assessment prompt.
  * Budget-aware: truncates to fit within maxChars.
+ *
+ * Strategic context is always included in its entirety; the per-category budget
+ * applies only to the learnings section.
  */
 export function formatMemoryForPrompt(
   db: Database.Database,
