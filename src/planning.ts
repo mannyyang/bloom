@@ -390,6 +390,10 @@ export function pickNextItem(items: ProjectItem[]): ProjectItem | null {
 
 /**
  * Format project items for inclusion in the assessment prompt.
+ * Items are grouped by status (Backlog, Up Next, In Progress); Done items are
+ * intentionally omitted to keep the prompt concise.  Items with a null status
+ * (which cannot be produced by parseRoadmap but may be constructed directly)
+ * are also excluded — callers should normalise status before passing items here.
  */
 export function formatPlanningContext(
   items: ProjectItem[],

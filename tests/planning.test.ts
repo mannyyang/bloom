@@ -190,6 +190,19 @@ describe("formatPlanningContext", () => {
     expect(result).toContain("Secondary Task");
   });
 
+  it("excludes null-status items from planning context (behaviour guard)", () => {
+    // null-status items cannot be produced by parseRoadmap but can be constructed
+    // directly. formatPlanningContext must silently exclude them rather than
+    // crashing or showing them under an unknown section header.
+    const items = [
+      makeItem({ id: "null-1", title: "Null Status Item", status: null as unknown as "Backlog", reactions: 0 }),
+      makeItem({ id: "real-1", title: "Real Backlog Item", status: "Backlog" }),
+    ];
+    const result = formatPlanningContext(items, null);
+    expect(result).not.toContain("Null Status Item");
+    expect(result).toContain("Real Backlog Item");
+  });
+
   it("excludes Done items from planning context to keep prompt concise", () => {
     // Regression guard: planning.ts line 411 has `if (status === "Done") continue;`
     // Done items are intentionally omitted so resolved work never inflates the LLM prompt.
