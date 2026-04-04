@@ -108,6 +108,14 @@ export function countImprovements(text: string): number {
   const inlineMatches = text.match(/(?:^|[\s,;(])\d+[.)]\s/gm);
   const inlineCount = inlineMatches ? inlineMatches.length : 0;
 
+  // On multi-line input where the line-based scan found items, prefer lineCount.
+  // This prevents prose references like "item 2) matters" from inflating the total.
+  // For single-line input (e.g., "1) foo. 2) bar. 3) baz"), fall back to Math.max
+  // so inline-only formats are still counted correctly.
+  const nonEmptyLines = text.split("\n").filter((l) => l.trim()).length;
+  if (lineCount > 0 && nonEmptyLines > 1) {
+    return lineCount;
+  }
   return Math.max(lineCount, inlineCount);
 }
 

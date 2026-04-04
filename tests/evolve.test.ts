@@ -380,11 +380,11 @@ describe("countImprovements", () => {
     expect(countImprovements("   \n  ")).toBe(0);
   });
 
-  it("handles mixed line-based and inline items by returning the max", () => {
+  it("prefers line count over inline count on multi-line input", () => {
     // lineCount = 2 (lines "1) First" and "2) Second." each start with "N) ")
-    // inlineCount = 3 ("1) ", "2) ", " 3) " all match the inline pattern)
-    // Math.max(2, 3) => 3
-    expect(countImprovements("1) First\n2) Second. 3) Inline")).toBe(3);
+    // inlineCount = 3 but multi-line input with lineCount > 0 returns lineCount
+    // to avoid prose back-references like "3) Inline" inflating the total.
+    expect(countImprovements("1) First\n2) Second. 3) Inline")).toBe(2);
   });
 });
 
