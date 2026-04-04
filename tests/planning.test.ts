@@ -79,6 +79,17 @@ describe("pickNextItem", () => {
     ];
     expect(pickNextItem(items)!.id).toBe("b");
   });
+
+  it("breaks ties by numeric ID — lowest-numbered item wins (item-2 beats item-10)", () => {
+    // item-10 sorts before item-2 with localeCompare ("1" < "2") but should lose
+    // numerically (10 > 2). The numeric tiebreaker must pick item-2.
+    const items = [
+      makeItem({ id: "item-10", status: "Up Next", reactions: 5 }),
+      makeItem({ id: "item-2",  status: "Up Next", reactions: 5 }),
+      makeItem({ id: "item-7",  status: "Up Next", reactions: 5 }),
+    ];
+    expect(pickNextItem(items)!.id).toBe("item-2");
+  });
 });
 
 describe("formatPlanningContext", () => {

@@ -382,7 +382,13 @@ export function pickNextItem(items: ProjectItem[]): ProjectItem | null {
   for (const status of statusPriority) {
     const candidates = items
       .filter((i) => i.status === status)
-      .sort((a, b) => b.reactions - a.reactions || a.id.localeCompare(b.id));
+      .sort((a, b) => {
+        const rxDiff = b.reactions - a.reactions;
+        if (rxDiff !== 0) return rxDiff;
+        const aNum = parseInt(a.id.replace(/^item-/, ""), 10);
+        const bNum = parseInt(b.id.replace(/^item-/, ""), 10);
+        return aNum - bNum;
+      });
     if (candidates.length > 0) return candidates[0];
   }
   return null;
