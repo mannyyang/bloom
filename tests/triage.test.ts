@@ -241,6 +241,21 @@ describe("parseTriageResponse", () => {
     expect(result).toHaveLength(2);
     expect(result.map((r) => r.issueNumber)).toEqual([1, 3]);
   });
+
+  it("silently filters nulls, non-objects, and wrong-typed fields from a partially-malformed LLM array", () => {
+    // Guards against silent data loss: the filter must keep only fully-valid entries
+    // when the LLM returns a mix of valid decisions and garbage values.
+    const input = JSON.stringify([
+      null,
+      { issueNumber: 7, action: "add_to_backlog", reason: "Valid entry" },
+      "garbage",
+      { issueNumber: "not-a-number", action: "add_to_backlog", reason: "String issueNumber" },
+    ]);
+    const result = parseTriageResponse(input);
+    expect(result).toHaveLength(1);
+    expect(result[0].issueNumber).toBe(7);
+    expect(result[0].action).toBe("add_to_backlog");
+  });
 });
 
 describe("triageIssues error resilience", () => {
