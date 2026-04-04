@@ -293,6 +293,33 @@ describe("updatePlanningStatus", () => {
     );
   });
 
+  it("forwards db argument to closeIssueWithComment when db is provided", async () => {
+    // Documents the real production call path where db is always passed from
+    // the orchestrator. Previously only tested with db=undefined; this test
+    // pins that the db argument is actually forwarded (not silently dropped).
+    vi.mocked(updateItemStatus).mockReturnValue(true);
+    const itemWithLinkedIssue: ProjectItem = {
+      ...currentItem,
+      linkedIssueNumber: 77,
+    };
+    const processed = {
+      improvementsSucceeded: 1,
+      improvementsAttempted: 1,
+      succeededSummary: "Fixed issue #77: resolved the problem.",
+    };
+    // Use a minimal mock db object — only the shape matters for the forwarding test.
+    const mockDb = {} as import("better-sqlite3").Database;
+    await updatePlanningStatus(10, projectConfig, itemWithLinkedIssue, processed, mockDb);
+
+    expect(vi.mocked(closeIssueWithComment)).toHaveBeenCalledWith(
+      77,
+      10,
+      expect.any(String),
+      mockDb,
+      "completed",
+    );
+  });
+
   it("does not close GitHub issue when item transitions to Up Next", async () => {
     vi.mocked(updateItemStatus).mockReturnValue(true);
     const itemWithLinkedIssue: ProjectItem = {
