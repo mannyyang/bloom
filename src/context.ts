@@ -10,6 +10,7 @@ import {
   getProjectItems,
   pickNextItem,
   updateItemStatus,
+  detectStaleInProgressItems,
   demoteStaleInProgressItems,
   formatPlanningContext,
   type ProjectConfig,
@@ -107,11 +108,20 @@ export async function loadEvolutionContext(
       return projectItems;
     });
 
-    // Demote any stale "In Progress" items before picking the next one
+    // Demote any stale "In Progress" items before picking the next one.
+    // Detect stale items in-memory first so we can update projectItems without
+    // a second getProjectItems() disk read after demoteStaleInProgressItems writes.
+    const staleItems = detectStaleInProgressItems(projectItems, cycleCount);
     const demoted = demoteStaleInProgressItems(projectConfig, cycleCount);
     if (demoted.length > 0) {
       console.log(`[planning] Demoted ${demoted.length} stale In Progress item(s) back to Up Next: ${demoted.join(", ")}`);
-      projectItems = getProjectItems(projectConfig);
+      // Apply the same transformation in-memory to avoid an extra disk read.
+      for (const item of projectItems) {
+        if (staleItems.some((s) => s.id === item.id)) {
+          item.status = "Up Next";
+          item.body = item.body.replace(/\n?\[since:\s*\d+\]/g, "").trim();
+        }
+      }
     }
 
     currentItem = pickNextItem(projectItems);

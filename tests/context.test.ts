@@ -30,6 +30,7 @@ vi.mock("../src/planning.js", () => ({
   getProjectItems: vi.fn(),
   pickNextItem: vi.fn(),
   updateItemStatus: vi.fn(),
+  detectStaleInProgressItems: vi.fn().mockReturnValue([]),
   demoteStaleInProgressItems: vi.fn().mockReturnValue([]),
   formatPlanningContext: vi.fn(),
 }));
@@ -48,6 +49,7 @@ import {
   getProjectItems,
   pickNextItem,
   updateItemStatus,
+  detectStaleInProgressItems,
   demoteStaleInProgressItems,
   formatPlanningContext,
   type ProjectItem,
@@ -66,6 +68,7 @@ function setupDefaults() {
   vi.mocked(formatCycleStats).mockReturnValue("stats text");
   vi.mocked(formatMemoryForPrompt).mockReturnValue("memory context");
   vi.mocked(ensureProject).mockImplementation(() => { throw new Error("no roadmap"); });
+  vi.mocked(detectStaleInProgressItems).mockReturnValue([]);
   vi.mocked(demoteStaleInProgressItems).mockReturnValue([]);
 }
 
@@ -438,21 +441,18 @@ describe("loadEvolutionContext", () => {
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("(5 reactions)"));
   });
 
-  it("re-fetches project items after demotion and passes post-demotion list to pickNextItem", async () => {
+  it("updates items in-memory after demotion (no extra getProjectItems call)", async () => {
     const config = { filePath: "ROADMAP.md" };
-    const itemsBefore: ProjectItem[] = [
-      { id: "1", title: "Stale Item", status: "In Progress", body: "", linkedIssueNumber: null, reactions: 0 },
-    ];
-    const itemsAfter: ProjectItem[] = [
-      { id: "1", title: "Stale Item", status: "Up Next", body: "", linkedIssueNumber: null, reactions: 0 },
-    ];
+    const staleItem: ProjectItem = {
+      id: "1", title: "Stale Item", status: "In Progress", body: "[since: 1]",
+      linkedIssueNumber: null, reactions: 0,
+    };
 
     vi.mocked(ensureProject).mockReturnValue(config);
-    // First call returns pre-demotion list; second call (after demotion) returns updated list
-    vi.mocked(getProjectItems)
-      .mockReturnValueOnce(itemsBefore)
-      .mockReturnValueOnce(itemsAfter);
+    vi.mocked(getProjectItems).mockReturnValue([staleItem]);
     vi.mocked(fetchCommunityIssues).mockResolvedValue([]);
+    // detectStaleInProgressItems returns the stale item so in-memory mutation fires
+    vi.mocked(detectStaleInProgressItems).mockReturnValue([staleItem]);
     vi.mocked(demoteStaleInProgressItems).mockReturnValue(["Stale Item"]);
     vi.mocked(pickNextItem).mockReturnValue(null);
     vi.mocked(formatPlanningContext).mockReturnValue("");
@@ -460,11 +460,13 @@ describe("loadEvolutionContext", () => {
     const consoleSpy = vi.spyOn(console, "log");
     await loadEvolutionContext(fakeDb, 1);
 
-    // getProjectItems should be called twice: initial load + post-demotion refresh
-    expect(getProjectItems).toHaveBeenCalledTimes(2);
-    // pickNextItem and formatPlanningContext should receive the refreshed post-demotion list
-    expect(pickNextItem).toHaveBeenCalledWith(itemsAfter);
-    expect(formatPlanningContext).toHaveBeenCalledWith(itemsAfter, null);
+    // getProjectItems should only be called once — no second disk read after demotion
+    expect(getProjectItems).toHaveBeenCalledTimes(1);
+    // The in-memory item should have been mutated to "Up Next"
+    expect(staleItem.status).toBe("Up Next");
+    expect(staleItem.body).not.toMatch(/\[since:/);
+    // pickNextItem and formatPlanningContext receive the (mutated) items array
+    expect(pickNextItem).toHaveBeenCalledWith([staleItem]);
     // demotion log message should be emitted
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringContaining("Demoted 1 stale In Progress item(s) back to Up Next: Stale Item"),
