@@ -112,12 +112,13 @@ export async function loadEvolutionContext(
     // Detect stale items in-memory first so we can update projectItems without
     // a second getProjectItems() disk read after demoteStaleInProgressItems writes.
     const staleItems = detectStaleInProgressItems(projectItems, cycleCount);
+    const staleIdSet = new Set(staleItems.map((s) => s.id));
     const demoted = demoteStaleInProgressItems(projectConfig, cycleCount);
     if (demoted.length > 0) {
       console.log(`[planning] Demoted ${demoted.length} stale In Progress item(s) back to Up Next: ${demoted.join(", ")}`);
       // Apply the same transformation in-memory to avoid an extra disk read.
       for (const item of projectItems) {
-        if (staleItems.some((s) => s.id === item.id)) {
+        if (staleIdSet.has(item.id)) {
           item.status = "Up Next";
           item.body = item.body.replace(/\n?\[since:\s*\d+\]/g, "").trim();
         }
