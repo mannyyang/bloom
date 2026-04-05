@@ -438,6 +438,31 @@ describe("loadEvolutionContext", () => {
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("(5 reactions)"));
   });
 
+  it("falls back to original items and logs error when syncReactionsToItems rejects", async () => {
+    const config = { filePath: "ROADMAP.md" };
+    const items: ProjectItem[] = [
+      { id: "1", title: "Item", status: "Up Next", body: "", linkedIssueNumber: null, reactions: 0 },
+    ];
+    vi.mocked(ensureProject).mockReturnValue(config);
+    vi.mocked(getProjectItems).mockReturnValue(items);
+    vi.mocked(fetchCommunityIssues).mockResolvedValue([]);
+    vi.mocked(syncReactionsToItems).mockRejectedValue(new Error("GitHub API down"));
+    vi.mocked(pickNextItem).mockReturnValue(null);
+    vi.mocked(formatPlanningContext).mockReturnValue("");
+
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const ctx = await loadEvolutionContext(fakeDb, 1);
+    // Context should resolve (non-fatal) and still return current item as null
+    expect(ctx.currentItem).toBeNull();
+    // The error log should mention the sync failure
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[context] Failed to sync reactions (non-fatal)"),
+    );
+    // formatPlanningContext should have been called with the original items (fallback)
+    expect(formatPlanningContext).toHaveBeenCalledWith(items, null);
+    errorSpy.mockRestore();
+  });
+
   it("re-reads project items from disk after demotion", async () => {
     // After demoting stale items, context.ts re-reads the roadmap from disk so
     // the in-memory view always matches exactly what demoteStaleInProgressItems
