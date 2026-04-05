@@ -441,18 +441,26 @@ describe("loadEvolutionContext", () => {
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("(5 reactions)"));
   });
 
-  it("updates items in-memory after demotion (no extra getProjectItems call)", async () => {
+  it("re-reads project items from disk after demotion", async () => {
+    // After demoting stale items, context.ts re-reads the roadmap from disk so
+    // the in-memory view always matches exactly what demoteStaleInProgressItems
+    // wrote, preventing silent divergence if the demotion logic ever changes.
     const config = { filePath: "ROADMAP.md" };
     const staleItem: ProjectItem = {
       id: "1", title: "Stale Item", status: "In Progress", body: "[since: 1]",
       linkedIssueNumber: null, reactions: 0,
     };
+    const demotedItem: ProjectItem = {
+      id: "1", title: "Stale Item", status: "Up Next", body: "",
+      linkedIssueNumber: null, reactions: 0,
+    };
 
     vi.mocked(ensureProject).mockReturnValue(config);
-    vi.mocked(getProjectItems).mockReturnValue([staleItem]);
+    // First call: initial load; second call: post-demotion re-read
+    vi.mocked(getProjectItems)
+      .mockReturnValueOnce([staleItem])
+      .mockReturnValueOnce([demotedItem]);
     vi.mocked(fetchCommunityIssues).mockResolvedValue([]);
-    // detectStaleInProgressItems returns the stale item so in-memory mutation fires
-    vi.mocked(detectStaleInProgressItems).mockReturnValue([staleItem]);
     vi.mocked(demoteStaleInProgressItems).mockReturnValue(["Stale Item"]);
     vi.mocked(pickNextItem).mockReturnValue(null);
     vi.mocked(formatPlanningContext).mockReturnValue("");
@@ -460,13 +468,10 @@ describe("loadEvolutionContext", () => {
     const consoleSpy = vi.spyOn(console, "log");
     await loadEvolutionContext(fakeDb, 1);
 
-    // getProjectItems should only be called once — no second disk read after demotion
-    expect(getProjectItems).toHaveBeenCalledTimes(1);
-    // The in-memory item should have been mutated to "Up Next"
-    expect(staleItem.status).toBe("Up Next");
-    expect(staleItem.body).not.toMatch(/\[since:/);
-    // pickNextItem and formatPlanningContext receive the (mutated) items array
-    expect(pickNextItem).toHaveBeenCalledWith([staleItem]);
+    // getProjectItems is called twice: initial load + re-read after demotion
+    expect(getProjectItems).toHaveBeenCalledTimes(2);
+    // pickNextItem receives the freshly re-read (post-demotion) items, not stale originals
+    expect(pickNextItem).toHaveBeenCalledWith([demotedItem]);
     // demotion log message should be emitted
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringContaining("Demoted 1 stale In Progress item(s) back to Up Next: Stale Item"),
