@@ -690,6 +690,30 @@ describe("triageIssues with injected deps", () => {
     expect(mockCloseIssue).not.toHaveBeenCalled();
   });
 
+  it("downgrades already_done to add_to_backlog when matching board item is In Progress (not Done)", async () => {
+    // Done-gate path: LLM says already_done for issue #33, and there IS a board
+    // item with a matching title concept — but its status is "In Progress", not "Done".
+    // Since the gate checks for status === "Done" && linkedIssueNumber === 33,
+    // the "In Progress" item provides no evidence, so the decision is downgraded.
+    const issues = [makeIssue({ number: 33, title: "Issue 33" })];
+    const boardItems = [
+      makeBoardItem({ status: "In Progress", linkedIssueNumber: null }), // In Progress, no link
+    ];
+    const deps = makeDeps([{ issueNumber: 33, action: "already_done", reason: "Looks done" }]);
+    const mockDb = {} as import("better-sqlite3").Database;
+
+    mockCloseIssue.mockResolvedValue(true);
+
+    const result = await triageIssues(issues, boardItems, 6, projectConfig, mockDb, deps);
+
+    // Done-gate fires: no Done item is linked to #33, so already_done → add_to_backlog
+    expect(result.addedToBacklog).toContain(33);
+    expect(mockAddLinkedItem).toHaveBeenCalled();
+    // add_to_backlog issues must NOT be closed at triage time
+    expect(result.closed).not.toContain(33);
+    expect(mockCloseIssue).not.toHaveBeenCalled();
+  });
+
   it("uses BLOOM_MODEL env var when set", async () => {
     const capturedOptions: unknown[] = [];
     const issues = [makeIssue({ number: 1 })];
