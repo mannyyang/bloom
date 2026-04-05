@@ -228,7 +228,7 @@ export function addLinkedItem(
   title: string,
   body: string,
   status: StatusColumn = "Backlog",
-): string | null {
+): string {
   return withRoadmapItems((items) => {
     // Don't add duplicates
     const existing = items.find((i) => i.linkedIssueNumber === issueNumber);
