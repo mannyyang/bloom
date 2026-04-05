@@ -1,7 +1,7 @@
 import type Database from "better-sqlite3";
 import type { CommunityIssue } from "./issues.js";
 import { closeIssueWithComment } from "./issues.js";
-import { hasIssueAction } from "./db.js";
+import { hasIssueAction, insertIssueAction } from "./db.js";
 import { errorMessage } from "./errors.js";
 import { addLinkedItem, type ProjectConfig, type ProjectItem } from "./planning.js";
 import { detectRepo, isValidRepo } from "./issues.js";
@@ -235,6 +235,9 @@ export async function triageIssues(
       if (effectiveAction === "add_to_backlog" && repo && isValidRepo(repo)) {
         addLinkedItem(projectConfig, issue.number, issue.title, issue.body);
         result.addedToBacklog.push(issue.number);
+        // Mark as triaged so future cycles skip this issue and avoid redundant LLM calls.
+        // Only recorded after a successful addLinkedItem to ensure the action is idempotent.
+        insertIssueAction(db, cycleCount, issue.number, "triaged");
       }
 
       // add_to_backlog issues stay open — they will be closed once the linked
