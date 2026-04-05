@@ -131,6 +131,10 @@ export async function triageIssues(
   // work must be confirmed complete before closing the community issue.
   const alreadyOnBoard = issues.filter((i) => boardIssueNumbers.has(i.number));
   for (const issue of alreadyOnBoard) {
+    // `alreadyOnBoard` is filtered by `boardIssueNumbers`, which only contains
+    // linkedIssueNumber values present in `boardItems`, so find() always succeeds
+    // and `linkedItem` is always defined here. The `!linkedItem` guard is kept
+    // for defensive completeness but is dead code.
     const linkedItem = boardItems.find((item) => item.linkedIssueNumber === issue.number);
     if (!linkedItem || linkedItem.status !== "Done") continue;
     if (db && hasIssueAction(db, issue.number, "triaged")) continue;
