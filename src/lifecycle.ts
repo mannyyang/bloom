@@ -31,6 +31,10 @@ function runBuildAndTest(): BuildResult {
 /**
  * Run preflight build+test check. Returns pass/fail status and captured output
  * (used to extract test counts).
+ *
+ * Note: this is an intentional alias for runBuildAndTest(). The semantic
+ * distinction (preflight vs. post-evolution) is meaningful to callers even
+ * though the underlying operation is identical. See also verifyBuild().
  */
 export function runPreflightCheck(): BuildResult {
   return runBuildAndTest();
@@ -110,8 +114,12 @@ export function pushTags(): boolean {
 }
 
 /**
- * Verify build passes. Used for post-evolution verification.
+ * Verify build passes after an evolution step.
  * Returns pass/fail status and captured output (used to extract test counts).
+ *
+ * Note: this is an intentional alias for runBuildAndTest(). The semantic
+ * distinction (post-evolution vs. preflight) is meaningful to callers even
+ * though the underlying operation is identical. See also runPreflightCheck().
  */
 export function verifyBuild(): BuildResult {
   return runBuildAndTest();
