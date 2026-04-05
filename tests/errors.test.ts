@@ -74,7 +74,7 @@ describe("execSyncOutput", () => {
   it("converts Buffer stdout/stderr to string", () => {
     expect(execSyncOutput({ stdout: Buffer.from("buf") })).toBe("buf");
     expect(execSyncOutput({ stderr: Buffer.from("err") })).toBe("err");
-    expect(execSyncOutput({ stdout: Buffer.from("out"), stderr: Buffer.from("err") })).toBe("outerr");
+    expect(execSyncOutput({ stdout: Buffer.from("out"), stderr: Buffer.from("err") })).toBe("out\nerr");
   });
 
   it("returns empty string when stdout/stderr are non-string non-Buffer types", () => {
@@ -86,7 +86,7 @@ describe("execSyncOutput", () => {
   });
 
   it("trims whitespace from combined output", () => {
-    expect(execSyncOutput({ stdout: "  out  ", stderr: "  err  " })).toBe("out    err");
+    expect(execSyncOutput({ stdout: "  out  ", stderr: "  err  " })).toBe("out\nerr");
   });
 
   it("returns empty string when both stdout and stderr are whitespace-only", () => {

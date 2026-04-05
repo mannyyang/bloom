@@ -47,5 +47,5 @@ export function execSyncOutput(err: unknown): string {
   };
   const stdout = "stdout" in err ? toStr(rec.stdout) : "";
   const stderr = "stderr" in err ? toStr(rec.stderr) : "";
-  return (stdout + stderr).trim();
+  return [stdout, stderr].map((s) => s.trim()).filter(Boolean).join("\n");
 }
