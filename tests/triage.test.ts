@@ -173,7 +173,12 @@ describe("parseTriageResponse", () => {
   });
 
   it("returns empty array for non-array JSON", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     expect(parseTriageResponse('{"issueNumber": 1}')).toEqual([]);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[triage] parseTriageResponse: expected JSON array"),
+    );
+    warnSpy.mockRestore();
   });
 
   it("filters out entries with invalid action values", () => {
