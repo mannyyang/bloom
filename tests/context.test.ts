@@ -30,7 +30,6 @@ vi.mock("../src/planning.js", () => ({
   getProjectItems: vi.fn(),
   pickNextItem: vi.fn(),
   updateItemStatus: vi.fn(),
-  detectStaleInProgressItems: vi.fn().mockReturnValue([]),
   demoteStaleInProgressItems: vi.fn().mockReturnValue([]),
   formatPlanningContext: vi.fn(),
 }));
@@ -49,7 +48,6 @@ import {
   getProjectItems,
   pickNextItem,
   updateItemStatus,
-  detectStaleInProgressItems,
   demoteStaleInProgressItems,
   formatPlanningContext,
   type ProjectItem,
@@ -68,7 +66,6 @@ function setupDefaults() {
   vi.mocked(formatCycleStats).mockReturnValue("stats text");
   vi.mocked(formatMemoryForPrompt).mockReturnValue("memory context");
   vi.mocked(ensureProject).mockImplementation(() => { throw new Error("no roadmap"); });
-  vi.mocked(detectStaleInProgressItems).mockReturnValue([]);
   vi.mocked(demoteStaleInProgressItems).mockReturnValue([]);
 }
 
