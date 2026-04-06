@@ -219,8 +219,7 @@ export function getProjectItems(
   _config: ProjectConfig,
 ): ProjectItem[] {
   const filePath = resolve(process.cwd(), _config.filePath);
-  if (!existsSync(filePath)) return [];
-  return parseRoadmap(readFileSync(filePath, "utf-8"));
+  return withRoadmapItems(filePath, (items) => [...items]);
 }
 
 /**
