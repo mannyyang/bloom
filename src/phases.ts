@@ -52,20 +52,24 @@ export async function updatePlanningStatus(
 ): Promise<void> {
   try {
     if (projectConfig && currentItem) {
+      const n = currentItem.linkedIssueNumber;
+      // Precompile the issue-mention pattern once alongside `n`, before any
+      // conditional branching, so it is ready for the guard check below.
+      // The lookaround anchors ensure e.g. "123" does not match inside "4123".
+      const issuePattern = n !== null ? new RegExp(`(?<![0-9])${n}(?![0-9])`) : null;
       let succeeded = processed.improvementsSucceeded > 0;
       // Guard against spurious Done-promotion: if the item is linked to a specific
       // issue, verify the issue number appears in the succeeded summary.  This
       // catches cycles where the LLM reports improvements but worked on something
       // unrelated to the linked issue.
-      if (succeeded && currentItem.linkedIssueNumber !== null) {
+      if (succeeded && n !== null && issuePattern) {
         const summary = processed.succeededSummary ?? "";
-        const n = currentItem.linkedIssueNumber;
         // `mentionsIssue` is already false when summary is empty (regex returns false on ""),
         // so a separate `!summary` guard is redundant and misleading — drop it.
-        const mentionsIssue = new RegExp(`(?<![0-9])${n}(?![0-9])`).test(summary);
+        const mentionsIssue = issuePattern.test(summary);
         if (!mentionsIssue) {
           console.warn(
-            `[planning] Issue #${currentItem.linkedIssueNumber} not mentioned in succeeded summary — keeping "${currentItem.title}" as "Up Next"`,
+            `[planning] Issue #${n} not mentioned in succeeded summary — keeping "${currentItem.title}" as "Up Next"`,
           );
           succeeded = false;
         }
@@ -80,10 +84,10 @@ export async function updatePlanningStatus(
         commitRoadmap(cycleCount);
         // Close the linked GitHub issue now that work is confirmed Done, providing
         // proof of resolution rather than closing prematurely at triage time.
-        if (newStatus === "Done" && currentItem.linkedIssueNumber !== null) {
+        if (newStatus === "Done" && n !== null) {
           const closeComment = `${completionNote}\n\nThis issue has been resolved — the linked roadmap item is now marked Done.`;
           await closeIssueWithComment(
-            currentItem.linkedIssueNumber,
+            n,
             cycleCount,
             closeComment,
             db,
