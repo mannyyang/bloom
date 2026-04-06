@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { existsSync, readFileSync, writeFileSync, unlinkSync } from "fs";
 import { resolve } from "path";
-import { ensureProject, getProjectItems, addDraftItem, addLinkedItem, updateItemStatus, demoteStaleInProgressItems, type ProjectConfig } from "../src/planning.js";
+import { ensureProject, getProjectItems, addDraftItem, addLinkedItem, updateItemStatus, demoteStaleInProgressItems, readRoadmap, type ProjectConfig } from "../src/planning.js";
 
 const ROADMAP_PATH = resolve(process.cwd(), "ROADMAP.md");
 
@@ -56,6 +56,19 @@ describe("ensureProject", () => {
     // Should not overwrite existing content
     const content = readTestRoadmap();
     expect(content).toContain("Existing item");
+  });
+});
+
+describe("readRoadmap", () => {
+  it("returns empty string when file does not exist", () => {
+    if (existsSync(ROADMAP_PATH)) unlinkSync(ROADMAP_PATH);
+    expect(readRoadmap(ROADMAP_PATH)).toBe("");
+  });
+
+  it("reads content from an explicit file path", () => {
+    const content = "# Bloom Evolution Roadmap\n\n## Backlog\n";
+    writeFileSync(ROADMAP_PATH, content, "utf-8");
+    expect(readRoadmap(ROADMAP_PATH)).toBe(content);
   });
 });
 
