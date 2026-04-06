@@ -195,17 +195,19 @@ export function nextItemId(items: ProjectItem[]): string {
 // --- Item CRUD ---
 
 /**
- * Read-modify-write helper: reads the roadmap, parses items, passes them to
- * `fn`, then serializes and writes back. Returns whatever `fn` returns.
+ * Read-modify-write helper: reads the roadmap at `filePath`, parses items,
+ * passes them to `fn`, then serializes and writes back only if items changed.
+ * Returns whatever `fn` returns.
  * This deduplicates the boilerplate shared by all CRUD operations.
  */
-function withRoadmapItems<T>(fn: (items: ProjectItem[]) => T): T {
-  const items = parseRoadmap(readRoadmap());
+function withRoadmapItems<T>(filePath: string, fn: (items: ProjectItem[]) => T): T {
+  const content = existsSync(filePath) ? readFileSync(filePath, "utf-8") : "";
+  const items = parseRoadmap(content);
   const before = JSON.stringify(items);
   const result = fn(items);
   const after = JSON.stringify(items);
   if (after !== before) {
-    writeRoadmap(serializeRoadmap(items));
+    writeFileSync(filePath, serializeRoadmap(items), "utf-8");
   }
   return result;
 }
@@ -216,7 +218,9 @@ function withRoadmapItems<T>(fn: (items: ProjectItem[]) => T): T {
 export function getProjectItems(
   _config: ProjectConfig,
 ): ProjectItem[] {
-  return parseRoadmap(readRoadmap());
+  const filePath = resolve(process.cwd(), _config.filePath);
+  if (!existsSync(filePath)) return [];
+  return parseRoadmap(readFileSync(filePath, "utf-8"));
 }
 
 /**
@@ -229,7 +233,8 @@ export function addLinkedItem(
   body: string,
   status: StatusColumn = "Backlog",
 ): string {
-  return withRoadmapItems((items) => {
+  const filePath = resolve(process.cwd(), _config.filePath);
+  return withRoadmapItems(filePath, (items) => {
     // Don't add duplicates
     const existing = items.find((i) => i.linkedIssueNumber === issueNumber);
     if (existing) return existing.id;
@@ -257,7 +262,8 @@ export function addDraftItem(
   body: string,
   status: StatusColumn = "Backlog",
 ): string {
-  return withRoadmapItems((items) => {
+  const filePath = resolve(process.cwd(), _config.filePath);
+  return withRoadmapItems(filePath, (items) => {
     // Don't add duplicates (match on title)
     const existing = items.find((i) => i.title === title);
     if (existing) return existing.id;
@@ -290,7 +296,8 @@ export function updateItemStatus(
   completionNote?: string,
   sinceCycle?: number,
 ): boolean {
-  return withRoadmapItems((items) => {
+  const filePath = resolve(process.cwd(), _config.filePath);
+  return withRoadmapItems(filePath, (items) => {
     const item = items.find((i) => i.id === itemId);
     if (!item) return false;
 
@@ -360,7 +367,8 @@ export function demoteStaleInProgressItems(
   currentCycle: number,
   threshold: number = 3,
 ): string[] {
-  return withRoadmapItems((items) => {
+  const filePath = resolve(process.cwd(), _config.filePath);
+  return withRoadmapItems(filePath, (items) => {
     const stale = detectStaleInProgressItems(items, currentCycle, threshold);
     for (const item of stale) {
       item.status = "Up Next";
