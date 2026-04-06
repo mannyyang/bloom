@@ -16,6 +16,7 @@ import {
   type PhaseUsage,
 } from "./usage.js";
 import { formatOutcomeForJournal } from "./outcomes.js";
+import { errorMessage } from "./errors.js";
 import { processEvolutionResult, type ProcessedEvolution } from "./orchestrator.js";
 import { insertPhaseUsage } from "./db.js";
 import type { EvolutionContext } from "./context.js";
@@ -205,8 +206,7 @@ export async function runEvolutionPhase(
   try {
     processed = deps.processEvolutionResult(db, cycleCount, evolutionResult);
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error(`[journal] processEvolutionResult failed (non-fatal): ${msg}`);
+    console.error(`[journal] processEvolutionResult failed (non-fatal): ${errorMessage(err)}`);
     console.error(`[journal] Continuing with partial data — journal/learnings may be incomplete for this cycle.`);
     // Return a minimal ProcessedEvolution so the caller can continue
     return {
