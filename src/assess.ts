@@ -39,7 +39,7 @@ export async function main() {
   const db = initDb();
   let cycleCount = 0;
   let identity = "";
-  let journalSummary: string | null = null;
+  let journalSummary = "";
   let cycleStatsText = "";
   let memoryContext = "";
   let planningContext = "";
