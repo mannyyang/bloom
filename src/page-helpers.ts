@@ -91,10 +91,8 @@ export function parseRoadmapSections(content: string): RoadmapSection[] {
   };
 
   for (const rawLine of content.split("\n")) {
-    const line = rawLine;
-
     // ## Section heading
-    const headingMatch = line.match(/^##\s+(.+)$/);
+    const headingMatch = rawLine.match(/^##\s+(.+)$/);
     if (headingMatch) {
       flush();
       if (currentSection) sections.push(currentSection);
@@ -103,7 +101,7 @@ export function parseRoadmapSections(content: string): RoadmapSection[] {
     }
 
     // - [ ] or - [x] item line
-    const itemMatch = line.match(/^- \[([ x])\] (.+)$/);
+    const itemMatch = rawLine.match(/^- \[([ x])\] (.+)$/);
     if (itemMatch && currentSection) {
       flush();
       const done = itemMatch[1] === "x";
@@ -116,11 +114,11 @@ export function parseRoadmapSections(content: string): RoadmapSection[] {
     }
 
     // [since: N] line — skip
-    if (line.match(/^\s+\[since:\s*\d+\]$/)) continue;
+    if (rawLine.match(/^\s+\[since:\s*\d+\]$/)) continue;
 
     // Indented description line
-    if (line.match(/^\s{2,}/) && currentItem) {
-      const desc = line.trim();
+    if (rawLine.match(/^\s{2,}/) && currentItem) {
+      const desc = rawLine.trim();
       if (desc) {
         currentItem.description = currentItem.description
           ? `${currentItem.description} ${desc}`
