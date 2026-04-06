@@ -11,6 +11,7 @@ import { formatDurationSec } from "./usage.js";
  */
 export interface ProcessedEvolution {
   journalSections: EvolutionSections;
+  succeededSummary: string;
   improvementsAttempted: number;
   improvementsSucceeded: number;
   learningsStored: number;
@@ -64,6 +65,7 @@ export function processEvolutionResult(
 
   return {
     journalSections,
+    succeededSummary: journalSections.succeeded,
     improvementsAttempted,
     improvementsSucceeded,
     learningsStored,

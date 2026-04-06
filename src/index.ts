@@ -81,10 +81,7 @@ async function main() {
 
     runBuildVerificationPhase(cycleCount, outcome);
 
-    await updatePlanningStatus(cycleCount, ctx.projectConfig, ctx.currentItem, {
-      ...processed,
-      succeededSummary: processed.journalSections.succeeded,
-    }, db ?? undefined);
+    await updatePlanningStatus(cycleCount, ctx.projectConfig, ctx.currentItem, processed, db ?? undefined);
 
     pushChangesPhase(outcome);
   } catch (err) {

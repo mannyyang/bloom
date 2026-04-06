@@ -211,6 +211,7 @@ export async function runEvolutionPhase(
     // Return a minimal ProcessedEvolution so the caller can continue
     return {
       journalSections: { attempted: "", succeeded: "", failed: "", learnings: "", strategic_context: "" },
+      succeededSummary: "",
       learningsStored: 0,
       strategicContextStored: false,
       improvementsAttempted: outcome.improvementsAttempted,

@@ -47,6 +47,7 @@ function createOutcome(overrides: Partial<CycleOutcome> = {}): CycleOutcome {
 function createProcessedEvolution(overrides: Partial<ProcessedEvolution> = {}): ProcessedEvolution {
   return {
     journalSections: { attempted: "", succeeded: "", failed: "", learnings: "", strategic_context: "" },
+    succeededSummary: "",
     improvementsAttempted: 0,
     improvementsSucceeded: 0,
     learningsStored: 0,
