@@ -28,8 +28,8 @@ function getRoadmapPath(): string {
   return resolve(process.cwd(), ROADMAP_FILE);
 }
 
-export function readRoadmap(): string {
-  const p = getRoadmapPath();
+export function readRoadmap(filePath?: string): string {
+  const p = filePath ?? getRoadmapPath();
   if (!existsSync(p)) return "";
   return readFileSync(p, "utf-8");
 }
