@@ -170,6 +170,16 @@ describe("formatPlanningContext", () => {
     expect(backlogMatches!.length).toBe(5);
   });
 
+  it("respects custom maxItemsPerSection parameter", () => {
+    // 4 Backlog items, cap of 2 → exactly 2 bullet lines should appear
+    const items = Array.from({ length: 4 }, (_, i) =>
+      makeItem({ id: `item-${i}`, title: `Backlog ${i}`, status: "Backlog" }),
+    );
+    const result = formatPlanningContext(items, null, 2000, 2);
+    const backlogMatches = result.match(/^- Backlog \d+$/gm);
+    expect(backlogMatches!.length).toBe(2);
+  });
+
   it("uses truncated string as-is when no newline found (single long line)", () => {
     // A single item whose title is long enough to exceed maxChars, with no
     // embedded newline, so lastNewline is -1 — exercises the fallback branch.
