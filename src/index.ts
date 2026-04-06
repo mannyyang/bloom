@@ -140,7 +140,7 @@ async function main() {
   }
 
   const totalMs = Date.now() - cycleStartTime;
-  console.log(`\n${formatCycleSummaryWithDuration(cycleCount, outcome, evolutionError, totalMs)}\n`);
+  console.log(`\n${formatCycleSummaryWithDuration(cycleCount, outcome, evolutionError !== null, totalMs)}\n`);
   console.log(formatOutcomeForJournal(outcome));
 
   // Exit with error code if the cycle failed, after DB has been committed/pushed

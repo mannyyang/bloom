@@ -80,12 +80,12 @@ export function processEvolutionResult(
 export function formatCycleSummaryWithDuration(
   cycleCount: number,
   outcome: CycleOutcome,
-  evolutionError: unknown,
+  hadError: boolean,
   totalMs: number,
 ): string {
   const lines = [
     `========================================`,
-    `  Cycle ${cycleCount} — ${evolutionError ? "FAILED" : "COMPLETE"}`,
+    `  Cycle ${cycleCount} — ${hadError ? "FAILED" : "COMPLETE"}`,
     `  Duration: ${formatDurationSec(totalMs)}`,
     `  Improvements: ${outcome.improvementsSucceeded}/${outcome.improvementsAttempted}`,
     `  Tests: ${outcome.testCountBefore ?? "?"} → ${outcome.testCountAfter ?? "?"}`,

@@ -311,7 +311,7 @@ STRATEGIC_CONTEXT: Focus on testing`;
         testCountAfter: 615,
       });
 
-      const summary = formatCycleSummaryWithDuration(42, outcome, null, 65000);
+      const summary = formatCycleSummaryWithDuration(42, outcome, false, 65000);
 
       expect(summary).toContain("Cycle 42");
       expect(summary).toContain("COMPLETE");
@@ -334,7 +334,7 @@ STRATEGIC_CONTEXT: Focus on testing`;
       const summary = formatCycleSummaryWithDuration(
         5,
         outcome,
-        new Error("something broke"),
+        true,
         10000,
       );
 
@@ -352,21 +352,21 @@ STRATEGIC_CONTEXT: Focus on testing`;
         testCountAfter: null,
       });
 
-      const summary = formatCycleSummaryWithDuration(1, outcome, null, 5000);
+      const summary = formatCycleSummaryWithDuration(1, outcome, false, 5000);
 
       expect(summary).toContain("? → ?");
     });
 
     it("formats sub-second durations", () => {
       const outcome = makeOutcome();
-      const summary = formatCycleSummaryWithDuration(1, outcome, null, 500);
+      const summary = formatCycleSummaryWithDuration(1, outcome, false, 500);
 
       expect(summary).toContain("0.5s");
     });
 
     it("includes separator lines", () => {
       const outcome = makeOutcome();
-      const summary = formatCycleSummaryWithDuration(1, outcome, null, 1000);
+      const summary = formatCycleSummaryWithDuration(1, outcome, false, 1000);
       const lines = summary.split("\n");
 
       expect(lines[0]).toContain("====");
@@ -379,7 +379,7 @@ STRATEGIC_CONTEXT: Focus on testing`;
         testCountAfter: 42,
       });
 
-      const summary = formatCycleSummaryWithDuration(1, outcome, null, 5000);
+      const summary = formatCycleSummaryWithDuration(1, outcome, false, 5000);
       expect(summary).toContain("? → 42");
     });
 
@@ -389,38 +389,38 @@ STRATEGIC_CONTEXT: Focus on testing`;
         testCountAfter: null,
       });
 
-      const summary = formatCycleSummaryWithDuration(1, outcome, null, 5000);
+      const summary = formatCycleSummaryWithDuration(1, outcome, false, 5000);
       expect(summary).toContain("100 → ?");
     });
 
     it("formats very long durations correctly", () => {
       const outcome = makeOutcome();
       // 10 minutes = 600000ms
-      const summary = formatCycleSummaryWithDuration(1, outcome, null, 600000);
+      const summary = formatCycleSummaryWithDuration(1, outcome, false, 600000);
       expect(summary).toContain("600.0s");
     });
 
     it("includes failure category line when failureCategory is not none", () => {
       const outcome = makeOutcome({ failureCategory: "build_failure" });
-      const summary = formatCycleSummaryWithDuration(1, outcome, new Error("build broke"), 5000);
+      const summary = formatCycleSummaryWithDuration(1, outcome, true, 5000);
       expect(summary).toContain("Failure: build_failure");
     });
 
     it("includes test_failure category in summary", () => {
       const outcome = makeOutcome({ failureCategory: "test_failure" });
-      const summary = formatCycleSummaryWithDuration(1, outcome, new Error("tests failed"), 5000);
+      const summary = formatCycleSummaryWithDuration(1, outcome, true, 5000);
       expect(summary).toContain("Failure: test_failure");
     });
 
     it("includes llm_error category in summary", () => {
       const outcome = makeOutcome({ failureCategory: "llm_error" });
-      const summary = formatCycleSummaryWithDuration(1, outcome, new Error("LLM failed"), 5000);
+      const summary = formatCycleSummaryWithDuration(1, outcome, true, 5000);
       expect(summary).toContain("Failure: llm_error");
     });
 
     it("omits failure category line when failureCategory is none", () => {
       const outcome = makeOutcome({ failureCategory: "none" });
-      const summary = formatCycleSummaryWithDuration(1, outcome, null, 5000);
+      const summary = formatCycleSummaryWithDuration(1, outcome, false, 5000);
       expect(summary).not.toContain("Failure:");
     });
 
@@ -435,7 +435,7 @@ STRATEGIC_CONTEXT: Focus on testing`;
         testCountAfter: 105,
       });
 
-      const summary = formatCycleSummaryWithDuration(10, outcome, null, 30000);
+      const summary = formatCycleSummaryWithDuration(10, outcome, false, 30000);
 
       expect(summary).toContain("Duration:");
       expect(summary).toContain("Improvements:");
