@@ -804,6 +804,95 @@ describe("addDraftItem", () => {
   });
 });
 
+describe("parse→serialize→parse roundtrip", () => {
+  it("preserves structural identity for a multi-section roadmap string", () => {
+    const input = `# Bloom Evolution Roadmap
+
+## Backlog
+- [ ] Fix bug (#3)
+  Some description
+
+## Up Next
+- [ ] Important feature (#7)
+
+## In Progress
+- [ ] Active task
+  [since: 42]
+
+## Done
+- [x] Completed thing (#1)
+  Completion note
+`;
+    const items = parseRoadmap(input);
+    const serialized = serializeRoadmap(items);
+    const reparsed = parseRoadmap(serialized);
+
+    expect(reparsed).toHaveLength(items.length);
+    for (let i = 0; i < items.length; i++) {
+      expect(reparsed[i].title).toBe(items[i].title);
+      expect(reparsed[i].status).toBe(items[i].status);
+      expect(reparsed[i].linkedIssueNumber).toBe(items[i].linkedIssueNumber);
+      expect(reparsed[i].body).toBe(items[i].body);
+    }
+  });
+
+  it("preserves [since: N] annotation through roundtrip", () => {
+    const input = `## In Progress
+- [ ] Active work
+  Some context
+  [since: 99]
+`;
+    const items = parseRoadmap(input);
+    expect(items).toHaveLength(1);
+    const reparsed = parseRoadmap(serializeRoadmap(items));
+    expect(reparsed[0].body).toBe(items[0].body);
+    expect(parseInProgressSinceCycle(reparsed[0].body)).toBe(99);
+  });
+
+  it("preserves backticks and special chars in item title through roundtrip", () => {
+    const input = `## Backlog
+- [ ] Add \`code\` support & fix <edge> cases
+`;
+    const items = parseRoadmap(input);
+    expect(items).toHaveLength(1);
+    expect(items[0].title).toBe("Add `code` support & fix <edge> cases");
+    const reparsed = parseRoadmap(serializeRoadmap(items));
+    expect(reparsed[0].title).toBe(items[0].title);
+  });
+
+  it("empty roadmap string roundtrips to empty item list", () => {
+    const items = parseRoadmap("");
+    const reparsed = parseRoadmap(serializeRoadmap(items));
+    expect(reparsed).toHaveLength(0);
+  });
+
+  it("item counts per section are preserved through roundtrip", () => {
+    const input = `## Backlog
+- [ ] Backlog A
+- [ ] Backlog B
+
+## Up Next
+- [ ] Up Next A
+
+## In Progress
+- [ ] In Progress A
+  [since: 10]
+
+## Done
+- [x] Done A
+- [x] Done B
+- [x] Done C
+`;
+    const items = parseRoadmap(input);
+    const reparsed = parseRoadmap(serializeRoadmap(items));
+    const countByStatus = (status: string) => reparsed.filter((i) => i.status === status).length;
+    expect(countByStatus("Backlog")).toBe(2);
+    expect(countByStatus("Up Next")).toBe(1);
+    expect(countByStatus("In Progress")).toBe(1);
+    expect(countByStatus("Done")).toBe(3);
+  });
+});
+
 describe("nextItemId", () => {
   it("returns item-0 for empty array", () => {
     expect(nextItemId([])).toBe("item-0");
