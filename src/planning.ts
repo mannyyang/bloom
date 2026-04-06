@@ -196,17 +196,17 @@ export function nextItemId(items: ProjectItem[]): string {
 
 /**
  * Read-modify-write helper: reads the roadmap at `filePath`, parses items,
- * passes them to `fn`, then serializes and writes back only if items changed.
- * Returns whatever `fn` returns.
+ * passes them to `fn` along with a `markDirty` callback, then serializes and
+ * writes back only when `markDirty()` was called. Returns whatever `fn` returns.
  * This deduplicates the boilerplate shared by all CRUD operations.
  */
-function withRoadmapItems<T>(filePath: string, fn: (items: ProjectItem[]) => T): T {
+function withRoadmapItems<T>(filePath: string, fn: (items: ProjectItem[], markDirty: () => void) => T): T {
   const content = existsSync(filePath) ? readFileSync(filePath, "utf-8") : "";
   const items = parseRoadmap(content);
-  const before = JSON.stringify(items);
-  const result = fn(items);
-  const after = JSON.stringify(items);
-  if (after !== before) {
+  let dirty = false;
+  const markDirty = () => { dirty = true; };
+  const result = fn(items, markDirty);
+  if (dirty) {
     writeFileSync(filePath, serializeRoadmap(items), "utf-8");
   }
   return result;
@@ -234,7 +234,7 @@ export function addLinkedItem(
   status: StatusColumn = "Backlog",
 ): string {
   const filePath = resolve(process.cwd(), _config.filePath);
-  return withRoadmapItems(filePath, (items) => {
+  return withRoadmapItems(filePath, (items, markDirty) => {
     // Don't add duplicates
     const existing = items.find((i) => i.linkedIssueNumber === issueNumber);
     if (existing) return existing.id;
@@ -249,6 +249,7 @@ export function addLinkedItem(
     };
 
     items.push(newItem);
+    markDirty();
     return newItem.id;
   });
 }
@@ -263,7 +264,7 @@ export function addDraftItem(
   status: StatusColumn = "Backlog",
 ): string {
   const filePath = resolve(process.cwd(), _config.filePath);
-  return withRoadmapItems(filePath, (items) => {
+  return withRoadmapItems(filePath, (items, markDirty) => {
     // Don't add duplicates (match on title)
     const existing = items.find((i) => i.title === title);
     if (existing) return existing.id;
@@ -278,6 +279,7 @@ export function addDraftItem(
     };
 
     items.push(newItem);
+    markDirty();
     return newItem.id;
   });
 }
@@ -297,9 +299,12 @@ export function updateItemStatus(
   sinceCycle?: number,
 ): boolean {
   const filePath = resolve(process.cwd(), _config.filePath);
-  return withRoadmapItems(filePath, (items) => {
+  return withRoadmapItems(filePath, (items, markDirty) => {
     const item = items.find((i) => i.id === itemId);
     if (!item) return false;
+
+    const oldStatus = item.status;
+    const oldBody = item.body;
 
     item.status = status;
     if (status === "Done" && completionNote) {
@@ -316,6 +321,8 @@ export function updateItemStatus(
           : `[since: ${sinceCycle}]`;
       }
     }
+
+    if (item.status !== oldStatus || item.body !== oldBody) markDirty();
     return true;
   });
 }
@@ -368,12 +375,13 @@ export function demoteStaleInProgressItems(
   threshold: number = 3,
 ): string[] {
   const filePath = resolve(process.cwd(), _config.filePath);
-  return withRoadmapItems(filePath, (items) => {
+  return withRoadmapItems(filePath, (items, markDirty) => {
     const stale = detectStaleInProgressItems(items, currentCycle, threshold);
     for (const item of stale) {
       item.status = "Up Next";
       item.body = item.body.replace(/\n?\[since:\s*\d+\]/g, "").trim();
     }
+    if (stale.length > 0) markDirty();
     return stale.map((i) => i.title);
   });
 }
