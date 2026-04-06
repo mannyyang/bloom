@@ -399,11 +399,16 @@ export function pickNextItem(items: ProjectItem[]): ProjectItem | null {
  * intentionally omitted to keep the prompt concise.  Items with a null status
  * (which cannot be produced by parseRoadmap but may be constructed directly)
  * are also excluded — callers should normalise status before passing items here.
+ *
+ * @param maxItemsPerSection - Maximum items shown per status section (default 5).
+ *   Items beyond this cap are silently excluded before the `maxChars` budget is
+ *   applied, so callers with a large roadmap may raise this if needed.
  */
 export function formatPlanningContext(
   items: ProjectItem[],
   currentItem: ProjectItem | null,
   maxChars: number = 1200,
+  maxItemsPerSection: number = 5,
 ): string {
   if (items.length === 0 && !currentItem) return "";
 
@@ -425,7 +430,7 @@ export function formatPlanningContext(
     if (statusItems.length === 0) continue;
 
     lines.push(`\n### ${status}`);
-    for (const item of statusItems.slice(0, 5)) {
+    for (const item of statusItems.slice(0, maxItemsPerSection)) {
       const reactions =
         item.reactions > 0 ? ` (${item.reactions} reactions)` : "";
       const issue = item.linkedIssueNumber
