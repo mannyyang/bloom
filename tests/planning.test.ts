@@ -802,6 +802,19 @@ describe("addDraftItem", () => {
     const parsed = parseRoadmap(written);
     expect(parsed[0].body.length).toBeLessThanOrEqual(200);
   });
+
+  it("works when roadmap file does not exist (empty-content fallback path)", () => {
+    // mockExistsSync returns false → withRoadmapItems uses "" as content
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockExistsSync.mockReturnValue(false as any);
+    const id = addDraftItem(config, "Brand New Task", "body text");
+    expect(id).toBe("item-0");
+    expect(mockWriteFileSync).toHaveBeenCalled();
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].title).toBe("Brand New Task");
+  });
 });
 
 describe("parse→serialize→parse roundtrip", () => {
