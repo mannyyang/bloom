@@ -58,6 +58,14 @@ describe("extractLearnings", () => {
     expect(result.learnings[0].category).toBe("domain");
     expect(result.learnings[0].content).toBe("Some insight");
   });
+
+  it("silently drops bare [category] lines that lack a leading bullet", () => {
+    // Lines starting with '[' do not match the ^[-*\d] guard in extractLearnings,
+    // so they are skipped. This test documents that constraint so future readers
+    // don't try to 'fix' extractLearnings without first updating the prompt format.
+    const result = extractLearnings("[pattern] Bare line without bullet");
+    expect(result).toEqual({ learnings: [] });
+  });
 });
 
 describe("storeLearnings", () => {
