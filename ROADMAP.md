@@ -1,6 +1,7 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
+- Verify stats fix: confirm avgImprovements and conversionRate show nonzero values post cycle 221 prompt format fix — check that LEARNINGS are now being stored in the DB and reflected in `pnpm stats` output.
 
 ## Up Next
 
