@@ -140,11 +140,14 @@ RULES:
 5. Keep changes small and incremental.
 6. Update README.md and other public-facing documentation if needed.
 
-After all improvements, end your response with a structured summary using EXACTLY this format (no markdown headers, no bold, just the marker followed by a colon):
+After all improvements, end your response with a structured summary using EXACTLY this format (no markdown headers, no bold, just the marker followed by a colon and bullet-list items):
 
-ATTEMPTED: <what was attempted>
-SUCCEEDED: <what succeeded>
-FAILED: <what failed>
+ATTEMPTED:
+- <each improvement attempted, one bullet per line>
+SUCCEEDED:
+- <each improvement that passed build+test and was committed, one bullet per line>
+FAILED:
+- <each improvement that was reverted or skipped, or "none" if all succeeded>
 LEARNINGS: <key insights — optionally prefix each with [pattern], [anti-pattern], [domain], or [tool-usage]>
 STRATEGIC_CONTEXT: <2-4 sentences about your current focus areas, trajectory, and ongoing goals>`;
 }
