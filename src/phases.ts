@@ -53,19 +53,17 @@ export async function updatePlanningStatus(
   try {
     if (projectConfig && currentItem) {
       const n = currentItem.linkedIssueNumber;
-      // Precompile the issue-mention pattern once alongside `n`, before any
-      // conditional branching, so it is ready for the guard check below.
-      // The lookaround anchors ensure e.g. "123" does not match inside "4123".
-      const issuePattern = n !== null ? new RegExp(`(?<![0-9])${n}(?![0-9])`) : null;
       let succeeded = processed.improvementsSucceeded > 0;
       // Guard against spurious Done-promotion: if the item is linked to a specific
       // issue, verify the issue number appears in the succeeded summary.  This
       // catches cycles where the LLM reports improvements but worked on something
       // unrelated to the linked issue.
-      if (succeeded && n !== null && issuePattern) {
+      if (succeeded && n !== null) {
         const summary = processed.succeededSummary ?? "";
+        // The lookaround anchors ensure e.g. "123" does not match inside "4123".
         // `mentionsIssue` is already false when summary is empty (regex returns false on ""),
         // so a separate `!summary` guard is redundant and misleading — drop it.
+        const issuePattern = new RegExp(`(?<![0-9])${n}(?![0-9])`);
         const mentionsIssue = issuePattern.test(summary);
         if (!mentionsIssue) {
           console.warn(
