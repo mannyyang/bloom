@@ -327,6 +327,15 @@ ATTEMPTED: Three improvements tried`;
     expect(result.attempted).toContain("Three improvements tried");
   });
 
+  it("captures inline content on header line when followed by another section", () => {
+    // Real LLM output pattern: "ATTEMPTED: Added logging\nSUCCEEDED: yes"
+    // The `rest` capture on the ATTEMPTED line must populate attempted, not be lost.
+    const input = "ATTEMPTED: Added logging\nSUCCEEDED: yes";
+    const result = parseEvolutionResult(input);
+    expect(result.attempted).toBe("Added logging");
+    expect(result.succeeded).toBe("yes");
+  });
+
   it("does not parse triple-asterisk headers (***ATTEMPTED***) — HEADER_RE only allows 0-2 asterisks", () => {
     // ***KEYWORD*** is markdown bold+italic; HEADER_RE uses \*{0,2} which intentionally
     // does not match three asterisks.  Content under such a header is silently skipped
