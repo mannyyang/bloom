@@ -81,13 +81,13 @@ export function storeLearnings(
   extracted: ExtractedLearnings,
 ): void {
   if (extracted.learnings.length === 0) return;
+  const exists = db.prepare("SELECT 1 FROM learnings WHERE content = ? LIMIT 1");
+  const newLearnings = extracted.learnings.filter(({ content }) => !exists.get(content));
+  if (newLearnings.length === 0) return;
   decayLearningRelevance(db);
   pruneLowRelevanceLearnings(db);
-  const exists = db.prepare("SELECT 1 FROM learnings WHERE content = ? LIMIT 1");
-  for (const { category, content } of extracted.learnings) {
-    if (!exists.get(content)) {
-      insertLearning(db, cycleNumber, category, content);
-    }
+  for (const { category, content } of newLearnings) {
+    insertLearning(db, cycleNumber, category, content);
   }
 }
 
