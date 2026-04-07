@@ -66,7 +66,11 @@ export function isDangerousRm(command: string): boolean {
   const hasForce = /(?:^|\s)--force(?:\s|$)/.test(rest) || /(?:^|\s)-\w*f/.test(rest);
   // Block root (/), home (~), bare current directory (. or ./), and parent directory (.. or ../) —
   // all wipe entire trees. Intentionally allows specific subdirectory paths like ./dist or ./build.
-  const hasDangerousPath = /(?:^|\s)\/(?:\s|$|\*)/.test(rest) || /(?:^|\s)~\/?(?:\s|$|\*)/.test(rest) || /(?:^|\s)\.(?:\/)?(?:\s|$)/.test(rest) || /(?:^|\s)\.\.(?:\/)?(?:\s|$)/.test(rest);
+  const hasRootPath   = /(?:^|\s)\/(?:\s|$|\*)/.test(rest);
+  const hasHomePath   = /(?:^|\s)~\/?(?:\s|$|\*)/.test(rest);
+  const hasCurrentDir = /(?:^|\s)\.(?:\/)?(?:\s|$)/.test(rest);
+  const hasParentDir  = /(?:^|\s)\.\.(?:\/)?(?:\s|$)/.test(rest);
+  const hasDangerousPath = hasRootPath || hasHomePath || hasCurrentDir || hasParentDir;
 
   // Critical system directories — no legitimate use in Bloom's context
   const CRITICAL_DIRS = /(?:^|\s)\/(?:etc|usr|var|boot|bin|sbin|lib|proc|sys)(?:\/?\s|\/?\*|\/?\||\/?;|\/?&|\/?$)/;
