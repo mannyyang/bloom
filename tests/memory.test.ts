@@ -59,6 +59,16 @@ describe("extractLearnings", () => {
     expect(result.learnings[0].content).toBe("Some insight");
   });
 
+  it("recognises [process] as a valid category without falling back to domain", () => {
+    const text = "- [process] Verifying a metrics fix requires re-running the full test suite";
+    const result = extractLearnings(text);
+    expect(result.learnings).toHaveLength(1);
+    expect(result.learnings[0].category).toBe("process");
+    expect(result.learnings[0].content).toBe(
+      "Verifying a metrics fix requires re-running the full test suite",
+    );
+  });
+
   it("silently drops bare [category] lines that lack a leading bullet", () => {
     // Lines starting with '[' do not match the ^[-*\d] guard in extractLearnings,
     // so they are skipped. This test documents that constraint so future readers

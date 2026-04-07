@@ -16,6 +16,7 @@ export const LEARNING_CATEGORIES = [
   "anti-pattern",
   "domain",
   "tool-usage",
+  "process",
 ] as const;
 
 export type LearningCategory = (typeof LEARNING_CATEGORIES)[number];
