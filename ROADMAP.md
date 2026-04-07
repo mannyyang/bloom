@@ -1,13 +1,14 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- Verify stats fix: confirm avgImprovements and conversionRate show nonzero values post cycle 221 prompt format fix — check that LEARNINGS are now being stored in the DB and reflected in `pnpm stats` output.
 
 ## Up Next
 
 ## In Progress
 
 ## Done
+- [x] Verify stats fix: confirm avgImprovements and conversionRate show nonzero values post cycle 221 prompt format fix
+  Verified in cycle 224: pnpm stats reports avgImprovements=0.3 and conversionRate=9%; 14 learnings rows confirmed in bloom.db.
 - [x] roadmap tab in the github page is broken (#23)
   Completed in cycle 197: regenerated docs pages; roadmap tab now renders correctly from SQLite data.
 - [x] Update journal in github page so it doesn't use collapsibies. Always display all text. (#24)
