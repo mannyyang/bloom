@@ -119,6 +119,16 @@ describe("buildEvolutionPrompt", () => {
     expect(prompt).toContain("LEARNINGS:");
   });
 
+  it("LEARNINGS section shows bullet-list format so extractLearnings can parse it", () => {
+    const prompt = buildEvolutionPrompt("assessment");
+    // extractLearnings requires lines starting with -, *, or digit.
+    // The prompt must model this so the agent produces parseable output.
+    const learningsIdx = prompt.indexOf("LEARNINGS:");
+    expect(learningsIdx).toBeGreaterThan(-1);
+    const afterLearnings = prompt.slice(learningsIdx);
+    expect(afterLearnings).toMatch(/LEARNINGS:\s*\n-\s+/);
+  });
+
   it("includes usage context when provided", () => {
     const prompt = buildEvolutionPrompt("assessment text", { usageContext: "Cost: $0.50" });
     expect(prompt).toContain("Resource usage so far this cycle:");

@@ -148,6 +148,8 @@ SUCCEEDED:
 - <each improvement that passed build+test and was committed, one bullet per line>
 FAILED:
 - <each improvement that was reverted or skipped, or "none" if all succeeded>
-LEARNINGS: <key insights — optionally prefix each with [pattern], [anti-pattern], [domain], or [tool-usage]>
+LEARNINGS:
+- [category] insight one, one bullet per line
+- [category] insight two
 STRATEGIC_CONTEXT: <2-4 sentences about your current focus areas, trajectory, and ongoing goals>`;
 }
