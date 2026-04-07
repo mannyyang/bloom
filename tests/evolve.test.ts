@@ -393,6 +393,12 @@ describe("countImprovements", () => {
     expect(countImprovements("   \n  ")).toBe(0);
   });
 
+  it("counts single-line inline items with N) format (falls through to Math.max)", () => {
+    // Single-line input: lineCount=1 (first "1) " at start), nonEmptyLines=1,
+    // so lineCount > 0 && nonEmptyLines > 1 is false → Math.max(1, 2) = 2
+    expect(countImprovements("1) foo. 2) bar.")).toBe(2);
+  });
+
   it("prefers line count over inline count on multi-line input", () => {
     // lineCount = 2 (lines "1) First" and "2) Second." each start with "N) ")
     // inlineCount = 3 but multi-line input with lineCount > 0 returns lineCount
