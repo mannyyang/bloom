@@ -219,6 +219,17 @@ describe("formatOutcomeForJournal", () => {
     expect(result).not.toContain("total:");
   });
 
+  it("formats only-after test count when testCountBefore is null", () => {
+    const outcome = makeOutcome({
+      improvementsAttempted: 1, improvementsSucceeded: 1,
+      buildVerificationPassed: true, pushSucceeded: true,
+      testCountBefore: null, testCountAfter: 500,
+    });
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).toContain("500 after (before count unavailable)");
+    expect(result).not.toContain("before,");
+  });
+
   it("handles both test counts null", () => {
     const outcome = makeOutcome({
       preflightPassed: false,
