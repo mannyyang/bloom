@@ -108,7 +108,7 @@ export async function updatePlanningStatus(
  */
 export function pushChangesPhase(outcome: CycleOutcome): void {
   console.log("\n========================================");
-  console.log("  Phase 3: Push");
+  console.log("  Push");
   console.log("========================================");
   outcome.pushSucceeded = false;
   if (pushChanges()) {
