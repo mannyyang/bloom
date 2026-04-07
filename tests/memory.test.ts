@@ -90,6 +90,16 @@ describe("storeLearnings", () => {
     expect(getRelevantLearnings(db, 10)).toHaveLength(0);
   });
 
+  it("does not insert duplicate learnings when called twice with the same content", () => {
+    const extracted = extractLearnings("- [pattern] Unique insight about testing");
+    storeLearnings(db, 1, extracted);
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    storeLearnings(db, 2, extracted);
+    const learnings = getRelevantLearnings(db, 10);
+    expect(learnings).toHaveLength(1);
+    expect(learnings[0].content).toBe("Unique insight about testing");
+  });
+
   it("does not decay existing learnings when new learnings list is empty", () => {
     // Insert an existing learning with default relevance 1.0
     insertLearning(db, 1, "domain", "Existing learning");
