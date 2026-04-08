@@ -129,28 +129,40 @@ export async function triageIssues(
 
   // Close issues already on the board only when the linked item is Done —
   // work must be confirmed complete before closing the community issue.
+  // Run all close API calls concurrently to eliminate linear latency scaling.
   const alreadyOnBoard = issues.filter((i) => boardIssueNumbers.has(i.number));
-  for (const issue of alreadyOnBoard) {
+  const closeCandidates = alreadyOnBoard.filter((issue) => {
     // `alreadyOnBoard` is filtered by `boardIssueNumbers`, which only contains
     // linkedIssueNumber values present in `boardItems`, so find() always succeeds
     // and `linkedItem` is always defined here. The `!linkedItem` guard is kept
     // for defensive completeness but is dead code.
     const linkedItem = boardItems.find((item) => item.linkedIssueNumber === issue.number);
-    if (!linkedItem || linkedItem.status !== "Done") continue;
-    if (db && hasIssueAction(db, issue.number, "triaged")) continue;
-    try {
-      const wasClosed = await closeIssueWithComment(
+    if (!linkedItem || linkedItem.status !== "Done") return false;
+    if (db && hasIssueAction(db, issue.number, "triaged")) return false;
+    return true;
+  });
+
+  const closeResults = await Promise.allSettled(
+    closeCandidates.map((issue) =>
+      closeIssueWithComment(
         issue.number,
         cycleCount,
         "This issue is already tracked on the Bloom Evolution Roadmap.",
         db,
         "triaged",
         repo ?? undefined,
-      );
-      if (wasClosed) result.closed.push(issue.number);
-    } catch (err) {
-      // Issue may have been closed externally between filter and close call
-      console.warn(`[triage] Could not close already-on-board issue #${issue.number} (non-fatal): ${errorMessage(err)}`);
+      )
+        .then((wasClosed) => ({ issueNumber: issue.number, wasClosed }))
+        .catch((err) => {
+          // Issue may have been closed externally between filter and close call
+          console.warn(`[triage] Could not close already-on-board issue #${issue.number} (non-fatal): ${errorMessage(err)}`);
+          return { issueNumber: issue.number, wasClosed: false };
+        }),
+    ),
+  );
+  for (const r of closeResults) {
+    if (r.status === "fulfilled" && r.value.wasClosed) {
+      result.closed.push(r.value.issueNumber);
     }
   }
 
