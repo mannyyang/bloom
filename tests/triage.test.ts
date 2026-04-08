@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { buildTriagePrompt, parseTriageResponse, triageIssues } from "../src/triage.js";
 import type { CommunityIssue } from "../src/issues.js";
 import { closeIssueWithComment, detectRepo, isValidRepo } from "../src/issues.js";
-import { hasIssueAction } from "../src/db.js";
+import { hasIssueAction, insertIssueAction } from "../src/db.js";
 import { addLinkedItem } from "../src/planning.js";
 import type { ProjectItem, ProjectConfig } from "../src/planning.js";
 
@@ -42,6 +42,7 @@ import { query } from "@anthropic-ai/claude-agent-sdk";
 const mockQuery = vi.mocked(query);
 const mockCloseIssue = vi.mocked(closeIssueWithComment);
 const mockHasIssueAction = vi.mocked(hasIssueAction);
+const mockInsertIssueAction = vi.mocked(insertIssueAction);
 
 function makeIssue(overrides: Partial<CommunityIssue> = {}): CommunityIssue {
   return {
@@ -378,6 +379,9 @@ describe("triageIssues with injected deps", () => {
     expect(mockAddLinkedItem).toHaveBeenCalledWith(
       projectConfig, 7, "Add caching", "Please add caching",
     );
+    // Idempotency guard: insertIssueAction must be called so the issue is not
+    // re-triaged next cycle. Removing this call would silently break deduplication.
+    expect(mockInsertIssueAction).toHaveBeenCalledWith(mockDb, 5, 7, "triaged");
   });
 
   it("downgrades already_done to add_to_backlog when no Done board item is linked (LLM path)", async () => {
