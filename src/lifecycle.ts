@@ -1,14 +1,14 @@
 import { execSync, execFileSync } from "child_process";
 import { execSyncOutput } from "./errors.js";
 
-/** Timeout for `pnpm build && pnpm test` (2 minutes). */
-export const BUILD_TIMEOUT_MS = 120_000;
-/** Timeout for git add/commit/tag operations (30 seconds). */
-export const GIT_OP_TIMEOUT_MS = 30_000;
-/** Timeout for git push operations (60 seconds). */
-export const GIT_PUSH_TIMEOUT_MS = 60_000;
-/** Timeout for git checkout/clean/reset operations (10 seconds). */
-export const GIT_REVERT_TIMEOUT_MS = 10_000;
+/** Timeout for `pnpm build && pnpm test` (2 minutes). Override with BLOOM_BUILD_TIMEOUT_MS. */
+export const BUILD_TIMEOUT_MS = Number(process.env.BLOOM_BUILD_TIMEOUT_MS ?? 120_000);
+/** Timeout for git add/commit/tag operations (30 seconds). Override with BLOOM_GIT_OP_TIMEOUT_MS. */
+export const GIT_OP_TIMEOUT_MS = Number(process.env.BLOOM_GIT_OP_TIMEOUT_MS ?? 30_000);
+/** Timeout for git push operations (60 seconds). Override with BLOOM_GIT_PUSH_TIMEOUT_MS. */
+export const GIT_PUSH_TIMEOUT_MS = Number(process.env.BLOOM_GIT_PUSH_TIMEOUT_MS ?? 60_000);
+/** Timeout for git checkout/clean/reset operations (10 seconds). Override with BLOOM_GIT_REVERT_TIMEOUT_MS. */
+export const GIT_REVERT_TIMEOUT_MS = Number(process.env.BLOOM_GIT_REVERT_TIMEOUT_MS ?? 10_000);
 
 export interface BuildResult {
   passed: boolean;
