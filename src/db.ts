@@ -129,6 +129,9 @@ export function initDb(path: string = DEFAULT_DB_PATH): Database.Database {
     CREATE INDEX IF NOT EXISTS idx_learnings_category ON learnings(category);
     CREATE INDEX IF NOT EXISTS idx_learnings_relevance ON learnings(relevance DESC);
 
+    CREATE INDEX IF NOT EXISTS idx_journal_entries_cycle ON journal_entries(cycle_number);
+    CREATE INDEX IF NOT EXISTS idx_phase_usage_cycle ON phase_usage(cycle_number);
+
     CREATE TABLE IF NOT EXISTS strategic_context (
       id           INTEGER PRIMARY KEY AUTOINCREMENT,
       cycle_number INTEGER NOT NULL REFERENCES cycles(cycle_number),
