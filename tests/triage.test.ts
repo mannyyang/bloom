@@ -525,9 +525,12 @@ describe("triageIssues with injected deps", () => {
   });
 
   it("Guard A: skips closing an alreadyOnBoard issue when db records it as already triaged", async () => {
-    // Issue #10 is on the board; db says it was already triaged in a prior cycle
+    // Issue #10 is on the board with status Done; db says it was already triaged in a prior cycle.
+    // The board item must be Done so closeCandidates reaches the hasIssueAction guard — if the
+    // item is Backlog/In-Progress the guard is short-circuited before hasIssueAction is called,
+    // leaving mockReturnValueOnce unconsumed and leaking into subsequent tests.
     const issues = [makeIssue({ number: 10, title: "On board" })];
-    const boardItems = [makeBoardItem({ linkedIssueNumber: 10 })];
+    const boardItems = [makeBoardItem({ linkedIssueNumber: 10, status: "Done" })];
     const deps = makeDeps([]);
 
     // Simulate a real db object with the issue already marked as triaged
@@ -615,6 +618,9 @@ describe("triageIssues with injected deps", () => {
     expect(mockAddLinkedItem).not.toHaveBeenCalled();
     // add_to_backlog issues are not closed at triage time
     expect(result.closed).toEqual([]);
+    // insertIssueAction must still be called even when repo is null so the decision
+    // is recorded and the issue is not re-triaged next cycle.
+    expect(mockInsertIssueAction).toHaveBeenCalledWith(mockDb, 5, 1, "triaged");
   });
 
   it("does not add to backlog when isValidRepo returns false for a non-null repo", async () => {

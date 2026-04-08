@@ -253,11 +253,15 @@ export async function triageIssues(
           ? "add_to_backlog"
           : decision.action;
 
-      if (effectiveAction === "add_to_backlog" && repo && isValidRepo(repo)) {
-        addLinkedItem(projectConfig, issue.number, issue.title, issue.body);
-        result.addedToBacklog.push(issue.number);
-        // Mark as triaged so future cycles skip this issue and avoid redundant LLM calls.
-        // Only recorded after a successful addLinkedItem to ensure the action is idempotent.
+      if (effectiveAction === "add_to_backlog") {
+        if (repo && isValidRepo(repo)) {
+          addLinkedItem(projectConfig, issue.number, issue.title, issue.body);
+          result.addedToBacklog.push(issue.number);
+        }
+        // Mark as triaged regardless of repo validity so the decision is always
+        // recorded and this issue is never re-sent to the LLM next cycle.
+        // Without this, an invalid/missing repo would cause the issue to be
+        // re-triaged on every subsequent cycle, wasting LLM budget.
         insertIssueAction(db, cycleCount, issue.number, "triaged");
       }
 
