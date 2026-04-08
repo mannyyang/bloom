@@ -421,6 +421,28 @@ describe("syncReactionsToItems", () => {
     expect(result[0].reactions).toBe(0);
   });
 
+  it("isolates per-item failures — failed item keeps original reactions, successful item is updated", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest
+      .mockRejectedValueOnce(new Error("network error"))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ number: 2, reactions: { "+1": 5 } }),
+      } as unknown as Response);
+
+    const items = [
+      makeItem({ id: "item-1", linkedIssueNumber: 1, reactions: 3 }),
+      makeItem({ id: "item-2", linkedIssueNumber: 2, reactions: 0 }),
+    ];
+    const result = await syncReactionsToItems(items);
+
+    // failed item keeps its original reactions value
+    expect(result[0].reactions).toBe(3);
+    // successful item gets updated reactions
+    expect(result[1].reactions).toBe(5);
+    expect(mockGithubApiRequest).toHaveBeenCalledTimes(2);
+  });
+
   it("handles multiple linked items with individual API calls", async () => {
     process.env.GITHUB_REPOSITORY = "owner/repo";
     mockGithubApiRequest
