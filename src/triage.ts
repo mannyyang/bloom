@@ -225,6 +225,11 @@ export async function triageIssues(
     not_applicable: `Closing — not applicable or out of scope (cycle ${cycleCount}).`,
   };
 
+  // Phase 1: process all decisions synchronously — add_to_backlog requires
+  // disk writes (addLinkedItem) that must stay sequential; collect close tasks
+  // for later fan-out.
+  const closeTasks: Array<{ issueNumber: number; comment: string }> = [];
+
   for (const decision of decisions) {
     if (!untriagedNumbers.has(decision.issueNumber)) {
       console.warn(
@@ -258,21 +263,35 @@ export async function triageIssues(
 
       // add_to_backlog issues stay open — they will be closed once the linked
       // roadmap item reaches "Done", providing a clear resolution trail.
-      // already_done and not_applicable issues are closed immediately.
+      // already_done and not_applicable issues are queued for concurrent closing.
       if (effectiveAction !== "add_to_backlog") {
-        const wasClosed = await closeIssueWithComment(
-          issue.number,
-          cycleCount,
-          `${commentMap[effectiveAction]}\n\n${decision.reason}`,
-          db,
-          "triaged",
-          repo ?? undefined,
-        );
-        if (wasClosed) result.closed.push(issue.number);
+        closeTasks.push({
+          issueNumber: issue.number,
+          comment: `${commentMap[effectiveAction]}\n\n${decision.reason}`,
+        });
       }
     } catch (err) {
       // Best-effort: don't let a single issue failure block others
       console.error(`[triage] Failed to process issue #${decision.issueNumber} (action=${decision.action}): ${errorMessage(err)}`);
+    }
+  }
+
+  // Phase 2: fan out close API calls concurrently — same pattern as the
+  // alreadyOnBoard loop above, eliminating linear latency scaling when multiple
+  // already_done / not_applicable decisions are returned in a single cycle.
+  const decisionCloseResults = await Promise.allSettled(
+    closeTasks.map(({ issueNumber, comment }) =>
+      closeIssueWithComment(issueNumber, cycleCount, comment, db, "triaged", repo ?? undefined)
+        .then((wasClosed) => ({ issueNumber, wasClosed }))
+        .catch((err) => {
+          console.error(`[triage] Failed to close issue #${issueNumber} (non-fatal): ${errorMessage(err)}`);
+          return { issueNumber, wasClosed: false };
+        }),
+    ),
+  );
+  for (const r of decisionCloseResults) {
+    if (r.status === "fulfilled" && r.value.wasClosed) {
+      result.closed.push(r.value.issueNumber);
     }
   }
 

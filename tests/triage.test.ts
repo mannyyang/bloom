@@ -320,8 +320,9 @@ describe("triageIssues error resilience", () => {
 
     await triageIssues(issues, [], 81, projectConfig, mockDb);
 
+    // Close failures are reported with the dedicated close-error message
     expect(errorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("[triage] Failed to process issue #42"),
+      expect.stringContaining("[triage] Failed to close issue #42 (non-fatal)"),
     );
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Connection timeout"),
