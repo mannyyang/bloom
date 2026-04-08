@@ -128,11 +128,11 @@ export async function syncReactionsToItems(items: ProjectItem[]): Promise<Projec
 
   const reactionMap = new Map<number, number>();
 
-  for (const item of linked) {
-    const issueNumber = item.linkedIssueNumber!;
-    try {
+  await Promise.allSettled(
+    linked.map(async (item) => {
+      const issueNumber = item.linkedIssueNumber!;
       const res = await githubApiRequest("GET", `/repos/${repo}/issues/${issueNumber}`);
-      if (!res.ok) continue;
+      if (!res.ok) return;
       const data: unknown = await res.json();
       if (
         typeof data === "object" &&
@@ -145,10 +145,8 @@ export async function syncReactionsToItems(items: ProjectItem[]): Promise<Projec
         const plusOne = typeof reactions["+1"] === "number" ? reactions["+1"] : 0;
         reactionMap.set(issueNumber, plusOne);
       }
-    } catch {
-      // Best-effort: skip this issue
-    }
-  }
+    }),
+  );
 
   if (reactionMap.size === 0) return items;
 
