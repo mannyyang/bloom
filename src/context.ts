@@ -107,6 +107,12 @@ export async function loadEvolutionContext(
       return projectItems;
     });
 
+    // Preserve live reaction data before potential re-fetch triggered by demotion.
+    // getProjectItems reads from disk where reactions are always 0; without this
+    // map the enriched counts from syncReactionsToItems would be silently dropped,
+    // degrading community-driven prioritization after any demotion cycle.
+    const reactionMap = new Map(projectItems.map((item) => [item.id, item.reactions]));
+
     // Demote any stale "In Progress" items before picking the next one.
     // Re-read from disk after the write so the in-memory view always matches
     // exactly what demoteStaleInProgressItems wrote, avoiding silent divergence
@@ -115,6 +121,13 @@ export async function loadEvolutionContext(
     if (demoted.length > 0) {
       console.log(`[planning] Demoted ${demoted.length} stale In Progress item(s) back to Up Next: ${demoted.join(", ")}`);
       projectItems = getProjectItems(projectConfig);
+      // Re-apply live reaction counts — the disk copy always has reactions=0.
+      for (const item of projectItems) {
+        const savedReactions = reactionMap.get(item.id);
+        if (savedReactions !== undefined) {
+          item.reactions = savedReactions;
+        }
+      }
     }
 
     currentItem = pickNextItem(projectItems);
