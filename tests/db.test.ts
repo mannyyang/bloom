@@ -42,6 +42,18 @@ describe("db", () => {
       expect(names).toContain("issue_actions");
     });
 
+    it("creates all expected indexes", () => {
+      const indexes = db.prepare(
+        "SELECT name FROM sqlite_master WHERE type='index' ORDER BY name"
+      ).all() as { name: string }[];
+      const names = indexes.map(i => i.name);
+      expect(names).toContain("idx_issue_actions_unique");
+      expect(names).toContain("idx_learnings_category");
+      expect(names).toContain("idx_learnings_relevance");
+      expect(names).toContain("idx_journal_entries_cycle");
+      expect(names).toContain("idx_phase_usage_cycle");
+    });
+
     describe("migrations — legacy schema missing columns", () => {
       // Creates a file-backed DB with only the original columns (no completed_at,
       // test_total_before, test_total_after) and verifies initDb adds them.
