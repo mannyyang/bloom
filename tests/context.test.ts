@@ -463,6 +463,42 @@ describe("loadEvolutionContext", () => {
     errorSpy.mockRestore();
   });
 
+  it("preserves live reaction data on items after demotion-triggered re-fetch", async () => {
+    // syncReactionsToItems enriches items with live GitHub counts, but the
+    // subsequent getProjectItems call (triggered by demotion) reads from disk
+    // where reactions are always 0.  The fix in context.ts builds a reactionMap
+    // before the demote call and re-applies it after the re-fetch, so
+    // pickNextItem receives enriched items rather than zeroed-out ones.
+    const config = { filePath: "ROADMAP.md" };
+    const staleItem: ProjectItem = {
+      id: "1", title: "Stale Item", status: "In Progress", body: "[since: 1]",
+      linkedIssueNumber: null, reactions: 0,
+    };
+    // Simulate syncReactionsToItems enriching the item with 7 reactions
+    const enrichedItem: ProjectItem = { ...staleItem, reactions: 7 };
+    // Disk re-read returns reactions=0 (disk never stores live counts)
+    const diskItem: ProjectItem = { ...staleItem, status: "Up Next", reactions: 0 };
+
+    vi.mocked(ensureProject).mockReturnValue(config);
+    vi.mocked(getProjectItems)
+      .mockReturnValueOnce([staleItem])   // initial load
+      .mockReturnValueOnce([diskItem]);   // post-demotion re-read from disk
+    vi.mocked(fetchCommunityIssues).mockResolvedValue([]);
+    // syncReactionsToItems returns enriched item with reactions=7
+    vi.mocked(syncReactionsToItems).mockResolvedValue([enrichedItem]);
+    vi.mocked(demoteStaleInProgressItems).mockReturnValue(["Stale Item"]);
+    vi.mocked(pickNextItem).mockReturnValue(null);
+    vi.mocked(formatPlanningContext).mockReturnValue("");
+
+    await loadEvolutionContext(fakeDb, 1);
+
+    // pickNextItem must receive the item with reactions=7 (from the reaction map),
+    // not reactions=0 (from the disk re-read), so community signal is preserved.
+    expect(pickNextItem).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ id: "1", reactions: 7 })]),
+    );
+  });
+
   it("re-reads project items from disk after demotion", async () => {
     // After demoting stale items, context.ts re-reads the roadmap from disk so
     // the in-memory view always matches exactly what demoteStaleInProgressItems
