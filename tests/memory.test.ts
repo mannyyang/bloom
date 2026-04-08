@@ -411,6 +411,21 @@ describe("storeStrategicContext", () => {
     // Latest context must still be accessible
     expect(getLatestStrategicContext(db)).toBe("Context for cycle 25");
   });
+
+  it("prunes exactly 1 row when 21st entry is inserted (fencepost boundary)", () => {
+    // After 20 entries, the table is at the limit; the 21st must evict exactly
+    // the oldest row — verifying there's no off-by-one error in the pruning SQL.
+    for (let i = 1; i <= 21; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+      storeStrategicContext(db, i, `Context for cycle ${i}`);
+    }
+    const count = (db.prepare("SELECT COUNT(*) as cnt FROM strategic_context").get() as { cnt: number }).cnt;
+    expect(count).toBe(20);
+    // The oldest (cycle 1) must have been evicted
+    const rows = db.prepare("SELECT summary FROM strategic_context ORDER BY cycle_number ASC").all() as { summary: string }[];
+    expect(rows[0].summary).toBe("Context for cycle 2");
+    expect(getLatestStrategicContext(db)).toBe("Context for cycle 21");
+  });
 });
 
 describe("DB functions for memory", () => {
