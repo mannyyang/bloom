@@ -339,6 +339,22 @@ describe("formatMemoryForPrompt", () => {
     expect(result).toContain(longContext);
   });
 
+  it("suppresses Key Learnings entirely when strategic context alone exceeds maxChars", () => {
+    // When the strategic context section is already over budget the learnings loop
+    // must not execute at all — no "## Key Learnings" header and no learning items
+    // should appear, even when learnings exist in the DB.
+    const longContext = "C".repeat(300);
+    insertStrategicContext(db, 1, longContext);
+    insertLearning(db, 1, "pattern", "Should never appear");
+    // Budget is far smaller than the strategic context section (~320 chars)
+    const result = formatMemoryForPrompt(db, 10);
+    // Strategic context is always emitted regardless of budget
+    expect(result).toContain("Strategic Context");
+    // Learnings section must be completely absent
+    expect(result).not.toContain("## Key Learnings");
+    expect(result).not.toContain("Should never appear");
+  });
+
   it("truncated output always ends on a clean newline boundary (no mid-line cuts)", () => {
     // Regression guard: budget-aware truncation must stop at whole-line boundaries,
     // never slicing a learning item mid-text. Each included line ends with \n,
