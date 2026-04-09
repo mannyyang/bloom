@@ -262,6 +262,26 @@ describe("parseTriageResponse", () => {
     expect(result[0].issueNumber).toBe(7);
     expect(result[0].action).toBe("add_to_backlog");
   });
+
+  it("filters out entries where issueNumber is a numeric string (e.g. \"5\" instead of 5)", () => {
+    // The LLM occasionally returns issueNumber as a JSON string like "5" instead of
+    // the number 5. The typeof guard must reject these to prevent string issue numbers
+    // from propagating through the triage pipeline.
+    const allStringInput = JSON.stringify([
+      { issueNumber: "5", action: "add_to_backlog", reason: "Numeric string" },
+    ]);
+    expect(parseTriageResponse(allStringInput)).toHaveLength(0);
+
+    // Mixed array: one valid (number), one invalid (numeric string) — only the valid entry survives
+    const mixedInput = JSON.stringify([
+      { issueNumber: "5", action: "add_to_backlog", reason: "Numeric string — rejected" },
+      { issueNumber: 5, action: "not_applicable", reason: "Real number — kept" },
+    ]);
+    const mixedResult = parseTriageResponse(mixedInput);
+    expect(mixedResult).toHaveLength(1);
+    expect(mixedResult[0].issueNumber).toBe(5);
+    expect(mixedResult[0].action).toBe("not_applicable");
+  });
 });
 
 describe("triageIssues error resilience", () => {
