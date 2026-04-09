@@ -346,6 +346,28 @@ ATTEMPTED: Three improvements tried`;
     expect(result.succeeded).toBe("yes");
   });
 
+  it("returns empty strategic_context for completely unmarked prose", () => {
+    // Regression: the existing "returns empty strings for missing sections" test
+    // checked attempted/succeeded/failed/learnings but not strategic_context.
+    const result = parseEvolutionResult("Just some random text with no section headers at all.");
+    expect(result.attempted).toBe("");
+    expect(result.succeeded).toBe("");
+    expect(result.failed).toBe("");
+    expect(result.learnings).toBe("");
+    expect(result.strategic_context).toBe("");
+  });
+
+  it("handles section marker at EOF with no trailing newline and no inline content", () => {
+    // LLM failure mode: section header appears as the very last token, no newline after.
+    // countImprovements() reads from succeeded/failed — this must not throw or return undefined.
+    const input = "ATTEMPTED: Added logging\nSUCCEEDED:";
+    const result = parseEvolutionResult(input);
+    expect(result.attempted).toBe("Added logging");
+    expect(result.succeeded).toBe("");
+    expect(result.failed).toBe("");
+    expect(result.strategic_context).toBe("");
+  });
+
   it("does not parse triple-asterisk headers (***ATTEMPTED***) — HEADER_RE only allows 0-2 asterisks", () => {
     // ***KEYWORD*** is markdown bold+italic; HEADER_RE uses \*{0,2} which intentionally
     // does not match three asterisks.  Content under such a header is silently skipped
