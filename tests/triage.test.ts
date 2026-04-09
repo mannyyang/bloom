@@ -675,11 +675,38 @@ describe("triageIssues with injected deps", () => {
       7,
       expect.stringContaining("not applicable or out of scope"),
       mockDb,
-      "triaged",
+      "closed",
       "test-owner/test-repo",
     );
   });
 
+  it("records insertIssueAction('triaged') before close for not_applicable (prevents re-triage on close failure)", async () => {
+    // Regression guard: if the GitHub close API fails in phase 2, the issue must
+    // still be marked "triaged" in the DB so it is not re-sent to the LLM next cycle.
+    // The fix records "triaged" in phase 1 (unconditionally) for not_applicable decisions,
+    // mirroring the add_to_backlog path. Phase 2 uses action "closed" to avoid the
+    // hasIssueAction("triaged") dedup guard short-circuiting the actual close call.
+    const issues = [makeIssue({ number: 92 })];
+    const deps = makeDeps([{ issueNumber: 92, action: "not_applicable", reason: "Out of scope" }]);
+    const mockDb = {} as import("better-sqlite3").Database;
+
+    mockCloseIssue.mockResolvedValue(true);
+
+    await triageIssues(issues, [], 3, projectConfig, mockDb, deps);
+
+    // insertIssueAction("triaged") must be called in phase 1 — before closeIssueWithComment —
+    // so the decision is persisted even if the GitHub close API call in phase 2 fails.
+    expect(mockInsertIssueAction).toHaveBeenCalledWith(mockDb, 3, 92, "triaged");
+    // Phase 2 uses "closed" so hasIssueAction("triaged") does not short-circuit the close
+    expect(mockCloseIssue).toHaveBeenCalledWith(
+      92,
+      3,
+      expect.any(String),
+      mockDb,
+      "closed",
+      "test-owner/test-repo",
+    );
+  });
 
   it("does not close add_to_backlog issues at triage time (they stay open until Done)", async () => {
     const issues = [makeIssue({ number: 11, title: "New feature request" })];

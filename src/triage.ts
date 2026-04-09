@@ -284,6 +284,13 @@ export async function triageIssues(
       // roadmap item reaches "Done", providing a clear resolution trail.
       // already_done and not_applicable issues are queued for concurrent closing.
       if (effectiveAction !== "add_to_backlog") {
+        // Mark as triaged immediately (before the close API call) so the decision
+        // is always persisted. If the GitHub close API fails in phase 2, the issue
+        // will still be filtered by the hasIssueAction("triaged") guard on the
+        // next cycle — preventing an infinite re-triage loop. Mirrors the
+        // add_to_backlog path above where insertIssueAction is called before
+        // addLinkedItem, making all three branches symmetric.
+        insertIssueAction(db, cycleCount, issue.number, "triaged");
         closeTasks.push({
           issueNumber: issue.number,
           comment: `${commentMap[effectiveAction]}\n\n${decision.reason}`,
@@ -300,7 +307,7 @@ export async function triageIssues(
   // already_done / not_applicable decisions are returned in a single cycle.
   const decisionCloseResults = await Promise.allSettled(
     closeTasks.map(({ issueNumber, comment }) =>
-      closeIssueWithComment(issueNumber, cycleCount, comment, db, "triaged", repo ?? undefined)
+      closeIssueWithComment(issueNumber, cycleCount, comment, db, "closed", repo ?? undefined)
         .then((wasClosed) => ({ issueNumber, wasClosed }))
         .catch((err) => {
           console.error(`[triage] Failed to close issue #${issueNumber} (non-fatal): ${errorMessage(err)}`);
