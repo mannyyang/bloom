@@ -623,6 +623,28 @@ describe("triageIssues with injected deps", () => {
     expect(mockInsertIssueAction).toHaveBeenCalledWith(mockDb, 5, 1, "triaged");
   });
 
+  it("calls insertIssueAction even when addLinkedItem throws (prevents infinite re-triage loop)", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    // Reset mocks fully to clear any queued mockReturnValueOnce from prior tests
+    mockIsValidRepo.mockReset().mockReturnValue(true);
+    mockDetectRepo.mockReset().mockReturnValue("test-owner/test-repo");
+    mockAddLinkedItem.mockImplementationOnce(() => { throw new Error("disk full"); });
+
+    const issues = [makeIssue({ number: 55, title: "Feature X" })];
+    const deps = makeDeps([{ issueNumber: 55, action: "add_to_backlog", reason: "Good idea" }]);
+    const mockDb = {} as import("better-sqlite3").Database;
+
+    const result = await triageIssues(issues, [], 10, projectConfig, mockDb, deps);
+
+    // insertIssueAction must still be called despite addLinkedItem throwing
+    expect(mockInsertIssueAction).toHaveBeenCalledWith(mockDb, 10, 55, "triaged");
+    // The issue is NOT in addedToBacklog because addLinkedItem threw before push
+    expect(result.addedToBacklog).not.toContain(55);
+    // A console.error should log the addLinkedItem failure
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("addLinkedItem failed for issue #55"));
+    errorSpy.mockRestore();
+  });
+
   it("does not add to backlog when isValidRepo returns false for a non-null repo", async () => {
     mockIsValidRepo.mockReturnValueOnce(false);
     mockDetectRepo.mockReturnValueOnce("owner/repo"); // non-null repo — exercises the isValidRepo guard
