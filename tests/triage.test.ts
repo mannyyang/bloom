@@ -728,6 +728,32 @@ describe("triageIssues with injected deps", () => {
     );
   });
 
+  it("records insertIssueAction('triaged') even when closeIssueWithComment throws on newIssues not_applicable path (ordering regression guard)", async () => {
+    // Regression guard for the phase-1/phase-2 ordering invariant on the newIssues path:
+    // insertIssueAction("triaged") must be persisted in phase 1 BEFORE the close API
+    // call in phase 2. If the close throws, the DB record must already exist so the issue
+    // is filtered by hasIssueAction("triaged") on the next cycle — preventing an
+    // infinite re-triage/re-close loop. Mirrors the alreadyOnBoard ordering test above.
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const issues = [makeIssue({ number: 55 })];
+    const deps = makeDeps([{ issueNumber: 55, action: "not_applicable", reason: "Out of scope" }]);
+    const mockDb = {} as import("better-sqlite3").Database;
+
+    // Simulate phase-2 GitHub API failure
+    mockCloseIssue.mockRejectedValueOnce(new Error("503 Service Unavailable"));
+
+    await triageIssues(issues, [], 7, projectConfig, mockDb, deps);
+
+    // insertIssueAction("triaged") must have been called in phase 1 — before the
+    // close threw — so the decision survives the API failure.
+    expect(mockInsertIssueAction).toHaveBeenCalledWith(mockDb, 7, 55, "triaged");
+    // The close failure must NOT propagate — it is caught and logged as non-fatal.
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[triage] Failed to close issue #55 (non-fatal)"),
+    );
+    errorSpy.mockRestore();
+  });
+
   it("does not close add_to_backlog issues at triage time (they stay open until Done)", async () => {
     const issues = [makeIssue({ number: 11, title: "New feature request" })];
     const deps = makeDeps([{ issueNumber: 11, action: "add_to_backlog", reason: "Valid idea." }]);
