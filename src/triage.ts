@@ -229,6 +229,10 @@ export async function triageIssues(
   // disk writes (addLinkedItem) that must stay sequential; collect close tasks
   // for later fan-out.
   const closeTasks: Array<{ issueNumber: number; comment: string }> = [];
+  // Guard against duplicate issueNumber entries in the LLM response — processing
+  // the same issue twice could create orphaned roadmap entries AND close the
+  // issue in a single cycle (e.g., add_to_backlog + not_applicable for #5).
+  const processedIssueNumbers = new Set<number>();
 
   for (const decision of decisions) {
     if (!untriagedNumbers.has(decision.issueNumber)) {
@@ -237,6 +241,13 @@ export async function triageIssues(
       );
       continue;
     }
+    if (processedIssueNumbers.has(decision.issueNumber)) {
+      console.warn(
+        `[triage] Duplicate decision for issue #${decision.issueNumber} (action=${decision.action}) — ignoring, keeping first occurrence`,
+      );
+      continue;
+    }
+    processedIssueNumbers.add(decision.issueNumber);
     const issue = untriaged.find((i) => i.number === decision.issueNumber);
     if (!issue) continue;
 

@@ -752,6 +752,55 @@ describe("triageIssues with injected deps", () => {
     expect(mockCloseIssue).not.toHaveBeenCalled();
   });
 
+  it("ignores duplicate issueNumber decisions (keeps first occurrence, warns on subsequent)", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const issues = [makeIssue({ number: 5, title: "Feature Z" })];
+    // LLM returns two contradictory decisions for the same issue
+    const deps = makeDeps([
+      { issueNumber: 5, action: "add_to_backlog", reason: "First decision" },
+      { issueNumber: 5, action: "not_applicable", reason: "Second (duplicate)" },
+    ]);
+    const mockDb = {} as import("better-sqlite3").Database;
+    mockCloseIssue.mockResolvedValue(true);
+
+    const result = await triageIssues(issues, [], 15, projectConfig, mockDb, deps);
+
+    // Only the FIRST decision should be processed: add_to_backlog
+    expect(result.addedToBacklog).toContain(5);
+    // The not_applicable duplicate must NOT cause the issue to be closed
+    expect(result.closed).not.toContain(5);
+    // A warning should be emitted for the duplicate
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("Duplicate decision for issue #5"));
+    warnSpy.mockRestore();
+  });
+
+  it("processes each unique issueNumber exactly once when LLM returns multiple entries", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const issues = [
+      makeIssue({ number: 1, title: "Issue One" }),
+      makeIssue({ number: 2, title: "Issue Two" }),
+    ];
+    const deps = makeDeps([
+      { issueNumber: 1, action: "add_to_backlog", reason: "Good idea" },
+      { issueNumber: 2, action: "add_to_backlog", reason: "Also good" },
+      { issueNumber: 2, action: "not_applicable", reason: "Duplicate — should be ignored" },
+    ]);
+    const mockDb = {} as import("better-sqlite3").Database;
+    mockCloseIssue.mockResolvedValue(true);
+
+    const result = await triageIssues(issues, [], 15, projectConfig, mockDb, deps);
+
+    // Both issues added to backlog (first occurrence of each)
+    expect(result.addedToBacklog).toContain(1);
+    expect(result.addedToBacklog).toContain(2);
+    // Duplicate not_applicable for #2 must be discarded — issue must NOT be closed
+    expect(result.closed).not.toContain(2);
+    // insertIssueAction for issue #2 called exactly once (no double-insert)
+    const insertCallsForTwo = mockInsertIssueAction.mock.calls.filter((c) => c[2] === 2);
+    expect(insertCallsForTwo).toHaveLength(1);
+    warnSpy.mockRestore();
+  });
+
   it("uses BLOOM_MODEL env var when set", async () => {
     const capturedOptions: unknown[] = [];
     const issues = [makeIssue({ number: 1 })];
