@@ -948,4 +948,38 @@ describe("triageIssues with injected deps", () => {
     );
     warnSpy.mockRestore();
   });
+
+  it("records insertIssueAction('triaged') before close for alreadyOnBoard path (prevents infinite retry on close failure)", async () => {
+    // Regression guard: if the GitHub close API throws for an alreadyOnBoard issue,
+    // the issue must still be marked "triaged" in DB so it is filtered out by
+    // hasIssueAction("triaged") on the next cycle — preventing an infinite close-retry loop.
+    // The fix pre-records "triaged" in insertIssueAction before Promise.allSettled,
+    // then passes "closed" to closeIssueWithComment, mirroring the new-issues phase-1/phase-2 split.
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const issues = [makeIssue({ number: 77, title: "On board Done" })];
+    const boardItems = [makeBoardItem({ linkedIssueNumber: 77, status: "Done" })];
+    const deps = makeDeps([]);
+    const mockDb = {} as import("better-sqlite3").Database;
+
+    // Simulate GitHub API failure on close
+    mockCloseIssue.mockRejectedValueOnce(new Error("500 Internal Server Error"));
+
+    await triageIssues(issues, boardItems, 4, projectConfig, mockDb, deps);
+
+    // insertIssueAction("triaged") must be called BEFORE closeIssueWithComment so
+    // the decision survives an API failure — preventing the issue from re-entering
+    // closeCandidates next cycle.
+    expect(mockInsertIssueAction).toHaveBeenCalledWith(mockDb, 4, 77, "triaged");
+    // closeIssueWithComment must use "closed" (not "triaged") so the pre-recorded
+    // "triaged" entry above acts as the retry guard without being overwritten.
+    expect(mockCloseIssue).toHaveBeenCalledWith(
+      77,
+      4,
+      expect.any(String),
+      mockDb,
+      "closed",
+      "test-owner/test-repo",
+    );
+    warnSpy.mockRestore();
+  });
 });
