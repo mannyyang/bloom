@@ -513,6 +513,35 @@ describe("closeIssueWithComment", () => {
     errorSpy.mockRestore();
   });
 
+  it("returns false when POST comment succeeds but PATCH state rejects", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    // POST comment resolves OK, but PATCH state throws (e.g. network drop mid-flight)
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+    mockGithubApiRequest.mockRejectedValueOnce(new Error("PATCH failed"));
+
+    const result = await closeIssueWithComment(9, 1, "Closing comment");
+
+    expect(result).toBe(false);
+    // POST comment was still attempted
+    expect(mockGithubApiRequest).toHaveBeenCalledWith(
+      "POST",
+      "/repos/owner/repo/issues/9/comments",
+      { body: "Closing comment" },
+    );
+    // PATCH was attempted too
+    expect(mockGithubApiRequest).toHaveBeenCalledWith(
+      "PATCH",
+      "/repos/owner/repo/issues/9",
+      { state: "closed" },
+    );
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[issues] closeIssueWithComment failed for issue #9"),
+    );
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("PATCH failed"));
+    errorSpy.mockRestore();
+  });
+
   it("uses custom action type for DB idempotency", async () => {
     process.env.GITHUB_REPOSITORY = "owner/repo";
     const db = initDb(":memory:");
