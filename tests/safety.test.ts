@@ -236,6 +236,9 @@ describe("blockDangerousCommands", () => {
     ["xargs chown (bypasses .git pattern)", "find .git -type f | xargs chown root"],
     ["xargs chmod on arbitrary files", "find . -name '*.sh' | xargs chmod +x"],
     ["xargs chown on arbitrary files", "find . | xargs chown user:group"],
+    // Bare file-truncation — zeroes or shrinks source files without rm/xargs
+    ["truncate -s 0 source file", "truncate -s 0 src/safety.ts"],
+    ["truncate --size=0 source file", "truncate --size=0 src/triage.ts"],
     // xargs with file-destroying commands
     ["xargs dd (wipes matched files)", "find . -name '*.ts' | xargs dd if=/dev/zero"],
     ["xargs truncate (zeros matched files)", "find . -name '*.log' | xargs truncate -s 0"],

@@ -169,6 +169,9 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // xargs chmod/chown bypass — evades direct .git pattern by placing .git before the command
   { pattern: /\bxargs\s+.*\bchmod\b/, category: "xargs-command-execution" },
   { pattern: /\bxargs\s+.*\bchown\b/, category: "xargs-command-execution" },
+  // Bare file-truncation — silently zeroes or shrinks any file (e.g. truncate -s 0 src/foo.ts)
+  // without requiring rm or xargs, bypassing all other path-based guards.
+  { pattern: /\btruncate\b/, category: "file-truncation" },
   // xargs with file-destroying commands — can wipe all matched files when fed paths from find
   { pattern: /\bxargs\s+.*\bdd\b/, category: "xargs-command-execution" },
   { pattern: /\bxargs\s+.*\btruncate\b/, category: "xargs-command-execution" },
