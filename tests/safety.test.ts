@@ -598,6 +598,7 @@ describe("isDangerousCommand", () => {
     ["git stash drop", "git stash drop stash@{0}", "git-stash-destruction"],
     ["xargs tee", "find . | xargs tee output.txt", "xargs-command-execution"],
     ["install -m", "install -m 777 src dst", "file-permission-tampering"],
+    ["unlink src/safety.ts (bare file-deletion)", "unlink src/safety.ts", "file-deletion"],
   ])("detects %s → %s", (_desc, command, category) => {
     expect(isDangerousCommand(command)).toBe(category);
   });
