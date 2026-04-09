@@ -48,6 +48,8 @@ vi.mock("../src/agent-phases.js", () => ({
 // --- Import after mocks are set up ---
 
 import { query } from "@anthropic-ai/claude-agent-sdk";
+import { readFileSync } from "fs";
+import { getLatestCycleNumber, getRecentJournalSummary } from "../src/db.js";
 import { extractResultText } from "../src/usage.js";
 import { buildAssessmentPrompt } from "../src/evolve.js";
 import { ensureProject, getProjectItems } from "../src/planning.js";
@@ -58,6 +60,9 @@ const mockExtractResultText = vi.mocked(extractResultText);
 const mockBuildAssessmentPrompt = vi.mocked(buildAssessmentPrompt);
 const mockEnsureProject = vi.mocked(ensureProject);
 const mockGetProjectItems = vi.mocked(getProjectItems);
+const mockGetLatestCycleNumber = vi.mocked(getLatestCycleNumber);
+const mockReadFileSync = vi.mocked(readFileSync);
+const mockGetRecentJournalSummary = vi.mocked(getRecentJournalSummary);
 
 // Helper: create an async generator that yields the provided messages.
 // Cast to `never` is required because the SDK's Query type extends AsyncGenerator
@@ -157,5 +162,63 @@ describe("assess.ts main()", () => {
     const logged = consoleSpy.mock.calls.map((c) => c.join(" "));
     expect(logged.some((l) => l.includes("(3 turns)"))).toBe(true);
     consoleSpy.mockRestore();
+  });
+
+  it("continues (non-fatal) when getLatestCycleNumber throws — cycleCount stays 0", async () => {
+    mockGetLatestCycleNumber.mockImplementation(() => {
+      throw new Error("DB locked");
+    });
+
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await expect(main()).resolves.toBeUndefined();
+
+    // Error must be surfaced, not silently swallowed
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("Context loading failed (non-fatal)"));
+
+    // cycleCount defaults to 0 so buildAssessmentPrompt receives cycleCount: 0
+    const call = mockBuildAssessmentPrompt.mock.calls[0][0];
+    expect(call.cycleCount).toBe(0);
+
+    errorSpy.mockRestore();
+  });
+
+  it("continues (non-fatal) when readFileSync throws — identity stays empty string", async () => {
+    mockReadFileSync.mockImplementation(() => {
+      throw new Error("IDENTITY.md not found");
+    });
+
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await expect(main()).resolves.toBeUndefined();
+
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("Context loading failed (non-fatal)"));
+
+    // identity is "" so systemPrompt in query call is empty string, not undefined
+    const { options } = mockQuery.mock.calls[0][0];
+    expect(options?.systemPrompt).toBe("");
+
+    errorSpy.mockRestore();
+  });
+
+  it("continues (non-fatal) when getRecentJournalSummary throws — journalSummary stays empty", async () => {
+    mockGetRecentJournalSummary.mockImplementation(() => {
+      throw new Error("journal table missing");
+    });
+
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await expect(main()).resolves.toBeUndefined();
+
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("Context loading failed (non-fatal)"));
+
+    // journalSummary defaults to "" so buildAssessmentPrompt receives an empty string
+    const call = mockBuildAssessmentPrompt.mock.calls[0][0];
+    expect(call.journalSummary).toBe("");
+
+    errorSpy.mockRestore();
   });
 });

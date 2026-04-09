@@ -45,17 +45,20 @@ export async function main() {
   let planningContext = "";
 
   try {
-    cycleCount = getLatestCycleNumber(db) + 1;
+    try {
+      cycleCount = getLatestCycleNumber(db) + 1;
+      identity = readFileSync("IDENTITY.md", "utf-8");
+      journalSummary = getRecentJournalSummary(db, 1200, 2);
+      const cycleStats = getCycleStats(db);
+      cycleStatsText = formatCycleStats(cycleStats);
+      memoryContext = formatMemoryForPrompt(db, 1200);
 
-    identity = readFileSync("IDENTITY.md", "utf-8");
-    journalSummary = getRecentJournalSummary(db, 1200, 2);
-    const cycleStats = getCycleStats(db);
-    cycleStatsText = formatCycleStats(cycleStats);
-    memoryContext = formatMemoryForPrompt(db, 1200);
-
-    console.log(`[assess] Cycle: ${cycleCount}`);
-    console.log(`[assess] Journal: ${journalSummary ? `${journalSummary.length} chars` : "empty"}`);
-    console.log(`[assess] Memory: ${memoryContext ? `${memoryContext.length} chars` : "empty"}`);
+      console.log(`[assess] Cycle: ${cycleCount}`);
+      console.log(`[assess] Journal: ${journalSummary ? `${journalSummary.length} chars` : "empty"}`);
+      console.log(`[assess] Memory: ${memoryContext ? `${memoryContext.length} chars` : "empty"}`);
+    } catch (err) {
+      console.error(`[assess] Context loading failed (non-fatal): ${errorMessage(err)}`);
+    }
 
     // Load planning context read-only — skip triage and status mutations
     try {
