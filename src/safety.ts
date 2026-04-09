@@ -127,6 +127,11 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /git\s+tag\s+(?:-d|--delete)\b/, category: "git-ref-destruction" },
   // Git ref destruction — switch -C force-creates or resets an existing branch to HEAD (ref destruction)
   { pattern: /git\s+switch\s+(?:.*\s)?-C\b/, category: "git-ref-destruction" },
+  // Git internals tampering — rm targeting the .git directory destroys all history, refs,
+  // and config with no recovery path. Matches: rm .git, rm -rf .git, rm -rf .git/, rm -rf .git/*
+  // The end-of-argument anchor requires whitespace, space/tab after /*, or end-of-string to avoid
+  // false positives when ".git/*" appears inside commit messages (e.g. rm -rf .git/*,\n more text).
+  { pattern: /\brm\s+(?:.*\s)?\.git(?:\/?\s|\/\*(?:[ \t]|$)|\/?$)/, category: "git-internals-tampering" },
   // Git internals tampering — changing permissions/ownership of .git/ or bare .git dir
   { pattern: /\bchmod\s+.*\.git(?:\/|\s|$|;|&|\|)/, category: "git-internals-tampering" },
   { pattern: /\bchown\s+.*\.git(?:\/|\s|$|;|&|\|)/, category: "git-internals-tampering" },

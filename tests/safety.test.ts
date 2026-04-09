@@ -249,6 +249,12 @@ describe("blockDangerousCommands", () => {
     ["install -m 777 (world-writable)", "install -m 777 src dst"],
     ["install -m 755 to system path", "install -m 755 dist/index.js /usr/local/bin/bloom"],
     ["install -Dm 644 (combined flags)", "install -Dm 644 bloom.service /etc/systemd/system/"],
+    // Git internals tampering — rm targeting .git directory
+    ["rm -rf .git", "rm -rf .git"],
+    ["rm -rf .git/", "rm -rf .git/"],
+    ["rm -rf .git/*", "rm -rf .git/*"],
+    ["rm --recursive --force .git", "rm --recursive --force .git"],
+    ["rm .git (non-recursive also blocked)", "rm .git"],
     // Git internals tampering
     ["chmod on .git/hooks/pre-commit", "chmod 000 .git/hooks/pre-commit"],
     ["chown on .git/hooks/", "chown root .git/hooks/"],
@@ -449,6 +455,9 @@ describe("blockDangerousCommands", () => {
     ["ruby -v (not inline exec)", "ruby -v"],
     ["perl -v (not inline exec)", "perl -v"],
     ["bash script.sh (not process sub)", "bash script.sh"],
+    ["rm .gitignore (not .git directory)", "rm .gitignore"],
+    ["rm -rf .gitignore", "rm -rf .gitignore"],
+    ["rm -rf .github (not .git)", "rm -rf .github"],
     ["bare pnpm install", "pnpm install"],
     ["bare npm install", "npm install"],
     ["npm install && npm run build", "npm install && npm run build"],
