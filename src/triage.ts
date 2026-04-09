@@ -142,6 +142,16 @@ export async function triageIssues(
     return true;
   });
 
+  // Pre-record "triaged" for each close candidate before the API fan-out so
+  // the decision is persisted even if the GitHub close API fails. Mirrors the
+  // new-issues path (phase 1) where insertIssueAction is called before
+  // closeIssueWithComment to prevent an infinite close-retry loop on API failure.
+  if (db) {
+    for (const issue of closeCandidates) {
+      insertIssueAction(db, cycleCount, issue.number, "triaged");
+    }
+  }
+
   const closeResults = await Promise.allSettled(
     closeCandidates.map((issue) =>
       closeIssueWithComment(
@@ -149,7 +159,7 @@ export async function triageIssues(
         cycleCount,
         "This issue is already tracked on the Bloom Evolution Roadmap.",
         db,
-        "triaged",
+        "closed",
         repo ?? undefined,
       )
         .then((wasClosed) => ({ issueNumber: issue.number, wasClosed }))
