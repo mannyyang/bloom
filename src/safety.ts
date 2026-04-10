@@ -234,6 +234,9 @@ export function buildProtectedFilePatterns(filename: string, opts?: { allowAppen
     new RegExp(`\\bcp\\s+(?:.*\\s)?(?:\\S*\\/)?${escaped}(?:\\s|$|;|&|\\|)`),
     new RegExp(`\\bmv\\s+(?:.*\\s)?(?:\\S*\\/)?${escaped}(?:\\s|$|;|&|\\|)`),
     new RegExp(`\\bsed\\s+(?:-i\\b|--in-place\\b|--in-place=\\S+).*${escaped}`),
+    // perl -i (in-place edit) — `perl -pi -e 's/...' file` modifies files in place;
+    // lookaheads verify both the -i flag and the protected filename are present.
+    new RegExp(`\\bperl\\b(?=.*-[a-zA-Z]*i\\b)(?=.*(?:\\S*/)?${escaped})`),
     new RegExp(`\\btruncate\\s+.*${escaped}`),
     new RegExp(`\\bdd\\s+.*of=(?:\\S*\\/)?${escaped}`),
     new RegExp(`\\bchmod\\s+.*${escaped}`),

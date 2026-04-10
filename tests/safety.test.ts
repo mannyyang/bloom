@@ -656,12 +656,23 @@ describe("buildProtectedFilePatterns", () => {
       ["unlink", "unlink IDENTITY.md"],
       ["git checkout --", "git checkout -- IDENTITY.md"],
       ["git restore", "git restore IDENTITY.md"],
+      ["perl -pi -e", "perl -pi -e 's/a/b/' IDENTITY.md"],
+      ["perl -i (standalone flag)", "perl -i -p -e 's/a/b/' IDENTITY.md"],
+      ["perl -i.bak (with backup suffix)", "perl -i.bak -p -e 's/a/b/' IDENTITY.md"],
     ])("blocks %s", (_desc, command) => {
       expect(matchesAny(patterns, command)).toBe(true);
     });
 
     it("does not match unrelated files", () => {
       expect(matchesAny(patterns, "echo x > README.md")).toBe(false);
+    });
+
+    it("does not block perl read-only use on protected file", () => {
+      expect(matchesAny(patterns, "perl -n 'print' IDENTITY.md")).toBe(false);
+    });
+
+    it("does not block perl -e without -i on protected file", () => {
+      expect(matchesAny(patterns, "perl -e 'print' IDENTITY.md")).toBe(false);
     });
   });
 
