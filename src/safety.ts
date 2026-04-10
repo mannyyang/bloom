@@ -102,6 +102,8 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Arbitrary code execution — eval, shell -c run uncontrolled strings
   { pattern: /\beval\s/, category: "arbitrary-code-execution" },
   { pattern: /(?:[\w./]*\/)?(?:ba|z|da|k)?sh\s+-c\b/, category: "arbitrary-code-execution" },
+  // Fish shell -c — executes arbitrary code identically to sh -c but was previously unmatched
+  { pattern: /\bfish\s+-c\b/, category: "arbitrary-code-execution" },
   // Inline interpreter code execution — functionally equivalent to sh -c
   { pattern: /\b(?:python3?|python3\.\d+)\s+-c\b/, category: "inline-code-execution" },
   { pattern: /\bnode\s+(?:-e|--eval)\b/, category: "inline-code-execution" },
