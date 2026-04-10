@@ -41,8 +41,7 @@ export function processEvolutionResult(
   let learningsStored = 0;
   try {
     const extracted = extractLearnings(journalSections.learnings);
-    storeLearnings(db, cycleCount, extracted);
-    learningsStored = extracted.learnings.length;
+    learningsStored = storeLearnings(db, cycleCount, extracted);
   } catch (err) {
     console.error(`[orchestrator] Failed to store learnings (non-fatal): ${errorMessage(err)}`);
   }

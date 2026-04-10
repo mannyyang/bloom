@@ -75,21 +75,23 @@ export function extractLearnings(learningsText: string): ExtractedLearnings {
 /**
  * Store extracted learnings in the database.
  * Applies relevance decay to existing learnings so newer ones rank higher.
+ * Returns the count of new (non-duplicate) learnings actually stored.
  */
 export function storeLearnings(
   db: Database.Database,
   cycleNumber: number,
   extracted: ExtractedLearnings,
-): void {
-  if (extracted.learnings.length === 0) return;
+): number {
+  if (extracted.learnings.length === 0) return 0;
   const exists = db.prepare("SELECT 1 FROM learnings WHERE content = ? LIMIT 1");
   const newLearnings = extracted.learnings.filter(({ content }) => !exists.get(content));
-  if (newLearnings.length === 0) return;
+  if (newLearnings.length === 0) return 0;
   decayLearningRelevance(db);
   pruneLowRelevanceLearnings(db);
   for (const { category, content } of newLearnings) {
     insertLearning(db, cycleNumber, category, content);
   }
+  return newLearnings.length;
 }
 
 // --- Strategic Context ---

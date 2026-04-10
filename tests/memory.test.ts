@@ -100,6 +100,22 @@ describe("storeLearnings", () => {
     expect(getRelevantLearnings(db, 10)).toHaveLength(0);
   });
 
+  it("returns the count of new learnings stored", () => {
+    const extracted = extractLearnings("- [pattern] First insight\n- [domain] Second insight");
+    expect(storeLearnings(db, 1, extracted)).toBe(2);
+  });
+
+  it("returns 0 when all learnings are duplicates", () => {
+    const extracted = extractLearnings("- [pattern] Unique insight about testing");
+    storeLearnings(db, 1, extracted);
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    expect(storeLearnings(db, 2, extracted)).toBe(0);
+  });
+
+  it("returns 0 for empty learnings", () => {
+    expect(storeLearnings(db, 1, { learnings: [] })).toBe(0);
+  });
+
   it("does not insert duplicate learnings when called twice with the same content", () => {
     const extracted = extractLearnings("- [pattern] Unique insight about testing");
     storeLearnings(db, 1, extracted);
