@@ -199,11 +199,12 @@ STRATEGIC_CONTEXT: Strategic info`;
       expect(processed).toHaveProperty("strategicContextStored");
     });
 
-    it("propagates error when insertJournalEntry throws", async () => {
+    it("logs error and continues when insertJournalEntry throws (non-fatal)", async () => {
       const dbModule = await import("../src/db.js");
       const spy = vi.spyOn(dbModule, "insertJournalEntry").mockImplementation(() => {
         throw new Error("simulated DB write failure");
       });
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
       const result = `ATTEMPTED: Something
 SUCCEEDED: Something
@@ -211,9 +212,16 @@ FAILED: Nothing
 LEARNINGS: - [pattern] A learning
 STRATEGIC_CONTEXT: Context`;
 
-      expect(() => processEvolutionResult(db, 1, result)).toThrow("simulated DB write failure");
+      const processed = processEvolutionResult(db, 1, result);
+
+      expect(processed.journalSections.attempted).toBe("Something");
+      expect(processed.improvementsAttempted).toBeGreaterThanOrEqual(0);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Failed to insert journal entry"),
+      );
 
       spy.mockRestore();
+      consoleSpy.mockRestore();
     });
 
     it("still returns correct results when extractLearnings throws", async () => {

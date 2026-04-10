@@ -33,7 +33,11 @@ export function processEvolutionResult(
   const journalSections = parseEvolutionResult(evolutionResult);
   for (const [section, content] of Object.entries(journalSections)) {
     if (content) {
-      insertJournalEntry(db, cycleCount, section, content);
+      try {
+        insertJournalEntry(db, cycleCount, section, content);
+      } catch (err) {
+        console.error(`[orchestrator] Failed to insert journal entry for section "${section}" (non-fatal): ${errorMessage(err)}`);
+      }
     }
   }
 
