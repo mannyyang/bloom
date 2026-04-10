@@ -439,6 +439,14 @@ describe("countImprovements", () => {
     expect(countImprovements("All three succeeded. 1) Added field. 2) Updated usage. 3) Removed fallback.")).toBe(3);
   });
 
+  it("counts bullet items starting with asterisk", () => {
+    expect(countImprovements("* Item 1\n* Item 2\n* Item 3")).toBe(3);
+  });
+
+  it("counts mixed asterisk and dash bullets", () => {
+    expect(countImprovements("* Item A\n- Item B\n* Item C")).toBe(3);
+  });
+
   it("does not count horizontal rules or bare dashes as improvements", () => {
     expect(countImprovements("---")).toBe(0);
     expect(countImprovements("---\nSome text\n---")).toBe(0);
