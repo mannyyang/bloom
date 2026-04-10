@@ -63,8 +63,8 @@ export function parseEvolutionResult(result: string): EvolutionSections {
   };
 
   // Single regex handles all header formats:
-  // "ATTEMPTED:", "**ATTEMPTED**:", "**ATTEMPTED:**", "## ATTEMPTED", "## **ATTEMPTED**", "- ATTEMPTED:"
-  const HEADER_RE = /^(?:##\s+|-\s+)?\*{0,2}(ATTEMPTED|SUCCEEDED|FAILED|LEARNINGS|STRATEGIC_CONTEXT)\*{0,2}:?\*{0,2}:?\s*/;
+  // "ATTEMPTED:", "**ATTEMPTED**:", "**ATTEMPTED:**", "## ATTEMPTED", "### ATTEMPTED", "## **ATTEMPTED**", "- ATTEMPTED:"
+  const HEADER_RE = /^(?:#{1,4}\s+|-\s+)?\*{0,2}(ATTEMPTED|SUCCEEDED|FAILED|LEARNINGS|STRATEGIC_CONTEXT)\*{0,2}:?\*{0,2}:?\s*/;
 
   let currentSection = "";
   for (const line of result.split("\n")) {

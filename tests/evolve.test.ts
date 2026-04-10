@@ -368,6 +368,22 @@ ATTEMPTED: Three improvements tried`;
     expect(result.strategic_context).toBe("");
   });
 
+  it("parses triple-hash header format like ### ATTEMPTED identically to ## ATTEMPTED", () => {
+    const input = `### ATTEMPTED
+- Triple-hash attempt
+### SUCCEEDED
+Triple-hash success
+### FAILED
+nothing
+### LEARNINGS
+Triple-hash learning`;
+    const result = parseEvolutionResult(input);
+    expect(result.attempted).toContain("- Triple-hash attempt");
+    expect(result.succeeded).toContain("Triple-hash success");
+    expect(result.failed).toContain("nothing");
+    expect(result.learnings).toContain("Triple-hash learning");
+  });
+
   it("does not parse triple-asterisk headers (***ATTEMPTED***) — HEADER_RE only allows 0-2 asterisks", () => {
     // ***KEYWORD*** is markdown bold+italic; HEADER_RE uses \*{0,2} which intentionally
     // does not match three asterisks.  Content under such a header is silently skipped
