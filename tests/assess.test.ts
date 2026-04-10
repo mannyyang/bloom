@@ -52,7 +52,7 @@ import { readFileSync } from "fs";
 import { getLatestCycleNumber, getRecentJournalSummary } from "../src/db.js";
 import { extractResultText } from "../src/usage.js";
 import { buildAssessmentPrompt } from "../src/evolve.js";
-import { ensureProject, getProjectItems } from "../src/planning.js";
+import { ensureProject, getProjectItems, formatPlanningContext } from "../src/planning.js";
 import { main } from "../src/assess.js";
 
 const mockQuery = vi.mocked(query);
@@ -60,6 +60,7 @@ const mockExtractResultText = vi.mocked(extractResultText);
 const mockBuildAssessmentPrompt = vi.mocked(buildAssessmentPrompt);
 const mockEnsureProject = vi.mocked(ensureProject);
 const mockGetProjectItems = vi.mocked(getProjectItems);
+const mockFormatPlanningContext = vi.mocked(formatPlanningContext);
 const mockGetLatestCycleNumber = vi.mocked(getLatestCycleNumber);
 const mockReadFileSync = vi.mocked(readFileSync);
 const mockGetRecentJournalSummary = vi.mocked(getRecentJournalSummary);
@@ -220,5 +221,19 @@ describe("assess.ts main()", () => {
     expect(call.journalSummary).toBe("");
 
     errorSpy.mockRestore();
+  });
+
+  it("passes planning context from formatPlanningContext to buildAssessmentPrompt", async () => {
+    // Regression guard: if the planningContext argument is dropped from the
+    // buildAssessmentPrompt call, the LLM loses roadmap awareness silently.
+    // This test verifies the success path where formatPlanningContext returns
+    // a string and that string flows through to buildAssessmentPrompt.
+    mockFormatPlanningContext.mockReturnValueOnce("specific roadmap context");
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    const call = mockBuildAssessmentPrompt.mock.calls[0][0];
+    expect(call.planningContext).toBe("specific roadmap context");
   });
 });
