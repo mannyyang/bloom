@@ -59,10 +59,9 @@ describe("parseTestCount", () => {
     expect(parseTestCount("Tests  3 passed | 1 skipped (4)")).toBe(3);
   });
 
-  it("returns null for skipped-only output (no passed token)", () => {
-    // "Tests  3 skipped (3)" has no "passed" token and no "failed" token,
-    // so both regex branches miss and the function returns null.
-    expect(parseTestCount("Tests  3 skipped (3)")).toBeNull();
+  it("returns 0 for skipped-only output (no passed or failed token)", () => {
+    // "Tests  3 skipped (3)" has no "passed" or "failed" token → 0 passed
+    expect(parseTestCount("Tests  3 skipped (3)")).toBe(0);
   });
 
   it("parses passed count from passed+skipped+failed output", () => {

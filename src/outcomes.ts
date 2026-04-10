@@ -25,6 +25,7 @@ export interface CycleOutcome {
  * Parse the passed test count from pnpm test output.
  * Looks for patterns like "Tests  490 passed" in vitest output.
  * Also handles cases where all tests fail (e.g., "Tests  5 failed (5)") — returns 0 passed.
+ * Also handles cases where all tests are skipped (e.g., "Tests  3 skipped (3)") — returns 0 passed.
  * Returns null if the pattern is not found.
  */
 export function parseTestCount(output: string): number | null {
@@ -36,6 +37,11 @@ export function parseTestCount(output: string): number | null {
   // All tests failed: "Tests  5 failed (5)" with no "passed" token
   const allFailedMatch = output.match(/Tests\s+\d+\s+failed\s+\(\d+\)/);
   if (allFailedMatch) {
+    return 0;
+  }
+  // All tests skipped: "Tests  3 skipped (3)" with no "passed" or "failed" token
+  const allSkippedMatch = output.match(/Tests\s+\d+\s+skipped\s+\(\d+\)/);
+  if (allSkippedMatch) {
     return 0;
   }
   return null;
