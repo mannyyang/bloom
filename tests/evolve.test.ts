@@ -368,6 +368,26 @@ ATTEMPTED: Three improvements tried`;
     expect(result.strategic_context).toBe("");
   });
 
+  it("parses single-hash header format like # ATTEMPTED (HEADER_RE minimum)", () => {
+    const input = `# ATTEMPTED
+- Single-hash attempt
+# SUCCEEDED
+Single-hash success`;
+    const result = parseEvolutionResult(input);
+    expect(result.attempted).toContain("- Single-hash attempt");
+    expect(result.succeeded).toContain("Single-hash success");
+  });
+
+  it("parses quad-hash header format like #### ATTEMPTED (HEADER_RE maximum)", () => {
+    const input = `#### ATTEMPTED
+- Quad-hash attempt
+#### SUCCEEDED
+Quad-hash success`;
+    const result = parseEvolutionResult(input);
+    expect(result.attempted).toContain("- Quad-hash attempt");
+    expect(result.succeeded).toContain("Quad-hash success");
+  });
+
   it("parses triple-hash header format like ### ATTEMPTED identically to ## ATTEMPTED", () => {
     const input = `### ATTEMPTED
 - Triple-hash attempt
