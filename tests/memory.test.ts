@@ -76,6 +76,21 @@ describe("extractLearnings", () => {
     const result = extractLearnings("[pattern] Bare line without bullet");
     expect(result).toEqual({ learnings: [] });
   });
+
+  it("silently drops bullet lines whose [category] tag has no trailing content", () => {
+    // A line like '- [pattern]' passes the bullet guard and the category match,
+    // but cleanContent.trim() is empty so the guard at line 67 discards it.
+    // This test documents that existing correct behaviour so the guard is not
+    // accidentally removed in future refactors.
+    const result = extractLearnings("- [pattern]");
+    expect(result).toEqual({ learnings: [] });
+  });
+
+  it("produces zero learnings for a mix of empty-tag and blank lines", () => {
+    const text = "- [pattern]\n- [anti-pattern]\n\n- [tool-usage]";
+    const result = extractLearnings(text);
+    expect(result.learnings).toHaveLength(0);
+  });
 });
 
 describe("storeLearnings", () => {
