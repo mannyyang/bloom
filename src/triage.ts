@@ -1,12 +1,9 @@
 import type Database from "better-sqlite3";
-import type { CommunityIssue } from "./issues.js";
-import { closeIssueWithComment } from "./issues.js";
+import { type CommunityIssue, closeIssueWithComment, detectRepo, isValidRepo } from "./issues.js";
 import { hasIssueAction, insertIssueAction } from "./db.js";
 import { errorMessage } from "./errors.js";
 import { addLinkedItem, type ProjectConfig, type ProjectItem } from "./planning.js";
-import { detectRepo, isValidRepo } from "./issues.js";
-import type { QueryFn } from "./agent-phases.js";
-import { resolveModel } from "./agent-phases.js";
+import { type QueryFn, resolveModel } from "./agent-phases.js";
 import { extractResultText } from "./usage.js";
 
 // --- Types ---
