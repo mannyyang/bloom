@@ -699,6 +699,7 @@ describe("buildProtectedFilePatterns", () => {
       ["git checkout --", "git checkout -- CUSTOM.txt"],
       ["git restore", "git restore CUSTOM.txt"],
       ["with path prefix", "rm /some/path/CUSTOM.txt"],
+      ["perl -pi -e", "perl -pi -e 's/a/b/' CUSTOM.txt"],
     ])("blocks %s", (_desc, command) => {
       expect(matchesAny(patterns, command)).toBe(true);
     });
