@@ -110,12 +110,15 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Shell script execution — source and dot-script (`. `) execute arbitrary files
   { pattern: /(?:^|[;&|]\s*)source\s/, category: "shell-script-execution" },
   { pattern: /(?:^|[;&|]\s*)\.\s+\S/, category: "shell-script-execution" },
-  // Untrusted package execution — npx/npm exec/pnpm exec/pnpm dlx/yarn dlx run arbitrary packages
+  // Untrusted package execution — npx/npm exec/pnpm exec/pnpm dlx/yarn dlx/bunx run arbitrary packages
   { pattern: /\bnpx\s/, category: "untrusted-package-execution" },
   { pattern: /\bnpm\s+exec\b/, category: "untrusted-package-execution" },
   { pattern: /\bpnpm\s+exec\b/, category: "untrusted-package-execution" },
   { pattern: /\bpnpm\s+dlx\s/, category: "untrusted-package-execution" },
   { pattern: /\byarn\s+dlx\s/, category: "untrusted-package-execution" },
+  // bunx / bun x — Bun's equivalent of npx; executes packages without permanent installation
+  { pattern: /\bbunx\s/, category: "untrusted-package-execution" },
+  { pattern: /\bbun\s+x\s/, category: "untrusted-package-execution" },
   // Git ref destruction — force-delete branches, delete reflog, prune objects, delete tags, delete remote refs
   { pattern: /git\s+branch\s+(-D|--delete\s+--force)\b/, category: "git-ref-destruction" },
   { pattern: /git\s+push\s+(?:.*\s)?(?:-d\b|--delete\b)/, category: "git-ref-destruction" },
@@ -194,6 +197,8 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bpnpm\s+(?:install|i)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
   { pattern: /\bnpm\s+(?:install|i)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
   { pattern: /\byarn\s+add\b/, category: "untrusted-package-installation" },
+  // bun add — Bun's package installation command, equivalent to yarn add
+  { pattern: /\bbun\s+add\b/, category: "untrusted-package-installation" },
 ];
 
 /**
