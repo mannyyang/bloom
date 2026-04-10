@@ -194,6 +194,16 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /git\s+stash\s+drop\b/, category: "git-stash-destruction" },
   // install(1) — Unix install utility copies files and sets arbitrary permissions with -m
   { pattern: /\binstall\s+(?:.*\s)?-[a-zA-Z]*m\b/, category: "file-permission-tampering" },
+  // find -exec/-execdir with shell interpreters — executes arbitrary code without xargs
+  {
+    pattern: /\bfind\b.*-exec(?:dir)?\s+(?:sh|bash|zsh|fish|dash|ksh|csh|tcsh|ash)\b/,
+    category: "find-exec-shell",
+  },
+  // find -exec/-execdir with destructive file commands — bypasses xargs guards
+  {
+    pattern: /\bfind\b.*-exec(?:dir)?\s+(?:rm|unlink|chmod|chown|mv|cp|dd|truncate|tee)\b/,
+    category: "find-exec-destructive",
+  },
   // Untrusted package installation — adding deps pulls arbitrary code
   { pattern: /\bpnpm\s+add\b/, category: "untrusted-package-installation" },
   { pattern: /\bpnpm\s+(?:install|i)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },

@@ -249,6 +249,14 @@ describe("blockDangerousCommands", () => {
     ["xargs cp targeting protected file", "find /tmp -name '*.md' | xargs cp IDENTITY.md"],
     ["xargs tee (overwrites files via stdin paths)", "find . | xargs tee output.txt"],
     ["xargs tee targeting protected file", "find /tmp | xargs tee IDENTITY.md"],
+    // find -exec/-execdir with shells — bypasses xargs guards
+    ["find -exec sh (shell via exec)", "find . -name '*.sh' -exec sh {} \\;"],
+    ["find -exec bash (bash via exec)", "find . -name '*.sh' -exec bash {} \\;"],
+    ["find -execdir sh (shell via execdir)", "find . -execdir sh {} \\;"],
+    // find -exec/-execdir with destructive file commands
+    ["find -exec rm (deletes matched files)", "find . -name '*.tmp' -exec rm {} +"],
+    ["find -exec chmod (changes permissions)", "find . -exec chmod 777 {} \\;"],
+    ["find -execdir unlink (unlinks via execdir)", "find . -name '*.log' -execdir unlink {} \\;"],
     // install(1) — copies files with arbitrary permissions
     ["install -m 777 (world-writable)", "install -m 777 src dst"],
     ["install -m 755 to system path", "install -m 755 dist/index.js /usr/local/bin/bloom"],
@@ -602,6 +610,10 @@ describe("isDangerousCommand", () => {
     ["git stash clear", "git stash clear", "git-stash-destruction"],
     ["git stash drop", "git stash drop stash@{0}", "git-stash-destruction"],
     ["xargs tee", "find . | xargs tee output.txt", "xargs-command-execution"],
+    ["find -exec sh", "find . -exec sh {} \\;", "find-exec-shell"],
+    ["find -exec bash (script, no -c)", "find . -name '*.sh' -exec bash {} \\;", "find-exec-shell"],
+    ["find -exec rm", "find . -name '*.tmp' -exec rm {} +", "find-exec-destructive"],
+    ["find -exec chmod", "find . -exec chmod 777 {} \\;", "find-exec-destructive"],
     ["install -m", "install -m 777 src dst", "file-permission-tampering"],
     ["unlink src/safety.ts (bare file-deletion)", "unlink src/safety.ts", "file-deletion"],
   ])("detects %s → %s", (_desc, command, category) => {
