@@ -249,6 +249,8 @@ describe("blockDangerousCommands", () => {
     ["xargs cp targeting protected file", "find /tmp -name '*.md' | xargs cp IDENTITY.md"],
     ["xargs tee (overwrites files via stdin paths)", "find . | xargs tee output.txt"],
     ["xargs tee targeting protected file", "find /tmp | xargs tee IDENTITY.md"],
+    ["xargs install -m 755 (bulk permission-set)", "find dist -name '*.sh' | xargs install -m 755"],
+    ["xargs install -Dm 644 (combined flags)", "find . -name '*.service' | xargs install -Dm 644 /etc/systemd/system/"],
     // find -exec/-execdir with shells — bypasses xargs guards
     ["find -exec sh (shell via exec)", "find . -name '*.sh' -exec sh {} \\;"],
     ["find -exec bash (bash via exec)", "find . -name '*.sh' -exec bash {} \\;"],
