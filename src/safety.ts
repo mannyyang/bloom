@@ -200,7 +200,7 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bawk\b.*\|\s*["']?(?:ba|z|da|k)?sh\b/, category: "awk-code-execution" },
   // find -exec/-execdir with shell interpreters — executes arbitrary code without xargs
   {
-    pattern: /\bfind\b.*-exec(?:dir)?\s+(?:sh|bash|zsh|fish|dash|ksh|csh|tcsh|ash|awk)\b/,
+    pattern: /\bfind\b.*-exec(?:dir)?\s+(?:sh|bash|zsh|fish|dash|ksh|csh|tcsh|ash|awk|perl|python3?|ruby|node)\b/,
     category: "find-exec-shell",
   },
   // find -exec/-execdir with destructive file commands — bypasses xargs guards

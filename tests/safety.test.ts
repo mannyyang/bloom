@@ -253,6 +253,11 @@ describe("blockDangerousCommands", () => {
     ["find -exec sh (shell via exec)", "find . -name '*.sh' -exec sh {} \\;"],
     ["find -exec bash (bash via exec)", "find . -name '*.sh' -exec bash {} \\;"],
     ["find -execdir sh (shell via execdir)", "find . -execdir sh {} \\;"],
+    ["find -exec perl (perl code execution)", "find . -exec perl -e 'system(\"rm -rf /\")' {} +"],
+    ["find -exec python (python code execution)", "find . -exec python -c 'import os; os.system(\"id\")' {} \\;"],
+    ["find -exec python3 (python3 code execution)", "find . -exec python3 -c 'import os; os.system(\"id\")' {} \\;"],
+    ["find -exec node (node code execution)", "find . -exec node -e 'require(\"child_process\").execSync(\"id\")' {} \\;"],
+    ["find -exec ruby (ruby code execution)", "find . -exec ruby -e 'system(\"id\")' {} \\;"],
     // find -exec/-execdir with destructive file commands
     ["find -exec rm (deletes matched files)", "find . -name '*.tmp' -exec rm {} +"],
     ["find -exec chmod (changes permissions)", "find . -exec chmod 777 {} \\;"],
