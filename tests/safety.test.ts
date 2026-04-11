@@ -634,6 +634,14 @@ describe("isDangerousCommand", () => {
     ["awk pipe to sh", "awk '{print | \"sh\"}'", "awk-code-execution"],
     ["awk pipe to bash", "awk '{print | \"bash\"}'", "awk-code-execution"],
     ["awk pipe to zsh", "awk '{cmd=\"ls\"; print | cmd}' | zsh", "awk-code-execution"],
+    ["process substitution tee >(bash)", "tee >(bash)", "process-substitution-execution"],
+    ["process substitution tee >(sh)", "echo hello | tee >(sh)", "process-substitution-execution"],
+    ["process substitution >(python)", "cmd > >(python exploit.py)", "process-substitution-execution"],
+    ["process substitution >(python3)", "cmd > >(python3 exploit.py)", "process-substitution-execution"],
+    ["process substitution >(perl)", "cmd > >(perl -e 'exec(\"id\")')", "process-substitution-execution"],
+    ["process substitution >(ruby)", "cmd > >(ruby -e 'exec(\"id\")')", "process-substitution-execution"],
+    ["process substitution >(node)", "output | tee >(node -e 'require(\"child_process\")')", "process-substitution-execution"],
+    ["process substitution >(zsh)", "cmd > >(zsh)", "process-substitution-execution"],
   ])("detects %s → %s", (_desc, command, category) => {
     expect(isDangerousCommand(command)).toBe(category);
   });
@@ -652,6 +660,9 @@ describe("isDangerousCommand", () => {
     ["git stash pop (safe)", "git stash pop"],
     ["plain awk print (safe)", "awk '{print $1}' file.txt"],
     ["awk field separator (safe)", "awk -F, '{print $2}' data.csv"],
+    ["process substitution basename (safe)", ">(basename /path/to/file)"],
+    ["process substitution wc (safe)", "cmd > >(wc -l)"],
+    ["process substitution grep (safe)", "cmd > >(grep error)"],
   ])("returns null for %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBeNull();
   });

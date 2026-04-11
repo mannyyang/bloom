@@ -96,6 +96,10 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bwget\b.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh/, category: "remote-code-execution" },
   // Remote code execution — process substitution download-and-execute
   { pattern: /(?:[\w./]*\/)?(?:ba|z|da|k)?sh\s+<\(\s*(?:curl|wget)\b/, category: "remote-code-execution" },
+  // Remote code execution — output process substitution >(interpreter) pipes data into arbitrary code
+  // Covers: tee >(bash), cmd > >(sh -c …), output | tee >(python3 exploit.py), etc.
+  // False-positive analysis: >(basename …), >(wc -l), >(grep …) are safe — none match the interpreter list.
+  { pattern: />\(\s*(?:[\w./]*\/)?(?:bash|sh|zsh|fish|dash|ksh|csh|tcsh|ash|python3?|perl|ruby|node)\b/, category: "process-substitution-execution" },
   // Remote code execution — piping downloaded content into script interpreters
   { pattern: /\bcurl\b.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby)\b/, category: "remote-code-execution" },
   { pattern: /\bwget\b.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby)\b/, category: "remote-code-execution" },
