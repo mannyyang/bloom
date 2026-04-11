@@ -91,6 +91,22 @@ describe("extractLearnings", () => {
     const result = extractLearnings(text);
     expect(result.learnings).toHaveLength(0);
   });
+
+  it("strips N) bullet prefix and extracts category correctly", () => {
+    const text = "1) [pattern] Use incremental commits for safer rollback";
+    const result = extractLearnings(text);
+    expect(result.learnings).toHaveLength(1);
+    expect(result.learnings[0].category).toBe("pattern");
+    expect(result.learnings[0].content).toBe("Use incremental commits for safer rollback");
+  });
+
+  it("strips N) bullet prefix and defaults to domain when no category tag", () => {
+    const text = "2) Always run tests before committing";
+    const result = extractLearnings(text);
+    expect(result.learnings).toHaveLength(1);
+    expect(result.learnings[0].category).toBe("domain");
+    expect(result.learnings[0].content).toBe("Always run tests before committing");
+  });
 });
 
 describe("storeLearnings", () => {

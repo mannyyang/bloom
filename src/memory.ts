@@ -40,8 +40,8 @@ export function extractLearnings(learningsText: string): ExtractedLearnings {
     const trimmed = line.trim();
     if (!trimmed || !trimmed.match(/^[-*\d]/)) continue;
 
-    // Strip leading "- " or "* " or "1. " etc.
-    const content = trimmed.replace(/^[-*]\s+/, "").replace(/^\d+\.\s+/, "");
+    // Strip leading "- " or "* " or "1. " or "1) " etc.
+    const content = trimmed.replace(/^[-*]\s+/, "").replace(/^\d+[.)]\s+/, "");
     if (!content) continue;
 
     // Check for [category] prefix
