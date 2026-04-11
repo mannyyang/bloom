@@ -373,6 +373,7 @@ describe("blockDangerousCommands", () => {
     ["sed -i on IDENTITY.md", "sed -i 's/foo/bar/' IDENTITY.md"],
     ["perl -pi -e on IDENTITY.md", "perl -pi -e 's/foo/bar/' IDENTITY.md"],
     ["tee to IDENTITY.md", "echo x | tee IDENTITY.md"],
+    ["tee IDENTITY.md (bare, no pipe)", "tee IDENTITY.md"],
     ["tee --append to IDENTITY.md (no allowAppend)", "echo x | tee --append IDENTITY.md"],
     ["chmod on IDENTITY.md", "chmod 777 IDENTITY.md"],
     ["redirect to absolute path IDENTITY.md", "echo x > /repo/IDENTITY.md"],
