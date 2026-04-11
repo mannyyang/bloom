@@ -652,6 +652,8 @@ describe("isDangerousCommand", () => {
     ["process substitution >(ruby)", "cmd > >(ruby -e 'exec(\"id\")')", "process-substitution-execution"],
     ["process substitution >(node)", "output | tee >(node -e 'require(\"child_process\")')", "process-substitution-execution"],
     ["process substitution >(zsh)", "cmd > >(zsh)", "process-substitution-execution"],
+    ["truncate -s 0 (file-truncation)", "truncate -s 0 src/safety.ts", "file-truncation"],
+    ["truncate --size=0 (file-truncation)", "truncate --size=0 src/triage.ts", "file-truncation"],
   ])("detects %s → %s", (_desc, command, category) => {
     expect(isDangerousCommand(command)).toBe(category);
   });
