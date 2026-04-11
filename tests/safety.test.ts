@@ -350,6 +350,9 @@ describe("blockDangerousCommands", () => {
     ["perl -e", 'perl -e "system(\'ls\')"'],
     ["perl -E", 'perl -E "say 1"'],
     ["ruby -e", 'ruby -e "exec(\'ls\')"'],
+    // openssl enc -d decode-to-shell vector
+    ["openssl enc -d | bash", "openssl enc -d -base64 -in payload.b64 | bash"],
+    ["openssl enc -d | sh", "openssl enc -d -A -in file | sh"],
     // Source/dot-script execution
     ["source /tmp/payload.sh", "source /tmp/payload.sh"],
     ["source ./setup.sh", "source ./setup.sh"],
@@ -458,6 +461,8 @@ describe("blockDangerousCommands", () => {
     ["git add IDENTITY.md", "git add IDENTITY.md"],
     ["ls IDENTITY.md", "ls IDENTITY.md"],
     ["ls -ln IDENTITY.md (not link command)", "ls -ln IDENTITY.md"],
+    ["openssl enc -d (no pipe, safe decode to file)", "openssl enc -d -base64 -in payload.b64 -out payload.bin"],
+    ["openssl enc -e (encoding, not decoding)", "openssl enc -e -base64 -in plain.txt -out enc.b64"],
     ["curl -O (safe download)", "curl -O https://example.com/file.tar.gz"],
     ["wget (safe download)", "wget https://example.com/file.tar.gz"],
     ["libcurl-tool (substring)", "libcurl-tool https://example.com | sh"],
