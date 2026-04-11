@@ -218,8 +218,9 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
     category: "find-exec-shell",
   },
   // find -exec/-execdir with destructive file commands — bypasses xargs guards
+  // sed is included because `find -exec sed -i` can bulk-modify source files in-place
   {
-    pattern: /\bfind\b.*-exec(?:dir)?\s+(?:rm|unlink|chmod|chown|mv|cp|dd|truncate|tee)\b/,
+    pattern: /\bfind\b.*-exec(?:dir)?\s+(?:rm|unlink|chmod|chown|mv|cp|dd|truncate|tee|sed)\b/,
     category: "find-exec-destructive",
   },
   // Untrusted package installation — adding deps pulls arbitrary code

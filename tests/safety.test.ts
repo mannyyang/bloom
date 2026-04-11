@@ -627,6 +627,8 @@ describe("isDangerousCommand", () => {
     ["find -exec awk", "find . -exec awk 'system(\"cmd\")' {} +", "awk-code-execution"],
     ["find -exec rm", "find . -name '*.tmp' -exec rm {} +", "find-exec-destructive"],
     ["find -exec chmod", "find . -exec chmod 777 {} \\;", "find-exec-destructive"],
+    ["find -exec sed -i (bulk in-place edit)", "find . -name '*.ts' -exec sed -i 's/x/y/g' {} \\;", "find-exec-destructive"],
+    ["find -execdir sed -i (in-place via execdir)", "find src -execdir sed -i '' 's/foo/bar/' {} \\;", "find-exec-destructive"],
     ["install -m", "install -m 777 src dst", "file-permission-tampering"],
     ["unlink src/safety.ts (bare file-deletion)", "unlink src/safety.ts", "file-deletion"],
     ["awk system() call", "awk 'system(\"rm -rf /\")'", "awk-code-execution"],
