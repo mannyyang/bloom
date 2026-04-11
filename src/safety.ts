@@ -170,6 +170,8 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bwget\s+.*--post-(data|file)\b/, category: "data-exfiltration" },
   // xargs command execution bypass — xargs can invoke dangerous commands from stdin
   { pattern: /\bxargs\s+.*(?:[\w./]*\/)?(?:ba|z|da|k)?sh\b/, category: "xargs-command-execution" },
+  // xargs with scripting interpreters — parallel to find -exec interpreter block (cycle 244)
+  { pattern: /\bxargs\s+.*(?:[\w./]*\/)?(?:python3?|perl|ruby|node)\b/, category: "xargs-command-execution" },
   { pattern: /\bxargs\s+.*\brm\s/, category: "xargs-command-execution" },
   // xargs chmod/chown bypass — evades direct .git pattern by placing .git before the command
   { pattern: /\bxargs\s+.*\bchmod\b/, category: "xargs-command-execution" },
