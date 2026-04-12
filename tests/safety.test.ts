@@ -358,6 +358,9 @@ describe("blockDangerousCommands", () => {
     // openssl enc -d decode-to-shell vector
     ["openssl enc -d | bash", "openssl enc -d -base64 -in payload.b64 | bash"],
     ["openssl enc -d | sh", "openssl enc -d -A -in file | sh"],
+    // openssl enc -d decode-to-scripting-interpreter vector
+    ["openssl enc -d | python3", "openssl enc -d -base64 -in payload.b64 | python3"],
+    ["openssl enc -d | node", "openssl enc -d -base64 -in payload.b64 | node"],
     // Source/dot-script execution
     ["source /tmp/payload.sh", "source /tmp/payload.sh"],
     ["source ./setup.sh", "source ./setup.sh"],
