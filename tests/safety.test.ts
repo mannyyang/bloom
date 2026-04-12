@@ -627,6 +627,8 @@ describe("isDangerousCommand", () => {
     ["python -c", "python -c 'import os; os.system(\"id\")'", "inline-code-execution"],
     ["node -e", "node -e 'process.exit(1)'", "inline-code-execution"],
     ["source", "source /tmp/evil.sh", "shell-script-execution"],
+    ["dot-script bare", ". /tmp/evil.sh", "shell-script-execution"],
+    ["dot-script after semicolon", "echo hi; . /tmp/evil.sh", "shell-script-execution"],
     ["git branch -D", "git branch -D feature", "git-ref-destruction"],
     ["git switch -C", "git switch -C existing-branch", "git-ref-destruction"],
     ["git tag -d", "git tag -d v1.0.0", "git-ref-destruction"],
