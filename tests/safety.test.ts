@@ -606,6 +606,8 @@ describe("isDangerousCommand", () => {
     ["bare git filter-repo", "git filter-repo", "git-history-rewriting"],
     ["git rebase -i", "git rebase -i HEAD~3", "git-history-rewriting"],
     ["git rebase --interactive", "git rebase --interactive main", "git-history-rewriting"],
+    ["git commit --amend", "git commit --amend", "git-history-rewriting"],
+    ["git commit --amend --no-edit", "git commit --amend --no-edit", "git-history-rewriting"],
     ["xargs piped to shell", 'echo "cmd" | xargs sh', "xargs-command-execution"],
     ["xargs with bash", "cat cmds.txt | xargs bash", "xargs-command-execution"],
     ["xargs rm", "find . | xargs rm -rf", "xargs-command-execution"],
