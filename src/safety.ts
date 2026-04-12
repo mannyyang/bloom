@@ -237,6 +237,9 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\byarn\s+add\b/, category: "untrusted-package-installation" },
   // bun add — Bun's package installation command, equivalent to yarn add
   { pattern: /\bbun\s+add\b/, category: "untrusted-package-installation" },
+  // bun install <pkg> / bun i <pkg> — Bun's install subcommand with a package argument;
+  // bare `bun install` (no package name) is a lockfile-only operation and remains allowed.
+  { pattern: /\bbun\s+(?:install|i)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
 ];
 
 /**
