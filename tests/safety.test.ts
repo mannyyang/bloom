@@ -414,6 +414,10 @@ describe("blockDangerousCommands", () => {
     ["npm i -g <package> (alias)", "npm i -g evil-pkg"],
     ["npm i --save <package> (alias)", "npm i --save evil-pkg"],
     ["npm i @scope/pkg (alias)", "npm i @scope/evil-pkg"],
+    // Untrusted Python package installation
+    ["pip install <pkg>", "pip install evil-pkg"],
+    ["pip3 install <pkg>", "pip3 install evil-pkg"],
+    ["pip3 install --user <pkg>", "pip3 install --user evil-pkg"],
     // JOURNAL.md modifications
     ["overwrite redirect to JOURNAL.md", 'echo "pwned" > JOURNAL.md'],
     ["rm JOURNAL.md", "rm JOURNAL.md"],
@@ -655,6 +659,9 @@ describe("isDangerousCommand", () => {
     ["bun install <pkg>", "bun install evil-pkg", "untrusted-package-installation"],
     ["bun i <pkg>", "bun i evil-pkg", "untrusted-package-installation"],
     ["bun install <pkg> with flag", "bun install --save evil-pkg", "untrusted-package-installation"],
+    ["pip install <pkg>", "pip install evil-pkg", "untrusted-package-installation"],
+    ["pip3 install <pkg>", "pip3 install evil-pkg", "untrusted-package-installation"],
+    ["pip3 install --user <pkg>", "pip3 install --user evil-pkg", "untrusted-package-installation"],
     ["git stash clear", "git stash clear", "git-stash-destruction"],
     ["git stash drop", "git stash drop stash@{0}", "git-stash-destruction"],
     ["xargs tee", "find . | xargs tee output.txt", "xargs-command-execution"],

@@ -240,6 +240,10 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // bun install <pkg> / bun i <pkg> — Bun's install subcommand with a package argument;
   // bare `bun install` (no package name) is a lockfile-only operation and remains allowed.
   { pattern: /\bbun\s+(?:install|i)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  // pip / pip3 install <pkg> — Python package installation pulls arbitrary code from PyPI.
+  // Matches pip install and pip3 install with optional flags before the package name.
+  // bare `pip install` (no package name) is blocked too since the pattern requires a pkg token.
+  { pattern: /\bpip3?\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
 ];
 
 /**
