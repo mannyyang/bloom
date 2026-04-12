@@ -261,6 +261,9 @@ describe("blockDangerousCommands", () => {
     ["find -exec node (node code execution)", "find . -exec node -e 'require(\"child_process\").execSync(\"id\")' {} \\;"],
     ["find -exec ruby (ruby code execution)", "find . -exec ruby -e 'system(\"id\")' {} \\;"],
     // find -exec/-execdir with destructive file commands
+    // Note: `find -exec truncate` → "file-truncation" and `find -exec unlink` → "file-deletion"
+    // due to pattern-priority (bare \btruncate\b / \bunlink\b patterns fire before find-exec-destructive).
+    // These are still dangerous — just categorised by their primary command, not the find wrapper.
     ["find -exec rm (deletes matched files)", "find . -name '*.tmp' -exec rm {} +"],
     ["find -exec chmod (changes permissions)", "find . -exec chmod 777 {} \\;"],
     ["find -execdir unlink (unlinks via execdir)", "find . -name '*.log' -execdir unlink {} \\;"],
