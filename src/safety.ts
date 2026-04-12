@@ -244,6 +244,15 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Matches pip install and pip3 install with optional flags before the package name.
   // bare `pip install` (no package name) is blocked too since the pattern requires a pkg token.
   { pattern: /\bpip3?\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  // cargo install <pkg> — Rust crate installation pulls arbitrary code from crates.io.
+  // Matches cargo install with optional flags before the crate name.
+  { pattern: /\bcargo\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  // gem install <pkg> — Ruby gem installation pulls arbitrary code from rubygems.org.
+  // Matches gem install with optional flags before the gem name.
+  { pattern: /\bgem\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  // go install / go get <pkg> — Go module installation pulls arbitrary code from public registries.
+  // Matches both subcommands with optional flags before the module path.
+  { pattern: /\bgo\s+(?:install|get)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
 ];
 
 /**
