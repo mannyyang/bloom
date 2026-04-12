@@ -645,6 +645,8 @@ describe("isDangerousCommand", () => {
     ["xargs perl", "find . -name '*.pl' | xargs perl", "xargs-command-execution"],
     ["xargs ruby", "find . | xargs ruby script.rb", "xargs-command-execution"],
     ["xargs node", "find . -name '*.js' | xargs node", "xargs-command-execution"],
+    ["xargs sed -i (bulk in-place rewrite)", "find . -name '*.ts' | xargs sed -i 's/old/new/g'", "xargs-command-execution"],
+    ["xargs sed --in-place (long flag)", "find src -name '*.ts' | xargs sed --in-place 's/foo/bar/g'", "xargs-command-execution"],
     ["xargs chmod", "find .git -type f | xargs chmod 777", "xargs-command-execution"],
     ["xargs chown", "find .git -type f | xargs chown root", "xargs-command-execution"],
     ["python -c", "python -c 'import os; os.system(\"id\")'", "inline-code-execution"],
@@ -684,6 +686,7 @@ describe("isDangerousCommand", () => {
     ["go get <pkg> with flag", "go get -u github.com/evil/pkg@latest", "untrusted-package-installation"],
     ["git stash clear", "git stash clear", "git-stash-destruction"],
     ["git stash drop", "git stash drop stash@{0}", "git-stash-destruction"],
+    ["xargs sed", "find . -name '*.ts' | xargs sed -i 's/old/new/g'", "xargs-command-execution"],
     ["xargs tee", "find . | xargs tee output.txt", "xargs-command-execution"],
     ["xargs cp", "find . -name '*.conf' | xargs cp /etc/", "xargs-command-execution"],
     ["xargs install", "find dist -name '*.so' | xargs install -m 755", "xargs-command-execution"],
@@ -1115,13 +1118,14 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "truncate -s 0 src/file.ts",
       // file-deletion (standalone unlink — appears before xargs dd in DANGEROUS_PATTERNS)
       "unlink src/file.ts",
-      // xargs-command-execution (dd, truncate, unlink, mv, cp, install, tee)
+      // xargs-command-execution (dd, truncate, unlink, mv, cp, install, sed, tee)
       "find . | xargs dd if=/dev/zero",
       "find logs | xargs truncate -s 0",
       "find . -name '*.tmp' | xargs unlink",
       "find . -name '*.bak' | xargs mv /tmp/",
       "find . -name '*.conf' | xargs cp /etc/",
       "find dist -name '*.so' | xargs install -m 755",
+      "find . -name '*.ts' | xargs sed -i 's/old/new/g'",
       "find . | xargs tee output.txt",
       // git-stash-destruction
       "git stash clear",

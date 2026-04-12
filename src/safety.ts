@@ -208,6 +208,8 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bxargs\s+.*\bcp\b/, category: "xargs-command-execution" },
   // xargs install — bulk-copy files with arbitrary permissions; mirrors standalone install -m guard
   { pattern: /\bxargs\s+.*\binstall\b/, category: "xargs-command-execution" },
+  // xargs sed — bulk in-place rewrites all matched source files (e.g. find . | xargs sed -i 's/old/new/g')
+  { pattern: /\bxargs\s+.*\bsed\b/, category: "xargs-command-execution" },
   // xargs tee — overwrites target files when fed paths from find (same risk as xargs cp)
   { pattern: /\bxargs\s+.*\btee\b/, category: "xargs-command-execution" },
   // Git stash destruction — clear destroys all stashes; drop destroys a named stash entry
