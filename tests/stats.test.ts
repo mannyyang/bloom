@@ -175,6 +175,18 @@ describe("generateStatsOutput", () => {
     expect(joined).toContain("Focusing on robustness improvements.");
   });
 
+  it("includes ## Strategic Context header in memory section when strategic context exists", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertStrategicContext(db, 1, "Prioritising coverage improvements this quarter.");
+    insertLearning(db, 1, "pattern", "Incremental changes reduce rollback risk");
+
+    const output = generateStatsOutput(db);
+    const joined = output.join("\n");
+    expect(joined).toContain("## Strategic Context");
+    expect(joined).toContain("Prioritising coverage improvements this quarter.");
+    expect(joined).toContain("Incremental changes reduce rollback risk");
+  });
+
   it("handles a high cycle number correctly", () => {
     insertCycle(db, makeOutcome({ cycleNumber: 9999 }));
     const output = generateStatsOutput(db);
