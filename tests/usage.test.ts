@@ -164,6 +164,60 @@ describe("extractUsage", () => {
     expect(result).not.toBeNull();
     expect(result!.totalCostUsd).toBe(2.0);
   });
+
+  it("returns PhaseUsage (not null) when total_cost_usd is exactly zero", () => {
+    // Zero-cost runs occur during sandbox/cached executions; 0 is still a valid number
+    const msg = {
+      type: "result",
+      total_cost_usd: 0,
+      usage: { input_tokens: 0, output_tokens: 0 },
+      duration_ms: 100,
+      num_turns: 1,
+    };
+    const result = extractUsage(msg, "ZeroCost");
+    expect(result).not.toBeNull();
+    expect(result!.totalCostUsd).toBe(0);
+    expect(result!.inputTokens).toBe(0);
+    expect(result!.outputTokens).toBe(0);
+  });
+
+  it("correctly preserves zero input tokens with non-zero cache tokens (cache-only run)", () => {
+    // Cache-heavy cycles: all prompt tokens served from cache, input_tokens=0
+    const msg = {
+      type: "result",
+      total_cost_usd: 0.05,
+      usage: {
+        input_tokens: 0,
+        output_tokens: 300,
+        cache_read_input_tokens: 20000,
+        cache_creation_input_tokens: 0,
+      },
+      duration_ms: 8000,
+      num_turns: 4,
+    };
+    const result = extractUsage(msg, "CacheOnly");
+    expect(result).not.toBeNull();
+    expect(result!.inputTokens).toBe(0);
+    expect(result!.cacheReadInputTokens).toBe(20000);
+    expect(result!.cacheCreationInputTokens).toBe(0);
+    expect(result!.outputTokens).toBe(300);
+  });
+
+  it("passes negative numeric token values through (numOrZero only guards non-numbers)", () => {
+    // numOrZero(val) returns val when typeof val === "number", even if negative.
+    // This documents the current behaviour so regressions are caught.
+    const msg = {
+      type: "result",
+      total_cost_usd: 0.1,
+      usage: { input_tokens: -5, output_tokens: 10 },
+      duration_ms: 500,
+      num_turns: 1,
+    };
+    const result = extractUsage(msg, "NegativeTokens");
+    expect(result).not.toBeNull();
+    expect(result!.inputTokens).toBe(-5);
+    expect(result!.outputTokens).toBe(10);
+  });
 });
 
 describe("aggregateUsage", () => {
@@ -231,6 +285,44 @@ describe("aggregateUsage", () => {
     };
     const result = aggregateUsage([noCache]);
     expect(result.totalCacheReadTokens).toBe(0);
+    expect(result.totalCacheCreationTokens).toBe(0);
+  });
+
+  it("aggregates an all-zero phase without producing NaN", () => {
+    const zeroCost: PhaseUsage = {
+      phase: "ZeroPhase",
+      totalCostUsd: 0,
+      inputTokens: 0,
+      outputTokens: 0,
+      cacheReadInputTokens: 0,
+      cacheCreationInputTokens: 0,
+      durationMs: 0,
+      numTurns: 0,
+    };
+    const result = aggregateUsage([zeroCost]);
+    expect(result.totalCostUsd).toBe(0);
+    expect(result.totalInputTokens).toBe(0);
+    expect(result.totalOutputTokens).toBe(0);
+    expect(result.totalCacheReadTokens).toBe(0);
+    expect(result.totalCacheCreationTokens).toBe(0);
+    // Verify no NaN leaked in
+    expect(Number.isNaN(result.totalCostUsd)).toBe(false);
+  });
+
+  it("aggregates a cache-only phase (zero input, non-zero cache read)", () => {
+    const cacheOnly: PhaseUsage = {
+      phase: "CacheHeavy",
+      totalCostUsd: 0.02,
+      inputTokens: 0,
+      outputTokens: 150,
+      cacheReadInputTokens: 30000,
+      cacheCreationInputTokens: 0,
+      durationMs: 3000,
+      numTurns: 2,
+    };
+    const result = aggregateUsage([cacheOnly]);
+    expect(result.totalInputTokens).toBe(0);
+    expect(result.totalCacheReadTokens).toBe(30000);
     expect(result.totalCacheCreationTokens).toBe(0);
   });
 });
