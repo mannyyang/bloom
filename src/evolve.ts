@@ -43,10 +43,17 @@ export interface EvolutionSections {
  * Parse the structured summary from an evolution result.
  * Extracts ATTEMPTED, SUCCEEDED, FAILED, LEARNINGS, and STRATEGIC_CONTEXT sections.
  */
+/** Maps uppercase marker names to their EvolutionSections keys. */
+const SECTION_MAP: Record<string, keyof EvolutionSections> = {
+  ATTEMPTED:        "attempted",
+  SUCCEEDED:        "succeeded",
+  FAILED:           "failed",
+  LEARNINGS:        "learnings",
+  STRATEGIC_CONTEXT: "strategic_context",
+};
+
 export function parseEvolutionResult(result: string): EvolutionSections {
-  // Use a plain Record internally to allow dynamic string indexing, then
-  // cast to EvolutionSections on return (all five keys are always present).
-  const sections: Record<string, string> = {
+  const sections: EvolutionSections = {
     attempted: "",
     succeeded: "",
     failed: "",
@@ -54,24 +61,16 @@ export function parseEvolutionResult(result: string): EvolutionSections {
     strategic_context: "",
   };
 
-  const sectionMap: Record<string, string> = {
-    "ATTEMPTED": "attempted",
-    "SUCCEEDED": "succeeded",
-    "FAILED": "failed",
-    "LEARNINGS": "learnings",
-    "STRATEGIC_CONTEXT": "strategic_context",
-  };
-
   // Single regex handles all header formats:
   // "ATTEMPTED:", "**ATTEMPTED**:", "**ATTEMPTED:**", "## ATTEMPTED", "### ATTEMPTED", "## **ATTEMPTED**", "- ATTEMPTED:"
   const HEADER_RE = /^(?:#{1,4}\s+|-\s+)?\*{0,2}(ATTEMPTED|SUCCEEDED|FAILED|LEARNINGS|STRATEGIC_CONTEXT)\*{0,2}:?\*{0,2}:?\s*/;
 
-  let currentSection = "";
+  let currentSection: keyof EvolutionSections | "" = "";
   for (const line of result.split("\n")) {
     const trimmed = line.trim();
     const m = HEADER_RE.exec(trimmed);
     if (m) {
-      currentSection = sectionMap[m[1]];
+      currentSection = SECTION_MAP[m[1]];
       const rest = trimmed.slice(m[0].length);
       if (rest) sections[currentSection] += rest + "\n";
     } else if (currentSection) {
@@ -79,12 +78,12 @@ export function parseEvolutionResult(result: string): EvolutionSections {
     }
   }
 
-  // Trim trailing whitespace
-  for (const key of Object.keys(sections)) {
+  // Trim trailing whitespace from every section
+  for (const key of Object.keys(sections) as Array<keyof EvolutionSections>) {
     sections[key] = sections[key].trim();
   }
 
-  return sections as unknown as EvolutionSections;
+  return sections;
 }
 
 /**
