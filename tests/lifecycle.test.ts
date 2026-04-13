@@ -283,6 +283,35 @@ describe("lifecycle helpers", () => {
       const result = verifyBuild();
       expect(result.passed).toBe(false);
     });
+
+    it("captures stdout from error object on failure", () => {
+      const err = new Error("test failure") as Error & { stdout: string };
+      err.stdout = "Tests  50 passed\nTests  3 failed";
+      mockedExecSync.mockImplementation(() => { throw err; });
+      const result = verifyBuild();
+      expect(result.passed).toBe(false);
+      expect(result.output).toContain("Tests  50 passed");
+    });
+
+    it("captures stderr from error object on failure", () => {
+      const err = new Error("type error") as Error & { stderr: string };
+      err.stderr = "TypeError: Cannot read properties of undefined";
+      mockedExecSync.mockImplementation(() => { throw err; });
+      const result = verifyBuild();
+      expect(result.passed).toBe(false);
+      expect(result.output).toContain("TypeError: Cannot read properties");
+    });
+
+    it("combines stdout and stderr from error object on failure", () => {
+      const err = new Error("build failure") as Error & { stdout: string; stderr: string };
+      err.stdout = "Tests  10 passed\n";
+      err.stderr = "FAIL src/lifecycle.test.ts\nAssertionError: expected false";
+      mockedExecSync.mockImplementation(() => { throw err; });
+      const result = verifyBuild();
+      expect(result.passed).toBe(false);
+      expect(result.output).toContain("Tests  10 passed");
+      expect(result.output).toContain("AssertionError: expected false");
+    });
   });
 
   describe("revertUncommitted", () => {
@@ -498,6 +527,49 @@ describe("lifecycle helpers", () => {
       mockedExecFileSync.mockReturnValue(Buffer.from(""));
       runBuildVerification(42, 5);
       expect(buildCallCount).toBe(5);
+    });
+
+    it("calls revertUncommitted exactly once when second attempt succeeds", () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      mockedExecSync
+        .mockImplementationOnce(() => { throw new Error("attempt 1 failed"); })
+        .mockReturnValueOnce("Tests  522 passed\n");
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+
+      const result = runBuildVerification(42);
+      expect(result.passed).toBe(true);
+
+      // revertUncommitted uses git checkout + git clean; each should be called exactly once
+      const checkoutCalls = mockedExecFileSync.mock.calls.filter(
+        (args) => args[0] === "git" && Array.isArray(args[1]) && (args[1] as string[])[0] === "checkout",
+      );
+      expect(checkoutCalls).toHaveLength(1);
+
+      const cleanCalls = mockedExecFileSync.mock.calls.filter(
+        (args) => args[0] === "git" && Array.isArray(args[1]) && (args[1] as string[])[0] === "clean",
+      );
+      expect(cleanCalls).toHaveLength(1);
+
+      errorSpy.mockRestore();
+    });
+
+    it("does not call hardResetTo when a retry attempt eventually passes", () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      mockedExecSync
+        .mockImplementationOnce(() => { throw new Error("attempt 1 failed"); })
+        .mockReturnValueOnce("Tests  522 passed\n");
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+
+      const result = runBuildVerification(42);
+      expect(result.passed).toBe(true);
+
+      // hardResetTo calls git reset --hard — it must NOT be called when a retry succeeds
+      const resetCalls = mockedExecFileSync.mock.calls.filter(
+        (args) => args[0] === "git" && Array.isArray(args[1]) && (args[1] as string[])[0] === "reset",
+      );
+      expect(resetCalls).toHaveLength(0);
+
+      errorSpy.mockRestore();
     });
   });
 });
