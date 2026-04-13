@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type Database from "better-sqlite3";
 import { initDb, insertCycle, insertLearning, getRelevantLearnings, decayLearningRelevance, pruneLowRelevanceLearnings, insertStrategicContext, getLatestStrategicContext } from "../src/db.js";
-import { extractLearnings, storeLearnings, storeStrategicContext, formatMemoryForPrompt } from "../src/memory.js";
+import { extractLearnings, storeLearnings, storeStrategicContext, formatMemoryForPrompt, type ExtractedLearnings } from "../src/memory.js";
 import { makeOutcome } from "./helpers.js";
 
 describe("extractLearnings", () => {
@@ -155,6 +155,33 @@ describe("storeLearnings", () => {
     const learnings = getRelevantLearnings(db, 10);
     expect(learnings).toHaveLength(1);
     expect(learnings[0].content).toBe("Unique insight about testing");
+  });
+
+  it("deduplicates learnings within the same batch (same content, same call)", () => {
+    // Two identical items in one batch — only the first should be inserted.
+    const extracted: ExtractedLearnings = {
+      learnings: [
+        { category: "pattern", content: "Repeated insight" },
+        { category: "domain",  content: "Repeated insight" },
+      ],
+    };
+    const count = storeLearnings(db, 1, extracted);
+    expect(count).toBe(1);
+    const learnings = getRelevantLearnings(db, 10);
+    expect(learnings).toHaveLength(1);
+    expect(learnings[0].content).toBe("Repeated insight");
+  });
+
+  it("deduplicates case-insensitively within the same batch", () => {
+    const extracted: ExtractedLearnings = {
+      learnings: [
+        { category: "pattern", content: "Case Insight" },
+        { category: "pattern", content: "case insight" },
+      ],
+    };
+    const count = storeLearnings(db, 1, extracted);
+    expect(count).toBe(1);
+    expect(getRelevantLearnings(db, 10)).toHaveLength(1);
   });
 
   it("does not decay existing learnings when new learnings list is empty", () => {

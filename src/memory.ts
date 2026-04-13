@@ -84,9 +84,18 @@ export function storeLearnings(
 ): number {
   if (extracted.learnings.length === 0) return 0;
   const exists = db.prepare("SELECT 1 FROM learnings WHERE LOWER(TRIM(content)) = LOWER(TRIM(?)) LIMIT 1");
+  // Deduplicate within the batch by normalised content before querying the DB,
+  // so two identical learnings returned in the same cycle only count once.
+  const seen = new Set<string>();
   const newLearnings = extracted.learnings
     .map(({ category, content }) => ({ category, content: content.trim() }))
-    .filter(({ content }) => content && !exists.get(content));
+    .filter(({ content }) => {
+      if (!content) return false;
+      const key = content.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return !exists.get(content);
+    });
   if (newLearnings.length === 0) return 0;
   decayLearningRelevance(db);
   pruneLowRelevanceLearnings(db);
