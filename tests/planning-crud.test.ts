@@ -126,3 +126,32 @@ describe("body truncation at 200 chars", () => {
     expect(items[0].body.length).toBe(200);
   });
 });
+
+describe("addDraftItem case-insensitive deduplication", () => {
+  it("returns existing item id when title differs only by case", () => {
+    writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([]), "utf-8");
+
+    const firstId = addDraftItem(config, "Fix bug", "First body");
+    const secondId = addDraftItem(config, "fix bug", "Second body");
+
+    expect(secondId).toBe(firstId);
+  });
+
+  it("returns existing item id when title differs by leading/trailing whitespace", () => {
+    writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([]), "utf-8");
+
+    const firstId = addDraftItem(config, "Fix bug", "First body");
+    const secondId = addDraftItem(config, "  Fix Bug  ", "Second body");
+
+    expect(secondId).toBe(firstId);
+  });
+
+  it("creates a new item when titles are genuinely different", () => {
+    writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([]), "utf-8");
+
+    const firstId = addDraftItem(config, "Fix bug A", "Body");
+    const secondId = addDraftItem(config, "Fix bug B", "Body");
+
+    expect(secondId).not.toBe(firstId);
+  });
+});

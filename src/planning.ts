@@ -264,8 +264,8 @@ export function addDraftItem(
 ): string {
   const filePath = resolve(process.cwd(), _config.filePath);
   return withRoadmapItems(filePath, (items, markDirty) => {
-    // Don't add duplicates (match on title)
-    const existing = items.find((i) => i.title === title);
+    // Don't add duplicates (match on title, case-insensitive)
+    const existing = items.find((i) => i.title.toLowerCase().trim() === title.toLowerCase().trim());
     if (existing) return existing.id;
 
     const newItem: ProjectItem = {
