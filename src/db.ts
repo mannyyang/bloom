@@ -547,7 +547,7 @@ export function formatCycleStats(stats: CycleStats): string {
     const breakdown = Object.entries(stats.failureCategoryBreakdown)
       .map(([cat, count]) => `${count} ${cat}`)
       .join(", ");
-    lines.push(`- **Failure breakdown** (last ${stats.totalCycles}): ${breakdown}`);
+    lines.push(`- **Failure breakdown** (across last ${stats.totalCycles} cycles): ${breakdown}`);
   }
   return lines.join("\n");
 }
