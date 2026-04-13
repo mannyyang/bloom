@@ -708,6 +708,30 @@ describe("demoteStaleInProgressItems", () => {
     expect(freshItem?.status).toBe("In Progress");
     expect(staleItem?.status).toBe("Up Next");
   });
+
+  it("does not demote item at exact threshold boundary (diff === threshold)", () => {
+    // currentCycle=5, since=2 → diff=3, NOT > 3 → fresh (boundary: equal is not stale)
+    const items = [makeItem({ id: "item-0", title: "Boundary Task", status: "In Progress", body: "[since: 2]" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    const result = demoteStaleInProgressItems(config, 5, 3);
+
+    expect(result).toEqual([]);
+    expect(mockWriteFileSync).not.toHaveBeenCalled();
+  });
+
+  it("demotes item one cycle past threshold (diff === threshold + 1)", () => {
+    // currentCycle=5, since=1 → diff=4, > 3 → stale (one cycle over threshold)
+    const items = [makeItem({ id: "item-0", title: "Just Stale Task", status: "In Progress", body: "[since: 1]" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    const result = demoteStaleInProgressItems(config, 5, 3);
+
+    expect(result).toEqual(["Just Stale Task"]);
+    expect(mockWriteFileSync).toHaveBeenCalled();
+  });
 });
 
 describe("addLinkedItem", () => {
