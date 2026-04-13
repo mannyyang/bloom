@@ -12,6 +12,7 @@ vi.mock("../src/lifecycle.js", () => ({
 // Mock planning module
 vi.mock("../src/planning.js", () => ({
   updateItemStatus: vi.fn(),
+  demoteStaleInProgressItems: vi.fn().mockReturnValue([]),
 }));
 
 // Mock issues module
@@ -21,9 +22,9 @@ vi.mock("../src/issues.js", () => ({
   isValidRepo: vi.fn().mockReturnValue(true),
 }));
 
-import { runBuildVerificationPhase, updatePlanningStatus, pushChangesPhase } from "../src/phases.js";
+import { runBuildVerificationPhase, updatePlanningStatus, pushChangesPhase, demoteStaleItemsPhase } from "../src/phases.js";
 import { runBuildVerification, pushChanges, commitRoadmap } from "../src/lifecycle.js";
-import { updateItemStatus } from "../src/planning.js";
+import { updateItemStatus, demoteStaleInProgressItems } from "../src/planning.js";
 import { closeIssueWithComment } from "../src/issues.js";
 
 function createOutcome(overrides: Partial<CycleOutcome> = {}): CycleOutcome {
@@ -66,7 +67,7 @@ describe("runBuildVerificationPhase", () => {
     logSpy.mockRestore();
   });
 
-  it("throws on failed build and sets outcome", () => {
+  it("throws on failed build and classifies as test_failure when vitest reports failures", () => {
     vi.mocked(runBuildVerification).mockReturnValue({
       passed: false,
       output: "Tests  3 passed | 2 failed (5)",
@@ -79,6 +80,19 @@ describe("runBuildVerificationPhase", () => {
     expect(outcome.testCountAfter).toBe(3);
     expect(outcome.testTotalAfter).toBe(5);
     expect(outcome.failureCategory).toBe("test_failure");
+  });
+
+  it("throws on failed build and classifies as build_failure when TypeScript compilation fails", () => {
+    vi.mocked(runBuildVerification).mockReturnValue({
+      passed: false,
+      output: "src/planning.ts(42,7): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.",
+    });
+    const outcome = createOutcome();
+    expect(() => runBuildVerificationPhase(1, outcome)).toThrow(
+      "Build verification failed",
+    );
+    expect(outcome.buildVerificationPassed).toBe(false);
+    expect(outcome.failureCategory).toBe("build_failure");
   });
 
   it("handles missing test counts gracefully", () => {
@@ -380,6 +394,54 @@ describe("updatePlanningStatus", () => {
     await expect(
       updatePlanningStatus(10, projectConfig, currentItem, processed),
     ).resolves.not.toThrow();
+  });
+});
+
+describe("demoteStaleItemsPhase", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  const projectConfig: ProjectConfig = { filePath: "ROADMAP.md" };
+
+  it("does nothing when projectConfig is null", () => {
+    demoteStaleItemsPhase(null, 10);
+    expect(demoteStaleInProgressItems).not.toHaveBeenCalled();
+  });
+
+  it("calls demoteStaleInProgressItems with projectConfig and cycleCount", () => {
+    vi.mocked(demoteStaleInProgressItems).mockReturnValue([]);
+    demoteStaleItemsPhase(projectConfig, 10);
+    expect(demoteStaleInProgressItems).toHaveBeenCalledWith(projectConfig, 10, 3);
+  });
+
+  it("logs demoted item titles when stale items exist", () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.mocked(demoteStaleInProgressItems).mockReturnValue(["Stuck feature", "Old task"]);
+    demoteStaleItemsPhase(projectConfig, 20);
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Stuck feature"),
+    );
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining("2 stale In Progress item(s)"),
+    );
+    logSpy.mockRestore();
+  });
+
+  it("does not log when no stale items exist", () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.mocked(demoteStaleInProgressItems).mockReturnValue([]);
+    demoteStaleItemsPhase(projectConfig, 20);
+    expect(logSpy).not.toHaveBeenCalledWith(
+      expect.stringContaining("stale"),
+    );
+    logSpy.mockRestore();
+  });
+
+  it("forwards custom threshold to demoteStaleInProgressItems", () => {
+    vi.mocked(demoteStaleInProgressItems).mockReturnValue([]);
+    demoteStaleItemsPhase(projectConfig, 15, 5);
+    expect(demoteStaleInProgressItems).toHaveBeenCalledWith(projectConfig, 15, 5);
   });
 });
 

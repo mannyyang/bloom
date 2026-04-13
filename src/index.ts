@@ -14,7 +14,7 @@ import {
   pushTags,
   createSafetyTag,
 } from "./lifecycle.js";
-import { runBuildVerificationPhase, updatePlanningStatus, pushChangesPhase } from "./phases.js";
+import { runBuildVerificationPhase, updatePlanningStatus, pushChangesPhase, demoteStaleItemsPhase } from "./phases.js";
 import { type PhaseUsage, formatDurationSec } from "./usage.js";
 import { createOutcome, formatOutcomeForJournal, parseTestCount, parseTestTotal } from "./outcomes.js";
 import { formatCycleSummaryWithDuration } from "./orchestrator.js";
@@ -71,6 +71,7 @@ async function main() {
     const safetyHooks = { protectIdentity, protectJournal, blockDangerousCommands };
 
     const ctx = await loadEvolutionContext(db, cycleCount);
+    demoteStaleItemsPhase(ctx.projectConfig, cycleCount);
     const phaseUsages: PhaseUsage[] = [];
 
     const assessment = await runAssessmentPhase(db, cycleCount, ctx, phaseUsages, deps);

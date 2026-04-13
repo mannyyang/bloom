@@ -10,7 +10,7 @@ import {
 import { parseTestCount, parseTestTotal, classifyBuildFailure } from "./outcomes.js";
 import { errorMessage } from "./errors.js";
 import { formatDurationSec } from "./usage.js";
-import { updateItemStatus, type ProjectConfig, type ProjectItem } from "./planning.js";
+import { updateItemStatus, demoteStaleInProgressItems, type ProjectConfig, type ProjectItem } from "./planning.js";
 import type { CycleOutcome } from "./outcomes.js";
 import { closeIssueWithComment } from "./issues.js";
 import type Database from "better-sqlite3";
@@ -98,6 +98,24 @@ export async function updatePlanningStatus(
     }
   } catch (err) {
     console.error(`[planning] Failed to update roadmap status (non-fatal): ${errorMessage(err)}`);
+  }
+}
+
+/**
+ * Demote any In Progress items stuck beyond the staleness threshold back to Up Next.
+ * Should be called before assessment so item selection reflects the corrected state.
+ */
+export function demoteStaleItemsPhase(
+  projectConfig: ProjectConfig | null,
+  cycleCount: number,
+  threshold: number = 3,
+): void {
+  if (!projectConfig) return;
+  const demoted = demoteStaleInProgressItems(projectConfig, cycleCount, threshold);
+  if (demoted.length > 0) {
+    console.log(
+      `[planning] Demoted ${demoted.length} stale In Progress item(s) back to Up Next: ${demoted.join(", ")}`,
+    );
   }
 }
 
