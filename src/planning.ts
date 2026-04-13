@@ -223,6 +223,27 @@ export function getProjectItems(
 }
 
 /**
+ * Private helper: push `newItem` onto `items` and call `markDirty()` only when
+ * `isDuplicate` returns false for every existing item. Returns the id of the
+ * surviving item (either the existing duplicate or the newly added one).
+ * Centralises the "check → construct → push → mark" pattern shared by
+ * addLinkedItem and addDraftItem so that future changes (e.g. to body
+ * truncation or field defaults) only need to be made in one place.
+ */
+function addItemIfAbsent(
+  items: ProjectItem[],
+  markDirty: () => void,
+  newItem: ProjectItem,
+  isDuplicate: (existing: ProjectItem) => boolean,
+): string {
+  const existing = items.find(isDuplicate);
+  if (existing) return existing.id;
+  items.push(newItem);
+  markDirty();
+  return newItem.id;
+}
+
+/**
  * Add a linked GitHub issue to the roadmap.
  */
 export function addLinkedItem(
@@ -234,10 +255,6 @@ export function addLinkedItem(
 ): string {
   const filePath = resolve(process.cwd(), _config.filePath);
   return withRoadmapItems(filePath, (items, markDirty) => {
-    // Don't add duplicates
-    const existing = items.find((i) => i.linkedIssueNumber === issueNumber);
-    if (existing) return existing.id;
-
     const newItem: ProjectItem = {
       id: nextItemId(items),
       title,
@@ -246,10 +263,7 @@ export function addLinkedItem(
       linkedIssueNumber: issueNumber,
       reactions: 0,
     };
-
-    items.push(newItem);
-    markDirty();
-    return newItem.id;
+    return addItemIfAbsent(items, markDirty, newItem, (i) => i.linkedIssueNumber === issueNumber);
   });
 }
 
@@ -264,10 +278,6 @@ export function addDraftItem(
 ): string {
   const filePath = resolve(process.cwd(), _config.filePath);
   return withRoadmapItems(filePath, (items, markDirty) => {
-    // Don't add duplicates (match on title, case-insensitive)
-    const existing = items.find((i) => i.title.toLowerCase().trim() === title.toLowerCase().trim());
-    if (existing) return existing.id;
-
     const newItem: ProjectItem = {
       id: nextItemId(items),
       title,
@@ -276,10 +286,9 @@ export function addDraftItem(
       linkedIssueNumber: null,
       reactions: 0,
     };
-
-    items.push(newItem);
-    markDirty();
-    return newItem.id;
+    // Deduplication is case- and whitespace-insensitive for draft items
+    const normalised = title.toLowerCase().trim();
+    return addItemIfAbsent(items, markDirty, newItem, (i) => i.title.toLowerCase().trim() === normalised);
   });
 }
 
