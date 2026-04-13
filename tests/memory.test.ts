@@ -563,6 +563,33 @@ describe("DB functions for memory", () => {
     expect(getRelevantLearnings(db, 10)).toHaveLength(1);
   });
 
+  it("deduplicates learnings that differ only by leading/trailing whitespace", () => {
+    // First store a learning with clean content
+    storeLearnings(db, 1, { learnings: [{ category: "pattern", content: "Always write tests first" }] });
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    // Then attempt to store the same learning with surrounding whitespace
+    const count = storeLearnings(db, 2, { learnings: [{ category: "pattern", content: "  Always write tests first  " }] });
+    expect(count).toBe(0);
+    expect(getRelevantLearnings(db, 10)).toHaveLength(1);
+  });
+
+  it("deduplicates learnings that differ only by capitalisation", () => {
+    // First store with lowercase
+    storeLearnings(db, 1, { learnings: [{ category: "domain", content: "use explicit return types" }] });
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    // Then attempt to store with capital first letter
+    const count = storeLearnings(db, 2, { learnings: [{ category: "domain", content: "Use explicit return types" }] });
+    expect(count).toBe(0);
+    expect(getRelevantLearnings(db, 10)).toHaveLength(1);
+  });
+
+  it("stores content trimmed of whitespace", () => {
+    storeLearnings(db, 1, { learnings: [{ category: "pattern", content: "  Trimmed learning  " }] });
+    const learnings = getRelevantLearnings(db, 10);
+    expect(learnings).toHaveLength(1);
+    expect(learnings[0].content).toBe("Trimmed learning");
+  });
+
   it("storeLearnings prunes low-relevance entries after decaying", () => {
     // Insert a learning and decay it far below the prune threshold
     insertLearning(db, 1, "domain", "Very old learning");

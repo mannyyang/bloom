@@ -83,8 +83,10 @@ export function storeLearnings(
   extracted: ExtractedLearnings,
 ): number {
   if (extracted.learnings.length === 0) return 0;
-  const exists = db.prepare("SELECT 1 FROM learnings WHERE content = ? LIMIT 1");
-  const newLearnings = extracted.learnings.filter(({ content }) => !exists.get(content));
+  const exists = db.prepare("SELECT 1 FROM learnings WHERE LOWER(TRIM(content)) = LOWER(TRIM(?)) LIMIT 1");
+  const newLearnings = extracted.learnings
+    .map(({ category, content }) => ({ category, content: content.trim() }))
+    .filter(({ content }) => content && !exists.get(content));
   if (newLearnings.length === 0) return 0;
   decayLearningRelevance(db);
   pruneLowRelevanceLearnings(db);
