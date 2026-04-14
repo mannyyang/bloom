@@ -353,4 +353,13 @@ describe("classifyBuildFailure", () => {
   it("returns build_failure when build output has no vitest failure pattern", () => {
     expect(classifyBuildFailure("Tests  10 passed (10)")).toBe("build_failure");
   });
+
+  it("returns test_failure for zero-count failed line (Tests  0 failed)", () => {
+    // Regex /Tests\s+.*\d+\s+failed/ matches "0 failed" — pin this edge case
+    expect(classifyBuildFailure("Tests  0 failed (0)")).toBe("test_failure");
+  });
+
+  it("returns test_failure when both passed and failed tokens appear (mixed run)", () => {
+    expect(classifyBuildFailure("Tests  100 passed | 2 failed (102)")).toBe("test_failure");
+  });
 });
