@@ -678,6 +678,29 @@ describe("closeIssueWithComment", () => {
     warnSpy.mockRestore();
   });
 
+  it("uses precomputedRepo without reading GITHUB_REPOSITORY or calling detectRepo", async () => {
+    // Unset env var to prove detectRepo is NOT called
+    delete process.env.GITHUB_REPOSITORY;
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+
+    const result = await closeIssueWithComment(42, 1, "Comment text", undefined, "closed", "precomputed-owner/precomputed-repo");
+
+    expect(result).toBe(true);
+    expect(mockGithubApiRequest).toHaveBeenCalledWith(
+      "POST",
+      "/repos/precomputed-owner/precomputed-repo/issues/42/comments",
+      { body: "Comment text" },
+    );
+    expect(mockGithubApiRequest).toHaveBeenCalledWith(
+      "PATCH",
+      "/repos/precomputed-owner/precomputed-repo/issues/42",
+      { state: "closed" },
+    );
+    // execFileSync should NOT have been called (no git subprocess needed)
+    expect(mockExecFileSync).not.toHaveBeenCalled();
+  });
+
   it("uses custom action type for DB idempotency", async () => {
     process.env.GITHUB_REPOSITORY = "owner/repo";
     const db = initDb(":memory:");
