@@ -646,6 +646,38 @@ describe("closeIssueWithComment", () => {
     errorSpy.mockRestore();
   });
 
+  it("returns false and warns when POST comment returns non-ok (e.g. 422)", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: false, status: 422 } as Response);
+
+    const result = await closeIssueWithComment(13, 1, "Some comment");
+
+    expect(result).toBe(false);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[issues] closeIssueWithComment: non-ok response 422 on POST comment for issue #13"),
+    );
+    // PATCH should not have been called since POST failed
+    expect(mockGithubApiRequest).toHaveBeenCalledTimes(1);
+    warnSpy.mockRestore();
+  });
+
+  it("returns false and warns when PATCH close returns non-ok (e.g. 404)", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: true } as Response);
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: false, status: 404 } as Response);
+
+    const result = await closeIssueWithComment(15, 1, "Some comment");
+
+    expect(result).toBe(false);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[issues] closeIssueWithComment: non-ok response 404 on PATCH close for issue #15"),
+    );
+    expect(mockGithubApiRequest).toHaveBeenCalledTimes(2);
+    warnSpy.mockRestore();
+  });
+
   it("uses custom action type for DB idempotency", async () => {
     process.env.GITHUB_REPOSITORY = "owner/repo";
     const db = initDb(":memory:");
