@@ -111,14 +111,22 @@ export async function closeIssueWithComment(
 
   try {
     // Post closing comment
-    await githubApiRequest("POST", `/repos/${repo}/issues/${issueNumber}/comments`, {
+    const commentRes = await githubApiRequest("POST", `/repos/${repo}/issues/${issueNumber}/comments`, {
       body: comment,
     });
+    if (!commentRes.ok) {
+      console.warn(`[issues] closeIssueWithComment: non-ok response ${commentRes.status} on POST comment for issue #${issueNumber}`);
+      return false;
+    }
 
     // Close the issue
-    await githubApiRequest("PATCH", `/repos/${repo}/issues/${issueNumber}`, {
+    const closeRes = await githubApiRequest("PATCH", `/repos/${repo}/issues/${issueNumber}`, {
       state: "closed",
     });
+    if (!closeRes.ok) {
+      console.warn(`[issues] closeIssueWithComment: non-ok response ${closeRes.status} on PATCH close for issue #${issueNumber}`);
+      return false;
+    }
 
     // Record the action
     if (db) insertIssueAction(db, cycleCount, issueNumber, action);
