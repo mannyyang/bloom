@@ -52,15 +52,6 @@ export async function loadEvolutionContext(
   const journalSummary = getRecentJournalSummary(db, 1200, 2);
   console.log(`[context] Journal summary: ${journalSummary ? `${journalSummary.length} chars` : "empty"}`);
 
-  const issues = await fetchCommunityIssues().catch((err: unknown) => {
-    console.error(`[context] Failed to fetch community issues (non-fatal): ${errorMessage(err)}`);
-    return [] as CommunityIssue[];
-  });
-  console.log(`[context] Community issues: ${issues.length} open`);
-  for (const issue of issues) {
-    console.log(`  - #${issue.number}: ${issue.title} (${issue.reactions} reactions)`);
-  }
-
   const cycleStats = getCycleStats(db);
   const cycleStatsText = formatCycleStats(cycleStats);
   console.log(`[context] Cycle stats: ${cycleStatsText ? `${cycleStatsText.length} chars` : "none"}`);
@@ -68,6 +59,22 @@ export async function loadEvolutionContext(
   // Memory context (best-effort)
   const memoryContext = formatMemoryForPrompt(db, 1200);
   console.log(`[context] Memory context: ${memoryContext ? `${memoryContext.length} chars` : "empty"}`);
+
+  // Fetch community issues concurrently with the initial (sync) planning setup
+  // so the GitHub API call — the slowest operation — does not block local work.
+  const [issuesResult] = await Promise.allSettled([
+    fetchCommunityIssues(),
+  ]);
+  const issues: CommunityIssue[] = issuesResult.status === "fulfilled"
+    ? issuesResult.value
+    : (() => {
+        console.error(`[context] Failed to fetch community issues (non-fatal): ${errorMessage((issuesResult as PromiseRejectedResult).reason)}`);
+        return [] as CommunityIssue[];
+      })();
+  console.log(`[context] Community issues: ${issues.length} open`);
+  for (const issue of issues) {
+    console.log(`  - #${issue.number}: ${issue.title} (${issue.reactions} reactions)`);
+  }
 
   // Planning context (best-effort, uses ROADMAP.md)
   let planningContext = "";
