@@ -96,6 +96,16 @@ describe("buildAssessmentPrompt", () => {
     expect(prompt).toContain("under 2000 characters");
     expect(prompt).toContain("passed directly into the implementation prompt");
   });
+
+  it("base prompt with empty context is itself under 2000 characters", () => {
+    // The static boilerplate in buildAssessmentPrompt should be compact so it
+    // doesn't crowd out the journal summary and other dynamic context.
+    const prompt = buildAssessmentPrompt({
+      journalSummary: "",
+      cycleCount: 1,
+    });
+    expect(prompt.length).toBeLessThan(2000);
+  });
 });
 
 describe("buildEvolutionPrompt", () => {
