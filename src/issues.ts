@@ -44,7 +44,10 @@ export async function fetchCommunityIssues(): Promise<CommunityIssue[]> {
       "GET",
       `/repos/${repo}/issues?labels=agent-input&state=open&per_page=20`,
     );
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.warn(`[issues] fetchCommunityIssues: non-ok response ${res.status} ${res.statusText}`);
+      return [];
+    }
 
     const raw: unknown = await res.json();
     if (!Array.isArray(raw)) return [];

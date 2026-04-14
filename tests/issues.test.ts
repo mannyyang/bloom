@@ -132,6 +132,32 @@ describe("fetchCommunityIssues", () => {
     expect(result).toEqual([]);
   });
 
+  it("logs console.warn with status code when API returns non-ok response", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: false, status: 403, statusText: "Forbidden" } as unknown as Response);
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const result = await fetchCommunityIssues();
+
+    expect(result).toEqual([]);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("403"));
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("Forbidden"));
+    warnSpy.mockRestore();
+  });
+
+  it("logs console.warn with 429 status for rate-limit response", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: false, status: 429, statusText: "Too Many Requests" } as unknown as Response);
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const result = await fetchCommunityIssues();
+
+    expect(result).toEqual([]);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("429"));
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("Too Many Requests"));
+    warnSpy.mockRestore();
+  });
+
   it("returns empty array for malicious repo containing shell metacharacters", async () => {
     process.env.GITHUB_REPOSITORY = "foo/bar; rm -rf ~";
     const result = await fetchCommunityIssues();
