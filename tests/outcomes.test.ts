@@ -280,6 +280,18 @@ describe("formatOutcomeForJournal", () => {
     expect(result.startsWith("### Outcome Metrics")).toBe(true);
   });
 
+  it("renders Preflight as failed when preflightPassed is false", () => {
+    const outcome = makeOutcome({ preflightPassed: false });
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).toContain("**Preflight**: failed");
+  });
+
+  it("renders Preflight as passed when preflightPassed is true", () => {
+    const outcome = makeOutcome({ preflightPassed: true });
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).toContain("**Preflight**: passed");
+  });
+
   it("includes Duration line when durationMs is present", () => {
     const outcome = makeOutcome({ durationMs: 12345 });
     const result = formatOutcomeForJournal(outcome);
