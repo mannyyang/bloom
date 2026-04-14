@@ -8,6 +8,27 @@ import {
 } from "../src/outcomes.js";
 import { makeOutcome } from "./helpers.js";
 
+// Literal vitest v1/v2 summary block copied from a real run — pins the exact
+// column-aligned format so parser regressions are caught immediately.
+const REAL_VITEST_OUTPUT = ` ✓ tests/issues.test.ts (42)
+ ✓ tests/triage.test.ts (31)
+ ✓ tests/outcomes.test.ts (28)
+
+ Test Files  3 passed (3)
+      Tests  101 passed (101)
+   Start at  09:15:22
+   Duration  2.45s (transform 0.91s, setup 0ms, collect 1.20s, tests 0.34s, environment 4ms, prepare 1.11s)
+`;
+
+const REAL_VITEST_OUTPUT_MIXED = ` ✗ tests/issues.test.ts (42)
+ ✓ tests/triage.test.ts (31)
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  490 passed | 5 failed (495)
+   Start at  10:00:00
+   Duration  1.23s (transform 0.40s, setup 0ms, collect 0.82s, tests 0.23s, environment 2ms, prepare 0.66s)
+`;
+
 describe("parseTestCount", () => {
   it("parses vitest output with passed count", () => {
     expect(parseTestCount("Tests  490 passed")).toBe(490);
@@ -20,6 +41,14 @@ describe("parseTestCount", () => {
    Start at  19:02:38
 `;
     expect(parseTestCount(output)).toBe(490);
+  });
+
+  it("parses passed count from real vitest output block", () => {
+    expect(parseTestCount(REAL_VITEST_OUTPUT)).toBe(101);
+  });
+
+  it("parses passed count from real vitest mixed passed/failed output", () => {
+    expect(parseTestCount(REAL_VITEST_OUTPUT_MIXED)).toBe(490);
   });
 
   it("returns null when no match found", () => {
@@ -72,6 +101,14 @@ describe("parseTestCount", () => {
 describe("parseTestTotal", () => {
   it("parses total from passed-only output", () => {
     expect(parseTestTotal("Tests  490 passed (490)")).toBe(490);
+  });
+
+  it("parses total from real vitest output block", () => {
+    expect(parseTestTotal(REAL_VITEST_OUTPUT)).toBe(101);
+  });
+
+  it("parses total from real vitest mixed passed/failed output", () => {
+    expect(parseTestTotal(REAL_VITEST_OUTPUT_MIXED)).toBe(495);
   });
 
   it("parses total from mixed passed/failed output", () => {
