@@ -562,6 +562,27 @@ describe("DB functions for memory", () => {
     expect(learnings[0].relevance).toBeCloseTo(0.5);
   });
 
+  it("decayLearningRelevance applies per-category rates when called without explicit factor", () => {
+    insertLearning(db, 1, "pattern", "Architectural insight");
+    insertLearning(db, 1, "tool-usage", "Tool tip");
+    decayLearningRelevance(db); // use per-category rates
+    const all = getRelevantLearnings(db, 10);
+    const pattern = all.find(l => l.content === "Architectural insight")!;
+    const toolUsage = all.find(l => l.content === "Tool tip")!;
+    // pattern (0.98) should decay slower than tool-usage (0.93)
+    expect(pattern.relevance).toBeCloseTo(0.98);
+    expect(toolUsage.relevance).toBeCloseTo(0.93);
+    expect(pattern.relevance).toBeGreaterThan(toolUsage.relevance);
+  });
+
+  it("decayLearningRelevance falls back to 0.95 for unknown categories", () => {
+    // Insert a learning with a category not in DECAY_BY_CATEGORY via raw SQL
+    db.prepare("INSERT INTO learnings (cycle_number, category, content) VALUES (?, ?, ?)").run(1, "unknown-cat", "Mystery learning");
+    decayLearningRelevance(db); // per-category path
+    const rows = db.prepare("SELECT relevance FROM learnings WHERE category = 'unknown-cat'").all() as { relevance: number }[];
+    expect(rows[0].relevance).toBeCloseTo(0.95);
+  });
+
   it("pruneLowRelevanceLearnings removes entries below threshold", () => {
     insertLearning(db, 1, "domain", "Keep me");
     insertLearning(db, 1, "domain", "Prune me");

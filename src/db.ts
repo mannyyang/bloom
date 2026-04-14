@@ -599,11 +599,38 @@ export function getRelevantLearnings(
   );
 }
 
+/**
+ * Per-category decay rates applied when decayLearningRelevance() is called
+ * without an explicit decayFactor. Architectural learnings (pattern,
+ * anti-pattern) persist longer; operational ones (process, tool-usage) decay
+ * faster since they go stale more quickly.
+ */
+export const DECAY_BY_CATEGORY: Record<string, number> = {
+  "pattern": 0.98,
+  "anti-pattern": 0.97,
+  "domain": 0.95,
+  "process": 0.93,
+  "tool-usage": 0.93,
+};
+
 export function decayLearningRelevance(
   db: Database.Database,
-  decayFactor: number = 0.95,
+  decayFactor?: number,
 ): void {
-  db.prepare("UPDATE learnings SET relevance = relevance * ?").run(decayFactor);
+  if (decayFactor !== undefined) {
+    // Uniform decay — used by tests and callers that supply an explicit factor.
+    db.prepare("UPDATE learnings SET relevance = relevance * ?").run(decayFactor);
+    return;
+  }
+  // Per-category weighted decay: architectural insights persist longer than
+  // operational learnings that go stale faster.
+  for (const [category, rate] of Object.entries(DECAY_BY_CATEGORY)) {
+    db.prepare("UPDATE learnings SET relevance = relevance * ? WHERE category = ?").run(rate, category);
+  }
+  // Fall back to 0.95 for any category not listed in DECAY_BY_CATEGORY.
+  const knownCategories = Object.keys(DECAY_BY_CATEGORY);
+  const placeholders = knownCategories.map(() => "?").join(", ");
+  db.prepare(`UPDATE learnings SET relevance = relevance * 0.95 WHERE category NOT IN (${placeholders})`).run(...knownCategories);
 }
 
 /**
