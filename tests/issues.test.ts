@@ -225,6 +225,40 @@ describe("fetchCommunityIssues", () => {
     const result = await fetchCommunityIssues();
     expect(result).toEqual([{ number: 5, title: "Minimal", body: "", reactions: 0 }]);
   });
+
+  it("resolves to [] when GitHub API does not respond within 10 s timeout", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    // A promise that never resolves — simulates a hung GitHub API
+    mockGithubApiRequest.mockReturnValueOnce(new Promise(() => {}));
+
+    vi.useFakeTimers();
+    const resultPromise = fetchCommunityIssues();
+    await vi.advanceTimersByTimeAsync(10_001);
+    vi.useRealTimers();
+
+    const result = await resultPromise;
+    expect(result).toEqual([]);
+  });
+
+  it("logs fetchCommunityIssues timed out message when timeout fires", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest.mockReturnValueOnce(new Promise(() => {}));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    vi.useFakeTimers();
+    const resultPromise = fetchCommunityIssues();
+    await vi.advanceTimersByTimeAsync(10_001);
+    vi.useRealTimers();
+
+    await resultPromise;
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[issues] fetchCommunityIssues failed (non-fatal)"),
+    );
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("timed out"),
+    );
+    errorSpy.mockRestore();
+  });
 });
 
 describe("fetchCommunityIssues — detectRepo git remote fallback", () => {

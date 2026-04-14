@@ -37,7 +37,9 @@ export async function fetchCommunityIssues(): Promise<CommunityIssue[]> {
   const repo = detectRepo();
   if (!repo || !isValidRepo(repo)) return [];
 
-  try {
+  const FETCH_TIMEOUT_MS = 10_000;
+
+  async function doFetch(): Promise<CommunityIssue[]> {
     const res = await githubApiRequest(
       "GET",
       `/repos/${repo}/issues?labels=agent-input&state=open&per_page=20`,
@@ -67,6 +69,18 @@ export async function fetchCommunityIssues(): Promise<CommunityIssue[]> {
             : 0,
       }))
       .sort((a, b) => b.reactions - a.reactions);
+  }
+
+  try {
+    return await Promise.race([
+      doFetch(),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error(`fetchCommunityIssues timed out after ${FETCH_TIMEOUT_MS}ms`)),
+          FETCH_TIMEOUT_MS,
+        ),
+      ),
+    ]);
   } catch (err) {
     console.error(`[issues] fetchCommunityIssues failed (non-fatal): ${errorMessage(err)}`);
     return [];
