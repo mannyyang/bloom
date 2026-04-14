@@ -847,6 +847,32 @@ describe("triageIssues with injected deps", () => {
     warnSpy.mockRestore();
   });
 
+  it("calls insertIssueAction and addLinkedItem exactly once when LLM returns two decisions for same issue", async () => {
+    // Pins the dedup guard: if the LLM returns two decisions for the same issue
+    // (e.g. add_to_backlog then not_applicable for #5), only the first is acted on.
+    // Both insertIssueAction and addLinkedItem must be called exactly once — the
+    // duplicate not_applicable must be dropped before any close path is reached.
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const issues = [makeIssue({ number: 5, title: "Feature Z" })];
+    const deps = makeDeps([
+      { issueNumber: 5, action: "add_to_backlog", reason: "First decision" },
+      { issueNumber: 5, action: "not_applicable", reason: "Duplicate — should be dropped" },
+    ]);
+    const mockDb = {} as import("better-sqlite3").Database;
+    mockCloseIssue.mockResolvedValue(true);
+
+    await triageIssues(issues, [], 15, projectConfig, mockDb, deps);
+
+    // insertIssueAction must be called exactly once for issue #5 (no double-insert)
+    const insertCallsForFive = mockInsertIssueAction.mock.calls.filter((c) => c[2] === 5);
+    expect(insertCallsForFive).toHaveLength(1);
+    // addLinkedItem must be called exactly once — the duplicate must not trigger a second add
+    expect(mockAddLinkedItem).toHaveBeenCalledTimes(1);
+    // A warning must be emitted for the dropped duplicate
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("Duplicate decision for issue #5"));
+    warnSpy.mockRestore();
+  });
+
   it("processes each unique issueNumber exactly once when LLM returns multiple entries", async () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const issues = [
