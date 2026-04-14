@@ -149,7 +149,10 @@ export async function syncReactionsToItems(items: ProjectItem[]): Promise<Projec
     linked.map(async (item) => {
       const issueNumber = item.linkedIssueNumber!;
       const res = await githubApiRequest("GET", `/repos/${repo}/issues/${issueNumber}`);
-      if (!res.ok) return;
+      if (!res.ok) {
+        console.warn(`[issues] syncReactionsToItems: non-ok response ${res.status} for issue #${issueNumber}`);
+        return;
+      }
       const data: unknown = await res.json();
       if (
         typeof data === "object" &&

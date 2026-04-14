@@ -459,6 +459,50 @@ describe("syncReactionsToItems", () => {
     expect(result).toEqual(items);
   });
 
+  it("logs a warning and returns original items on 403 response", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: false, status: 403 } as Response);
+
+    const items = [makeItem({ linkedIssueNumber: 7, reactions: 0 })];
+    const result = await syncReactionsToItems(items);
+
+    expect(result).toEqual(items);
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[issues] syncReactionsToItems: non-ok response 403 for issue #7",
+    );
+    warnSpy.mockRestore();
+  });
+
+  it("logs a warning and returns original items on 500 response", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    mockGithubApiRequest.mockResolvedValueOnce({ ok: false, status: 500 } as Response);
+
+    const items = [makeItem({ linkedIssueNumber: 11, reactions: 0 })];
+    const result = await syncReactionsToItems(items);
+
+    expect(result).toEqual(items);
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[issues] syncReactionsToItems: non-ok response 500 for issue #11",
+    );
+    warnSpy.mockRestore();
+  });
+
+  it("returns items unchanged when API response has no reactions field", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ number: 5, title: "missing reactions key" }), // no "reactions" key at all
+    } as unknown as Response);
+
+    const items = [makeItem({ linkedIssueNumber: 5, reactions: 3 })];
+    const result = await syncReactionsToItems(items);
+    // reactionMap stays empty → original items returned unchanged
+    expect(result).toEqual(items);
+    expect(result[0].reactions).toBe(3);
+  });
+
   it("skips issue silently when API call throws", async () => {
     process.env.GITHUB_REPOSITORY = "owner/repo";
     mockGithubApiRequest.mockRejectedValueOnce(new Error("network error"));
