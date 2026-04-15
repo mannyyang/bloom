@@ -127,6 +127,16 @@ describe("buildEvolutionPrompt", () => {
     expect(prompt).toContain("SUCCEEDED:");
     expect(prompt).toContain("FAILED:");
     expect(prompt).toContain("LEARNINGS:");
+    expect(prompt).toContain("STRATEGIC_CONTEXT:");
+  });
+
+  it("STRATEGIC_CONTEXT marker includes angle-bracket placeholder describing expected content", () => {
+    const prompt = buildEvolutionPrompt("assessment");
+    const idx = prompt.indexOf("STRATEGIC_CONTEXT:");
+    expect(idx).toBeGreaterThan(-1);
+    // Marker must be followed by the angle-bracket hint so agents know what to write
+    const after = prompt.slice(idx);
+    expect(after).toMatch(/STRATEGIC_CONTEXT:\s*<[^>]+>/);
   });
 
   it("LEARNINGS section shows bullet-list format so extractLearnings can parse it", () => {
