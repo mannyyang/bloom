@@ -45,6 +45,14 @@ describe("errorMessage", () => {
   it("returns JSON for objects where message is not a string", () => {
     expect(errorMessage({ message: 123 })).toBe('{"message":123}');
   });
+
+  it("falls back to String() for circular-reference objects that cannot be JSON-stringified", () => {
+    // JSON.stringify throws a TypeError on circular references; the catch branch
+    // must return String(err) which produces "[object Object]".
+    const o: Record<string, unknown> = {};
+    o.self = o;
+    expect(errorMessage(o)).toBe("[object Object]");
+  });
 });
 
 describe("execSyncOutput", () => {
