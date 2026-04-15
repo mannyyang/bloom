@@ -129,10 +129,6 @@ export async function triageIssues(
   // Run all close API calls concurrently to eliminate linear latency scaling.
   const alreadyOnBoard = issues.filter((i) => boardIssueNumbers.has(i.number));
   const closeCandidates = alreadyOnBoard.filter((issue) => {
-    // `alreadyOnBoard` is filtered by `boardIssueNumbers`, which only contains
-    // linkedIssueNumber values present in `boardItems`, so find() always succeeds
-    // and `linkedItem` is always defined here. The `!linkedItem` guard is kept
-    // for defensive completeness but is dead code.
     const linkedItem = boardItems.find((item) => item.linkedIssueNumber === issue.number);
     if (!linkedItem || linkedItem.status !== "Done") return false;
     if (db && hasIssueAction(db, issue.number, "triaged")) return false;
