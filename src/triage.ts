@@ -74,7 +74,7 @@ export function parseTriageResponse(text: string): TriageDecision[] {
       return [];
     }
 
-    return parsed.filter(
+    const validDecisions = parsed.filter(
       (item): item is TriageDecision =>
         typeof item === "object" &&
         item !== null &&
@@ -84,6 +84,11 @@ export function parseTriageResponse(text: string): TriageDecision[] {
         ) &&
         typeof item.reason === "string",
     );
+    const droppedCount = parsed.length - validDecisions.length;
+    if (droppedCount > 0) {
+      console.warn(`[triage] parseTriageResponse: dropped ${droppedCount} item(s) with unrecognised action or missing fields (prompt drift?)`);
+    }
+    return validDecisions;
   } catch {
     console.warn(`[triage] parseTriageResponse: failed to parse JSON, returning empty decisions. Input (first 200 chars): ${jsonStr.slice(0, 200)}`);
     return [];

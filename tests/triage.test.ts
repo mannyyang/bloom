@@ -191,6 +191,7 @@ describe("parseTriageResponse", () => {
   });
 
   it("filters out entries with invalid action values", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const input = `[
       {"issueNumber": 1, "action": "add_to_backlog", "reason": "Good"},
       {"issueNumber": 2, "action": "invalid_action", "reason": "Bad"}
@@ -198,6 +199,21 @@ describe("parseTriageResponse", () => {
     const result = parseTriageResponse(input);
     expect(result).toHaveLength(1);
     expect(result[0].issueNumber).toBe(1);
+    warnSpy.mockRestore();
+  });
+
+  it("warns when invalid items are dropped due to unrecognised action", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const input = `[
+      {"issueNumber": 1, "action": "add_to_backlog", "reason": "Valid"},
+      {"issueNumber": 2, "action": "defer", "reason": "Unrecognised action"}
+    ]`;
+    const result = parseTriageResponse(input);
+    expect(result).toHaveLength(1);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[triage] parseTriageResponse: dropped 1 item(s)"),
+    );
+    warnSpy.mockRestore();
   });
 
   it("filters out entries missing required fields", () => {
