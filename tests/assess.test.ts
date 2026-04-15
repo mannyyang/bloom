@@ -7,58 +7,66 @@ vi.mock("@anthropic-ai/claude-agent-sdk", () => ({
 }));
 
 vi.mock("fs", () => ({
-  readFileSync: vi.fn().mockReturnValue("mock identity content"),
+  readFileSync: vi.fn(),
 }));
 
 vi.mock("../src/db.js", () => ({
-  initDb: vi.fn().mockReturnValue({ close: vi.fn() }),
-  getLatestCycleNumber: vi.fn().mockReturnValue(185),
-  getRecentJournalSummary: vi.fn().mockReturnValue("mock journal summary"),
-  getCycleStats: vi.fn().mockReturnValue({}),
-  formatCycleStats: vi.fn().mockReturnValue("mock stats text"),
+  initDb: vi.fn(),
+  getLatestCycleNumber: vi.fn(),
+  getRecentJournalSummary: vi.fn(),
+  getCycleStats: vi.fn(),
+  formatCycleStats: vi.fn(),
 }));
 
 vi.mock("../src/evolve.js", () => ({
-  buildAssessmentPrompt: vi.fn().mockReturnValue("mock assessment prompt"),
+  buildAssessmentPrompt: vi.fn(),
 }));
 
 vi.mock("../src/errors.js", () => ({
-  errorMessage: vi.fn((e: unknown) => String(e)),
+  errorMessage: vi.fn(),
 }));
 
 vi.mock("../src/memory.js", () => ({
-  formatMemoryForPrompt: vi.fn().mockReturnValue("mock memory context"),
+  formatMemoryForPrompt: vi.fn(),
 }));
 
 vi.mock("../src/planning.js", () => ({
-  ensureProject: vi.fn().mockReturnValue({ filePath: "ROADMAP.md" }),
-  getProjectItems: vi.fn().mockReturnValue([]),
-  formatPlanningContext: vi.fn().mockReturnValue("mock planning context"),
+  ensureProject: vi.fn(),
+  getProjectItems: vi.fn(),
+  formatPlanningContext: vi.fn(),
 }));
 
 vi.mock("../src/usage.js", () => ({
   extractResultText: vi.fn(),
-  formatDurationSec: vi.fn().mockReturnValue("1.00s"),
+  formatDurationSec: vi.fn(),
 }));
 
 vi.mock("../src/agent-phases.js", () => ({
-  resolveModel: vi.fn().mockReturnValue("claude-opus-4-5"),
+  resolveModel: vi.fn(),
 }));
 
 // --- Import after mocks are set up ---
 
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { readFileSync } from "fs";
-import { getLatestCycleNumber, getRecentJournalSummary } from "../src/db.js";
-import { extractResultText } from "../src/usage.js";
+import {
+  initDb,
+  getLatestCycleNumber,
+  getRecentJournalSummary,
+  getCycleStats,
+  formatCycleStats,
+} from "../src/db.js";
+import { extractResultText, formatDurationSec } from "../src/usage.js";
 import { buildAssessmentPrompt } from "../src/evolve.js";
+import { errorMessage } from "../src/errors.js";
 import { ensureProject, getProjectItems, formatPlanningContext } from "../src/planning.js";
 import { formatMemoryForPrompt } from "../src/memory.js";
-import { formatCycleStats } from "../src/db.js";
+import { resolveModel } from "../src/agent-phases.js";
 import { main } from "../src/assess.js";
 
 const mockQuery = vi.mocked(query);
 const mockExtractResultText = vi.mocked(extractResultText);
+const mockFormatDurationSec = vi.mocked(formatDurationSec);
 const mockBuildAssessmentPrompt = vi.mocked(buildAssessmentPrompt);
 const mockEnsureProject = vi.mocked(ensureProject);
 const mockGetProjectItems = vi.mocked(getProjectItems);
@@ -68,6 +76,10 @@ const mockReadFileSync = vi.mocked(readFileSync);
 const mockGetRecentJournalSummary = vi.mocked(getRecentJournalSummary);
 const mockFormatMemoryForPrompt = vi.mocked(formatMemoryForPrompt);
 const mockFormatCycleStats = vi.mocked(formatCycleStats);
+const mockInitDb = vi.mocked(initDb);
+const mockGetCycleStats = vi.mocked(getCycleStats);
+const mockResolveModel = vi.mocked(resolveModel);
+const mockErrorMessage = vi.mocked(errorMessage);
 
 // Helper: create an async generator that yields the provided messages.
 // Cast to `never` is required because the SDK's Query type extends AsyncGenerator
@@ -81,12 +93,28 @@ function mockGen(messages: unknown[]) {
 
 describe("assess.ts main()", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    // Default: query yields nothing; extractResultText returns null by default.
-    mockQuery.mockReturnValue(mockGen([]));
-    mockExtractResultText.mockReturnValue(null);
+    // resetAllMocks clears both call history AND implementations, preventing
+    // mockImplementation(() => { throw ... }) leaks from one test into the next.
+    vi.resetAllMocks();
+    // Restore factory defaults cleared by resetAllMocks.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockInitDb.mockReturnValue({ close: vi.fn() } as any);
+    mockGetLatestCycleNumber.mockReturnValue(185);
+    mockReadFileSync.mockReturnValue("mock identity content");
+    mockGetRecentJournalSummary.mockReturnValue("mock journal summary");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockGetCycleStats.mockReturnValue({} as any);
+    mockFormatCycleStats.mockReturnValue("mock stats text");
+    mockFormatMemoryForPrompt.mockReturnValue("mock memory context");
+    mockBuildAssessmentPrompt.mockReturnValue("mock assessment prompt");
     mockEnsureProject.mockReturnValue({ filePath: "ROADMAP.md" });
     mockGetProjectItems.mockReturnValue([]);
+    mockFormatPlanningContext.mockReturnValue("mock planning context");
+    mockQuery.mockReturnValue(mockGen([]));
+    mockExtractResultText.mockReturnValue(null);
+    mockFormatDurationSec.mockReturnValue("1.00s");
+    mockResolveModel.mockReturnValue("claude-opus-4-5");
+    mockErrorMessage.mockImplementation((e: unknown) => String(e));
   });
 
   it("calls buildAssessmentPrompt with cycleCount one above the latest cycle", async () => {
@@ -245,12 +273,6 @@ describe("assess.ts main()", () => {
     // Regression guard: if the memoryContext argument is silently dropped from
     // the buildAssessmentPrompt call, accumulated knowledge is lost with no
     // failure signal.
-    //
-    // Reset mocks that earlier throw-tests may have set (vi.clearAllMocks does
-    // not reset implementations, only call history).
-    mockGetLatestCycleNumber.mockReturnValue(185);
-    mockReadFileSync.mockReturnValue("mock identity content");
-    mockGetRecentJournalSummary.mockReturnValue("mock journal summary");
     mockFormatMemoryForPrompt.mockImplementation(() => "specific memory context");
     vi.spyOn(console, "log").mockImplementation(() => {});
 
@@ -263,12 +285,6 @@ describe("assess.ts main()", () => {
   it("passes cycleStatsText from formatCycleStats to buildAssessmentPrompt", async () => {
     // Regression guard: if cycleStatsText is silently dropped, the track-record
     // section of the assessment prompt goes blank with no failure signal.
-    //
-    // Reset mocks that earlier throw-tests may have set (vi.clearAllMocks does
-    // not reset implementations, only call history).
-    mockGetLatestCycleNumber.mockReturnValue(185);
-    mockReadFileSync.mockReturnValue("mock identity content");
-    mockGetRecentJournalSummary.mockReturnValue("mock journal summary");
     mockFormatCycleStats.mockImplementation(() => "specific stats text");
     vi.spyOn(console, "log").mockImplementation(() => {});
 
@@ -298,5 +314,17 @@ describe("assess.ts main()", () => {
     expect(call.memoryContext).toBe("");
 
     errorSpy.mockRestore();
+  });
+
+  it("calls query with correct safety-relevant options", async () => {
+    // Guard: if permissionMode, allowedTools, maxTurns, or maxBudgetUsd are
+    // accidentally changed, no other test would catch the regression silently.
+    await main();
+    expect(mockQuery).toHaveBeenCalledOnce();
+    const { options } = mockQuery.mock.calls[0][0];
+    expect(options?.permissionMode).toBe("dontAsk");
+    expect(options?.allowedTools).toEqual(["Read", "Glob", "Grep", "Bash"]);
+    expect(options?.maxTurns).toBe(20);
+    expect(options?.maxBudgetUsd).toBe(2.0);
   });
 });
