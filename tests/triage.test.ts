@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { buildTriagePrompt, parseTriageResponse, triageIssues } from "../src/triage.js";
 import type { CommunityIssue } from "../src/issues.js";
 import { closeIssueWithComment, detectRepo, isValidRepo } from "../src/issues.js";
@@ -43,6 +43,14 @@ const mockQuery = vi.mocked(query);
 const mockCloseIssue = vi.mocked(closeIssueWithComment);
 const mockHasIssueAction = vi.mocked(hasIssueAction);
 const mockInsertIssueAction = vi.mocked(insertIssueAction);
+
+// Restore factory defaults after each global resetMocks cycle.
+beforeEach(() => {
+  mockCloseIssue.mockResolvedValue(true);
+  vi.mocked(detectRepo).mockReturnValue("test-owner/test-repo");
+  vi.mocked(isValidRepo).mockReturnValue(true);
+  mockHasIssueAction.mockReturnValue(false);
+});
 
 function makeIssue(overrides: Partial<CommunityIssue> = {}): CommunityIssue {
   return {
