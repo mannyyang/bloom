@@ -26,8 +26,12 @@ describe("errorMessage", () => {
     expect(errorMessage({ message: "obj error" })).toBe("obj error");
   });
 
-  it("stringifies objects without a message property", () => {
-    expect(errorMessage({ code: 42 })).toBe("[object Object]");
+  it("returns JSON representation for objects without a message property", () => {
+    expect(errorMessage({ code: 42 })).toBe('{"code":42}');
+  });
+
+  it("returns JSON representation for nested objects", () => {
+    expect(errorMessage({ status: 404, detail: "not found" })).toBe('{"status":404,"detail":"not found"}');
   });
 
   it("stringifies numbers", () => {
@@ -38,8 +42,8 @@ describe("errorMessage", () => {
     expect(errorMessage("")).toBe("");
   });
 
-  it("handles objects where message is not a string", () => {
-    expect(errorMessage({ message: 123 })).toBe("[object Object]");
+  it("returns JSON for objects where message is not a string", () => {
+    expect(errorMessage({ message: 123 })).toBe('{"message":123}');
   });
 });
 

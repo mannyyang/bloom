@@ -17,6 +17,8 @@ export type ErrorCategory = "build_failure" | "test_failure" | "llm_error" | "no
 /**
  * Extract a human-readable message from an unknown thrown value.
  * Handles Error instances, strings, objects with a message property, and fallbacks.
+ * For plain objects without a message property, returns a JSON representation
+ * rather than the unhelpful "[object Object]".
  */
 export function errorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
@@ -28,6 +30,13 @@ export function errorMessage(err: unknown): string {
     typeof (err as Record<string, unknown>).message === "string"
   ) {
     return (err as Record<string, unknown>).message as string;
+  }
+  if (typeof err === "object" && err !== null) {
+    try {
+      return JSON.stringify(err);
+    } catch {
+      // Circular reference or other serialisation error — fall back to String()
+    }
   }
   return String(err);
 }
