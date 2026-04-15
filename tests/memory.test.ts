@@ -429,6 +429,21 @@ describe("formatMemoryForPrompt", () => {
     expect(result).not.toContain("Should never appear");
   });
 
+  it("suppresses learnings when maxChars exactly equals the strategic context section length", () => {
+    // Edge case: budget is set to precisely the length of the strategic context section.
+    // The learnings loop checks `totalLen + learningSection.length + ... > maxChars`
+    // and should break immediately, so no "## Key Learnings" header or items appear.
+    const context = "Exact budget test context.";
+    insertStrategicContext(db, 1, context);
+    insertLearning(db, 1, "pattern", "Should not appear at exact boundary");
+    const contextSection = `## Strategic Context\n${context}\n`;
+    const result = formatMemoryForPrompt(db, contextSection.length);
+    expect(result).toContain("Strategic Context");
+    expect(result).toContain(context);
+    expect(result).not.toContain("## Key Learnings");
+    expect(result).not.toContain("Should not appear at exact boundary");
+  });
+
   it("truncated output always ends on a clean newline boundary (no mid-line cuts)", () => {
     // Regression guard: budget-aware truncation must stop at whole-line boundaries,
     // never slicing a learning item mid-text. Each included line ends with \n,
