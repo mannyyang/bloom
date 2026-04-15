@@ -53,6 +53,8 @@ import { getLatestCycleNumber, getRecentJournalSummary } from "../src/db.js";
 import { extractResultText } from "../src/usage.js";
 import { buildAssessmentPrompt } from "../src/evolve.js";
 import { ensureProject, getProjectItems, formatPlanningContext } from "../src/planning.js";
+import { formatMemoryForPrompt } from "../src/memory.js";
+import { formatCycleStats } from "../src/db.js";
 import { main } from "../src/assess.js";
 
 const mockQuery = vi.mocked(query);
@@ -64,6 +66,8 @@ const mockFormatPlanningContext = vi.mocked(formatPlanningContext);
 const mockGetLatestCycleNumber = vi.mocked(getLatestCycleNumber);
 const mockReadFileSync = vi.mocked(readFileSync);
 const mockGetRecentJournalSummary = vi.mocked(getRecentJournalSummary);
+const mockFormatMemoryForPrompt = vi.mocked(formatMemoryForPrompt);
+const mockFormatCycleStats = vi.mocked(formatCycleStats);
 
 // Helper: create an async generator that yields the provided messages.
 // Cast to `never` is required because the SDK's Query type extends AsyncGenerator
@@ -235,5 +239,64 @@ describe("assess.ts main()", () => {
 
     const call = mockBuildAssessmentPrompt.mock.calls[0][0];
     expect(call.planningContext).toBe("specific roadmap context");
+  });
+
+  it("passes memoryContext from formatMemoryForPrompt to buildAssessmentPrompt", async () => {
+    // Regression guard: if the memoryContext argument is silently dropped from
+    // the buildAssessmentPrompt call, accumulated knowledge is lost with no
+    // failure signal.
+    //
+    // Reset mocks that earlier throw-tests may have set (vi.clearAllMocks does
+    // not reset implementations, only call history).
+    mockGetLatestCycleNumber.mockReturnValue(185);
+    mockReadFileSync.mockReturnValue("mock identity content");
+    mockGetRecentJournalSummary.mockReturnValue("mock journal summary");
+    mockFormatMemoryForPrompt.mockImplementation(() => "specific memory context");
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    const call = mockBuildAssessmentPrompt.mock.calls[0][0];
+    expect(call.memoryContext).toBe("specific memory context");
+  });
+
+  it("passes cycleStatsText from formatCycleStats to buildAssessmentPrompt", async () => {
+    // Regression guard: if cycleStatsText is silently dropped, the track-record
+    // section of the assessment prompt goes blank with no failure signal.
+    //
+    // Reset mocks that earlier throw-tests may have set (vi.clearAllMocks does
+    // not reset implementations, only call history).
+    mockGetLatestCycleNumber.mockReturnValue(185);
+    mockReadFileSync.mockReturnValue("mock identity content");
+    mockGetRecentJournalSummary.mockReturnValue("mock journal summary");
+    mockFormatCycleStats.mockImplementation(() => "specific stats text");
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    const call = mockBuildAssessmentPrompt.mock.calls[0][0];
+    expect(call.cycleStatsText).toBe("specific stats text");
+  });
+
+  it("continues (non-fatal) when formatMemoryForPrompt throws — memoryContext stays empty", async () => {
+    mockFormatMemoryForPrompt.mockImplementation(() => {
+      throw new Error("memory DB corrupted");
+    });
+
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await expect(main()).resolves.toBeUndefined();
+
+    // Error must be surfaced, not silently swallowed
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Context loading failed (non-fatal)")
+    );
+
+    // memoryContext defaults to "" so buildAssessmentPrompt receives an empty string
+    const call = mockBuildAssessmentPrompt.mock.calls[0][0];
+    expect(call.memoryContext).toBe("");
+
+    errorSpy.mockRestore();
   });
 });
