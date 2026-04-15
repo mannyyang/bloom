@@ -94,7 +94,14 @@ export function storeLearnings(
       const key = content.toLowerCase();
       if (seen.has(key)) return false;
       seen.add(key);
-      return !exists.get(content);
+      try {
+        return !exists.get(content);
+      } catch {
+        // Transient IO error (disk full, WAL corruption, locked DB) — treat
+        // as new learning and skip dedup to keep the evolution cycle alive.
+        console.warn("[memory] storeLearnings: DB lookup failed, skipping dedup for this learning (non-fatal)");
+        return false;
+      }
     });
   if (newLearnings.length === 0) return 0;
   decayLearningRelevance(db);

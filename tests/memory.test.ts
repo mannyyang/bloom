@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import type Database from "better-sqlite3";
 import { initDb, insertCycle, insertLearning, getRelevantLearnings, decayLearningRelevance, pruneLowRelevanceLearnings, insertStrategicContext, getLatestStrategicContext } from "../src/db.js";
 import { extractLearnings, storeLearnings, storeStrategicContext, formatMemoryForPrompt, type ExtractedLearnings } from "../src/memory.js";
@@ -216,6 +216,34 @@ describe("storeLearnings", () => {
     expect(newLearning!.relevance).toBe(1.0);
     expect(oldLearning!.relevance).toBeLessThan(1.0);
     expect(oldLearning!.relevance).toBeCloseTo(0.95);
+  });
+
+  it("survives a DB IO error during dedup lookup without throwing", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    // Intercept db.prepare so the SELECT 1 lookup throws to simulate IO failure
+    const originalPrepare = db.prepare.bind(db);
+    vi.spyOn(db, "prepare").mockImplementation((sql: string) => {
+      if (sql.includes("SELECT 1 FROM learnings")) {
+        return { get: () => { throw new Error("disk full"); } } as unknown as ReturnType<typeof db.prepare>;
+      }
+      return originalPrepare(sql);
+    });
+
+    const extracted: ExtractedLearnings = {
+      learnings: [{ category: "domain", content: "IO error learning" }],
+    };
+
+    // Must not throw — the try-catch keeps the cycle alive
+    expect(() => storeLearnings(db, 1, extracted)).not.toThrow();
+    // The learning is skipped (returns 0) rather than crashing
+    expect(storeLearnings(db, 1, extracted)).toBe(0);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[memory] storeLearnings: DB lookup failed"),
+    );
+
+    vi.restoreAllMocks();
+    warnSpy.mockRestore();
   });
 });
 
