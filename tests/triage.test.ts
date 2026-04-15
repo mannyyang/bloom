@@ -1042,4 +1042,27 @@ describe("triageIssues with injected deps", () => {
     );
     warnSpy.mockRestore();
   });
+
+  it("calls insertIssueAction before closeIssueWithComment for alreadyOnBoard path (invocationCallOrder)", async () => {
+    // Integration ordering test: the DB pre-record must happen before the API fan-out
+    // so that a close failure still leaves "triaged" persisted in the DB, preventing
+    // an infinite close-retry loop on subsequent cycles.
+    const issues = [makeIssue({ number: 88, title: "On board Done" })];
+    const boardItems = [makeBoardItem({ linkedIssueNumber: 88, status: "Done" })];
+    const deps = makeDeps([]);
+    const mockDb = {} as import("better-sqlite3").Database;
+
+    mockCloseIssue.mockResolvedValueOnce(true);
+
+    await triageIssues(issues, boardItems, 6, projectConfig, mockDb, deps);
+
+    // Both must have been called
+    expect(mockInsertIssueAction).toHaveBeenCalledWith(mockDb, 6, 88, "triaged");
+    expect(mockCloseIssue).toHaveBeenCalledTimes(1);
+
+    // Ordering: insertIssueAction must have been invoked strictly before closeIssueWithComment
+    const insertOrder = mockInsertIssueAction.mock.invocationCallOrder[0];
+    const closeOrder = mockCloseIssue.mock.invocationCallOrder[0];
+    expect(insertOrder).toBeLessThan(closeOrder);
+  });
 });
