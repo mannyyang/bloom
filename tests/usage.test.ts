@@ -455,6 +455,25 @@ describe("formatUsageForJournal", () => {
     expect(md).toContain("**Total**");
   });
 
+  it("includes per-phase duration in journal format", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 1.0,
+        inputTokens: 5000,
+        outputTokens: 2000,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 30000,
+        numTurns: 10,
+      },
+    ]);
+
+    const md = formatUsageForJournal(cu);
+    const phaseLine = md.split("\n").find((l) => l.includes("**Assessment**"))!;
+    expect(phaseLine).toContain("30.0s");
+  });
+
   it("includes cache suffix when cache tokens are non-zero", () => {
     const cu = aggregateUsage([
       {

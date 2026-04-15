@@ -125,8 +125,9 @@ export function formatUsageForJournal(cu: CycleUsage): string {
   const lines: string[] = ["### Resource Usage", ""];
   for (const p of cu.phases) {
     const cost = p.totalCostUsd.toFixed(4);
+    const duration = formatDurationSec(p.durationMs);
     lines.push(
-      `- **${p.phase}**: $${cost} — ${p.inputTokens.toLocaleString()} input tokens, ${p.outputTokens.toLocaleString()} output tokens, ${p.numTurns} turns`,
+      `- **${p.phase}**: $${cost} — ${p.inputTokens.toLocaleString()} input tokens, ${p.outputTokens.toLocaleString()} output tokens, ${p.numTurns} turns, ${duration}`,
     );
   }
   const cacheSuffix = (cu.totalCacheReadTokens > 0 || cu.totalCacheCreationTokens > 0)
