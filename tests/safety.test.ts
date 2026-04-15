@@ -571,6 +571,8 @@ describe("isDangerousRm", () => {
     // Current directory — wipes the entire project tree
     ["rm -rf . (bare dot)", "rm -rf ."],
     ["rm -rf ./ (dot-slash)", "rm -rf ./"],
+    ["rm -rf ./* (glob all files in cwd)", "rm -rf ./*"],
+    ["rm -rf ./** (recursive glob all files in cwd)", "rm -rf ./**"],
     ["rm -rf . at end of compound command", "rm -rf ./dist && rm -rf ."],
     // Parent directory — wipes the entire parent of the project tree
     ["rm -rf .. (bare double-dot)", "rm -rf .."],

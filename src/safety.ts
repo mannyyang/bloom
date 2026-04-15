@@ -68,7 +68,7 @@ export function isDangerousRm(command: string): boolean {
   // all wipe entire trees. Intentionally allows specific subdirectory paths like ./dist or ./build.
   const hasRootPath   = /(?:^|\s)\/(?:\s|$|\*)/.test(rest);
   const hasHomePath   = /(?:^|\s)~\/?(?:\s|$|\*)/.test(rest);
-  const hasCurrentDir = /(?:^|\s)\.(?:\/)?(?:\s|$)/.test(rest);
+  const hasCurrentDir = /(?:^|\s)\.(?:\/\*{0,2})?(?:\s|$)/.test(rest);
   const hasParentDir  = /(?:^|\s)\.\.(?:\/)?(?:\s|$)/.test(rest);
   const hasDangerousPath = hasRootPath || hasHomePath || hasCurrentDir || hasParentDir;
 
