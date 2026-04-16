@@ -472,6 +472,27 @@ describe("formatMemoryForPrompt", () => {
     expect(result).not.toContain("Should not appear at exact boundary");
   });
 
+  it("output.length never exceeds maxChars for tight budgets spanning context and learnings", () => {
+    // Regression guard for the sections.join("\\n") separator: when both strategic
+    // context and learnings are present, the separator adds 1 char to the output.
+    // The budget check must account for it so output.length <= maxChars always holds.
+    const context = "Boundary guard context string.";
+    insertStrategicContext(db, 1, context);
+    insertLearning(db, 1, "pattern", "Pattern item A");
+    insertLearning(db, 1, "pattern", "Pattern item B which is a bit longer");
+    insertLearning(db, 1, "domain", "Domain item one");
+
+    const fullResult = formatMemoryForPrompt(db, 100000);
+    // Test a range of tight budgets near the boundary where learnings get truncated.
+    // Skip budgets smaller than the strategic context section alone (strategic context
+    // is always emitted regardless of budget — output can exceed maxChars in that case).
+    const contextSectionLen = `## Strategic Context\n${context}\n`.length;
+    for (let budget = contextSectionLen; budget <= fullResult.length; budget++) {
+      const result = formatMemoryForPrompt(db, budget);
+      expect(result.length).toBeLessThanOrEqual(budget);
+    }
+  });
+
   it("truncated output always ends on a clean newline boundary (no mid-line cuts)", () => {
     // Regression guard: budget-aware truncation must stop at whole-line boundaries,
     // never slicing a learning item mid-text. Each included line ends with \n,

@@ -162,6 +162,11 @@ export function formatMemoryForPrompt(
       grouped.set(l.category, list);
     }
 
+    // sections.join("\n") adds a "\n" separator before the learnings section when
+    // a strategic-context section already exists; account for it in budget checks so
+    // the final output never silently exceeds maxChars.
+    const separatorLen = sections.length > 0 ? 1 : 0;
+
     const learningSectionHeader = "## Key Learnings\n";
     let learningSection = learningSectionHeader;
     let budgetExhausted = false;
@@ -171,11 +176,11 @@ export function formatMemoryForPrompt(
       const header = `### ${category}\n`;
       const firstLine = `- ${items[0].content}\n`;
       // Require budget for both the header AND its first item before committing
-      if (totalLen + learningSection.length + header.length + firstLine.length > maxChars) break;
+      if (totalLen + separatorLen + learningSection.length + header.length + firstLine.length > maxChars) break;
       learningSection += header;
       for (const item of items) {
         const line = `- ${item.content}\n`;
-        if (totalLen + learningSection.length + line.length > maxChars) {
+        if (totalLen + separatorLen + learningSection.length + line.length > maxChars) {
           budgetExhausted = true;
           break;
         }
