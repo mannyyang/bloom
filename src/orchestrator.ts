@@ -45,7 +45,11 @@ export function processEvolutionResult(
   let learningsStored = 0;
   try {
     const extracted = extractLearnings(journalSections.learnings);
-    learningsStored = storeLearnings(db, cycleCount, extracted);
+    const learningsResult = storeLearnings(db, cycleCount, extracted);
+    learningsStored = learningsResult.count;
+    if (learningsResult.dedupSkipped > 0) {
+      console.warn(`[orchestrator] storeLearnings: dedup skipped for ${learningsResult.dedupSkipped} learning(s) due to DB IO error — duplicates may exist`);
+    }
   } catch (err) {
     console.error(`[orchestrator] Failed to store learnings (non-fatal): ${errorMessage(err)}`);
   }

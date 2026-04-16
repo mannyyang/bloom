@@ -133,18 +133,18 @@ describe("storeLearnings", () => {
 
   it("returns the count of new learnings stored", () => {
     const extracted = extractLearnings("- [pattern] First insight\n- [domain] Second insight");
-    expect(storeLearnings(db, 1, extracted)).toBe(2);
+    expect(storeLearnings(db, 1, extracted).count).toBe(2);
   });
 
   it("returns 0 when all learnings are duplicates", () => {
     const extracted = extractLearnings("- [pattern] Unique insight about testing");
     storeLearnings(db, 1, extracted);
     insertCycle(db, makeOutcome({ cycleNumber: 2 }));
-    expect(storeLearnings(db, 2, extracted)).toBe(0);
+    expect(storeLearnings(db, 2, extracted).count).toBe(0);
   });
 
   it("returns 0 for empty learnings", () => {
-    expect(storeLearnings(db, 1, { learnings: [] })).toBe(0);
+    expect(storeLearnings(db, 1, { learnings: [] }).count).toBe(0);
   });
 
   it("does not insert duplicate learnings when called twice with the same content", () => {
@@ -165,7 +165,7 @@ describe("storeLearnings", () => {
         { category: "domain",  content: "Repeated insight" },
       ],
     };
-    const count = storeLearnings(db, 1, extracted);
+    const { count } = storeLearnings(db, 1, extracted);
     expect(count).toBe(1);
     const learnings = getRelevantLearnings(db, 10);
     expect(learnings).toHaveLength(1);
@@ -179,7 +179,7 @@ describe("storeLearnings", () => {
         { category: "pattern", content: "case insight" },
       ],
     };
-    const count = storeLearnings(db, 1, extracted);
+    const { count } = storeLearnings(db, 1, extracted);
     expect(count).toBe(1);
     expect(getRelevantLearnings(db, 10)).toHaveLength(1);
   });
@@ -236,8 +236,11 @@ describe("storeLearnings", () => {
 
     // Must not throw — the try-catch keeps the cycle alive
     expect(() => storeLearnings(db, 1, extracted)).not.toThrow();
-    // Dedup is skipped but the learning IS inserted (returns 1) to keep the cycle alive
-    expect(storeLearnings(db, 1, extracted)).toBe(1);
+    // Dedup is skipped but the learning IS inserted to keep the cycle alive.
+    // dedupSkipped must be 1 so the orchestrator can log/track the blind spot.
+    const result = storeLearnings(db, 1, extracted);
+    expect(result.count).toBe(1);
+    expect(result.dedupSkipped).toBe(1);
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("[memory] storeLearnings: DB lookup failed"),
     );
@@ -680,8 +683,8 @@ describe("DB functions for memory", () => {
     storeLearnings(db, 1, { learnings: [{ category: "pattern", content: "Always write tests first" }] });
     insertCycle(db, makeOutcome({ cycleNumber: 2 }));
     // Then attempt to store the same learning with surrounding whitespace
-    const count = storeLearnings(db, 2, { learnings: [{ category: "pattern", content: "  Always write tests first  " }] });
-    expect(count).toBe(0);
+    const { count: count1 } = storeLearnings(db, 2, { learnings: [{ category: "pattern", content: "  Always write tests first  " }] });
+    expect(count1).toBe(0);
     expect(getRelevantLearnings(db, 10)).toHaveLength(1);
   });
 
@@ -690,8 +693,8 @@ describe("DB functions for memory", () => {
     storeLearnings(db, 1, { learnings: [{ category: "domain", content: "use explicit return types" }] });
     insertCycle(db, makeOutcome({ cycleNumber: 2 }));
     // Then attempt to store with capital first letter
-    const count = storeLearnings(db, 2, { learnings: [{ category: "domain", content: "Use explicit return types" }] });
-    expect(count).toBe(0);
+    const { count: count2 } = storeLearnings(db, 2, { learnings: [{ category: "domain", content: "Use explicit return types" }] });
+    expect(count2).toBe(0);
     expect(getRelevantLearnings(db, 10)).toHaveLength(1);
   });
 

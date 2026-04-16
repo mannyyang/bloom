@@ -73,20 +73,34 @@ export function extractLearnings(learningsText: string): ExtractedLearnings {
 }
 
 /**
+ * Result of storing extracted learnings.
+ * `count` is the number of new (non-duplicate) learnings stored.
+ * `dedupSkipped` is the count of learnings where the DB dedup lookup failed
+ * due to a transient IO error — the learning was treated as new and stored
+ * anyway to keep the cycle alive, but may be a duplicate.
+ */
+export interface StoreLearningsResult {
+  count: number;
+  dedupSkipped: number;
+}
+
+/**
  * Store extracted learnings in the database.
  * Applies relevance decay to existing learnings so newer ones rank higher.
- * Returns the count of new (non-duplicate) learnings actually stored.
+ * Returns a StoreLearningsResult with the count of new learnings stored
+ * and a dedupSkipped counter tracking IO-error dedup bypasses.
  */
 export function storeLearnings(
   db: Database.Database,
   cycleNumber: number,
   extracted: ExtractedLearnings,
-): number {
-  if (extracted.learnings.length === 0) return 0;
+): StoreLearningsResult {
+  if (extracted.learnings.length === 0) return { count: 0, dedupSkipped: 0 };
   const exists = db.prepare("SELECT 1 FROM learnings WHERE LOWER(TRIM(content)) = LOWER(TRIM(?)) LIMIT 1");
   // Deduplicate within the batch by normalised content before querying the DB,
   // so two identical learnings returned in the same cycle only count once.
   const seen = new Set<string>();
+  let dedupSkipped = 0;
   const newLearnings = extracted.learnings
     .map(({ category, content }) => ({ category, content: content.trim() }))
     .filter(({ content }) => {
@@ -99,17 +113,18 @@ export function storeLearnings(
       } catch {
         // Transient IO error (disk full, WAL corruption, locked DB) — treat
         // as new learning and skip dedup to keep the evolution cycle alive.
+        dedupSkipped++;
         console.warn("[memory] storeLearnings: DB lookup failed, skipping dedup for this learning (non-fatal)");
         return true;
       }
     });
-  if (newLearnings.length === 0) return 0;
+  if (newLearnings.length === 0) return { count: 0, dedupSkipped };
   decayLearningRelevance(db);
   pruneLowRelevanceLearnings(db);
   for (const { category, content } of newLearnings) {
     insertLearning(db, cycleNumber, category, content);
   }
-  return newLearnings.length;
+  return { count: newLearnings.length, dedupSkipped };
 }
 
 // --- Strategic Context ---
