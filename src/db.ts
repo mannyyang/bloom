@@ -623,14 +623,18 @@ export function decayLearningRelevance(
     return;
   }
   // Per-category weighted decay: architectural insights persist longer than
-  // operational learnings that go stale faster.
-  for (const [category, rate] of Object.entries(DECAY_BY_CATEGORY)) {
-    db.prepare("UPDATE learnings SET relevance = relevance * ? WHERE category = ?").run(rate, category);
-  }
-  // Fall back to 0.95 for any category not listed in DECAY_BY_CATEGORY.
-  const knownCategories = Object.keys(DECAY_BY_CATEGORY);
-  const placeholders = knownCategories.map(() => "?").join(", ");
-  db.prepare(`UPDATE learnings SET relevance = relevance * 0.95 WHERE category NOT IN (${placeholders})`).run(...knownCategories);
+  // operational learnings that go stale faster. Wrapped in a transaction so
+  // a mid-loop crash cannot leave some categories decayed and others not —
+  // either all categories decay atomically or none do.
+  db.transaction(() => {
+    for (const [category, rate] of Object.entries(DECAY_BY_CATEGORY)) {
+      db.prepare("UPDATE learnings SET relevance = relevance * ? WHERE category = ?").run(rate, category);
+    }
+    // Fall back to 0.95 for any category not listed in DECAY_BY_CATEGORY.
+    const knownCategories = Object.keys(DECAY_BY_CATEGORY);
+    const placeholders = knownCategories.map(() => "?").join(", ");
+    db.prepare(`UPDATE learnings SET relevance = relevance * 0.95 WHERE category NOT IN (${placeholders})`).run(...knownCategories);
+  })();
 }
 
 /**
