@@ -199,7 +199,7 @@ STRATEGIC_CONTEXT: Strategic info`;
       expect(processed).toHaveProperty("strategicContextStored");
     });
 
-    it("logs error and continues when insertJournalEntry throws (non-fatal)", async () => {
+    it("logs error and continues when insertJournalEntry throws (transaction rolled back)", async () => {
       const dbModule = await import("../src/db.js");
       const spy = vi.spyOn(dbModule, "insertJournalEntry").mockImplementation(() => {
         throw new Error("simulated DB write failure");
@@ -214,10 +214,14 @@ STRATEGIC_CONTEXT: Context`;
 
       const processed = processEvolutionResult(db, 1, result);
 
+      // Parsed sections are always available (pure computation, unaffected by DB failure)
       expect(processed.journalSections.attempted).toBe("Something");
       expect(processed.improvementsAttempted).toBeGreaterThanOrEqual(0);
+      // Transaction rolled back — nothing stored
+      expect(processed.learningsStored).toBe(0);
+      expect(processed.strategicContextStored).toBe(false);
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Failed to insert journal entry"),
+        expect.stringContaining("Failed to persist evolution data"),
       );
 
       spy.mockRestore();
@@ -239,19 +243,23 @@ STRATEGIC_CONTEXT: Focus on testing`;
 
       const processed = processEvolutionResult(db, 1, result);
 
+      // extractLearnings runs before the transaction; failure is caught and falls
+      // back to empty learnings so the transaction can still commit the rest.
       expect(processed.learningsStored).toBe(0);
       expect(processed.improvementsAttempted).toBe(1);
       expect(processed.improvementsSucceeded).toBe(1);
+      // Strategic context is still stored because the transaction proceeds with
+      // empty learnings after the extraction failure is caught pre-transaction.
       expect(processed.strategicContextStored).toBe(true);
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Failed to store learnings"),
+        expect.stringContaining("Failed to extract learnings"),
       );
 
       spy.mockRestore();
       consoleSpy.mockRestore();
     });
 
-    it("logs console.error and returns 0 learnings when storeLearnings throws", async () => {
+    it("logs console.error and returns 0 learnings when storeLearnings throws (transaction rolled back)", async () => {
       const memoryModule = await import("../src/memory.js");
       const storeSpy = vi.spyOn(memoryModule, "storeLearnings").mockImplementation(() => {
         throw new Error("simulated store failure");
@@ -266,11 +274,13 @@ STRATEGIC_CONTEXT: Focus on testing`;
 
       const processed = processEvolutionResult(db, 1, result);
 
+      // storeLearnings throws inside the transaction — everything rolls back
       expect(processed.learningsStored).toBe(0);
+      expect(processed.strategicContextStored).toBe(false);
       expect(processed.improvementsAttempted).toBe(1);
       expect(processed.improvementsSucceeded).toBe(1);
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("[orchestrator] Failed to store learnings (non-fatal)"),
+        expect.stringContaining("Failed to persist evolution data"),
       );
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("simulated store failure"));
 
@@ -278,7 +288,7 @@ STRATEGIC_CONTEXT: Focus on testing`;
       consoleSpy.mockRestore();
     });
 
-    it("still returns correct results when storeStrategicContext throws", async () => {
+    it("still returns correct results when storeStrategicContext throws (transaction rolled back)", async () => {
       const memoryModule = await import("../src/memory.js");
       const spy = vi.spyOn(memoryModule, "storeStrategicContext").mockImplementation(() => {
         throw new Error("simulated context storage failure");
@@ -294,12 +304,14 @@ STRATEGIC_CONTEXT: Focus on testing`;
 
       const processed = processEvolutionResult(db, 1, result);
 
+      // storeStrategicContext throws inside the transaction — everything rolls back,
+      // so learnings are also not persisted (atomicity guarantee).
       expect(processed.strategicContextStored).toBe(false);
       expect(processed.improvementsAttempted).toBe(2);
       expect(processed.improvementsSucceeded).toBe(1);
-      expect(processed.learningsStored).toBe(1);
+      expect(processed.learningsStored).toBe(0);
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("Failed to store strategic context"),
+        expect.stringContaining("Failed to persist evolution data"),
       );
 
       spy.mockRestore();
