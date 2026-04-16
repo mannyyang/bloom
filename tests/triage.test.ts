@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
+import { describe, it, expect, vi, afterEach, afterAll, beforeAll, beforeEach } from "vitest";
 import { buildTriagePrompt, parseTriageResponse, triageIssues } from "../src/triage.js";
 import type { CommunityIssue } from "../src/issues.js";
 import { closeIssueWithComment, detectRepo, isValidRepo } from "../src/issues.js";
-import { hasIssueAction, insertIssueAction } from "../src/db.js";
+import { hasIssueAction, insertIssueAction, initDb, insertCycle } from "../src/db.js";
+import { makeOutcome } from "./helpers.js";
 import { addLinkedItem } from "../src/planning.js";
 import type { ProjectItem, ProjectConfig } from "../src/planning.js";
 
@@ -1148,5 +1149,78 @@ describe("triageIssues with injected deps", () => {
     expect(mockInsertIssueAction).toHaveBeenCalledWith(mockDb, 20, 72, "triaged");
 
     errorSpy.mockRestore();
+  });
+});
+
+describe("triageIssues real DB integration", () => {
+  // These tests use a real in-memory SQLite database to verify that the
+  // hasIssueAction dedup guard and closeCandidates transaction commit work
+  // correctly against actual SQLite — not just mocked function calls.
+  const projectConfig: ProjectConfig = { filePath: "ROADMAP.md" };
+  let realDb: ReturnType<typeof initDb>;
+  let actualDbModule: typeof import("../src/db.js");
+
+  function makeIntegrationDeps(decisions: Array<{ issueNumber: number; action: string; reason: string }>) {
+    const json = JSON.stringify(decisions);
+    async function* fakeQuery() {
+      yield { result: json };
+    }
+    return { queryFn: () => fakeQuery() as AsyncIterable<unknown> };
+  }
+
+  beforeAll(async () => {
+    actualDbModule = await vi.importActual<typeof import("../src/db.js")>("../src/db.js");
+  });
+
+  beforeEach(() => {
+    // The top-level beforeEach runs first and resets mockHasIssueAction to
+    // mockReturnValue(false). Override here (inner beforeEach runs after outer)
+    // to wire the mocks through to the real in-memory SQLite instance.
+    mockHasIssueAction.mockImplementation((db, issueNumber, action) =>
+      actualDbModule.hasIssueAction(db, issueNumber, action)
+    );
+    mockInsertIssueAction.mockImplementation((db, cycleNumber, issueNumber, action) =>
+      actualDbModule.insertIssueAction(db, cycleNumber, issueNumber, action)
+    );
+    realDb = initDb(":memory:");
+    insertCycle(realDb, makeOutcome({ cycleNumber: 1 }));
+  });
+
+  afterEach(() => {
+    realDb.close();
+    // Restore module-level defaults so other describe blocks are not affected
+    mockHasIssueAction.mockReturnValue(false);
+    mockInsertIssueAction.mockImplementation(() => {});
+  });
+
+  afterAll(() => {
+    mockHasIssueAction.mockReturnValue(false);
+    mockInsertIssueAction.mockImplementation(() => {});
+  });
+
+  it("second triageIssues call with same untriaged issue is a no-op (hasIssueAction dedup guard)", async () => {
+    const issue = makeIssue({ number: 100, title: "Real dedup test" });
+    const deps = makeIntegrationDeps([{ issueNumber: 100, action: "add_to_backlog", reason: "Valid" }]);
+
+    // First call: real hasIssueAction returns false → issue is triaged, addedToBacklog populated
+    const result1 = await triageIssues([issue], [], 1, projectConfig, realDb, deps);
+    expect(result1.addedToBacklog).toContain(100);
+
+    // Second call: real hasIssueAction now returns true (row was inserted) → no-op
+    const result2 = await triageIssues([issue], [], 1, projectConfig, realDb, deps);
+    expect(result2.addedToBacklog).toHaveLength(0);
+    expect(result2.decisions).toHaveLength(0);
+  });
+
+  it("alreadyOnBoard Done issue records exactly 1 row in issue_actions (closeCandidates transaction)", async () => {
+    const issue = makeIssue({ number: 200, title: "Already done issue" });
+    const doneBoard = [
+      makeBoardItem({ linkedIssueNumber: 200, status: "Done", title: "Done item" }),
+    ];
+
+    await triageIssues([issue], doneBoard, 1, projectConfig, realDb);
+
+    const row = realDb.prepare("SELECT COUNT(*) as cnt FROM issue_actions").get() as { cnt: number };
+    expect(row.cnt).toBe(1);
   });
 });
