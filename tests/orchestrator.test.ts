@@ -288,6 +288,33 @@ STRATEGIC_CONTEXT: Focus on testing`;
       consoleSpy.mockRestore();
     });
 
+    it("transaction rolls back journal entries (write group 1) when storeLearnings throws mid-transaction", async () => {
+      // Atomicity regression guard: the transaction wraps all three write groups —
+      // journal entries, learnings, and strategic context. If storeLearnings (write
+      // group 2) throws, the entire transaction must roll back, including journal
+      // entries written in write group 1 (even though those writes succeeded).
+      // This test explicitly queries the DB to assert zero rows were committed.
+      const memoryModule = await import("../src/memory.js");
+      const storeSpy = vi.spyOn(memoryModule, "storeLearnings").mockImplementation(() => {
+        throw new Error("simulated mid-transaction failure");
+      });
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      const result = `ATTEMPTED: - Feature A
+SUCCEEDED: - Feature A
+FAILED: nothing
+LEARNINGS: - [pattern] A learning
+STRATEGIC_CONTEXT: Focus on testing`;
+
+      processEvolutionResult(db, 1, result);
+
+      // Write group 1 (journal entries) must also be rolled back — zero rows in DB
+      expect(getJournalEntries(db)).toHaveLength(0);
+
+      storeSpy.mockRestore();
+      consoleSpy.mockRestore();
+    });
+
     it("still returns correct results when storeStrategicContext throws (transaction rolled back)", async () => {
       const memoryModule = await import("../src/memory.js");
       const spy = vi.spyOn(memoryModule, "storeStrategicContext").mockImplementation(() => {
