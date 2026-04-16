@@ -157,6 +157,31 @@ describe("storeLearnings", () => {
     expect(learnings[0].content).toBe("Unique insight about testing");
   });
 
+  it("cross-cycle dedup: count is 0 and DB has exactly 1 row when same content re-submitted next cycle", () => {
+    // Explicit combined assertion: exercises the LOWER(TRIM(?)) real SQLite path
+    // to confirm the unique-content guard prevents runaway table growth across cycles.
+    const extracted = extractLearnings("- [domain] Dedup guard real SQLite check");
+    storeLearnings(db, 1, extracted);
+
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    const result = storeLearnings(db, 2, extracted);
+
+    expect(result.count).toBe(0);
+    expect(getRelevantLearnings(db, 10)).toHaveLength(1);
+  });
+
+  it("cross-cycle dedup: case/whitespace variants are rejected via LOWER(TRIM) guard", () => {
+    // First cycle: store the canonical form
+    storeLearnings(db, 1, { learnings: [{ category: "pattern", content: "Use transactions for batch writes" }] });
+
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    // Second cycle: submit with different casing — LOWER(TRIM) should block it
+    const result = storeLearnings(db, 2, { learnings: [{ category: "pattern", content: "use transactions for batch writes" }] });
+
+    expect(result.count).toBe(0);
+    expect(getRelevantLearnings(db, 10)).toHaveLength(1);
+  });
+
   it("deduplicates learnings within the same batch (same content, same call)", () => {
     // Two identical items in one batch — only the first should be inserted.
     const extracted: ExtractedLearnings = {
