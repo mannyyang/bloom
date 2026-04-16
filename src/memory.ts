@@ -100,7 +100,7 @@ export function storeLearnings(
         // Transient IO error (disk full, WAL corruption, locked DB) — treat
         // as new learning and skip dedup to keep the evolution cycle alive.
         console.warn("[memory] storeLearnings: DB lookup failed, skipping dedup for this learning (non-fatal)");
-        return false;
+        return true;
       }
     });
   if (newLearnings.length === 0) return 0;

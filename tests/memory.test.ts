@@ -236,8 +236,8 @@ describe("storeLearnings", () => {
 
     // Must not throw — the try-catch keeps the cycle alive
     expect(() => storeLearnings(db, 1, extracted)).not.toThrow();
-    // The learning is skipped (returns 0) rather than crashing
-    expect(storeLearnings(db, 1, extracted)).toBe(0);
+    // Dedup is skipped but the learning IS inserted (returns 1) to keep the cycle alive
+    expect(storeLearnings(db, 1, extracted)).toBe(1);
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("[memory] storeLearnings: DB lookup failed"),
     );
