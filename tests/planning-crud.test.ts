@@ -103,27 +103,27 @@ describe("withRoadmapItems write-skip optimization", () => {
   });
 });
 
-describe("body truncation at 200 chars", () => {
-  const longBody = "x".repeat(300);
+describe("body truncation at 500 chars", () => {
+  const longBody = "x".repeat(600);
 
-  it("truncates addLinkedItem body to 200 chars", () => {
+  it("truncates addLinkedItem body to 500 chars", () => {
     writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([]), "utf-8");
 
     addLinkedItem(config, 99, "Truncation test", longBody);
 
     const written = readFileSync(join(tmpDir, "ROADMAP.md"), "utf-8");
     const items = parseRoadmap(written);
-    expect(items[0].body.length).toBe(200);
+    expect(items[0].body.length).toBe(500);
   });
 
-  it("truncates addDraftItem body to 200 chars", () => {
+  it("truncates addDraftItem body to 500 chars", () => {
     writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([]), "utf-8");
 
     addDraftItem(config, "Draft truncation test", longBody);
 
     const written = readFileSync(join(tmpDir, "ROADMAP.md"), "utf-8");
     const items = parseRoadmap(written);
-    expect(items[0].body.length).toBe(200);
+    expect(items[0].body.length).toBe(500);
   });
 });
 

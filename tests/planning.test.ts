@@ -775,14 +775,34 @@ describe("addLinkedItem", () => {
     expect(parsed[0].status).toBe("Up Next");
   });
 
-  it("truncates body to 200 characters", () => {
+  it("truncates body to 500 characters", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mockReadFileSync.mockReturnValue(serializeRoadmap([]) as any);
-    const longBody = "x".repeat(300);
+    const longBody = "x".repeat(600);
     addLinkedItem(config, 9, "Title", longBody);
     const written = mockWriteFileSync.mock.calls[0][1] as string;
     const parsed = parseRoadmap(written);
-    expect(parsed[0].body.length).toBeLessThanOrEqual(200);
+    expect(parsed[0].body.length).toBeLessThanOrEqual(500);
+  });
+
+  it("emits console.warn when body is truncated", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap([]) as any);
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const longBody = "x".repeat(600);
+    addLinkedItem(config, 12, "Title", longBody);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("truncated"));
+    warnSpy.mockRestore();
+  });
+
+  it("does not emit console.warn when body is within limit", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap([]) as any);
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const shortBody = "x".repeat(100);
+    addLinkedItem(config, 13, "Title", shortBody);
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 });
 
@@ -827,14 +847,34 @@ describe("addDraftItem", () => {
     expect(parsed[0].status).toBe("Up Next");
   });
 
-  it("truncates body to 200 characters", () => {
+  it("truncates body to 500 characters", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mockReadFileSync.mockReturnValue(serializeRoadmap([]) as any);
-    const longBody = "y".repeat(300);
+    const longBody = "y".repeat(600);
     addDraftItem(config, "Long Body Task", longBody);
     const written = mockWriteFileSync.mock.calls[0][1] as string;
     const parsed = parseRoadmap(written);
-    expect(parsed[0].body.length).toBeLessThanOrEqual(200);
+    expect(parsed[0].body.length).toBeLessThanOrEqual(500);
+  });
+
+  it("emits console.warn when body is truncated", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap([]) as any);
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const longBody = "y".repeat(600);
+    addDraftItem(config, "Long Draft Task", longBody);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("truncated"));
+    warnSpy.mockRestore();
+  });
+
+  it("does not emit console.warn when body is within limit", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap([]) as any);
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const shortBody = "y".repeat(100);
+    addDraftItem(config, "Short Draft Task", shortBody);
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 
   it("works when roadmap file does not exist (empty-content fallback path)", () => {

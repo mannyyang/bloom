@@ -20,6 +20,13 @@ export interface ProjectConfig {
 
 const ROADMAP_FILE = "ROADMAP.md";
 const STATUS_COLUMNS = ["Backlog", "Up Next", "In Progress", "Done"] as const;
+
+/**
+ * Maximum number of characters stored for an item body.
+ * Bodies exceeding this limit are silently truncated — a console.warn is
+ * emitted so callers can diagnose data loss without crashing the cycle.
+ */
+const ITEM_BODY_LIMIT = 500;
 export type StatusColumn = (typeof STATUS_COLUMNS)[number];
 
 // --- Roadmap File I/O ---
@@ -255,11 +262,14 @@ export function addLinkedItem(
 ): string {
   const filePath = resolve(process.cwd(), _config.filePath);
   return withRoadmapItems(filePath, (items, markDirty) => {
+    if (body.length > ITEM_BODY_LIMIT) {
+      console.warn(`[planning] addLinkedItem #${issueNumber}: body truncated from ${body.length} to ${ITEM_BODY_LIMIT} chars`);
+    }
     const newItem: ProjectItem = {
       id: nextItemId(items),
       title,
       status,
-      body: body.slice(0, 200),
+      body: body.slice(0, ITEM_BODY_LIMIT),
       linkedIssueNumber: issueNumber,
       reactions: 0,
     };
@@ -278,11 +288,14 @@ export function addDraftItem(
 ): string {
   const filePath = resolve(process.cwd(), _config.filePath);
   return withRoadmapItems(filePath, (items, markDirty) => {
+    if (body.length > ITEM_BODY_LIMIT) {
+      console.warn(`[planning] addDraftItem "${title}": body truncated from ${body.length} to ${ITEM_BODY_LIMIT} chars`);
+    }
     const newItem: ProjectItem = {
       id: nextItemId(items),
       title,
       status,
-      body: body.slice(0, 200),
+      body: body.slice(0, ITEM_BODY_LIMIT),
       linkedIssueNumber: null,
       reactions: 0,
     };
