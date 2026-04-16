@@ -82,7 +82,9 @@ export function parseTriageResponse(text: string): TriageDecision[] {
         ["add_to_backlog", "already_done", "not_applicable"].includes(
           item.action,
         ) &&
-        typeof item.reason === "string",
+        typeof item.reason === "string" &&
+        item.reason.length > 0 &&
+        item.reason.length <= 2000,
     );
     const droppedCount = parsed.length - validDecisions.length;
     if (droppedCount > 0) {

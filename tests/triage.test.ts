@@ -307,6 +307,43 @@ describe("parseTriageResponse", () => {
     expect(mixedResult[0].issueNumber).toBe(5);
     expect(mixedResult[0].action).toBe("not_applicable");
   });
+
+  it("rejects entries with an empty-string reason", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const input = JSON.stringify([
+      { issueNumber: 1, action: "add_to_backlog", reason: "" },
+      { issueNumber: 2, action: "not_applicable", reason: "Valid reason" },
+    ]);
+    const result = parseTriageResponse(input);
+    expect(result).toHaveLength(1);
+    expect(result[0].issueNumber).toBe(2);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("dropped 1 item(s)"));
+    warnSpy.mockRestore();
+  });
+
+  it("rejects entries with a reason exceeding 2000 characters", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const oversizedReason = "x".repeat(2001);
+    const input = JSON.stringify([
+      { issueNumber: 1, action: "add_to_backlog", reason: oversizedReason },
+      { issueNumber: 2, action: "already_done", reason: "Short reason" },
+    ]);
+    const result = parseTriageResponse(input);
+    expect(result).toHaveLength(1);
+    expect(result[0].issueNumber).toBe(2);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("dropped 1 item(s)"));
+    warnSpy.mockRestore();
+  });
+
+  it("accepts entries with reason at the exact 2000-character boundary", () => {
+    const boundaryReason = "x".repeat(2000);
+    const input = JSON.stringify([
+      { issueNumber: 1, action: "add_to_backlog", reason: boundaryReason },
+    ]);
+    const result = parseTriageResponse(input);
+    expect(result).toHaveLength(1);
+    expect(result[0].reason).toHaveLength(2000);
+  });
 });
 
 describe("triageIssues error resilience", () => {
