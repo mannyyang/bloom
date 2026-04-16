@@ -345,6 +345,57 @@ describe("formatOutcomeForJournal", () => {
   });
 });
 
+describe("parseTestCount/parseTestTotal null propagation round-trip", () => {
+  // These tests pin the contract: malformed/changed vitest output → null parse result →
+  // outcome with null test counts → formatOutcomeForJournal emits graceful output.
+  // If the vitest output format drifts, breakage surfaces here rather than silently
+  // producing wrong numbers in the journal.
+
+  it("garbage input: both parsers return null → journal omits Tests line", () => {
+    const raw = "error: module not found\nstderr: Cannot find module 'foo'";
+    const countBefore = parseTestCount(raw);
+    const totalBefore = parseTestTotal(raw);
+    expect(countBefore).toBeNull();
+    expect(totalBefore).toBeNull();
+    const outcome = makeOutcome({ testCountBefore: countBefore, testCountAfter: null, testTotalBefore: totalBefore, testTotalAfter: null });
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).not.toContain("**Tests**");
+  });
+
+  it("partial vitest output (count present, total missing) → journal shows count only, no total", () => {
+    // A format where the parenthesised total is absent — parseTestTotal returns null
+    const rawBefore = "Tests  10 passed";      // no parenthesised total
+    const rawAfter  = "Tests  12 passed";
+    const countBefore = parseTestCount(rawBefore); // 10
+    const countAfter  = parseTestCount(rawAfter);  // 12
+    const totalBefore = parseTestTotal(rawBefore); // null
+    const totalAfter  = parseTestTotal(rawAfter);  // null
+    expect(countBefore).toBe(10);
+    expect(countAfter).toBe(12);
+    expect(totalBefore).toBeNull();
+    expect(totalAfter).toBeNull();
+    const outcome = makeOutcome({ testCountBefore: countBefore, testCountAfter: countAfter, testTotalBefore: totalBefore, testTotalAfter: totalAfter });
+    const result = formatOutcomeForJournal(outcome);
+    // Counts are shown but no total suffix
+    expect(result).toContain("**Tests**: 10 before, 12 after (+2)");
+    expect(result).not.toContain("total:");
+  });
+
+  it("changed vitest format (no Tests keyword) → null parse → journal omits Tests line gracefully", () => {
+    // Simulate a vitest format change where the summary keyword changes
+    const raw = "Suites  5 passed (5)\n  Specs  490 all green (490)";
+    const count = parseTestCount(raw); // null — regex not matched
+    const total = parseTestTotal(raw); // null — no parenthesised Tests line
+    expect(count).toBeNull();
+    expect(total).toBeNull();
+    const outcome = makeOutcome({ testCountBefore: 400, testCountAfter: count, testTotalBefore: 405, testTotalAfter: total });
+    // Only before is available — should use the "after count unavailable" branch
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).toContain("400 before (after count unavailable)");
+    expect(result).not.toContain("total:");
+  });
+});
+
 describe("classifyBuildFailure", () => {
   it("returns test_failure when vitest reports failed tests", () => {
     expect(classifyBuildFailure("Tests  5 failed (5)")).toBe("test_failure");
