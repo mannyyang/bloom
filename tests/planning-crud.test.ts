@@ -105,25 +105,52 @@ describe("withRoadmapItems write-skip optimization", () => {
 
 describe("body truncation at 500 chars", () => {
   const longBody = "x".repeat(600);
+  const TRUNCATION_SUFFIX = " \u2026[truncated]";
 
-  it("truncates addLinkedItem body to 500 chars", () => {
+  it("truncates addLinkedItem body and appends truncation indicator", () => {
     writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([]), "utf-8");
 
     addLinkedItem(config, 99, "Truncation test", longBody);
 
     const written = readFileSync(join(tmpDir, "ROADMAP.md"), "utf-8");
     const items = parseRoadmap(written);
-    expect(items[0].body.length).toBe(500);
+    expect(items[0].body.endsWith(TRUNCATION_SUFFIX)).toBe(true);
+    expect(items[0].body.startsWith("x".repeat(500))).toBe(true);
   });
 
-  it("truncates addDraftItem body to 500 chars", () => {
+  it("truncates addDraftItem body and appends truncation indicator", () => {
     writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([]), "utf-8");
 
     addDraftItem(config, "Draft truncation test", longBody);
 
     const written = readFileSync(join(tmpDir, "ROADMAP.md"), "utf-8");
     const items = parseRoadmap(written);
-    expect(items[0].body.length).toBe(500);
+    expect(items[0].body.endsWith(TRUNCATION_SUFFIX)).toBe(true);
+    expect(items[0].body.startsWith("x".repeat(500))).toBe(true);
+  });
+
+  it("does NOT append truncation indicator when body is within limit", () => {
+    writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([]), "utf-8");
+
+    const shortBody = "Short description";
+    addLinkedItem(config, 100, "No truncation test", shortBody);
+
+    const written = readFileSync(join(tmpDir, "ROADMAP.md"), "utf-8");
+    const items = parseRoadmap(written);
+    expect(items[0].body).toBe(shortBody);
+    expect(items[0].body).not.toContain(TRUNCATION_SUFFIX);
+  });
+
+  it("does NOT append truncation indicator when body is exactly at the limit", () => {
+    writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([]), "utf-8");
+
+    const exactBody = "y".repeat(500);
+    addLinkedItem(config, 101, "Exact limit test", exactBody);
+
+    const written = readFileSync(join(tmpDir, "ROADMAP.md"), "utf-8");
+    const items = parseRoadmap(written);
+    expect(items[0].body).toBe(exactBody);
+    expect(items[0].body).not.toContain(TRUNCATION_SUFFIX);
   });
 });
 

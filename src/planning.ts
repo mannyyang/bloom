@@ -262,14 +262,15 @@ export function addLinkedItem(
 ): string {
   const filePath = resolve(process.cwd(), _config.filePath);
   return withRoadmapItems(filePath, (items, markDirty) => {
-    if (body.length > ITEM_BODY_LIMIT) {
+    const truncated = body.length > ITEM_BODY_LIMIT;
+    if (truncated) {
       console.warn(`[planning] addLinkedItem #${issueNumber}: body truncated from ${body.length} to ${ITEM_BODY_LIMIT} chars`);
     }
     const newItem: ProjectItem = {
       id: nextItemId(items),
       title,
       status,
-      body: body.slice(0, ITEM_BODY_LIMIT),
+      body: truncated ? body.slice(0, ITEM_BODY_LIMIT) + " \u2026[truncated]" : body,
       linkedIssueNumber: issueNumber,
       reactions: 0,
     };
@@ -288,14 +289,15 @@ export function addDraftItem(
 ): string {
   const filePath = resolve(process.cwd(), _config.filePath);
   return withRoadmapItems(filePath, (items, markDirty) => {
-    if (body.length > ITEM_BODY_LIMIT) {
+    const truncated = body.length > ITEM_BODY_LIMIT;
+    if (truncated) {
       console.warn(`[planning] addDraftItem "${title}": body truncated from ${body.length} to ${ITEM_BODY_LIMIT} chars`);
     }
     const newItem: ProjectItem = {
       id: nextItemId(items),
       title,
       status,
-      body: body.slice(0, ITEM_BODY_LIMIT),
+      body: truncated ? body.slice(0, ITEM_BODY_LIMIT) + " \u2026[truncated]" : body,
       linkedIssueNumber: null,
       reactions: 0,
     };

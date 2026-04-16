@@ -775,14 +775,15 @@ describe("addLinkedItem", () => {
     expect(parsed[0].status).toBe("Up Next");
   });
 
-  it("truncates body to 500 characters", () => {
+  it("truncates body to 500 characters and appends truncation indicator", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mockReadFileSync.mockReturnValue(serializeRoadmap([]) as any);
     const longBody = "x".repeat(600);
     addLinkedItem(config, 9, "Title", longBody);
     const written = mockWriteFileSync.mock.calls[0][1] as string;
     const parsed = parseRoadmap(written);
-    expect(parsed[0].body.length).toBeLessThanOrEqual(500);
+    expect(parsed[0].body.startsWith("x".repeat(500))).toBe(true);
+    expect(parsed[0].body.endsWith(" \u2026[truncated]")).toBe(true);
   });
 
   it("emits console.warn when body is truncated", () => {
@@ -847,14 +848,15 @@ describe("addDraftItem", () => {
     expect(parsed[0].status).toBe("Up Next");
   });
 
-  it("truncates body to 500 characters", () => {
+  it("truncates body to 500 characters and appends truncation indicator", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mockReadFileSync.mockReturnValue(serializeRoadmap([]) as any);
     const longBody = "y".repeat(600);
     addDraftItem(config, "Long Body Task", longBody);
     const written = mockWriteFileSync.mock.calls[0][1] as string;
     const parsed = parseRoadmap(written);
-    expect(parsed[0].body.length).toBeLessThanOrEqual(500);
+    expect(parsed[0].body.startsWith("y".repeat(500))).toBe(true);
+    expect(parsed[0].body.endsWith(" \u2026[truncated]")).toBe(true);
   });
 
   it("emits console.warn when body is truncated", () => {
