@@ -144,10 +144,15 @@ export async function triageIssues(
   // the decision is persisted even if the GitHub close API fails. Mirrors the
   // new-issues path (phase 1) where insertIssueAction is called before
   // closeIssueWithComment to prevent an infinite close-retry loop on API failure.
-  if (db) {
-    for (const issue of closeCandidates) {
-      insertIssueAction(db, cycleCount, issue.number, "triaged");
-    }
+  // All inserts are wrapped in a single transaction so a mid-loop crash cannot
+  // leave a partial set persisted — either all candidates are marked or none,
+  // preventing false negatives where some issues are skipped on the next cycle.
+  if (db && closeCandidates.length > 0) {
+    db.transaction(() => {
+      for (const issue of closeCandidates) {
+        insertIssueAction(db, cycleCount, issue.number, "triaged");
+      }
+    })();
   }
 
   const closeResults = await Promise.allSettled(

@@ -952,7 +952,7 @@ describe("triageIssues with injected deps", () => {
     const issues = [makeIssue({ number: 10, title: "On board Done" })];
     const boardItems = [makeBoardItem({ linkedIssueNumber: 10, status: "Done" })];
     const deps = makeDeps([]);
-    const mockDb = {} as import("better-sqlite3").Database;
+    const mockDb = { transaction: <T>(fn: () => T) => fn } as unknown as import("better-sqlite3").Database;
 
     // closeIssueWithComment returns false (soft failure — e.g. already closed externally)
     mockCloseIssue.mockResolvedValueOnce(false);
@@ -1011,7 +1011,7 @@ describe("triageIssues with injected deps", () => {
     const issues = [makeIssue({ number: 10, title: "On board Done" })];
     const boardItems = [makeBoardItem({ linkedIssueNumber: 10, status: "Done" })];
     const deps = makeDeps([]);
-    const mockDb = {} as import("better-sqlite3").Database;
+    const mockDb = { transaction: <T>(fn: () => T) => fn } as unknown as import("better-sqlite3").Database;
 
     mockCloseIssue.mockRejectedValueOnce(new Error("422 Unprocessable Entity"));
 
@@ -1035,7 +1035,7 @@ describe("triageIssues with injected deps", () => {
     const issues = [makeIssue({ number: 77, title: "On board Done" })];
     const boardItems = [makeBoardItem({ linkedIssueNumber: 77, status: "Done" })];
     const deps = makeDeps([]);
-    const mockDb = {} as import("better-sqlite3").Database;
+    const mockDb = { transaction: <T>(fn: () => T) => fn } as unknown as import("better-sqlite3").Database;
 
     // Simulate GitHub API failure on close
     mockCloseIssue.mockRejectedValueOnce(new Error("500 Internal Server Error"));
@@ -1066,7 +1066,7 @@ describe("triageIssues with injected deps", () => {
     const issues = [makeIssue({ number: 88, title: "On board Done" })];
     const boardItems = [makeBoardItem({ linkedIssueNumber: 88, status: "Done" })];
     const deps = makeDeps([]);
-    const mockDb = {} as import("better-sqlite3").Database;
+    const mockDb = { transaction: <T>(fn: () => T) => fn } as unknown as import("better-sqlite3").Database;
 
     mockCloseIssue.mockResolvedValueOnce(true);
 
