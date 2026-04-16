@@ -1081,4 +1081,72 @@ describe("triageIssues with injected deps", () => {
     const closeOrder = mockCloseIssue.mock.invocationCallOrder[0];
     expect(insertOrder).toBeLessThan(closeOrder);
   });
+
+  it("outer catch: cycle continues when insertIssueAction throws for not_applicable decision", async () => {
+    // If the DB write fails mid-processing (e.g., disk full) for one issue, the outer
+    // catch-and-continue block must log the error and let other issues proceed normally.
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const issues = [
+      makeIssue({ number: 61, title: "Fails to record" }),
+      makeIssue({ number: 62, title: "Should still succeed" }),
+    ];
+    const deps = makeDeps([
+      { issueNumber: 61, action: "not_applicable", reason: "Out of scope" },
+      { issueNumber: 62, action: "not_applicable", reason: "Also out of scope" },
+    ]);
+    const mockDb = {} as import("better-sqlite3").Database;
+
+    // Make insertIssueAction throw only for issue #61
+    mockInsertIssueAction.mockImplementationOnce(() => { throw new Error("disk full"); });
+    mockCloseIssue.mockResolvedValue(true);
+
+    // Must not throw — outer catch keeps the cycle alive
+    const result = await triageIssues(issues, [], 20, projectConfig, mockDb, deps);
+
+    // The failure for #61 is logged
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[triage] Failed to process issue #61"),
+    );
+    // Cycle continues — #62 is still processed (insertIssueAction called for it)
+    expect(mockInsertIssueAction).toHaveBeenCalledWith(mockDb, 20, 62, "triaged");
+    // #62 is eventually closed
+    expect(result.closed).toContain(62);
+    // #61 is NOT closed because its closeTasks.push was never reached
+    expect(result.closed).not.toContain(61);
+
+    errorSpy.mockRestore();
+  });
+
+  it("outer catch: cycle continues when insertIssueAction throws for add_to_backlog decision", async () => {
+    // If insertIssueAction throws on the add_to_backlog path for one issue, the outer
+    // catch must log and continue so other issues in the same cycle are not blocked.
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const issues = [
+      makeIssue({ number: 71, title: "DB write fails" }),
+      makeIssue({ number: 72, title: "Should still be added" }),
+    ];
+    const deps = makeDeps([
+      { issueNumber: 71, action: "add_to_backlog", reason: "Good feature" },
+      { issueNumber: 72, action: "add_to_backlog", reason: "Also good" },
+    ]);
+    const mockDb = {} as import("better-sqlite3").Database;
+
+    // addLinkedItem succeeds for both; insertIssueAction throws only for #71
+    mockInsertIssueAction.mockImplementationOnce(() => { throw new Error("WAL corruption"); });
+    mockCloseIssue.mockResolvedValue(true);
+
+    const result = await triageIssues(issues, [], 20, projectConfig, mockDb, deps);
+
+    // The failure for #71 is logged
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[triage] Failed to process issue #71"),
+    );
+    // #72 is still added to backlog despite #71 failing
+    expect(result.addedToBacklog).toContain(72);
+    expect(mockInsertIssueAction).toHaveBeenCalledWith(mockDb, 20, 72, "triaged");
+
+    errorSpy.mockRestore();
+  });
 });
