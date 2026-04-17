@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach, afterAll, beforeAll, beforeEach } from "vitest";
-import { buildTriagePrompt, parseTriageResponse, triageIssues } from "../src/triage.js";
+import { buildTriagePrompt, parseTriageResponse, triageIssues, PROMPT_BODY_PREVIEW_CHARS } from "../src/triage.js";
 import type { CommunityIssue } from "../src/issues.js";
 import { closeIssueWithComment, detectRepo, isValidRepo } from "../src/issues.js";
 import { hasIssueAction, insertIssueAction, initDb, insertCycle } from "../src/db.js";
@@ -107,16 +107,21 @@ describe("buildTriagePrompt", () => {
     expect(prompt).toContain("not_applicable");
   });
 
+  it("PROMPT_BODY_PREVIEW_CHARS is a positive integer", () => {
+    expect(Number.isInteger(PROMPT_BODY_PREVIEW_CHARS)).toBe(true);
+    expect(PROMPT_BODY_PREVIEW_CHARS).toBeGreaterThan(0);
+  });
+
   it("truncates long issue bodies", () => {
     const longBody = "x".repeat(500);
     const prompt = buildTriagePrompt([makeIssue({ body: longBody })], []);
-    // Body should be truncated to 200 chars (PROMPT_BODY_PREVIEW_CHARS — a prompt-preview cap, not a storage limit)
+    // Body should be truncated to PROMPT_BODY_PREVIEW_CHARS chars (a prompt-preview cap, not a storage limit)
     expect(prompt).not.toContain("x".repeat(500));
-    expect(prompt).toContain("x".repeat(200));
-    expect(prompt).not.toContain("x".repeat(201));
+    expect(prompt).toContain("x".repeat(PROMPT_BODY_PREVIEW_CHARS));
+    expect(prompt).not.toContain("x".repeat(PROMPT_BODY_PREVIEW_CHARS + 1));
   });
 
-  it("leaves short bodies intact (no truncation under 200 chars)", () => {
+  it("leaves short bodies intact (no truncation under PROMPT_BODY_PREVIEW_CHARS chars)", () => {
     const shortBody = "x".repeat(100);
     const prompt = buildTriagePrompt([makeIssue({ body: shortBody })], []);
     expect(prompt).toContain("x".repeat(100));

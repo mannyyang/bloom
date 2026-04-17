@@ -8,7 +8,7 @@ import { extractResultText } from "./usage.js";
 
 // Prompt-preview cap for issue bodies — keeps prompts concise without
 // affecting stored content (cf. ITEM_BODY_LIMIT in planning.ts which is 500).
-const PROMPT_BODY_PREVIEW_CHARS = 200;
+export const PROMPT_BODY_PREVIEW_CHARS = 200;
 
 // --- Types ---
 
