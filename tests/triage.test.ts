@@ -191,6 +191,39 @@ describe("parseTriageResponse", () => {
     warnSpy.mockRestore();
   });
 
+  it("returns empty decisions without throwing when LLM returns JSON null", () => {
+    // JSON.parse("null") === null — not an array; must warn and return []
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const result = parseTriageResponse("null");
+    expect(result).toEqual([]);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[triage] parseTriageResponse: expected JSON array"),
+    );
+    warnSpy.mockRestore();
+  });
+
+  it("returns empty decisions without throwing when LLM returns unparseable 'undefined' text", () => {
+    // "undefined" is not valid JSON — JSON.parse throws; must warn and return []
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const result = parseTriageResponse("undefined");
+    expect(result).toEqual([]);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[triage] parseTriageResponse: failed to parse JSON"),
+    );
+    warnSpy.mockRestore();
+  });
+
+  it("returns empty decisions without throwing when LLM returns a non-array scalar string", () => {
+    // JSON.parse('"ok"') === "ok" — a string, not an array; must warn and return []
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const result = parseTriageResponse('"ok"');
+    expect(result).toEqual([]);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[triage] parseTriageResponse: expected JSON array"),
+    );
+    warnSpy.mockRestore();
+  });
+
   it("filters out entries with invalid action values", () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const input = `[
