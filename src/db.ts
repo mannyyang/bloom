@@ -141,28 +141,34 @@ export function initDb(path: string = DEFAULT_DB_PATH): Database.Database {
   `);
 
   // --- Migrations: add columns that may be missing from older databases ---
-  const cycleColumns = validateRows<{ name: string }>(
-    db.prepare("PRAGMA table_info(cycles)").all(),
-    { name: "string" },
-    "PRAGMA.table_info(cycles)",
-  );
-  const cycleColNames = new Set(cycleColumns.map(c => c.name));
+  // Wrapped in a transaction so a mid-migration crash (disk full, OOM) leaves
+  // the schema fully unchanged rather than partially upgraded. SQLite supports
+  // DDL statements inside transactions, so a BEGIN/COMMIT wraps all ALTER TABLE
+  // calls atomically — either all columns are added or none are.
+  db.transaction(() => {
+    const cycleColumns = validateRows<{ name: string }>(
+      db.prepare("PRAGMA table_info(cycles)").all(),
+      { name: "string" },
+      "PRAGMA.table_info(cycles)",
+    );
+    const cycleColNames = new Set(cycleColumns.map(c => c.name));
 
-  if (!cycleColNames.has("duration_ms")) {
-    db.exec("ALTER TABLE cycles ADD COLUMN duration_ms INTEGER");
-  }
-  if (!cycleColNames.has("completed_at")) {
-    db.exec("ALTER TABLE cycles ADD COLUMN completed_at TEXT");
-  }
-  if (!cycleColNames.has("test_total_before")) {
-    db.exec("ALTER TABLE cycles ADD COLUMN test_total_before INTEGER");
-  }
-  if (!cycleColNames.has("test_total_after")) {
-    db.exec("ALTER TABLE cycles ADD COLUMN test_total_after INTEGER");
-  }
-  if (!cycleColNames.has("failure_category")) {
-    db.exec("ALTER TABLE cycles ADD COLUMN failure_category TEXT NOT NULL DEFAULT 'none'");
-  }
+    if (!cycleColNames.has("duration_ms")) {
+      db.exec("ALTER TABLE cycles ADD COLUMN duration_ms INTEGER");
+    }
+    if (!cycleColNames.has("completed_at")) {
+      db.exec("ALTER TABLE cycles ADD COLUMN completed_at TEXT");
+    }
+    if (!cycleColNames.has("test_total_before")) {
+      db.exec("ALTER TABLE cycles ADD COLUMN test_total_before INTEGER");
+    }
+    if (!cycleColNames.has("test_total_after")) {
+      db.exec("ALTER TABLE cycles ADD COLUMN test_total_after INTEGER");
+    }
+    if (!cycleColNames.has("failure_category")) {
+      db.exec("ALTER TABLE cycles ADD COLUMN failure_category TEXT NOT NULL DEFAULT 'none'");
+    }
+  })();
 
   return db;
 }

@@ -129,6 +129,32 @@ describe("db", () => {
         migratedDb.close();
         unlinkSync(path);
       });
+
+      it("migration DDL rolls back atomically when a mid-migration ALTER TABLE fails", () => {
+        // Verify the fundamental SQLite guarantee that the initDb migration block
+        // relies on: wrapping multiple ALTER TABLE calls in a db.transaction()
+        // means a failure on any call rolls back ALL preceding DDL in that
+        // transaction, leaving the schema unchanged.
+        const rawDb = new Database(":memory:");
+        rawDb.exec("CREATE TABLE t (a INTEGER)");
+
+        let threw = false;
+        try {
+          rawDb.transaction(() => {
+            rawDb.exec("ALTER TABLE t ADD COLUMN b INTEGER"); // succeeds
+            rawDb.exec("ALTER TABLE t ADD COLUMN b INTEGER"); // fails: duplicate column
+          })();
+        } catch {
+          threw = true;
+        }
+
+        expect(threw).toBe(true);
+        // Column b must NOT be present — the transaction rolled back the first ALTER too
+        const cols = rawDb.prepare("PRAGMA table_info(t)").all() as { name: string }[];
+        const colNames = cols.map(c => c.name);
+        expect(colNames).not.toContain("b");
+        rawDb.close();
+      });
     });
   });
 
