@@ -27,6 +27,13 @@ import type { HookCallback } from "@anthropic-ai/claude-agent-sdk";
 export const DEFAULT_BLOOM_MODEL = "claude-sonnet-4-6";
 
 /**
+ * Maximum number of characters from the assessment output shown in the
+ * console preview. Keeping this short avoids flooding the terminal while
+ * still giving a useful snapshot of what the assessment produced.
+ */
+export const ASSESSMENT_PREVIEW_CHARS = 500;
+
+/**
  * Resolve the model to use for LLM calls.
  * Reads BLOOM_MODEL at call time so tests can override it via process.env.
  */
@@ -126,7 +133,7 @@ export async function runAssessmentPhase(
   }
 
   console.log(`\n[assessment] Completed in ${formatDurationSec(assessmentMs)} (${assessmentTurns} turns, ${assessment.length} chars)`);
-  console.log(`[assessment] Output preview:\n${assessment.slice(0, 500)}${assessment.length > 500 ? "\n  ..." : ""}`);
+  console.log(`[assessment] Output preview:\n${assessment.slice(0, ASSESSMENT_PREVIEW_CHARS)}${assessment.length > ASSESSMENT_PREVIEW_CHARS ? "\n  ..." : ""}`);
 
   return assessment;
 }

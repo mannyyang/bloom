@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type Database from "better-sqlite3";
-import { runAssessmentPhase, runEvolutionPhase, createDefaultDeps, resolveModel, DEFAULT_BLOOM_MODEL, type QueryFn, type PhaseDeps, type SafetyHooks } from "../src/agent-phases.js";
+import { runAssessmentPhase, runEvolutionPhase, createDefaultDeps, resolveModel, DEFAULT_BLOOM_MODEL, ASSESSMENT_PREVIEW_CHARS, type QueryFn, type PhaseDeps, type SafetyHooks } from "../src/agent-phases.js";
 import type { PhaseUsage } from "../src/usage.js";
 import type { EvolutionContext } from "../src/context.js";
 import type { CycleOutcome } from "../src/outcomes.js";
@@ -581,5 +581,10 @@ describe("resolveModel", () => {
   it("DEFAULT_BLOOM_MODEL is a non-empty string", () => {
     expect(typeof DEFAULT_BLOOM_MODEL).toBe("string");
     expect(DEFAULT_BLOOM_MODEL.length).toBeGreaterThan(0);
+  });
+
+  it("ASSESSMENT_PREVIEW_CHARS is a positive integer", () => {
+    expect(Number.isInteger(ASSESSMENT_PREVIEW_CHARS)).toBe(true);
+    expect(ASSESSMENT_PREVIEW_CHARS).toBeGreaterThan(0);
   });
 });
