@@ -27,6 +27,13 @@ const STATUS_COLUMNS = ["Backlog", "Up Next", "In Progress", "Done"] as const;
  * emitted so callers can diagnose data loss without crashing the cycle.
  */
 const ITEM_BODY_LIMIT = 500;
+
+/**
+ * Maximum number of characters from a current-focus item body shown in the
+ * planning context prompt. Kept intentionally short to avoid bloating prompts.
+ */
+export const PLANNING_BODY_PREVIEW_CHARS = 200;
+
 export type StatusColumn = (typeof STATUS_COLUMNS)[number];
 
 /**
@@ -459,7 +466,7 @@ export function formatPlanningContext(
   if (currentItem) {
     lines.push(`\n**Current focus**: ${currentItem.title}`);
     if (currentItem.body) {
-      lines.push(currentItem.body.slice(0, 200));
+      lines.push(currentItem.body.slice(0, PLANNING_BODY_PREVIEW_CHARS));
     }
   }
 

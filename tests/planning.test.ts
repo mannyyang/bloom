@@ -11,7 +11,7 @@ const mockReadFileSync = vi.mocked(readFileSync);
 const mockWriteFileSync = vi.mocked(writeFileSync);
 const mockExistsSync = vi.mocked(existsSync);
 
-import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, getProjectItems, type ProjectItem } from "../src/planning.js";
+import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, getProjectItems, PLANNING_BODY_PREVIEW_CHARS, type ProjectItem } from "../src/planning.js";
 
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
@@ -108,6 +108,26 @@ describe("formatPlanningContext", () => {
     const current = makeItem({ title: "Task", body: "Detailed description here" });
     const result = formatPlanningContext([], current);
     expect(result).toContain("Detailed description here");
+  });
+
+  it("PLANNING_BODY_PREVIEW_CHARS is a positive integer", () => {
+    expect(Number.isInteger(PLANNING_BODY_PREVIEW_CHARS)).toBe(true);
+    expect(PLANNING_BODY_PREVIEW_CHARS).toBeGreaterThan(0);
+  });
+
+  it("truncates current focus body to PLANNING_BODY_PREVIEW_CHARS characters", () => {
+    const longBody = "B".repeat(PLANNING_BODY_PREVIEW_CHARS + 50);
+    const current = makeItem({ title: "Task", body: longBody });
+    const result = formatPlanningContext([], current);
+    expect(result).toContain("B".repeat(PLANNING_BODY_PREVIEW_CHARS));
+    expect(result).not.toContain("B".repeat(PLANNING_BODY_PREVIEW_CHARS + 1));
+  });
+
+  it("does not truncate current focus body at exactly PLANNING_BODY_PREVIEW_CHARS characters", () => {
+    const exactBody = "C".repeat(PLANNING_BODY_PREVIEW_CHARS);
+    const current = makeItem({ title: "Task", body: exactBody });
+    const result = formatPlanningContext([], current);
+    expect(result).toContain(exactBody);
   });
 
   it("groups items by status", () => {
