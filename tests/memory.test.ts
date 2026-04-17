@@ -667,6 +667,23 @@ describe("DB functions for memory", () => {
     expect(pattern.relevance).toBeGreaterThan(toolUsage.relevance);
   });
 
+  it.each([
+    ["pattern",      0.98],
+    ["anti-pattern", 0.97],
+    ["domain",       0.95],
+    ["process",      0.93],
+    ["tool-usage",   0.93],
+  ] as const)(
+    "decayLearningRelevance: '%s' category decays from 1.0 to exactly %s after one cycle",
+    (category, expectedRate) => {
+      insertLearning(db, 1, category, `${category} learning`);
+      decayLearningRelevance(db); // per-category rates, no explicit factor
+      const rows = db.prepare("SELECT relevance FROM learnings WHERE category = ?").all(category) as { relevance: number }[];
+      expect(rows).toHaveLength(1);
+      expect(rows[0].relevance).toBeCloseTo(expectedRate, 5);
+    },
+  );
+
   it("decayLearningRelevance falls back to 0.95 for unknown categories", () => {
     // Insert a learning with a category not in DECAY_BY_CATEGORY via raw SQL
     db.prepare("INSERT INTO learnings (cycle_number, category, content) VALUES (?, ?, ?)").run(1, "unknown-cat", "Mystery learning");
