@@ -6,6 +6,10 @@ import { addLinkedItem, type ProjectConfig, type ProjectItem } from "./planning.
 import { type QueryFn, resolveModel } from "./agent-phases.js";
 import { extractResultText } from "./usage.js";
 
+// Prompt-preview cap for issue bodies — keeps prompts concise without
+// affecting stored content (cf. ITEM_BODY_LIMIT in planning.ts which is 500).
+const PROMPT_BODY_PREVIEW_CHARS = 200;
+
 // --- Types ---
 
 export interface TriageDecision {
@@ -29,7 +33,7 @@ export function buildTriagePrompt(
   const issueList = issues
     .map(
       (i) =>
-        `- #${i.number}: "${i.title}" (${i.reactions} reactions)\n  ${i.body.slice(0, 200)}`,
+        `- #${i.number}: "${i.title}" (${i.reactions} reactions)\n  ${i.body.slice(0, PROMPT_BODY_PREVIEW_CHARS)}`,
     )
     .join("\n");
 
