@@ -11,7 +11,7 @@ const mockReadFileSync = vi.mocked(readFileSync);
 const mockWriteFileSync = vi.mocked(writeFileSync);
 const mockExistsSync = vi.mocked(existsSync);
 
-import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, type ProjectItem } from "../src/planning.js";
+import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, getProjectItems, type ProjectItem } from "../src/planning.js";
 
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
@@ -890,6 +890,23 @@ describe("addDraftItem", () => {
     const parsed = parseRoadmap(written);
     expect(parsed).toHaveLength(1);
     expect(parsed[0].title).toBe("Brand New Task");
+  });
+});
+
+describe("getProjectItems", () => {
+  const config = { filePath: "" };
+
+  beforeEach(() => {
+    mockReadFileSync.mockReset();
+    mockWriteFileSync.mockReset();
+  });
+
+  it("returns empty array when roadmap file does not exist", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockExistsSync.mockReturnValue(false as any);
+    const items = getProjectItems(config);
+    expect(items).toEqual([]);
+    expect(mockWriteFileSync).not.toHaveBeenCalled();
   });
 });
 
