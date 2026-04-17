@@ -29,6 +29,17 @@ const STATUS_COLUMNS = ["Backlog", "Up Next", "In Progress", "Done"] as const;
 const ITEM_BODY_LIMIT = 500;
 export type StatusColumn = (typeof STATUS_COLUMNS)[number];
 
+/**
+ * Truncate a body string to ITEM_BODY_LIMIT characters, emitting a warning
+ * when truncation occurs. The `tag` label is included in the warning message
+ * for easy identification (e.g. "addLinkedItem #42" or "addDraftItem \"Title\"").
+ */
+function truncateItemBody(tag: string, body: string): string {
+  if (body.length <= ITEM_BODY_LIMIT) return body;
+  console.warn(`[planning] ${tag}: body truncated from ${body.length} to ${ITEM_BODY_LIMIT} chars`);
+  return body.slice(0, ITEM_BODY_LIMIT) + " \u2026[truncated]";
+}
+
 // --- Roadmap File I/O ---
 
 function getRoadmapPath(): string {
@@ -262,15 +273,11 @@ export function addLinkedItem(
 ): string {
   const filePath = resolve(process.cwd(), _config.filePath);
   return withRoadmapItems(filePath, (items, markDirty) => {
-    const truncated = body.length > ITEM_BODY_LIMIT;
-    if (truncated) {
-      console.warn(`[planning] addLinkedItem #${issueNumber}: body truncated from ${body.length} to ${ITEM_BODY_LIMIT} chars`);
-    }
     const newItem: ProjectItem = {
       id: nextItemId(items),
       title,
       status,
-      body: truncated ? body.slice(0, ITEM_BODY_LIMIT) + " \u2026[truncated]" : body,
+      body: truncateItemBody(`addLinkedItem #${issueNumber}`, body),
       linkedIssueNumber: issueNumber,
       reactions: 0,
     };
@@ -289,15 +296,11 @@ export function addDraftItem(
 ): string {
   const filePath = resolve(process.cwd(), _config.filePath);
   return withRoadmapItems(filePath, (items, markDirty) => {
-    const truncated = body.length > ITEM_BODY_LIMIT;
-    if (truncated) {
-      console.warn(`[planning] addDraftItem "${title}": body truncated from ${body.length} to ${ITEM_BODY_LIMIT} chars`);
-    }
     const newItem: ProjectItem = {
       id: nextItemId(items),
       title,
       status,
-      body: truncated ? body.slice(0, ITEM_BODY_LIMIT) + " \u2026[truncated]" : body,
+      body: truncateItemBody(`addDraftItem "${title}"`, body),
       linkedIssueNumber: null,
       reactions: 0,
     };
