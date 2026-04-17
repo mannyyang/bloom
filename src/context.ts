@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import type Database from "better-sqlite3";
 import { getRecentJournalSummary, getCycleStats, formatCycleStats } from "./db.js";
-import { fetchCommunityIssues, syncReactionsToItems } from "./issues.js";
+import { fetchCommunityIssues, syncReactionsToItems, type CommunityIssue } from "./issues.js";
 import { triageIssues } from "./triage.js";
 import { errorMessage } from "./errors.js";
 import { formatMemoryForPrompt } from "./memory.js";
@@ -15,7 +15,6 @@ import {
   type ProjectConfig,
   type ProjectItem,
 } from "./planning.js";
-import type { CommunityIssue } from "./issues.js";
 
 /**
  * Context gathered for the evolution cycle: identity, journal, issues,
