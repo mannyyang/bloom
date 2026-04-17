@@ -60,17 +60,14 @@ export async function loadEvolutionContext(
   const memoryContext = formatMemoryForPrompt(db, 1200);
   console.log(`[context] Memory context: ${memoryContext ? `${memoryContext.length} chars` : "empty"}`);
 
-  // Fetch community issues concurrently with the initial (sync) planning setup
-  // so the GitHub API call — the slowest operation — does not block local work.
-  const [issuesResult] = await Promise.allSettled([
-    fetchCommunityIssues(),
-  ]);
-  const issues: CommunityIssue[] = issuesResult.status === "fulfilled"
-    ? issuesResult.value
-    : (() => {
-        console.error(`[context] Failed to fetch community issues (non-fatal): ${errorMessage((issuesResult as PromiseRejectedResult).reason)}`);
-        return [] as CommunityIssue[];
-      })();
+  // Fetch community issues; errors are non-fatal — fall back to an empty list
+  // so a transient GitHub API failure does not abort the evolution cycle.
+  let issues: CommunityIssue[] = [];
+  try {
+    issues = await fetchCommunityIssues();
+  } catch (err) {
+    console.error(`[context] Failed to fetch community issues (non-fatal): ${errorMessage(err)}`);
+  }
   console.log(`[context] Community issues: ${issues.length} open`);
   for (const issue of issues) {
     console.log(`  - #${issue.number}: ${issue.title} (${issue.reactions} reactions)`);
