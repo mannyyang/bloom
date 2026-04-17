@@ -26,7 +26,7 @@ const STATUS_COLUMNS = ["Backlog", "Up Next", "In Progress", "Done"] as const;
  * Bodies exceeding this limit are silently truncated — a console.warn is
  * emitted so callers can diagnose data loss without crashing the cycle.
  */
-const ITEM_BODY_LIMIT = 500;
+export const ITEM_BODY_LIMIT = 500;
 
 /**
  * Maximum number of characters from a current-focus item body shown in the

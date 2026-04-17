@@ -11,7 +11,7 @@ const mockReadFileSync = vi.mocked(readFileSync);
 const mockWriteFileSync = vi.mocked(writeFileSync);
 const mockExistsSync = vi.mocked(existsSync);
 
-import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, getProjectItems, PLANNING_BODY_PREVIEW_CHARS, type ProjectItem } from "../src/planning.js";
+import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, getProjectItems, PLANNING_BODY_PREVIEW_CHARS, ITEM_BODY_LIMIT, type ProjectItem } from "../src/planning.js";
 
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
@@ -113,6 +113,11 @@ describe("formatPlanningContext", () => {
   it("PLANNING_BODY_PREVIEW_CHARS is a positive integer", () => {
     expect(Number.isInteger(PLANNING_BODY_PREVIEW_CHARS)).toBe(true);
     expect(PLANNING_BODY_PREVIEW_CHARS).toBeGreaterThan(0);
+  });
+
+  it("ITEM_BODY_LIMIT is a positive integer", () => {
+    expect(Number.isInteger(ITEM_BODY_LIMIT)).toBe(true);
+    expect(ITEM_BODY_LIMIT).toBeGreaterThan(0);
   });
 
   it("truncates current focus body to PLANNING_BODY_PREVIEW_CHARS characters", () => {
@@ -795,14 +800,14 @@ describe("addLinkedItem", () => {
     expect(parsed[0].status).toBe("Up Next");
   });
 
-  it("truncates body to 500 characters and appends truncation indicator", () => {
+  it("truncates body to ITEM_BODY_LIMIT characters and appends truncation indicator", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mockReadFileSync.mockReturnValue(serializeRoadmap([]) as any);
     const longBody = "x".repeat(600);
     addLinkedItem(config, 9, "Title", longBody);
     const written = mockWriteFileSync.mock.calls[0][1] as string;
     const parsed = parseRoadmap(written);
-    expect(parsed[0].body.startsWith("x".repeat(500))).toBe(true);
+    expect(parsed[0].body.startsWith("x".repeat(ITEM_BODY_LIMIT))).toBe(true);
     expect(parsed[0].body.endsWith(" \u2026[truncated]")).toBe(true);
   });
 
@@ -868,14 +873,14 @@ describe("addDraftItem", () => {
     expect(parsed[0].status).toBe("Up Next");
   });
 
-  it("truncates body to 500 characters and appends truncation indicator", () => {
+  it("truncates body to ITEM_BODY_LIMIT characters and appends truncation indicator", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mockReadFileSync.mockReturnValue(serializeRoadmap([]) as any);
     const longBody = "y".repeat(600);
     addDraftItem(config, "Long Body Task", longBody);
     const written = mockWriteFileSync.mock.calls[0][1] as string;
     const parsed = parseRoadmap(written);
-    expect(parsed[0].body.startsWith("y".repeat(500))).toBe(true);
+    expect(parsed[0].body.startsWith("y".repeat(ITEM_BODY_LIMIT))).toBe(true);
     expect(parsed[0].body.endsWith(" \u2026[truncated]")).toBe(true);
   });
 
