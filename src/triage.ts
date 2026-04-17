@@ -157,7 +157,7 @@ export async function triageIssues(
     })();
   }
 
-  const closeResults = await Promise.allSettled(
+  const closeResults = await Promise.all(
     closeCandidates.map((issue) =>
       closeIssueWithComment(
         issue.number,
@@ -176,8 +176,8 @@ export async function triageIssues(
     ),
   );
   for (const r of closeResults) {
-    if (r.status === "fulfilled" && r.value.wasClosed) {
-      result.closed.push(r.value.issueNumber);
+    if (r.wasClosed) {
+      result.closed.push(r.issueNumber);
     }
   }
 
@@ -320,7 +320,7 @@ export async function triageIssues(
   // Phase 2: fan out close API calls concurrently — same pattern as the
   // alreadyOnBoard loop above, eliminating linear latency scaling when multiple
   // already_done / not_applicable decisions are returned in a single cycle.
-  const decisionCloseResults = await Promise.allSettled(
+  const decisionCloseResults = await Promise.all(
     closeTasks.map(({ issueNumber, comment }) =>
       closeIssueWithComment(issueNumber, cycleCount, comment, db, "closed", repo ?? undefined)
         .then((wasClosed) => ({ issueNumber, wasClosed }))
@@ -331,8 +331,8 @@ export async function triageIssues(
     ),
   );
   for (const r of decisionCloseResults) {
-    if (r.status === "fulfilled" && r.value.wasClosed) {
-      result.closed.push(r.value.issueNumber);
+    if (r.wasClosed) {
+      result.closed.push(r.issueNumber);
     }
   }
 
