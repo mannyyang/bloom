@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach, afterAll, beforeAll, beforeEach } from "vitest";
-import { buildTriagePrompt, parseTriageResponse, triageIssues, PROMPT_BODY_PREVIEW_CHARS } from "../src/triage.js";
+import { buildTriagePrompt, parseTriageResponse, triageIssues, PROMPT_BODY_PREVIEW_CHARS, TRIAGE_MAX_TURNS, TRIAGE_MAX_BUDGET_USD } from "../src/triage.js";
 import type { CommunityIssue } from "../src/issues.js";
 import { closeIssueWithComment, detectRepo, isValidRepo } from "../src/issues.js";
 import { hasIssueAction, insertIssueAction, initDb, insertCycle } from "../src/db.js";
@@ -74,6 +74,16 @@ function makeBoardItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
     ...overrides,
   };
 }
+
+describe("triage.ts constants", () => {
+  it("TRIAGE_MAX_TURNS equals 3", () => {
+    expect(TRIAGE_MAX_TURNS).toBe(3);
+  });
+
+  it("TRIAGE_MAX_BUDGET_USD equals 0.5", () => {
+    expect(TRIAGE_MAX_BUDGET_USD).toBe(0.5);
+  });
+});
 
 describe("buildTriagePrompt", () => {
   it("includes issue numbers and titles", () => {
@@ -1224,6 +1234,27 @@ describe("triageIssues with injected deps", () => {
     expect(mockInsertIssueAction).toHaveBeenCalledWith(mockDb, 20, 72, "triaged");
 
     errorSpy.mockRestore();
+  });
+
+  it("calls queryFn with TRIAGE_MAX_TURNS and TRIAGE_MAX_BUDGET_USD options", async () => {
+    // Guard: if maxTurns or maxBudgetUsd are accidentally changed, this test catches
+    // the regression — mirrors the assess.test.ts safety-options pattern.
+    const capturedOptions: unknown[] = [];
+    const issues = [makeIssue({ number: 1 })];
+    const customQuery = async function* (args: { options?: unknown }) {
+      capturedOptions.push(args.options);
+      yield { result: JSON.stringify([{ issueNumber: 1, action: "not_applicable", reason: "Test" }]) };
+    };
+    const deps = { queryFn: customQuery as Parameters<typeof triageIssues>[5] extends undefined ? never : NonNullable<Parameters<typeof triageIssues>[5]>["queryFn"] };
+    const mockDb = {} as import("better-sqlite3").Database;
+
+    mockCloseIssue.mockResolvedValue(true);
+    await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
+
+    expect(capturedOptions[0]).toMatchObject({
+      maxTurns: TRIAGE_MAX_TURNS,
+      maxBudgetUsd: TRIAGE_MAX_BUDGET_USD,
+    });
   });
 });
 

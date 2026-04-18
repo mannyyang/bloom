@@ -10,6 +10,12 @@ import { extractResultText } from "./usage.js";
 // affecting stored content (cf. ITEM_BODY_LIMIT in planning.ts which is 500).
 export const PROMPT_BODY_PREVIEW_CHARS = 200;
 
+/** Maximum LLM turns allowed per triage call. */
+export const TRIAGE_MAX_TURNS = 3;
+
+/** Maximum USD budget per triage LLM call. */
+export const TRIAGE_MAX_BUDGET_USD = 0.5;
+
 // --- Types ---
 
 export interface TriageDecision {
@@ -218,8 +224,8 @@ export async function triageIssues(
       prompt,
       options: {
         model: resolveModel(),
-        maxTurns: 3,
-        maxBudgetUsd: 0.5,
+        maxTurns: TRIAGE_MAX_TURNS,
+        maxBudgetUsd: TRIAGE_MAX_BUDGET_USD,
         permissionMode: "dontAsk",
         allowedTools: [],
       },
