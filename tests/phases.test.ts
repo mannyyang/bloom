@@ -443,6 +443,12 @@ describe("demoteStaleItemsPhase", () => {
     demoteStaleItemsPhase(projectConfig, 15, 5);
     expect(demoteStaleInProgressItems).toHaveBeenCalledWith(projectConfig, 15, 5);
   });
+
+  it("uses default threshold of 3 when no threshold argument is provided", () => {
+    vi.mocked(demoteStaleInProgressItems).mockReturnValue([]);
+    demoteStaleItemsPhase(projectConfig, 10);
+    expect(demoteStaleInProgressItems).toHaveBeenCalledWith(projectConfig, 10, 3);
+  });
 });
 
 describe("pushChangesPhase", () => {
