@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type Database from "better-sqlite3";
-import { runAssessmentPhase, runEvolutionPhase, createDefaultDeps, resolveModel, DEFAULT_BLOOM_MODEL, ASSESSMENT_PREVIEW_CHARS, type QueryFn, type PhaseDeps, type SafetyHooks } from "../src/agent-phases.js";
+import { runAssessmentPhase, runEvolutionPhase, createDefaultDeps, resolveModel, DEFAULT_BLOOM_MODEL, ASSESSMENT_PREVIEW_CHARS, AGENT_ASSESSMENT_MAX_TURNS, AGENT_ASSESSMENT_MAX_BUDGET_USD, AGENT_EVOLUTION_MAX_TURNS, AGENT_EVOLUTION_MAX_BUDGET_USD, type QueryFn, type PhaseDeps, type SafetyHooks } from "../src/agent-phases.js";
 import type { PhaseUsage } from "../src/usage.js";
 import type { EvolutionContext } from "../src/context.js";
 import type { CycleOutcome } from "../src/outcomes.js";
@@ -225,9 +225,11 @@ describe("runAssessmentPhase", () => {
       model: "claude-sonnet-4-6",
       allowedTools: ["Read", "Glob", "Grep", "Bash"],
       permissionMode: "dontAsk",
-      maxTurns: 20,
-      maxBudgetUsd: 2.0,
+      maxTurns: AGENT_ASSESSMENT_MAX_TURNS,
+      maxBudgetUsd: AGENT_ASSESSMENT_MAX_BUDGET_USD,
     });
+    expect(queryCalls[0].options.maxTurns).toBe(AGENT_ASSESSMENT_MAX_TURNS);
+    expect(queryCalls[0].options.maxBudgetUsd).toBe(AGENT_ASSESSMENT_MAX_BUDGET_USD);
   });
 
   it("includes context fields in the prompt and options", async () => {
@@ -377,9 +379,11 @@ describe("runEvolutionPhase", () => {
       allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
       permissionMode: "acceptEdits",
       systemPrompt: "my identity",
-      maxTurns: 50,
-      maxBudgetUsd: 5.0,
+      maxTurns: AGENT_EVOLUTION_MAX_TURNS,
+      maxBudgetUsd: AGENT_EVOLUTION_MAX_BUDGET_USD,
     });
+    expect(queryCalls[0].options.maxTurns).toBe(AGENT_EVOLUTION_MAX_TURNS);
+    expect(queryCalls[0].options.maxBudgetUsd).toBe(AGENT_EVOLUTION_MAX_BUDGET_USD);
   });
 
   it("handles evolution with no result messages (empty string)", async () => {
@@ -586,5 +590,21 @@ describe("resolveModel", () => {
   it("ASSESSMENT_PREVIEW_CHARS is a positive integer", () => {
     expect(Number.isInteger(ASSESSMENT_PREVIEW_CHARS)).toBe(true);
     expect(ASSESSMENT_PREVIEW_CHARS).toBeGreaterThan(0);
+  });
+
+  it("AGENT_ASSESSMENT_MAX_TURNS is pinned to 20", () => {
+    expect(AGENT_ASSESSMENT_MAX_TURNS).toBe(20);
+  });
+
+  it("AGENT_ASSESSMENT_MAX_BUDGET_USD is pinned to 2.0", () => {
+    expect(AGENT_ASSESSMENT_MAX_BUDGET_USD).toBe(2.0);
+  });
+
+  it("AGENT_EVOLUTION_MAX_TURNS is pinned to 50", () => {
+    expect(AGENT_EVOLUTION_MAX_TURNS).toBe(50);
+  });
+
+  it("AGENT_EVOLUTION_MAX_BUDGET_USD is pinned to 5.0", () => {
+    expect(AGENT_EVOLUTION_MAX_BUDGET_USD).toBe(5.0);
   });
 });

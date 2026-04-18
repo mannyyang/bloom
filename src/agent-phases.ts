@@ -33,6 +33,15 @@ export const DEFAULT_BLOOM_MODEL = "claude-sonnet-4-6";
  */
 export const ASSESSMENT_PREVIEW_CHARS = 500;
 
+/** Maximum agent turns allowed in the assessment phase. */
+export const AGENT_ASSESSMENT_MAX_TURNS = 20;
+/** Maximum USD budget allowed for the assessment phase. */
+export const AGENT_ASSESSMENT_MAX_BUDGET_USD = 2.0;
+/** Maximum agent turns allowed in the evolution phase. */
+export const AGENT_EVOLUTION_MAX_TURNS = 50;
+/** Maximum USD budget allowed for the evolution phase. */
+export const AGENT_EVOLUTION_MAX_BUDGET_USD = 5.0;
+
 /**
  * Resolve the model to use for LLM calls.
  * Reads BLOOM_MODEL at call time so tests can override it via process.env.
@@ -102,8 +111,8 @@ export async function runAssessmentPhase(
       allowedTools: ["Read", "Glob", "Grep", "Bash"],
       permissionMode: "dontAsk",
       systemPrompt: ctx.identity,
-      maxTurns: 20,
-      maxBudgetUsd: 2.0,
+      maxTurns: AGENT_ASSESSMENT_MAX_TURNS,
+      maxBudgetUsd: AGENT_ASSESSMENT_MAX_BUDGET_USD,
     },
   })) {
     assessmentTurns++;
@@ -176,8 +185,8 @@ export async function runEvolutionPhase(
       allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
       permissionMode: "acceptEdits",
       systemPrompt: identity,
-      maxTurns: 50,
-      maxBudgetUsd: 5.0,
+      maxTurns: AGENT_EVOLUTION_MAX_TURNS,
+      maxBudgetUsd: AGENT_EVOLUTION_MAX_BUDGET_USD,
       hooks: {
         PreToolUse: [
           { matcher: "Write|Edit", hooks: [safetyHooks.protectIdentity, safetyHooks.protectJournal] },
