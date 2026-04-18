@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach, afterAll, beforeAll, beforeEach } from "vitest";
-import { buildTriagePrompt, parseTriageResponse, triageIssues, PROMPT_BODY_PREVIEW_CHARS, TRIAGE_MAX_TURNS, TRIAGE_MAX_BUDGET_USD } from "../src/triage.js";
+import { buildTriagePrompt, parseTriageResponse, triageIssues, PROMPT_BODY_PREVIEW_CHARS, TRIAGE_MAX_TURNS, TRIAGE_MAX_BUDGET_USD, TRIAGE_REASON_MAX_CHARS, TRIAGE_ERROR_PREVIEW_CHARS } from "../src/triage.js";
 import type { CommunityIssue } from "../src/issues.js";
 import { closeIssueWithComment, detectRepo, isValidRepo } from "../src/issues.js";
 import { hasIssueAction, insertIssueAction, initDb, insertCycle } from "../src/db.js";
@@ -1328,5 +1328,15 @@ describe("triageIssues real DB integration", () => {
 
     const row = realDb.prepare("SELECT COUNT(*) as cnt FROM issue_actions").get() as { cnt: number };
     expect(row.cnt).toBe(1);
+  });
+});
+
+describe("triage constants", () => {
+  it("TRIAGE_REASON_MAX_CHARS is 2000 (value-pinning)", () => {
+    expect(TRIAGE_REASON_MAX_CHARS).toBe(2000);
+  });
+
+  it("TRIAGE_ERROR_PREVIEW_CHARS is 200 (value-pinning)", () => {
+    expect(TRIAGE_ERROR_PREVIEW_CHARS).toBe(200);
   });
 });

@@ -16,6 +16,12 @@ export const TRIAGE_MAX_TURNS = 3;
 /** Maximum USD budget per triage LLM call. */
 export const TRIAGE_MAX_BUDGET_USD = 0.5;
 
+/** Maximum character length accepted for a triage decision reason string. */
+export const TRIAGE_REASON_MAX_CHARS = 2000;
+
+/** Number of chars of a failed-parse JSON string shown in the warning log. */
+export const TRIAGE_ERROR_PREVIEW_CHARS = 200;
+
 // --- Types ---
 
 export interface TriageDecision {
@@ -94,7 +100,7 @@ export function parseTriageResponse(text: string): TriageDecision[] {
         ) &&
         typeof item.reason === "string" &&
         item.reason.length > 0 &&
-        item.reason.length <= 2000,
+        item.reason.length <= TRIAGE_REASON_MAX_CHARS,
     );
     const droppedCount = parsed.length - validDecisions.length;
     if (droppedCount > 0) {
@@ -102,7 +108,7 @@ export function parseTriageResponse(text: string): TriageDecision[] {
     }
     return validDecisions;
   } catch {
-    console.warn(`[triage] parseTriageResponse: failed to parse JSON, returning empty decisions. Input (first 200 chars): ${jsonStr.slice(0, 200)}`);
+    console.warn(`[triage] parseTriageResponse: failed to parse JSON, returning empty decisions. Input (first ${TRIAGE_ERROR_PREVIEW_CHARS} chars): ${jsonStr.slice(0, TRIAGE_ERROR_PREVIEW_CHARS)}`);
     return [];
   }
 }
