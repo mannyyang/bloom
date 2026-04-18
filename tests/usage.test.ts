@@ -203,9 +203,9 @@ describe("extractUsage", () => {
     expect(result!.outputTokens).toBe(300);
   });
 
-  it("passes negative numeric token values through (numOrZero only guards non-numbers)", () => {
-    // numOrZero(val) returns val when typeof val === "number", even if negative.
-    // This documents the current behaviour so regressions are caught.
+  it("clamps negative numeric token values to zero (numOrZero guards both non-numbers and negatives)", () => {
+    // Negative token counts are semantically impossible; numOrZero clamps them to 0
+    // so corrupt SDK output never silently corrupts aggregate cost/token metrics.
     const msg = {
       type: "result",
       total_cost_usd: 0.1,
@@ -215,7 +215,7 @@ describe("extractUsage", () => {
     };
     const result = extractUsage(msg, "NegativeTokens");
     expect(result).not.toBeNull();
-    expect(result!.inputTokens).toBe(-5);
+    expect(result!.inputTokens).toBe(0);
     expect(result!.outputTokens).toBe(10);
   });
 });
