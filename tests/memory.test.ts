@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import type Database from "better-sqlite3";
 import { initDb, insertCycle, insertLearning, getRelevantLearnings, decayLearningRelevance, pruneLowRelevanceLearnings, insertStrategicContext, getLatestStrategicContext } from "../src/db.js";
-import { extractLearnings, storeLearnings, storeStrategicContext, formatMemoryForPrompt, MAX_MEMORY_CHARS, type ExtractedLearnings } from "../src/memory.js";
+import { extractLearnings, storeLearnings, storeStrategicContext, formatMemoryForPrompt, MAX_MEMORY_CHARS, STRATEGIC_CONTEXT_RETENTION_CYCLES, MAX_RELEVANT_LEARNINGS_TO_FETCH, type ExtractedLearnings } from "../src/memory.js";
 import { makeOutcome } from "./helpers.js";
 
 describe("extractLearnings", () => {
@@ -775,5 +775,17 @@ describe("MAX_MEMORY_CHARS", () => {
     expect(typeof MAX_MEMORY_CHARS).toBe("number");
     expect(Number.isInteger(MAX_MEMORY_CHARS)).toBe(true);
     expect(MAX_MEMORY_CHARS).toBeGreaterThan(0);
+  });
+});
+
+describe("STRATEGIC_CONTEXT_RETENTION_CYCLES", () => {
+  it("is 20 (value-pinning)", () => {
+    expect(STRATEGIC_CONTEXT_RETENTION_CYCLES).toBe(20);
+  });
+});
+
+describe("MAX_RELEVANT_LEARNINGS_TO_FETCH", () => {
+  it("is 25 (value-pinning)", () => {
+    expect(MAX_RELEVANT_LEARNINGS_TO_FETCH).toBe(25);
   });
 });

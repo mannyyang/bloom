@@ -130,9 +130,17 @@ export function storeLearnings(
 // --- Strategic Context ---
 
 /**
+ * Number of recent cycles' worth of strategic context to retain.
+ * Older entries are pruned after each insert to prevent unbounded table growth
+ * while still preserving enough history for meaningful trend analysis.
+ */
+export const STRATEGIC_CONTEXT_RETENTION_CYCLES = 20;
+
+/**
  * Store strategic context for a cycle.
- * Prunes old entries after inserting, keeping only the last 20 cycles' worth
- * to prevent unbounded table growth without losing meaningful recent history.
+ * Prunes old entries after inserting, keeping only the last
+ * STRATEGIC_CONTEXT_RETENTION_CYCLES cycles' worth to prevent unbounded table
+ * growth without losing meaningful recent history.
  */
 export function storeStrategicContext(
   db: Database.Database,
@@ -140,10 +148,16 @@ export function storeStrategicContext(
   context: string,
 ): void {
   insertStrategicContext(db, cycleNumber, context);
-  pruneStrategicContext(db, 20);
+  pruneStrategicContext(db, STRATEGIC_CONTEXT_RETENTION_CYCLES);
 }
 
 // --- Formatting for Prompt Injection ---
+
+/**
+ * Maximum number of learnings fetched from the DB for prompt injection.
+ * Ranked by relevance; excess entries are dropped before budget formatting.
+ */
+export const MAX_RELEVANT_LEARNINGS_TO_FETCH = 25;
 
 /**
  * Default character budget for memory injected into the assessment prompt.
@@ -175,7 +189,7 @@ export function formatMemoryForPrompt(
   }
 
   // Then learnings by category, ranked by relevance
-  const learnings = getRelevantLearnings(db, 25);
+  const learnings = getRelevantLearnings(db, MAX_RELEVANT_LEARNINGS_TO_FETCH);
   if (learnings.length > 0) {
     const grouped = new Map<string, Learning[]>();
     for (const l of learnings) {
