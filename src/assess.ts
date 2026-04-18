@@ -28,6 +28,11 @@ import {
 import { extractResultText, formatDurationSec } from "./usage.js";
 import { resolveModel } from "./agent-phases.js";
 
+/** Maximum number of turns the assessment agent may take. */
+export const ASSESS_MAX_TURNS = 20;
+/** Maximum USD budget for a single assessment run. */
+export const ASSESS_MAX_BUDGET_USD = 2.0;
+
 export async function main() {
   const startTime = Date.now();
   console.log("\n========================================");
@@ -94,8 +99,8 @@ export async function main() {
       allowedTools: ["Read", "Glob", "Grep", "Bash"],
       permissionMode: "dontAsk",
       systemPrompt: identity,
-      maxTurns: 20,
-      maxBudgetUsd: 2.0,
+      maxTurns: ASSESS_MAX_TURNS,
+      maxBudgetUsd: ASSESS_MAX_BUDGET_USD,
     },
   })) {
     turns++;

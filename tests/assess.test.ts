@@ -62,7 +62,7 @@ import { errorMessage } from "../src/errors.js";
 import { ensureProject, getProjectItems, formatPlanningContext } from "../src/planning.js";
 import { formatMemoryForPrompt } from "../src/memory.js";
 import { resolveModel } from "../src/agent-phases.js";
-import { main } from "../src/assess.js";
+import { main, ASSESS_MAX_TURNS, ASSESS_MAX_BUDGET_USD } from "../src/assess.js";
 
 const mockQuery = vi.mocked(query);
 const mockExtractResultText = vi.mocked(extractResultText);
@@ -90,6 +90,16 @@ async function* makeGen(messages: unknown[]): AsyncGenerator<unknown> {
 function mockGen(messages: unknown[]) {
   return makeGen(messages) as never;
 }
+
+describe("assess.ts constants", () => {
+  it("ASSESS_MAX_TURNS equals 20", () => {
+    expect(ASSESS_MAX_TURNS).toBe(20);
+  });
+
+  it("ASSESS_MAX_BUDGET_USD equals 2.0", () => {
+    expect(ASSESS_MAX_BUDGET_USD).toBe(2.0);
+  });
+});
 
 describe("assess.ts main()", () => {
   beforeEach(() => {
