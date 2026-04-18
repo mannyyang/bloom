@@ -1,8 +1,16 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats } from "../src/db.js";
-import { generateStatsOutput } from "../src/stats.js";
+import { generateStatsOutput, STATS_MEMORY_PREVIEW_CHARS } from "../src/stats.js";
 import { makeOutcome } from "./helpers.js";
+
+describe("STATS_MEMORY_PREVIEW_CHARS", () => {
+  it("is a positive number less than MAX_MEMORY_CHARS (1200)", () => {
+    expect(STATS_MEMORY_PREVIEW_CHARS).toBe(1000);
+    expect(STATS_MEMORY_PREVIEW_CHARS).toBeGreaterThan(0);
+    expect(STATS_MEMORY_PREVIEW_CHARS).toBeLessThan(1200);
+  });
+});
 
 describe("generateStatsOutput", () => {
   let db: Database.Database;

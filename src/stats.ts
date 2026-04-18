@@ -15,6 +15,13 @@ import { initDb, getCycleStats, formatCycleStats, getLatestCycleNumber } from ".
 import { formatMemoryForPrompt } from "./memory.js";
 
 /**
+ * Number of characters of memory to include in the stats preview.
+ * Intentionally less than MAX_MEMORY_CHARS (1200) — the stats CLI shows a
+ * condensed snapshot rather than the full prompt context.
+ */
+export const STATS_MEMORY_PREVIEW_CHARS = 1000;
+
+/**
  * Core stats logic, accepting a db parameter for testability.
  * Returns the lines that would be printed to console.
  */
@@ -39,7 +46,7 @@ export function generateStatsOutput(db: Database.Database): string[] {
   lines.push(formatted);
 
   // Show latest strategic context if available
-  const memory = formatMemoryForPrompt(db, 1000);
+  const memory = formatMemoryForPrompt(db, STATS_MEMORY_PREVIEW_CHARS);
   if (memory) {
     lines.push("");
     lines.push(memory);
