@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import type Database from "better-sqlite3";
 import { initDb, insertCycle, insertLearning, getRelevantLearnings, decayLearningRelevance, pruneLowRelevanceLearnings, insertStrategicContext, getLatestStrategicContext } from "../src/db.js";
-import { extractLearnings, storeLearnings, storeStrategicContext, formatMemoryForPrompt, type ExtractedLearnings } from "../src/memory.js";
+import { extractLearnings, storeLearnings, storeStrategicContext, formatMemoryForPrompt, MAX_MEMORY_CHARS, type ExtractedLearnings } from "../src/memory.js";
 import { makeOutcome } from "./helpers.js";
 
 describe("extractLearnings", () => {
@@ -767,5 +767,13 @@ describe("DB functions for memory", () => {
     insertStrategicContext(db, 1, "Old context");
     insertStrategicContext(db, 2, "New context");
     expect(getLatestStrategicContext(db)).toBe("New context");
+  });
+});
+
+describe("MAX_MEMORY_CHARS", () => {
+  it("is a positive integer", () => {
+    expect(typeof MAX_MEMORY_CHARS).toBe("number");
+    expect(Number.isInteger(MAX_MEMORY_CHARS)).toBe(true);
+    expect(MAX_MEMORY_CHARS).toBeGreaterThan(0);
   });
 });

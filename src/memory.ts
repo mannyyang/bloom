@@ -146,6 +146,13 @@ export function storeStrategicContext(
 // --- Formatting for Prompt Injection ---
 
 /**
+ * Default character budget for memory injected into the assessment prompt.
+ * Keeps the context block small enough to avoid inflating token costs while
+ * still providing meaningful learnings and strategic context.
+ */
+export const MAX_MEMORY_CHARS = 1200;
+
+/**
  * Format memory (learnings + strategic context) for inclusion in the assessment prompt.
  * Budget-aware: truncates to fit within maxChars.
  *
@@ -154,7 +161,7 @@ export function storeStrategicContext(
  */
 export function formatMemoryForPrompt(
   db: Database.Database,
-  maxChars: number = 1200,
+  maxChars: number = MAX_MEMORY_CHARS,
 ): string {
   const sections: string[] = [];
   let totalLen = 0;
