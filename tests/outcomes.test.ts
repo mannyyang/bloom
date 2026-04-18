@@ -304,6 +304,14 @@ describe("formatOutcomeForJournal", () => {
     expect(result).not.toContain("**Duration**");
   });
 
+  it("includes Duration line when durationMs is 0 (not null)", () => {
+    // Guard: the check is `!== null`, so 0 is a valid duration (a cycle that
+    // completed in < 1 ms) and must produce a Duration line, not be suppressed.
+    const outcome = makeOutcome({ durationMs: 0 });
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).toContain("**Duration**: 0.0s");
+  });
+
   it("omits total when testTotalBefore is set but testTotalAfter is null", () => {
     const outcome = makeOutcome({
       cycleNumber: 46, improvementsAttempted: 2, improvementsSucceeded: 2,
