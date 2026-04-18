@@ -26,6 +26,8 @@ import {
   GIT_OP_TIMEOUT_MS,
   GIT_PUSH_TIMEOUT_MS,
   GIT_REVERT_TIMEOUT_MS,
+  GIT_BOT_NAME,
+  GIT_BOT_EMAIL,
 } from "../src/lifecycle.js";
 
 describe("lifecycle helpers", () => {
@@ -44,6 +46,16 @@ describe("lifecycle helpers", () => {
       expect(GIT_OP_TIMEOUT_MS).toBe(30_000);
       expect(GIT_PUSH_TIMEOUT_MS).toBe(60_000);
       expect(GIT_REVERT_TIMEOUT_MS).toBe(10_000);
+    });
+  });
+
+  describe("bot identity constants", () => {
+    it("GIT_BOT_NAME equals bloom[bot]", () => {
+      expect(GIT_BOT_NAME).toBe("bloom[bot]");
+    });
+
+    it("GIT_BOT_EMAIL equals bloom[bot]@users.noreply.github.com", () => {
+      expect(GIT_BOT_EMAIL).toBe("bloom[bot]@users.noreply.github.com");
     });
   });
 

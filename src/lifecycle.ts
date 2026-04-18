@@ -10,6 +10,11 @@ export const GIT_PUSH_TIMEOUT_MS = Number(process.env.BLOOM_GIT_PUSH_TIMEOUT_MS 
 /** Timeout for git checkout/clean/reset operations (10 seconds). Override with BLOOM_GIT_REVERT_TIMEOUT_MS. */
 export const GIT_REVERT_TIMEOUT_MS = Number(process.env.BLOOM_GIT_REVERT_TIMEOUT_MS ?? 10_000);
 
+/** Git author/committer name for bot-authored commits. */
+export const GIT_BOT_NAME = "bloom[bot]";
+/** Git author/committer email for bot-authored commits (GitHub no-reply format). */
+export const GIT_BOT_EMAIL = "bloom[bot]@users.noreply.github.com";
+
 export interface BuildResult {
   passed: boolean;
   output: string;
@@ -44,13 +49,13 @@ export function runPreflightCheck(): BuildResult {
  * Set git author/committer to the Bloom bot identity via env vars and git config.
  */
 export function setGitBotIdentity(): void {
-  process.env.GIT_AUTHOR_NAME = "bloom[bot]";
-  process.env.GIT_AUTHOR_EMAIL = "bloom[bot]@users.noreply.github.com";
-  process.env.GIT_COMMITTER_NAME = "bloom[bot]";
-  process.env.GIT_COMMITTER_EMAIL = "bloom[bot]@users.noreply.github.com";
+  process.env.GIT_AUTHOR_NAME = GIT_BOT_NAME;
+  process.env.GIT_AUTHOR_EMAIL = GIT_BOT_EMAIL;
+  process.env.GIT_COMMITTER_NAME = GIT_BOT_NAME;
+  process.env.GIT_COMMITTER_EMAIL = GIT_BOT_EMAIL;
   try {
-    execFileSync("git", ["config", "user.name", "bloom[bot]"], { stdio: "ignore" });
-    execFileSync("git", ["config", "user.email", "bloom[bot]@users.noreply.github.com"], { stdio: "ignore" });
+    execFileSync("git", ["config", "user.name", GIT_BOT_NAME], { stdio: "ignore" });
+    execFileSync("git", ["config", "user.email", GIT_BOT_EMAIL], { stdio: "ignore" });
   } catch { /* env vars are sufficient fallback */ }
 }
 
