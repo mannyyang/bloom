@@ -4,7 +4,7 @@ import { getRecentJournalSummary, getCycleStats, formatCycleStats } from "./db.j
 import { fetchCommunityIssues, syncReactionsToItems, type CommunityIssue } from "./issues.js";
 import { triageIssues } from "./triage.js";
 import { errorMessage } from "./errors.js";
-import { formatMemoryForPrompt } from "./memory.js";
+import { formatMemoryForPrompt, MAX_MEMORY_CHARS } from "./memory.js";
 import {
   ensureProject,
   getProjectItems,
@@ -15,6 +15,12 @@ import {
   type ProjectConfig,
   type ProjectItem,
 } from "./planning.js";
+
+/**
+ * Maximum characters of journal history injected into the assessment prompt.
+ * Keeps journal context concise while still covering recent cycles.
+ */
+export const CONTEXT_JOURNAL_MAX_CHARS = 1200;
 
 /**
  * Context gathered for the evolution cycle: identity, journal, issues,
@@ -48,7 +54,7 @@ export async function loadEvolutionContext(
   }
   console.log(`[context] Identity loaded (${identity.length} chars)`);
 
-  const journalSummary = getRecentJournalSummary(db, 1200, 2);
+  const journalSummary = getRecentJournalSummary(db, CONTEXT_JOURNAL_MAX_CHARS, 2);
   console.log(`[context] Journal summary: ${journalSummary ? `${journalSummary.length} chars` : "empty"}`);
 
   const cycleStats = getCycleStats(db);
@@ -56,7 +62,7 @@ export async function loadEvolutionContext(
   console.log(`[context] Cycle stats: ${cycleStatsText ? `${cycleStatsText.length} chars` : "none"}`);
 
   // Memory context (best-effort)
-  const memoryContext = formatMemoryForPrompt(db, 1200);
+  const memoryContext = formatMemoryForPrompt(db, MAX_MEMORY_CHARS);
   console.log(`[context] Memory context: ${memoryContext ? `${memoryContext.length} chars` : "empty"}`);
 
   // Fetch community issues; errors are non-fatal — fall back to an empty list

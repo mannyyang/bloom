@@ -23,6 +23,7 @@ vi.mock("../src/triage.js", () => ({
 
 vi.mock("../src/memory.js", () => ({
   formatMemoryForPrompt: vi.fn(),
+  MAX_MEMORY_CHARS: 1200,
 }));
 
 vi.mock("../src/planning.js", () => ({
@@ -52,10 +53,21 @@ import {
   formatPlanningContext,
   type ProjectItem,
 } from "../src/planning.js";
-import { loadEvolutionContext } from "../src/context.js";
+import { loadEvolutionContext, CONTEXT_JOURNAL_MAX_CHARS } from "../src/context.js";
+import { MAX_MEMORY_CHARS } from "../src/memory.js";
 
 // Fake db object — all DB calls are mocked
 const fakeDb = {} as Database.Database;
+
+describe("context constants", () => {
+  it("CONTEXT_JOURNAL_MAX_CHARS is 1200 (value-pinning)", () => {
+    expect(CONTEXT_JOURNAL_MAX_CHARS).toBe(1200);
+  });
+
+  it("MAX_MEMORY_CHARS is 1200 (value-pinning)", () => {
+    expect(MAX_MEMORY_CHARS).toBe(1200);
+  });
+});
 
 function setupDefaults() {
   vi.mocked(readFileSync).mockReturnValue("# Identity");
