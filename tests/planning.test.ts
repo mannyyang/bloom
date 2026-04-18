@@ -11,7 +11,7 @@ const mockReadFileSync = vi.mocked(readFileSync);
 const mockWriteFileSync = vi.mocked(writeFileSync);
 const mockExistsSync = vi.mocked(existsSync);
 
-import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, getProjectItems, PLANNING_BODY_PREVIEW_CHARS, ITEM_BODY_LIMIT, type ProjectItem } from "../src/planning.js";
+import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, getProjectItems, PLANNING_BODY_PREVIEW_CHARS, ITEM_BODY_LIMIT, PLANNING_CONTEXT_MAX_CHARS, PLANNING_CONTEXT_MAX_ITEMS, type ProjectItem } from "../src/planning.js";
 
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
@@ -24,6 +24,16 @@ function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
     ...overrides,
   };
 }
+
+describe("planning.ts constants", () => {
+  it("PLANNING_CONTEXT_MAX_CHARS equals 1200", () => {
+    expect(PLANNING_CONTEXT_MAX_CHARS).toBe(1200);
+  });
+
+  it("PLANNING_CONTEXT_MAX_ITEMS equals 5", () => {
+    expect(PLANNING_CONTEXT_MAX_ITEMS).toBe(5);
+  });
+});
 
 describe("pickNextItem", () => {
   it("returns null when no items exist", () => {
@@ -186,13 +196,13 @@ describe("formatPlanningContext", () => {
     expect(result).not.toContain("- Long Item B");
   });
 
-  it("limits to 5 items per status", () => {
+  it("limits to PLANNING_CONTEXT_MAX_ITEMS items per status", () => {
     const items = Array.from({ length: 10 }, (_, i) =>
       makeItem({ id: `item-${i}`, title: `Item ${i}`, status: "Backlog" }),
     );
     const result = formatPlanningContext(items, null);
     const backlogMatches = result.match(/^- Item \d+$/gm);
-    expect(backlogMatches!.length).toBe(5);
+    expect(backlogMatches!.length).toBe(PLANNING_CONTEXT_MAX_ITEMS);
   });
 
   it("respects custom maxItemsPerSection parameter", () => {

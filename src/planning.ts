@@ -34,6 +34,20 @@ export const ITEM_BODY_LIMIT = 500;
  */
 export const PLANNING_BODY_PREVIEW_CHARS = 200;
 
+/**
+ * Default maximum total characters for the formatted planning context string
+ * returned by formatPlanningContext. Truncation is applied at a newline boundary
+ * to avoid cutting mid-line.
+ */
+export const PLANNING_CONTEXT_MAX_CHARS = 1200;
+
+/**
+ * Default maximum number of items rendered per status section in the planning
+ * context (e.g. Backlog, Up Next). Prevents the prompt from growing unbounded
+ * when many items share the same status.
+ */
+export const PLANNING_CONTEXT_MAX_ITEMS = 5;
+
 export type StatusColumn = (typeof STATUS_COLUMNS)[number];
 
 /**
@@ -456,8 +470,8 @@ export function pickNextItem(items: ProjectItem[]): ProjectItem | null {
 export function formatPlanningContext(
   items: ProjectItem[],
   currentItem: ProjectItem | null,
-  maxChars: number = 1200,
-  maxItemsPerSection: number = 5,
+  maxChars: number = PLANNING_CONTEXT_MAX_CHARS,
+  maxItemsPerSection: number = PLANNING_CONTEXT_MAX_ITEMS,
 ): string {
   if (items.length === 0 && !currentItem) return "";
 
