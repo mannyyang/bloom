@@ -23,6 +23,7 @@ import {
   RELEVANT_LEARNINGS_LIMIT,
   STRATEGIC_CONTEXT_KEEP_LAST,
   DECAY_DEFAULT_RATE,
+  PRUNE_MIN_RELEVANCE,
 } from "../src/db.js";
 import Database from "better-sqlite3";
 import { makeOutcome } from "./helpers.js";
@@ -39,6 +40,9 @@ describe("db constants (value-pinning)", () => {
   });
   it("DECAY_DEFAULT_RATE is 0.95", () => {
     expect(DECAY_DEFAULT_RATE).toBe(0.95);
+  });
+  it("PRUNE_MIN_RELEVANCE is 0.05", () => {
+    expect(PRUNE_MIN_RELEVANCE).toBe(0.05);
   });
 });
 

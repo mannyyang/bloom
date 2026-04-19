@@ -8,6 +8,14 @@ export const CYCLE_STATS_HISTORY_LIMIT = 20;
 export const RELEVANT_LEARNINGS_LIMIT = 20;
 export const STRATEGIC_CONTEXT_KEEP_LAST = 20;
 
+/**
+ * Minimum relevance score below which a learning entry is pruned.
+ * At the default DECAY_DEFAULT_RATE of 0.95, a learning reaches this
+ * threshold after ~60 cycles, preventing unbounded table growth while
+ * retaining meaningful recent knowledge.
+ */
+export const PRUNE_MIN_RELEVANCE = 0.05;
+
 // --- Row validation helpers ---
 
 type FieldType = "number" | "number?" | "string" | "string?";
@@ -658,7 +666,7 @@ export function decayLearningRelevance(
  */
 export function pruneLowRelevanceLearnings(
   db: Database.Database,
-  minRelevance: number = 0.05,
+  minRelevance: number = PRUNE_MIN_RELEVANCE,
 ): void {
   db.prepare("DELETE FROM learnings WHERE relevance < ?").run(minRelevance);
 }
