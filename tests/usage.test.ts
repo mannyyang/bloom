@@ -7,6 +7,7 @@ import {
   formatCycleUsage,
   formatUsageForJournal,
   formatDurationSec,
+  COST_DECIMAL_PLACES,
   PhaseUsage,
 } from "../src/usage.js";
 
@@ -549,5 +550,26 @@ describe("formatDurationSec", () => {
 
   it("handles large values", () => {
     expect(formatDurationSec(123456)).toBe("123.5s");
+  });
+});
+
+describe("COST_DECIMAL_PLACES", () => {
+  it("is pinned to 4 for sub-cent precision in cost reporting", () => {
+    expect(COST_DECIMAL_PLACES).toBe(4);
+  });
+
+  it("formatPhaseUsage uses COST_DECIMAL_PLACES decimal places for cost", () => {
+    const pu: PhaseUsage = {
+      phase: "test",
+      totalCostUsd: 1.23456789,
+      inputTokens: 100,
+      outputTokens: 50,
+      cacheReadInputTokens: 0,
+      cacheCreationInputTokens: 0,
+      durationMs: 1000,
+      numTurns: 5,
+    };
+    const formatted = formatPhaseUsage(pu);
+    expect(formatted).toContain(`$${(1.23456789).toFixed(COST_DECIMAL_PLACES)}`);
   });
 });

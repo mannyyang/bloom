@@ -24,6 +24,12 @@ export interface CycleUsage {
 }
 
 /**
+ * Number of decimal places used when formatting USD cost values.
+ * Four decimal places gives sub-cent precision for per-cycle cost reporting.
+ */
+export const COST_DECIMAL_PLACES = 4;
+
+/**
  * Format a millisecond duration as seconds with one decimal place.
  * e.g. 1234 → "1.2s"
  */
@@ -96,7 +102,7 @@ export function aggregateUsage(phases: PhaseUsage[]): CycleUsage {
  * Format a PhaseUsage into a human-readable log line.
  */
 export function formatPhaseUsage(pu: PhaseUsage): string {
-  const cost = pu.totalCostUsd.toFixed(4);
+  const cost = pu.totalCostUsd.toFixed(COST_DECIMAL_PLACES);
   const input = pu.inputTokens.toLocaleString();
   const output = pu.outputTokens.toLocaleString();
   const duration = formatDurationSec(pu.durationMs);
@@ -108,7 +114,7 @@ export function formatPhaseUsage(pu: PhaseUsage): string {
  */
 export function formatCycleUsage(cu: CycleUsage): string {
   const lines = cu.phases.map(formatPhaseUsage);
-  const totalCost = cu.totalCostUsd.toFixed(4);
+  const totalCost = cu.totalCostUsd.toFixed(COST_DECIMAL_PLACES);
   const totalIn = cu.totalInputTokens.toLocaleString();
   const totalOut = cu.totalOutputTokens.toLocaleString();
   const cachePart = (cu.totalCacheReadTokens > 0 || cu.totalCacheCreationTokens > 0)
@@ -124,7 +130,7 @@ export function formatCycleUsage(cu: CycleUsage): string {
 export function formatUsageForJournal(cu: CycleUsage): string {
   const lines: string[] = ["### Resource Usage", ""];
   for (const p of cu.phases) {
-    const cost = p.totalCostUsd.toFixed(4);
+    const cost = p.totalCostUsd.toFixed(COST_DECIMAL_PLACES);
     const duration = formatDurationSec(p.durationMs);
     lines.push(
       `- **${p.phase}**: $${cost} — ${p.inputTokens.toLocaleString()} input tokens, ${p.outputTokens.toLocaleString()} output tokens, ${p.numTurns} turns, ${duration}`,
@@ -134,7 +140,7 @@ export function formatUsageForJournal(cu: CycleUsage): string {
     ? ` (cache: ${cu.totalCacheReadTokens.toLocaleString()} read, ${cu.totalCacheCreationTokens.toLocaleString()} created)`
     : "";
   lines.push(
-    `- **Total**: $${cu.totalCostUsd.toFixed(4)} — ${cu.totalInputTokens.toLocaleString()} input + ${cu.totalOutputTokens.toLocaleString()} output tokens${cacheSuffix}`,
+    `- **Total**: $${cu.totalCostUsd.toFixed(COST_DECIMAL_PLACES)} — ${cu.totalInputTokens.toLocaleString()} input + ${cu.totalOutputTokens.toLocaleString()} output tokens${cacheSuffix}`,
   );
   return lines.join("\n");
 }
