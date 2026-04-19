@@ -19,6 +19,9 @@ export const PRUNE_MIN_RELEVANCE = 0.05;
 /** Milliseconds per minute, used for duration conversions. */
 export const MS_PER_MINUTE = 60_000;
 
+/** Token count at or above which display switches to "Nk" abbreviated form. */
+export const TOKEN_DISPLAY_THRESHOLD = 1_000;
+
 // --- Row validation helpers ---
 
 type FieldType = "number" | "number?" | "string" | "string?";
@@ -553,7 +556,7 @@ export function formatCycleStats(stats: CycleStats): string {
     lines.push(`- **Avg cycle duration**: ${stats.avgDurationMinutes} min`);
   }
   if (stats.totalCostUsd > 0 || stats.totalInputTokens > 0 || stats.totalOutputTokens > 0) {
-    const fmtTokens = (n: number) => n >= 1000 ? `${Math.round(n / 1000)}k` : `${n}`;
+    const fmtTokens = (n: number) => n >= TOKEN_DISPLAY_THRESHOLD ? `${Math.round(n / TOKEN_DISPLAY_THRESHOLD)}k` : `${n}`;
     const costPart = stats.totalCostUsd > 0
       ? `$${stats.totalCostUsd.toFixed(2)} total / $${stats.avgCostPerCycle.toFixed(2)} avg`
       : null;

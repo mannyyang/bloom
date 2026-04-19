@@ -25,6 +25,7 @@ import {
   DECAY_DEFAULT_RATE,
   PRUNE_MIN_RELEVANCE,
   MS_PER_MINUTE,
+  TOKEN_DISPLAY_THRESHOLD,
 } from "../src/db.js";
 import Database from "better-sqlite3";
 import { makeOutcome } from "./helpers.js";
@@ -47,6 +48,9 @@ describe("db constants (value-pinning)", () => {
   });
   it("MS_PER_MINUTE is 60000", () => {
     expect(MS_PER_MINUTE).toBe(60_000);
+  });
+  it("TOKEN_DISPLAY_THRESHOLD is 1000", () => {
+    expect(TOKEN_DISPLAY_THRESHOLD).toBe(1_000);
   });
 });
 
