@@ -211,11 +211,17 @@ export function formatMemoryForPrompt(
       if (items.length === 0) continue;
       const header = `### ${category}\n`;
       const firstLine = `- ${items[0].content}\n`;
-      // Require budget for both the header AND its first item before committing
+      // Require budget for both the category header AND its first item before
+      // committing either to learningSection. This prevents a dangling header
+      // with no items if the budget runs out immediately after the header.
       if (totalLen + separatorLen + learningSection.length + header.length + firstLine.length > maxChars) break;
       learningSection += header;
       for (const item of items) {
         const line = `- ${item.content}\n`;
+        // Each item is checked individually; the ceiling is enforced here rather
+        // than at loop entry so partial categories still contribute learnings.
+        // separatorLen is included because join("\n") will insert it at output
+        // time — omitting it would allow totalLen to silently exceed maxChars.
         if (totalLen + separatorLen + learningSection.length + line.length > maxChars) {
           budgetExhausted = true;
           break;
