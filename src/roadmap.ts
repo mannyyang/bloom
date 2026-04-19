@@ -19,6 +19,8 @@ import {
 // Re-export for testability
 export { generateRoadmapOutput };
 
+export const ROADMAP_BODY_PREVIEW_MAX_CHARS = 120;
+
 const STATUS_ORDER: StatusColumn[] = ["In Progress", "Up Next", "Backlog", "Done"];
 
 /**
@@ -49,7 +51,7 @@ function generateRoadmapOutput(content: string): string[] {
       lines.push(`  ${check} ${item.title}${issue}${reactions}`);
       if (item.body) {
         // Indent and wrap the body description
-        const preview = item.body.length > 120 ? item.body.slice(0, 120) + "…" : item.body;
+        const preview = item.body.length > ROADMAP_BODY_PREVIEW_MAX_CHARS ? item.body.slice(0, ROADMAP_BODY_PREVIEW_MAX_CHARS) + "…" : item.body;
         for (const bodyLine of preview.split("\n")) {
           lines.push(`      ${bodyLine}`);
         }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { generateRoadmapOutput } from "../src/roadmap.js";
+import { generateRoadmapOutput, ROADMAP_BODY_PREVIEW_MAX_CHARS } from "../src/roadmap.js";
 import * as planning from "../src/planning.js";
 import { parseRoadmap } from "../src/planning.js";
 
@@ -118,17 +118,21 @@ describe("generateRoadmapOutput", () => {
     expect(joined).toContain("No items on the roadmap yet.");
   });
 
-  it("truncates body descriptions longer than 120 characters", () => {
-    const longBody = "x".repeat(130);
+  it("ROADMAP_BODY_PREVIEW_MAX_CHARS is 120 (value-pinning)", () => {
+    expect(ROADMAP_BODY_PREVIEW_MAX_CHARS).toBe(120);
+  });
+
+  it("truncates body descriptions longer than ROADMAP_BODY_PREVIEW_MAX_CHARS characters", () => {
+    const longBody = "x".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS + 10);
     const roadmapWithLongBody = `# Bloom Evolution Roadmap\n\n## Backlog\n- [ ] Long body item\n  ${longBody}\n`;
     const output = generateRoadmapOutput(roadmapWithLongBody);
     const joined = output.join("\n");
     // Should contain the ellipsis truncation marker
     expect(joined).toContain("…");
-    // Should not contain the full 130-char body
-    expect(joined).not.toContain("x".repeat(130));
-    // Should contain the first 120 characters
-    expect(joined).toContain("x".repeat(120));
+    // Should not contain the full over-length body
+    expect(joined).not.toContain("x".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS + 10));
+    // Should contain the first ROADMAP_BODY_PREVIEW_MAX_CHARS characters
+    expect(joined).toContain("x".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS));
   });
 
   it("renders multi-line body as separate indented lines", () => {
