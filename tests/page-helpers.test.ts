@@ -10,6 +10,11 @@ import {
   generateHtml,
   generateJournalHtml,
   generateStatsHtml,
+  STATUS_COLORS,
+  STATUS_COLOR_BACKLOG,
+  STATUS_COLOR_UP_NEXT,
+  STATUS_COLOR_IN_PROGRESS,
+  STATUS_COLOR_DONE,
 } from "../src/page-helpers.js";
 import type { DbStats, JournalEntry, RoadmapSection } from "../src/page-helpers.js";
 
@@ -499,5 +504,34 @@ describe("generateStatsHtml", () => {
     const html = generateStatsHtml(null, "now");
     expect(html).toContain("<!DOCTYPE html>");
     expect(html).toContain("</html>");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// STATUS_COLOR constants — value-pinning tests
+// ---------------------------------------------------------------------------
+
+describe("STATUS_COLOR constants", () => {
+  it("STATUS_COLOR_BACKLOG is the expected gray hex", () => {
+    expect(STATUS_COLOR_BACKLOG).toBe("#6b7280");
+  });
+
+  it("STATUS_COLOR_UP_NEXT is the expected blue hex", () => {
+    expect(STATUS_COLOR_UP_NEXT).toBe("#2563eb");
+  });
+
+  it("STATUS_COLOR_IN_PROGRESS is the expected amber hex", () => {
+    expect(STATUS_COLOR_IN_PROGRESS).toBe("#d97706");
+  });
+
+  it("STATUS_COLOR_DONE is the expected green hex", () => {
+    expect(STATUS_COLOR_DONE).toBe("#16a34a");
+  });
+
+  it("STATUS_COLORS map uses the named constants", () => {
+    expect(STATUS_COLORS["Backlog"]).toBe(STATUS_COLOR_BACKLOG);
+    expect(STATUS_COLORS["Up Next"]).toBe(STATUS_COLOR_UP_NEXT);
+    expect(STATUS_COLORS["In Progress"]).toBe(STATUS_COLOR_IN_PROGRESS);
+    expect(STATUS_COLORS["Done"]).toBe(STATUS_COLOR_DONE);
   });
 });

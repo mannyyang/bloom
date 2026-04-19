@@ -137,11 +137,19 @@ export function parseRoadmapSections(content: string): RoadmapSection[] {
 // Roadmap section renderer
 // ---------------------------------------------------------------------------
 
+// Named colour tokens for each roadmap status. Extracted so tests can pin
+// exact values and future colour changes are made in one place rather than
+// scattered across the STATUS_COLORS object literal.
+export const STATUS_COLOR_BACKLOG     = "#6b7280"; // gray-500  — muted/backlog
+export const STATUS_COLOR_UP_NEXT     = "#2563eb"; // blue-600  — queued/up-next
+export const STATUS_COLOR_IN_PROGRESS = "#d97706"; // amber-600 — actively worked
+export const STATUS_COLOR_DONE        = "#16a34a"; // green-600 — completed
+
 export const STATUS_COLORS: Record<string, string> = {
-  Backlog: "#6b7280",
-  "Up Next": "#2563eb",
-  "In Progress": "#d97706",
-  Done: "#16a34a",
+  Backlog:       STATUS_COLOR_BACKLOG,
+  "Up Next":     STATUS_COLOR_UP_NEXT,
+  "In Progress": STATUS_COLOR_IN_PROGRESS,
+  Done:          STATUS_COLOR_DONE,
 };
 
 export function renderSection(section: RoadmapSection): string {
