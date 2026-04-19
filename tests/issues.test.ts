@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { execFileSync } from "child_process";
-import { fetchCommunityIssues, closeIssueWithComment, isValidRepo, isSafeIssueNumber, detectRepo, syncReactionsToItems } from "../src/issues.js";
+import { fetchCommunityIssues, closeIssueWithComment, isValidRepo, isSafeIssueNumber, detectRepo, syncReactionsToItems, ISSUES_PER_PAGE } from "../src/issues.js";
 import { githubApiRequest } from "../src/github-app.js";
 import { initDb, hasIssueAction } from "../src/db.js";
 import type { ProjectItem } from "../src/planning.js";
@@ -103,6 +103,12 @@ describe("detectRepo (direct)", () => {
     delete process.env.GITHUB_REPOSITORY;
     mockExecFileSync.mockImplementationOnce(() => { throw new Error("not a git repo"); });
     expect(detectRepo()).toBeNull();
+  });
+});
+
+describe("ISSUES_PER_PAGE", () => {
+  it("is 20 (value-pinning)", () => {
+    expect(ISSUES_PER_PAGE).toBe(20);
   });
 });
 

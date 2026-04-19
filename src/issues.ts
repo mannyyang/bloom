@@ -5,6 +5,8 @@ import { githubApiRequest } from "./github-app.js";
 import { insertIssueAction, hasIssueAction } from "./db.js";
 import type { ProjectItem } from "./planning.js";
 
+export const ISSUES_PER_PAGE = 20;
+
 export interface CommunityIssue {
   number: number;
   title: string;
@@ -42,7 +44,7 @@ export async function fetchCommunityIssues(): Promise<CommunityIssue[]> {
   async function doFetch(): Promise<CommunityIssue[]> {
     const res = await githubApiRequest(
       "GET",
-      `/repos/${repo}/issues?labels=agent-input&state=open&per_page=20`,
+      `/repos/${repo}/issues?labels=agent-input&state=open&per_page=${ISSUES_PER_PAGE}`,
     );
     if (!res.ok) {
       console.warn(`[issues] fetchCommunityIssues: non-ok response ${res.status} ${res.statusText}`);
