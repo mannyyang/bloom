@@ -4,6 +4,10 @@ import type { PhaseUsage } from "./usage.js";
 
 const DEFAULT_DB_PATH = "bloom.db";
 
+export const CYCLE_STATS_HISTORY_LIMIT = 20;
+export const RELEVANT_LEARNINGS_LIMIT = 20;
+export const STRATEGIC_CONTEXT_KEEP_LAST = 20;
+
 // --- Row validation helpers ---
 
 type FieldType = "number" | "number?" | "string" | "string?";
@@ -388,7 +392,7 @@ export interface CycleStats {
  * Compute aggregate success metrics over the last N cycles.
  * Answers the question: "How are you measuring success?" (community issue #3).
  */
-export function getCycleStats(db: Database.Database, limit: number = 20): CycleStats {
+export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS_HISTORY_LIMIT): CycleStats {
   const rawRows = db.prepare(`
     SELECT
       cycle_number, preflight_passed, improvements_attempted, improvements_succeeded,
@@ -581,7 +585,7 @@ export function insertLearning(
 
 export function getRelevantLearnings(
   db: Database.Database,
-  maxItems: number = 20,
+  maxItems: number = RELEVANT_LEARNINGS_LIMIT,
   category?: string,
 ): Learning[] {
   const learningSchema: RowSchema = { id: "number", cycleNumber: "number", category: "string", content: "string", relevance: "number" };
@@ -685,7 +689,7 @@ export function getLatestStrategicContext(
  */
 export function pruneStrategicContext(
   db: Database.Database,
-  keepLast: number = 20,
+  keepLast: number = STRATEGIC_CONTEXT_KEEP_LAST,
 ): void {
   db.prepare(`
     DELETE FROM strategic_context
