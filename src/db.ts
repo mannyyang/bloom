@@ -623,6 +623,9 @@ export const DECAY_BY_CATEGORY: Record<string, number> = {
   "tool-usage": 0.93,
 };
 
+/** Fallback decay rate applied to any learning category not listed in DECAY_BY_CATEGORY. */
+export const DECAY_DEFAULT_RATE = 0.95;
+
 export function decayLearningRelevance(
   db: Database.Database,
   decayFactor?: number,
@@ -640,10 +643,10 @@ export function decayLearningRelevance(
     for (const [category, rate] of Object.entries(DECAY_BY_CATEGORY)) {
       db.prepare("UPDATE learnings SET relevance = relevance * ? WHERE category = ?").run(rate, category);
     }
-    // Fall back to 0.95 for any category not listed in DECAY_BY_CATEGORY.
+    // Fall back to DECAY_DEFAULT_RATE for any category not listed in DECAY_BY_CATEGORY.
     const knownCategories = Object.keys(DECAY_BY_CATEGORY);
     const placeholders = knownCategories.map(() => "?").join(", ");
-    db.prepare(`UPDATE learnings SET relevance = relevance * 0.95 WHERE category NOT IN (${placeholders})`).run(...knownCategories);
+    db.prepare(`UPDATE learnings SET relevance = relevance * ${DECAY_DEFAULT_RATE} WHERE category NOT IN (${placeholders})`).run(...knownCategories);
   })();
 }
 

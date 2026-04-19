@@ -22,6 +22,7 @@ import {
   CYCLE_STATS_HISTORY_LIMIT,
   RELEVANT_LEARNINGS_LIMIT,
   STRATEGIC_CONTEXT_KEEP_LAST,
+  DECAY_DEFAULT_RATE,
 } from "../src/db.js";
 import Database from "better-sqlite3";
 import { makeOutcome } from "./helpers.js";
@@ -35,6 +36,9 @@ describe("db constants (value-pinning)", () => {
   });
   it("STRATEGIC_CONTEXT_KEEP_LAST is 20", () => {
     expect(STRATEGIC_CONTEXT_KEEP_LAST).toBe(20);
+  });
+  it("DECAY_DEFAULT_RATE is 0.95", () => {
+    expect(DECAY_DEFAULT_RATE).toBe(0.95);
   });
 });
 
