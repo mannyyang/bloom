@@ -22,7 +22,7 @@ vi.mock("../src/issues.js", () => ({
   isValidRepo: vi.fn().mockReturnValue(true),
 }));
 
-import { runBuildVerificationPhase, updatePlanningStatus, pushChangesPhase, demoteStaleItemsPhase } from "../src/phases.js";
+import { runBuildVerificationPhase, updatePlanningStatus, pushChangesPhase, demoteStaleItemsPhase, DEMOTE_STALE_THRESHOLD } from "../src/phases.js";
 import { runBuildVerification, pushChanges, commitRoadmap } from "../src/lifecycle.js";
 import { updateItemStatus, demoteStaleInProgressItems } from "../src/planning.js";
 import { closeIssueWithComment } from "../src/issues.js";
@@ -412,7 +412,7 @@ describe("demoteStaleItemsPhase", () => {
   it("calls demoteStaleInProgressItems with projectConfig and cycleCount", () => {
     vi.mocked(demoteStaleInProgressItems).mockReturnValue([]);
     demoteStaleItemsPhase(projectConfig, 10);
-    expect(demoteStaleInProgressItems).toHaveBeenCalledWith(projectConfig, 10, 3);
+    expect(demoteStaleInProgressItems).toHaveBeenCalledWith(projectConfig, 10, DEMOTE_STALE_THRESHOLD);
   });
 
   it("logs demoted item titles when stale items exist", () => {
@@ -447,7 +447,8 @@ describe("demoteStaleItemsPhase", () => {
   it("uses default threshold of 3 when no threshold argument is provided", () => {
     vi.mocked(demoteStaleInProgressItems).mockReturnValue([]);
     demoteStaleItemsPhase(projectConfig, 10);
-    expect(demoteStaleInProgressItems).toHaveBeenCalledWith(projectConfig, 10, 3);
+    expect(demoteStaleInProgressItems).toHaveBeenCalledWith(projectConfig, 10, DEMOTE_STALE_THRESHOLD);
+    expect(DEMOTE_STALE_THRESHOLD).toBe(3);
   });
 });
 

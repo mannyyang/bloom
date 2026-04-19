@@ -101,6 +101,9 @@ export async function updatePlanningStatus(
   }
 }
 
+/** Number of cycles an item can remain In Progress before being demoted back to Up Next. */
+export const DEMOTE_STALE_THRESHOLD = 3;
+
 /**
  * Demote any In Progress items stuck beyond the staleness threshold back to Up Next.
  * Should be called before assessment so item selection reflects the corrected state.
@@ -108,7 +111,7 @@ export async function updatePlanningStatus(
 export function demoteStaleItemsPhase(
   projectConfig: ProjectConfig | null,
   cycleCount: number,
-  threshold: number = 3,
+  threshold: number = DEMOTE_STALE_THRESHOLD,
 ): void {
   if (!projectConfig) return;
   const demoted = demoteStaleInProgressItems(projectConfig, cycleCount, threshold);
