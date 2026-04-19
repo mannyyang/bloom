@@ -433,4 +433,9 @@ describe("classifyBuildFailure", () => {
   it("returns test_failure when both passed and failed tokens appear (mixed run)", () => {
     expect(classifyBuildFailure("Tests  100 passed | 2 failed (102)")).toBe("test_failure");
   });
+
+  it("returns build_failure for all-skipped vitest output (no failed token)", () => {
+    // "Tests  3 skipped (3)" has no "failed" token so the regex does not match — pin this.
+    expect(classifyBuildFailure("Tests  3 skipped (3)")).toBe("build_failure");
+  });
 });
