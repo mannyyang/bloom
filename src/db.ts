@@ -16,6 +16,9 @@ export const STRATEGIC_CONTEXT_KEEP_LAST = 20;
  */
 export const PRUNE_MIN_RELEVANCE = 0.05;
 
+/** Milliseconds per minute, used for duration conversions. */
+export const MS_PER_MINUTE = 60_000;
+
 // --- Row validation helpers ---
 
 type FieldType = "number" | "number?" | "string" | "string?";
@@ -487,7 +490,7 @@ export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS
       }
     }
     if (count > 0) {
-      avgDurationMinutes = Math.round((totalMs / count / 60000) * 10) / 10;
+      avgDurationMinutes = Math.round((totalMs / count / MS_PER_MINUTE) * 10) / 10;
     }
   }
 

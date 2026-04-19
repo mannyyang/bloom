@@ -24,6 +24,7 @@ import {
   STRATEGIC_CONTEXT_KEEP_LAST,
   DECAY_DEFAULT_RATE,
   PRUNE_MIN_RELEVANCE,
+  MS_PER_MINUTE,
 } from "../src/db.js";
 import Database from "better-sqlite3";
 import { makeOutcome } from "./helpers.js";
@@ -43,6 +44,9 @@ describe("db constants (value-pinning)", () => {
   });
   it("PRUNE_MIN_RELEVANCE is 0.05", () => {
     expect(PRUNE_MIN_RELEVANCE).toBe(0.05);
+  });
+  it("MS_PER_MINUTE is 60000", () => {
+    expect(MS_PER_MINUTE).toBe(60_000);
   });
 });
 
