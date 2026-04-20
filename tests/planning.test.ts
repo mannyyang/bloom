@@ -565,6 +565,22 @@ describe("detectStaleInProgressItems", () => {
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe("b");
   });
+
+  it("flags item stuck exactly STALE_IN_PROGRESS_THRESHOLD_CYCLES+1 cycles as stale (boundary above)", () => {
+    // diff = STALE_IN_PROGRESS_THRESHOLD_CYCLES + 1 → strictly greater than threshold → stale
+    const cycleCount = 10;
+    const since = cycleCount - (STALE_IN_PROGRESS_THRESHOLD_CYCLES + 1);
+    const item = makeItem({ status: "In Progress", body: `[since: ${since}]` });
+    expect(detectStaleInProgressItems([item], cycleCount)).toHaveLength(1);
+  });
+
+  it("does not flag item stuck exactly STALE_IN_PROGRESS_THRESHOLD_CYCLES cycles (boundary at threshold)", () => {
+    // diff = STALE_IN_PROGRESS_THRESHOLD_CYCLES → not strictly greater → fresh
+    const cycleCount = 10;
+    const since = cycleCount - STALE_IN_PROGRESS_THRESHOLD_CYCLES;
+    const item = makeItem({ status: "In Progress", body: `[since: ${since}]` });
+    expect(detectStaleInProgressItems([item], cycleCount)).toHaveLength(0);
+  });
 });
 
 describe("updateItemStatus", () => {
