@@ -1,3 +1,6 @@
+/** Maximum characters allowed for the assessment passed into the evolution prompt. */
+export const ASSESSMENT_CHAR_LIMIT = 2000;
+
 export interface AssessmentContext {
   journalSummary: string;
   cycleCount: number;
@@ -15,7 +18,7 @@ export interface AssessmentContext {
 export function buildAssessmentPrompt(ctx: AssessmentContext): string {
   return `This is evolution cycle ${ctx.cycleCount}.
 
-Read src/ and tests/, then list top 1-3 improvements (bugs, roadmap items, test gaps, clarity, new capabilities) — for each: what/why/difficulty. Keep your assessment under 2000 characters — it is passed directly into the implementation prompt.
+Read src/ and tests/, then list top 1-3 improvements (bugs, roadmap items, test gaps, clarity, new capabilities) — for each: what/why/difficulty. Keep your assessment under ${ASSESSMENT_CHAR_LIMIT} characters — it is passed directly into the implementation prompt.
 
 Recent journal entries:
 ${ctx.journalSummary}

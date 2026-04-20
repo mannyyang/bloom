@@ -1,5 +1,16 @@
 import { describe, it, expect } from "vitest";
-import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements } from "../src/evolve.js";
+import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements, ASSESSMENT_CHAR_LIMIT } from "../src/evolve.js";
+
+describe("ASSESSMENT_CHAR_LIMIT", () => {
+  it("is 2000 (value-pinning)", () => {
+    expect(ASSESSMENT_CHAR_LIMIT).toBe(2000);
+  });
+
+  it("is interpolated into the assessment prompt", () => {
+    const prompt = buildAssessmentPrompt({ journalSummary: "", cycleCount: 1 });
+    expect(prompt).toContain("2000 characters");
+  });
+});
 
 describe("buildAssessmentPrompt", () => {
   it("includes cycle count in prompt", () => {
