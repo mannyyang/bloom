@@ -19,7 +19,7 @@ import {
 } from "./db.js";
 import { buildAssessmentPrompt } from "./evolve.js";
 import { errorMessage } from "./errors.js";
-import { formatMemoryForPrompt } from "./memory.js";
+import { formatMemoryForPrompt, MAX_MEMORY_CHARS } from "./memory.js";
 import {
   ensureProject,
   getProjectItems,
@@ -57,7 +57,7 @@ export async function main() {
       journalSummary = getRecentJournalSummary(db, CONTEXT_JOURNAL_MAX_CHARS, 2);
       const cycleStats = getCycleStats(db);
       cycleStatsText = formatCycleStats(cycleStats);
-      memoryContext = formatMemoryForPrompt(db, 1200);
+      memoryContext = formatMemoryForPrompt(db, MAX_MEMORY_CHARS);
 
       console.log(`[assess] Cycle: ${cycleCount}`);
       console.log(`[assess] Journal: ${journalSummary ? `${journalSummary.length} chars` : "empty"}`);

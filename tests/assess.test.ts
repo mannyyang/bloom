@@ -28,6 +28,7 @@ vi.mock("../src/errors.js", () => ({
 
 vi.mock("../src/memory.js", () => ({
   formatMemoryForPrompt: vi.fn(),
+  MAX_MEMORY_CHARS: 1200,
 }));
 
 vi.mock("../src/planning.js", () => ({
@@ -60,7 +61,7 @@ import { extractResultText, formatDurationSec } from "../src/usage.js";
 import { buildAssessmentPrompt } from "../src/evolve.js";
 import { errorMessage } from "../src/errors.js";
 import { ensureProject, getProjectItems, formatPlanningContext } from "../src/planning.js";
-import { formatMemoryForPrompt } from "../src/memory.js";
+import { formatMemoryForPrompt, MAX_MEMORY_CHARS } from "../src/memory.js";
 import { resolveModel } from "../src/agent-phases.js";
 import { main, ASSESS_MAX_TURNS, ASSESS_MAX_BUDGET_USD } from "../src/assess.js";
 
@@ -277,6 +278,19 @@ describe("assess.ts main()", () => {
 
     const call = mockBuildAssessmentPrompt.mock.calls[0][0];
     expect(call.planningContext).toBe("specific roadmap context");
+  });
+
+  it("calls formatMemoryForPrompt with MAX_MEMORY_CHARS as the char limit", async () => {
+    // Tripwire: if the magic literal drifts from the constant, this assertion
+    // catches it immediately rather than letting silent divergence accumulate.
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    expect(mockFormatMemoryForPrompt).toHaveBeenCalledWith(
+      expect.anything(),
+      MAX_MEMORY_CHARS,
+    );
   });
 
   it("passes memoryContext from formatMemoryForPrompt to buildAssessmentPrompt", async () => {
