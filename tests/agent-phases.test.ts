@@ -587,9 +587,8 @@ describe("resolveModel", () => {
     expect(DEFAULT_BLOOM_MODEL.length).toBeGreaterThan(0);
   });
 
-  it("ASSESSMENT_PREVIEW_CHARS is a positive integer", () => {
-    expect(Number.isInteger(ASSESSMENT_PREVIEW_CHARS)).toBe(true);
-    expect(ASSESSMENT_PREVIEW_CHARS).toBeGreaterThan(0);
+  it("ASSESSMENT_PREVIEW_CHARS is pinned to 500", () => {
+    expect(ASSESSMENT_PREVIEW_CHARS).toBe(500);
   });
 
   it("AGENT_ASSESSMENT_MAX_TURNS is pinned to 20", () => {

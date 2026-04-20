@@ -83,6 +83,10 @@ describe("triage.ts constants", () => {
   it("TRIAGE_MAX_BUDGET_USD equals 0.5", () => {
     expect(TRIAGE_MAX_BUDGET_USD).toBe(0.5);
   });
+
+  it("PROMPT_BODY_PREVIEW_CHARS is pinned to 200", () => {
+    expect(PROMPT_BODY_PREVIEW_CHARS).toBe(200);
+  });
 });
 
 describe("buildTriagePrompt", () => {

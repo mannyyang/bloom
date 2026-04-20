@@ -33,6 +33,14 @@ describe("planning.ts constants", () => {
   it("PLANNING_CONTEXT_MAX_ITEMS equals 5", () => {
     expect(PLANNING_CONTEXT_MAX_ITEMS).toBe(5);
   });
+
+  it("PLANNING_BODY_PREVIEW_CHARS is pinned to 200", () => {
+    expect(PLANNING_BODY_PREVIEW_CHARS).toBe(200);
+  });
+
+  it("ITEM_BODY_LIMIT is pinned to 500", () => {
+    expect(ITEM_BODY_LIMIT).toBe(500);
+  });
 });
 
 describe("pickNextItem", () => {
