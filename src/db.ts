@@ -25,6 +25,12 @@ export const TOKEN_DISPLAY_THRESHOLD = 1_000;
 /** Number of most-recent cycles examined when computing the recent-failure count. */
 export const RECENT_FAILURES_WINDOW = 5;
 
+/** Default maximum character budget for getRecentJournalSummary output. */
+export const JOURNAL_SUMMARY_MAX_CHARS = 4000;
+
+/** Default maximum number of cycles fetched by getRecentJournalSummary. */
+export const JOURNAL_SUMMARY_MAX_CYCLES = 5;
+
 // --- Row validation helpers ---
 
 type FieldType = "number" | "number?" | "string" | "string?";
@@ -719,7 +725,7 @@ export function pruneStrategicContext(
   `).run(keepLast);
 }
 
-export function getRecentJournalSummary(db: Database.Database, maxChars: number = 4000, maxCycles: number = 5): string {
+export function getRecentJournalSummary(db: Database.Database, maxChars: number = JOURNAL_SUMMARY_MAX_CHARS, maxCycles: number = JOURNAL_SUMMARY_MAX_CYCLES): string {
   const entries = exportJournalJson(db, maxCycles);
   const lines: string[] = [];
   let totalLen = 0;

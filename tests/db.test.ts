@@ -28,6 +28,8 @@ import {
   TOKEN_DISPLAY_THRESHOLD,
   RECENT_FAILURES_WINDOW,
   DECAY_BY_CATEGORY,
+  JOURNAL_SUMMARY_MAX_CHARS,
+  JOURNAL_SUMMARY_MAX_CYCLES,
 } from "../src/db.js";
 import Database from "better-sqlite3";
 import { makeOutcome } from "./helpers.js";
@@ -71,6 +73,12 @@ describe("db constants (value-pinning)", () => {
   });
   it("DECAY_BY_CATEGORY tool-usage rate is 0.93", () => {
     expect(DECAY_BY_CATEGORY["tool-usage"]).toBe(0.93);
+  });
+  it("JOURNAL_SUMMARY_MAX_CHARS is pinned to 4000", () => {
+    expect(JOURNAL_SUMMARY_MAX_CHARS).toBe(4000);
+  });
+  it("JOURNAL_SUMMARY_MAX_CYCLES is pinned to 5", () => {
+    expect(JOURNAL_SUMMARY_MAX_CYCLES).toBe(5);
   });
 });
 
