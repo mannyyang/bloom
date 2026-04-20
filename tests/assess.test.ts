@@ -64,6 +64,7 @@ import { ensureProject, getProjectItems, formatPlanningContext } from "../src/pl
 import { formatMemoryForPrompt, MAX_MEMORY_CHARS } from "../src/memory.js";
 import { resolveModel } from "../src/agent-phases.js";
 import { main, ASSESS_MAX_TURNS, ASSESS_MAX_BUDGET_USD } from "../src/assess.js";
+import { CONTEXT_JOURNAL_MAX_CHARS, CONTEXT_JOURNAL_MAX_CYCLES } from "../src/context.js";
 
 const mockQuery = vi.mocked(query);
 const mockExtractResultText = vi.mocked(extractResultText);
@@ -290,6 +291,20 @@ describe("assess.ts main()", () => {
     expect(mockFormatMemoryForPrompt).toHaveBeenCalledWith(
       expect.anything(),
       MAX_MEMORY_CHARS,
+    );
+  });
+
+  it("calls getRecentJournalSummary with (db, CONTEXT_JOURNAL_MAX_CHARS, CONTEXT_JOURNAL_MAX_CYCLES)", async () => {
+    // Tripwire: ensures char-limit and cycle-limit arguments are never silently
+    // swapped or replaced with a magic literal in assess.ts.
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    expect(mockGetRecentJournalSummary).toHaveBeenCalledWith(
+      expect.anything(),
+      CONTEXT_JOURNAL_MAX_CHARS,
+      CONTEXT_JOURNAL_MAX_CYCLES,
     );
   });
 

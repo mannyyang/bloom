@@ -112,6 +112,16 @@ describe("loadEvolutionContext", () => {
     expect(ctx.journalSummary).toBe("recent journal");
   });
 
+  it("calls getRecentJournalSummary with (db, CONTEXT_JOURNAL_MAX_CHARS, CONTEXT_JOURNAL_MAX_CYCLES)", async () => {
+    // Tripwire: catches silent argument drift without relying on output side-effects.
+    await loadEvolutionContext(fakeDb, 1);
+    expect(getRecentJournalSummary).toHaveBeenCalledWith(
+      fakeDb,
+      CONTEXT_JOURNAL_MAX_CHARS,
+      CONTEXT_JOURNAL_MAX_CYCLES,
+    );
+  });
+
   it("fetches community issues", async () => {
     const issues = [
       { number: 1, title: "Bug", body: "", reactions: 5, labels: [] },
