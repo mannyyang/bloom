@@ -280,6 +280,37 @@ describe("formatPlanningContext", () => {
     expect(result).not.toContain("Old Bug Fix");
   });
 
+  it("returns result verbatim when output fits within maxChars", () => {
+    // Pins the early-return branch: result.length <= maxChars → no truncation.
+    const items = [makeItem({ title: "Short", status: "Backlog" })];
+    const expected = formatPlanningContext(items, null);
+    // Provide a generous limit well above the actual output length.
+    const result = formatPlanningContext(items, null, expected.length + 500);
+    expect(result).toBe(expected);
+    expect(result).not.toContain("...");
+  });
+
+  it("truncates at last newline when output exceeds maxChars and a newline precedes the cut", () => {
+    // Pins the newline-boundary branch: lastNewline > 0 → slice at newline, append "\n...".
+    const items = [
+      makeItem({ id: "x", title: "First Item", status: "Backlog" }),
+      makeItem({ id: "y", title: "Second Item", status: "Backlog" }),
+    ];
+    const full = "## Evolution Roadmap\n\n### Backlog\n- First Item\n- Second Item";
+    // Set maxChars to cut mid-way through "- Second Item" so lastNewline > 0.
+    const maxChars = full.indexOf("- Second Item") + 3; // "- S" included
+    const result = formatPlanningContext(items, null, maxChars);
+    expect(result).toBe("## Evolution Roadmap\n\n### Backlog\n- First Item\n...");
+  });
+
+  it("hard-cuts at maxChars when no newline precedes the cut point", () => {
+    // Pins the no-newline fallback: lastNewline <= 0 → use raw truncated string + "\n...".
+    // A maxChars of 5 slices into the header "## Ev" with no newline in that prefix.
+    const items = [makeItem({ title: "Anything", status: "Backlog" })];
+    const result = formatPlanningContext(items, null, 5);
+    expect(result).toBe("## Ev\n...");
+  });
+
   it("truncated output ends with '\\n...' (positive structural assertion)", () => {
     // Positive assertion: after line-aware truncation the suffix is exactly "\n..."
     // This pins the design decision that lastIndexOf("\n") is used to avoid cutting
