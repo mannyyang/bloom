@@ -6,6 +6,7 @@ import { insertIssueAction, hasIssueAction } from "./db.js";
 import type { ProjectItem } from "./planning.js";
 
 export const ISSUES_PER_PAGE = 20;
+export const FETCH_TIMEOUT_MS = 10_000;
 
 export interface CommunityIssue {
   number: number;
@@ -38,8 +39,6 @@ export function isValidRepo(repo: string): boolean {
 export async function fetchCommunityIssues(): Promise<CommunityIssue[]> {
   const repo = detectRepo();
   if (!repo || !isValidRepo(repo)) return [];
-
-  const FETCH_TIMEOUT_MS = 10_000;
 
   async function doFetch(): Promise<CommunityIssue[]> {
     const res = await githubApiRequest(
