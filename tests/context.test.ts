@@ -53,7 +53,7 @@ import {
   formatPlanningContext,
   type ProjectItem,
 } from "../src/planning.js";
-import { loadEvolutionContext, CONTEXT_JOURNAL_MAX_CHARS } from "../src/context.js";
+import { loadEvolutionContext, CONTEXT_JOURNAL_MAX_CHARS, CONTEXT_JOURNAL_MAX_CYCLES } from "../src/context.js";
 import { MAX_MEMORY_CHARS } from "../src/memory.js";
 
 // Fake db object — all DB calls are mocked
@@ -66,6 +66,10 @@ describe("context constants", () => {
 
   it("MAX_MEMORY_CHARS is 1200 (value-pinning)", () => {
     expect(MAX_MEMORY_CHARS).toBe(1200);
+  });
+
+  it("CONTEXT_JOURNAL_MAX_CYCLES is 2 (value-pinning)", () => {
+    expect(CONTEXT_JOURNAL_MAX_CYCLES).toBe(2);
   });
 });
 

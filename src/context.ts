@@ -23,6 +23,12 @@ import {
 export const CONTEXT_JOURNAL_MAX_CHARS = 1200;
 
 /**
+ * Maximum number of recent cycles included in the journal summary injected
+ * into the assessment and evolution prompts.
+ */
+export const CONTEXT_JOURNAL_MAX_CYCLES = 2;
+
+/**
  * Context gathered for the evolution cycle: identity, journal, issues,
  * memory, planning state, etc.
  */
@@ -54,7 +60,7 @@ export async function loadEvolutionContext(
   }
   console.log(`[context] Identity loaded (${identity.length} chars)`);
 
-  const journalSummary = getRecentJournalSummary(db, CONTEXT_JOURNAL_MAX_CHARS, 2);
+  const journalSummary = getRecentJournalSummary(db, CONTEXT_JOURNAL_MAX_CHARS, CONTEXT_JOURNAL_MAX_CYCLES);
   console.log(`[context] Journal summary: ${journalSummary ? `${journalSummary.length} chars` : "empty"}`);
 
   const cycleStats = getCycleStats(db);

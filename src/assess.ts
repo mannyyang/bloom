@@ -27,7 +27,7 @@ import {
 } from "./planning.js";
 import { extractResultText, formatDurationSec } from "./usage.js";
 import { resolveModel } from "./agent-phases.js";
-import { CONTEXT_JOURNAL_MAX_CHARS } from "./context.js";
+import { CONTEXT_JOURNAL_MAX_CHARS, CONTEXT_JOURNAL_MAX_CYCLES } from "./context.js";
 
 /** Maximum number of turns the assessment agent may take. */
 export const ASSESS_MAX_TURNS = 20;
@@ -54,7 +54,7 @@ export async function main() {
     try {
       cycleCount = getLatestCycleNumber(db) + 1;
       identity = readFileSync("IDENTITY.md", "utf-8");
-      journalSummary = getRecentJournalSummary(db, CONTEXT_JOURNAL_MAX_CHARS, 2);
+      journalSummary = getRecentJournalSummary(db, CONTEXT_JOURNAL_MAX_CHARS, CONTEXT_JOURNAL_MAX_CYCLES);
       const cycleStats = getCycleStats(db);
       cycleStatsText = formatCycleStats(cycleStats);
       memoryContext = formatMemoryForPrompt(db, MAX_MEMORY_CHARS);
