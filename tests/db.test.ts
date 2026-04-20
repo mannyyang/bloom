@@ -26,6 +26,8 @@ import {
   PRUNE_MIN_RELEVANCE,
   MS_PER_MINUTE,
   TOKEN_DISPLAY_THRESHOLD,
+  RECENT_FAILURES_WINDOW,
+  DECAY_BY_CATEGORY,
 } from "../src/db.js";
 import Database from "better-sqlite3";
 import { makeOutcome } from "./helpers.js";
@@ -51,6 +53,24 @@ describe("db constants (value-pinning)", () => {
   });
   it("TOKEN_DISPLAY_THRESHOLD is 1000", () => {
     expect(TOKEN_DISPLAY_THRESHOLD).toBe(1_000);
+  });
+  it("RECENT_FAILURES_WINDOW is 5", () => {
+    expect(RECENT_FAILURES_WINDOW).toBe(5);
+  });
+  it("DECAY_BY_CATEGORY pattern rate is 0.98", () => {
+    expect(DECAY_BY_CATEGORY["pattern"]).toBe(0.98);
+  });
+  it("DECAY_BY_CATEGORY anti-pattern rate is 0.97", () => {
+    expect(DECAY_BY_CATEGORY["anti-pattern"]).toBe(0.97);
+  });
+  it("DECAY_BY_CATEGORY domain rate is 0.95", () => {
+    expect(DECAY_BY_CATEGORY["domain"]).toBe(0.95);
+  });
+  it("DECAY_BY_CATEGORY process rate is 0.93", () => {
+    expect(DECAY_BY_CATEGORY["process"]).toBe(0.93);
+  });
+  it("DECAY_BY_CATEGORY tool-usage rate is 0.93", () => {
+    expect(DECAY_BY_CATEGORY["tool-usage"]).toBe(0.93);
   });
 });
 
