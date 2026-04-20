@@ -48,6 +48,14 @@ export const PLANNING_CONTEXT_MAX_CHARS = 1200;
  */
 export const PLANNING_CONTEXT_MAX_ITEMS = 5;
 
+/**
+ * Default number of cycles an item may remain "In Progress" before it is
+ * considered stale and demoted back to "Up Next". Items stuck for more than
+ * this many cycles (i.e. currentCycle - sinceCycle > threshold) are flagged
+ * by detectStaleInProgressItems and demoted by demoteStaleInProgressItems.
+ */
+export const STALE_IN_PROGRESS_THRESHOLD_CYCLES = 3;
+
 export type StatusColumn = (typeof STATUS_COLUMNS)[number];
 
 /**
@@ -402,7 +410,7 @@ export function parseInProgressSinceCycle(body: string, currentCycle?: number): 
 export function detectStaleInProgressItems(
   items: ProjectItem[],
   currentCycle: number,
-  threshold: number = 3,
+  threshold: number = STALE_IN_PROGRESS_THRESHOLD_CYCLES,
 ): ProjectItem[] {
   return items.filter((item) => {
     if (item.status !== "In Progress") return false;
@@ -419,7 +427,7 @@ export function detectStaleInProgressItems(
 export function demoteStaleInProgressItems(
   _config: ProjectConfig,
   currentCycle: number,
-  threshold: number = 3,
+  threshold: number = STALE_IN_PROGRESS_THRESHOLD_CYCLES,
 ): string[] {
   const filePath = resolve(process.cwd(), _config.filePath);
   return withRoadmapItems(filePath, (items, markDirty) => {
