@@ -582,9 +582,8 @@ describe("resolveModel", () => {
     expect(resolveModel()).toBe("claude-opus-4");
   });
 
-  it("DEFAULT_BLOOM_MODEL is a non-empty string", () => {
-    expect(typeof DEFAULT_BLOOM_MODEL).toBe("string");
-    expect(DEFAULT_BLOOM_MODEL.length).toBeGreaterThan(0);
+  it("DEFAULT_BLOOM_MODEL is pinned to claude-sonnet-4-6", () => {
+    expect(DEFAULT_BLOOM_MODEL).toBe("claude-sonnet-4-6");
   });
 
   it("ASSESSMENT_PREVIEW_CHARS is pinned to 500", () => {
