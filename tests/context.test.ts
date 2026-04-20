@@ -525,6 +525,23 @@ describe("loadEvolutionContext", () => {
     );
   });
 
+  it("calls demoteStaleInProgressItems with exactly (config, cycleCount) — no custom threshold", async () => {
+    // Tripwire: ensures context.ts never silently starts passing a custom threshold,
+    // which would shadow STALE_IN_PROGRESS_THRESHOLD_CYCLES without an explicit change here.
+    const config = { filePath: "ROADMAP.md" };
+    const items: ProjectItem[] = [
+      { id: "1", title: "Item", status: "In Progress", body: "[since: 1]", linkedIssueNumber: null, reactions: 0 },
+    ];
+    vi.mocked(ensureProject).mockReturnValue(config);
+    vi.mocked(getProjectItems).mockReturnValue(items);
+    vi.mocked(fetchCommunityIssues).mockResolvedValue([]);
+    vi.mocked(pickNextItem).mockReturnValue(null);
+    vi.mocked(formatPlanningContext).mockReturnValue("");
+
+    await loadEvolutionContext(fakeDb, 7);
+    expect(demoteStaleInProgressItems).toHaveBeenCalledWith(config, 7);
+  });
+
   it("re-reads project items from disk after demotion", async () => {
     // After demoting stale items, context.ts re-reads the roadmap from disk so
     // the in-memory view always matches exactly what demoteStaleInProgressItems
