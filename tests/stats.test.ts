@@ -248,7 +248,7 @@ describe("generateStatsOutput", () => {
       expect(joined).toContain("build_failure");
       expect(joined).toContain("test_failure");
       expect(joined).toContain("Failure breakdown");
-      expect(joined).toContain("across last");
+      expect(joined).toContain("across all");
     });
 
     it("failure breakdown omitted when all cycles have category none", () => {

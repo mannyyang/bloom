@@ -22,6 +22,9 @@ export const MS_PER_MINUTE = 60_000;
 /** Token count at or above which display switches to "Nk" abbreviated form. */
 export const TOKEN_DISPLAY_THRESHOLD = 1_000;
 
+/** Number of most-recent cycles examined when computing the recent-failure count. */
+export const RECENT_FAILURES_WINDOW = 5;
+
 // --- Row validation helpers ---
 
 type FieldType = "number" | "number?" | "string" | "string?";
@@ -471,8 +474,8 @@ export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS
     testCountTrend = (withCounts[0].test_count_after ?? 0) - (withCounts[0].test_count_before ?? 0);
   }
 
-  // Count recent failures (last 5 cycles)
-  const recent = rows.slice(0, 5);
+  // Count recent failures (last RECENT_FAILURES_WINDOW cycles)
+  const recent = rows.slice(0, RECENT_FAILURES_WINDOW);
   const recentFailures = recent.filter(r => r.build_verification_passed !== 1 || r.push_succeeded !== 1).length;
 
   // Average cycle duration — prefer precise duration_ms, fall back to timestamp subtraction
@@ -566,12 +569,12 @@ export function formatCycleStats(stats: CycleStats): string {
     const parts = [costPart, tokenPart].filter(Boolean).join(" · ");
     lines.push(`- **Cost**: ${parts}`);
   }
-  lines.push(`- **Recent failures** (last 5): ${stats.recentFailures}`);
+  lines.push(`- **Recent failures** (last ${RECENT_FAILURES_WINDOW}): ${stats.recentFailures}`);
   if (stats.recentFailures > 0 && Object.keys(stats.failureCategoryBreakdown).length > 0) {
     const breakdown = Object.entries(stats.failureCategoryBreakdown)
       .map(([cat, count]) => `${count} ${cat}`)
       .join(", ");
-    lines.push(`- **Failure breakdown** (across last ${stats.totalCycles} cycles): ${breakdown}`);
+    lines.push(`- **Failure breakdown** (across all ${stats.totalCycles} tracked cycles): ${breakdown}`);
   }
   return lines.join("\n");
 }
