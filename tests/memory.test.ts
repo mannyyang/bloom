@@ -776,6 +776,10 @@ describe("MAX_MEMORY_CHARS", () => {
     expect(Number.isInteger(MAX_MEMORY_CHARS)).toBe(true);
     expect(MAX_MEMORY_CHARS).toBeGreaterThan(0);
   });
+
+  it("is 1200 (value-pinning)", () => {
+    expect(MAX_MEMORY_CHARS).toBe(1200);
+  });
 });
 
 describe("STRATEGIC_CONTEXT_RETENTION_CYCLES", () => {
