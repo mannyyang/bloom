@@ -35,6 +35,7 @@ import {
   JOURNAL_FAILED_HEADER,
   JOURNAL_LEARNINGS_HEADER,
   JOURNAL_STRATEGIC_CONTEXT_HEADER,
+  JOURNAL_SECTIONS_PER_CYCLE,
 } from "../src/db.js";
 import Database from "better-sqlite3";
 import { makeOutcome } from "./helpers.js";
@@ -99,6 +100,9 @@ describe("db constants (value-pinning)", () => {
   });
   it("JOURNAL_STRATEGIC_CONTEXT_HEADER is '### Strategic Context'", () => {
     expect(JOURNAL_STRATEGIC_CONTEXT_HEADER).toBe("### Strategic Context");
+  });
+  it("JOURNAL_SECTIONS_PER_CYCLE is 6", () => {
+    expect(JOURNAL_SECTIONS_PER_CYCLE).toBe(6);
   });
 });
 

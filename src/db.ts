@@ -31,6 +31,13 @@ export const JOURNAL_SUMMARY_MAX_CHARS = 4000;
 /** Default maximum number of cycles fetched by getRecentJournalSummary. */
 export const JOURNAL_SUMMARY_MAX_CYCLES = 5;
 
+/**
+ * Estimated number of journal sections written per cycle (attempted, succeeded,
+ * failed, learnings, strategic_context, plus potential extras). Used by
+ * exportJournalJson to compute a row-fetch limit from a cycle count.
+ */
+export const JOURNAL_SECTIONS_PER_CYCLE = 6;
+
 /** Section-header strings used in journal Markdown output. */
 export const JOURNAL_ATTEMPTED_HEADER = "### What was attempted";
 export const JOURNAL_SUCCEEDED_HEADER = "### What succeeded";
@@ -369,10 +376,7 @@ export interface JournalExportEntry {
 }
 
 export function exportJournalJson(db: Database.Database, maxCycles?: number): JournalExportEntry[] {
-  // Estimate row limit: each cycle has at most 6 sections (attempted, succeeded,
-  // failed, learnings, strategic_context, plus potential extras). Fetch a few
-  // extra rows to account for cycles with fewer sections.
-  const rowLimit = maxCycles ? maxCycles * 6 : undefined;
+  const rowLimit = maxCycles ? maxCycles * JOURNAL_SECTIONS_PER_CYCLE : undefined;
   const rows = getJournalEntries(db, rowLimit);
   const grouped = new Map<number, { date: string; sections: Map<string, string> }>();
 
