@@ -22,6 +22,13 @@ const ROADMAP_FILE = "ROADMAP.md";
 const STATUS_COLUMNS = ["Backlog", "Up Next", "In Progress", "Done"] as const;
 
 /**
+ * The canonical H1 header written at the top of every ROADMAP.md file.
+ * Exported so tests can pin its value and callers can reference it without
+ * relying on a hard-coded string literal.
+ */
+export const ROADMAP_HEADER = "# Bloom Evolution Roadmap";
+
+/**
  * Maximum number of characters stored for an item body.
  * Bodies exceeding this limit are silently truncated — a console.warn is
  * emitted so callers can diagnose data loss without crashing the cycle.
@@ -180,7 +187,7 @@ function finalizeItem(partial: Partial<ProjectItem>, idx: number): ProjectItem {
  * Serialize ProjectItems back into ROADMAP.md format.
  */
 export function serializeRoadmap(items: ProjectItem[]): string {
-  const lines: string[] = ["# Bloom Evolution Roadmap", ""];
+  const lines: string[] = [ROADMAP_HEADER, ""];
 
   for (const status of STATUS_COLUMNS) {
     const statusItems = items.filter((i) => i.status === status);
