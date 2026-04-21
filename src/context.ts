@@ -29,6 +29,12 @@ export const CONTEXT_JOURNAL_MAX_CHARS = 1200;
 export const CONTEXT_JOURNAL_MAX_CYCLES = 2;
 
 /**
+ * Number of characters of a triage decision reason shown in the per-decision
+ * log line. Keeps output scannable without truncating the stored reason.
+ */
+export const CONTEXT_REASON_PREVIEW_CHARS = 100;
+
+/**
  * Context gathered for the evolution cycle: identity, journal, issues,
  * memory, planning state, etc.
  */
@@ -109,7 +115,7 @@ export async function loadEvolutionContext(
         console.log(`[triage] Closed: ${triageResult.closed.map(n => `#${n}`).join(", ")}`);
       }
       for (const d of triageResult.decisions) {
-        console.log(`  - #${d.issueNumber}: ${d.action} — ${d.reason.slice(0, 100)}`);
+        console.log(`  - #${d.issueNumber}: ${d.action} — ${d.reason.slice(0, CONTEXT_REASON_PREVIEW_CHARS)}`);
       }
       // Re-fetch items since triage may have added new ones
       projectItems = getProjectItems(projectConfig);
