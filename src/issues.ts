@@ -7,6 +7,7 @@ import type { ProjectItem } from "./planning.js";
 
 export const ISSUES_PER_PAGE = 20;
 export const FETCH_TIMEOUT_MS = 10_000;
+export const ISSUES_DEFAULT_ACTION = "closed";
 
 export interface CommunityIssue {
   number: number;
@@ -100,7 +101,7 @@ export async function closeIssueWithComment(
   cycleCount: number,
   comment: string,
   db?: Database.Database,
-  action: string = "closed",
+  action: string = ISSUES_DEFAULT_ACTION,
   precomputedRepo?: string,
 ): Promise<boolean> {
   const repo = precomputedRepo ?? detectRepo();
@@ -122,7 +123,7 @@ export async function closeIssueWithComment(
 
     // Close the issue
     const closeRes = await githubApiRequest("PATCH", `/repos/${repo}/issues/${issueNumber}`, {
-      state: "closed",
+      state: ISSUES_DEFAULT_ACTION,
     });
     if (!closeRes.ok) {
       console.warn(`[issues] closeIssueWithComment: non-ok response ${closeRes.status} on PATCH close for issue #${issueNumber}`);

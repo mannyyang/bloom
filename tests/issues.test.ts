@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { execFileSync } from "child_process";
-import { fetchCommunityIssues, closeIssueWithComment, isValidRepo, isSafeIssueNumber, detectRepo, syncReactionsToItems, ISSUES_PER_PAGE, FETCH_TIMEOUT_MS } from "../src/issues.js";
+import { fetchCommunityIssues, closeIssueWithComment, isValidRepo, isSafeIssueNumber, detectRepo, syncReactionsToItems, ISSUES_PER_PAGE, FETCH_TIMEOUT_MS, ISSUES_DEFAULT_ACTION } from "../src/issues.js";
 import { githubApiRequest } from "../src/github-app.js";
 import { initDb, hasIssueAction } from "../src/db.js";
 import type { ProjectItem } from "../src/planning.js";
@@ -115,6 +115,12 @@ describe("ISSUES_PER_PAGE", () => {
 describe("FETCH_TIMEOUT_MS", () => {
   it("is 10000 (value-pinning)", () => {
     expect(FETCH_TIMEOUT_MS).toBe(10_000);
+  });
+});
+
+describe("ISSUES_DEFAULT_ACTION", () => {
+  it('is "closed" (value-pinning)', () => {
+    expect(ISSUES_DEFAULT_ACTION).toBe("closed");
   });
 });
 
