@@ -22,6 +22,11 @@ export const TRIAGE_REASON_MAX_CHARS = 2000;
 /** Number of chars of a failed-parse JSON string shown in the warning log. */
 export const TRIAGE_ERROR_PREVIEW_CHARS = 200;
 
+/** Action name recorded in issue_actions to mark an issue as triaged.
+ *  Used for deduplication — every path that processes an issue must write
+ *  exactly this string so hasIssueAction guards fire correctly. */
+export const TRIAGE_ACTION_NAME = "triaged";
+
 // --- Types ---
 
 export interface TriageDecision {
@@ -154,7 +159,7 @@ export async function triageIssues(
   const closeCandidates = alreadyOnBoard.filter((issue) => {
     const linkedItem = boardItems.find((item) => item.linkedIssueNumber === issue.number);
     if (!linkedItem || linkedItem.status !== "Done") return false;
-    if (db && hasIssueAction(db, issue.number, "triaged")) return false;
+    if (db && hasIssueAction(db, issue.number, TRIAGE_ACTION_NAME)) return false;
     return true;
   });
 
@@ -168,7 +173,7 @@ export async function triageIssues(
   if (db && closeCandidates.length > 0) {
     db.transaction(() => {
       for (const issue of closeCandidates) {
-        insertIssueAction(db, cycleCount, issue.number, "triaged");
+        insertIssueAction(db, cycleCount, issue.number, TRIAGE_ACTION_NAME);
       }
     })();
   }
@@ -211,7 +216,7 @@ export async function triageIssues(
 
   // Filter out any issues already triaged in this or a previous cycle
   const untriaged = newIssues.filter(
-    (i) => !hasIssueAction(db, i.number, "triaged"),
+    (i) => !hasIssueAction(db, i.number, TRIAGE_ACTION_NAME),
   );
 
   if (untriaged.length === 0) return result;
@@ -308,7 +313,7 @@ export async function triageIssues(
         // always recorded and this issue is never re-sent to the LLM next cycle.
         // Without this, a transient addLinkedItem failure (e.g., disk full, file
         // locked) would cause infinite re-triage loops and potential duplicates.
-        insertIssueAction(db, cycleCount, issue.number, "triaged");
+        insertIssueAction(db, cycleCount, issue.number, TRIAGE_ACTION_NAME);
       }
 
       // add_to_backlog issues stay open — they will be closed once the linked
@@ -317,11 +322,11 @@ export async function triageIssues(
       if (effectiveAction !== "add_to_backlog") {
         // Mark as triaged immediately (before the close API call) so the decision
         // is always persisted. If the GitHub close API fails in phase 2, the issue
-        // will still be filtered by the hasIssueAction("triaged") guard on the
+        // will still be filtered by the hasIssueAction(TRIAGE_ACTION_NAME) guard on the
         // next cycle — preventing an infinite re-triage loop. Mirrors the
         // add_to_backlog path above where insertIssueAction is called before
         // addLinkedItem, making all three branches symmetric.
-        insertIssueAction(db, cycleCount, issue.number, "triaged");
+        insertIssueAction(db, cycleCount, issue.number, TRIAGE_ACTION_NAME);
         closeTasks.push({
           issueNumber: issue.number,
           comment: `${commentMap[effectiveAction]}\n\n${decision.reason}`,
