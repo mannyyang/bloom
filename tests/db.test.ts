@@ -30,6 +30,11 @@ import {
   DECAY_BY_CATEGORY,
   JOURNAL_SUMMARY_MAX_CHARS,
   JOURNAL_SUMMARY_MAX_CYCLES,
+  JOURNAL_ATTEMPTED_HEADER,
+  JOURNAL_SUCCEEDED_HEADER,
+  JOURNAL_FAILED_HEADER,
+  JOURNAL_LEARNINGS_HEADER,
+  JOURNAL_STRATEGIC_CONTEXT_HEADER,
 } from "../src/db.js";
 import Database from "better-sqlite3";
 import { makeOutcome } from "./helpers.js";
@@ -79,6 +84,21 @@ describe("db constants (value-pinning)", () => {
   });
   it("JOURNAL_SUMMARY_MAX_CYCLES is pinned to 5", () => {
     expect(JOURNAL_SUMMARY_MAX_CYCLES).toBe(5);
+  });
+  it("JOURNAL_ATTEMPTED_HEADER is '### What was attempted'", () => {
+    expect(JOURNAL_ATTEMPTED_HEADER).toBe("### What was attempted");
+  });
+  it("JOURNAL_SUCCEEDED_HEADER is '### What succeeded'", () => {
+    expect(JOURNAL_SUCCEEDED_HEADER).toBe("### What succeeded");
+  });
+  it("JOURNAL_FAILED_HEADER is '### What failed'", () => {
+    expect(JOURNAL_FAILED_HEADER).toBe("### What failed");
+  });
+  it("JOURNAL_LEARNINGS_HEADER is '### Learnings'", () => {
+    expect(JOURNAL_LEARNINGS_HEADER).toBe("### Learnings");
+  });
+  it("JOURNAL_STRATEGIC_CONTEXT_HEADER is '### Strategic Context'", () => {
+    expect(JOURNAL_STRATEGIC_CONTEXT_HEADER).toBe("### Strategic Context");
   });
 });
 
@@ -614,10 +634,10 @@ describe("db", () => {
       insertJournalEntry(db, 1, "learnings", "Learned something");
 
       const summary = getRecentJournalSummary(db);
-      expect(summary).toContain("### What was attempted");
-      expect(summary).toContain("### Learnings");
-      expect(summary).not.toContain("### What succeeded");
-      expect(summary).not.toContain("### What failed");
+      expect(summary).toContain(JOURNAL_ATTEMPTED_HEADER);
+      expect(summary).toContain(JOURNAL_LEARNINGS_HEADER);
+      expect(summary).not.toContain(JOURNAL_SUCCEEDED_HEADER);
+      expect(summary).not.toContain(JOURNAL_FAILED_HEADER);
     });
 
     it("includes all non-strategic section headers when all fields have content", () => {
@@ -629,11 +649,11 @@ describe("db", () => {
       insertJournalEntry(db, 1, "strategic_context", "E");
 
       const summary = getRecentJournalSummary(db, 4000, 5);
-      expect(summary).toContain("### What was attempted");
-      expect(summary).toContain("### What succeeded");
-      expect(summary).toContain("### What failed");
-      expect(summary).toContain("### Learnings");
-      expect(summary).not.toContain("### Strategic Context");
+      expect(summary).toContain(JOURNAL_ATTEMPTED_HEADER);
+      expect(summary).toContain(JOURNAL_SUCCEEDED_HEADER);
+      expect(summary).toContain(JOURNAL_FAILED_HEADER);
+      expect(summary).toContain(JOURNAL_LEARNINGS_HEADER);
+      expect(summary).not.toContain(JOURNAL_STRATEGIC_CONTEXT_HEADER);
     });
 
     it("default maxCycles limits to 5 cycles", () => {

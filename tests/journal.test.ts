@@ -1,7 +1,16 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertJournalEntry } from "../src/db.js";
-import { generateJournalOutput, formatJournalMarkdown, parseArgs } from "../src/journal.js";
+import {
+  generateJournalOutput,
+  formatJournalMarkdown,
+  parseArgs,
+  JOURNAL_ATTEMPTED_HEADER,
+  JOURNAL_SUCCEEDED_HEADER,
+  JOURNAL_FAILED_HEADER,
+  JOURNAL_LEARNINGS_HEADER,
+  JOURNAL_STRATEGIC_CONTEXT_HEADER,
+} from "../src/journal.js";
 import { makeOutcome } from "./helpers.js";
 
 describe("generateJournalOutput", () => {
@@ -77,6 +86,24 @@ describe("generateJournalOutput", () => {
   });
 });
 
+describe("journal header constants (value-pinning)", () => {
+  it("JOURNAL_ATTEMPTED_HEADER is '### What was attempted'", () => {
+    expect(JOURNAL_ATTEMPTED_HEADER).toBe("### What was attempted");
+  });
+  it("JOURNAL_SUCCEEDED_HEADER is '### What succeeded'", () => {
+    expect(JOURNAL_SUCCEEDED_HEADER).toBe("### What succeeded");
+  });
+  it("JOURNAL_FAILED_HEADER is '### What failed'", () => {
+    expect(JOURNAL_FAILED_HEADER).toBe("### What failed");
+  });
+  it("JOURNAL_LEARNINGS_HEADER is '### Learnings'", () => {
+    expect(JOURNAL_LEARNINGS_HEADER).toBe("### Learnings");
+  });
+  it("JOURNAL_STRATEGIC_CONTEXT_HEADER is '### Strategic Context'", () => {
+    expect(JOURNAL_STRATEGIC_CONTEXT_HEADER).toBe("### Strategic Context");
+  });
+});
+
 describe("formatJournalMarkdown", () => {
   it("returns message when no entries exist", () => {
     expect(formatJournalMarkdown([])).toBe("No journal entries recorded yet.");
@@ -96,8 +123,8 @@ describe("formatJournalMarkdown", () => {
     ];
     const output = formatJournalMarkdown(entries);
     expect(output).toContain("## Cycle 5 — 2025-01-15");
-    expect(output).toContain("### What was attempted");
-    expect(output).toContain("### Strategic Context");
+    expect(output).toContain(JOURNAL_ATTEMPTED_HEADER);
+    expect(output).toContain(JOURNAL_STRATEGIC_CONTEXT_HEADER);
   });
 
   it("omits empty sections", () => {
@@ -113,9 +140,9 @@ describe("formatJournalMarkdown", () => {
       },
     ];
     const output = formatJournalMarkdown(entries);
-    expect(output).toContain("### What was attempted");
-    expect(output).not.toContain("### What succeeded");
-    expect(output).not.toContain("### What failed");
+    expect(output).toContain(JOURNAL_ATTEMPTED_HEADER);
+    expect(output).not.toContain(JOURNAL_SUCCEEDED_HEADER);
+    expect(output).not.toContain(JOURNAL_FAILED_HEADER);
   });
 
   it("renders multiple entries with separators and correct cycle headers", () => {
