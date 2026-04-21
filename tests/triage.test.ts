@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach, afterAll, beforeAll, beforeEach } from "vitest";
-import { buildTriagePrompt, parseTriageResponse, triageIssues, PROMPT_BODY_PREVIEW_CHARS, TRIAGE_MAX_TURNS, TRIAGE_MAX_BUDGET_USD, TRIAGE_REASON_MAX_CHARS, TRIAGE_ERROR_PREVIEW_CHARS, TRIAGE_ACTION_NAME } from "../src/triage.js";
+import { buildTriagePrompt, parseTriageResponse, triageIssues, PROMPT_BODY_PREVIEW_CHARS, TRIAGE_MAX_TURNS, TRIAGE_MAX_BUDGET_USD, TRIAGE_REASON_MAX_CHARS, TRIAGE_ERROR_PREVIEW_CHARS, TRIAGE_ACTION_NAME, TRIAGE_BOARD_STATUS_DONE } from "../src/triage.js";
 import type { CommunityIssue } from "../src/issues.js";
 import { closeIssueWithComment, detectRepo, isValidRepo } from "../src/issues.js";
 import { hasIssueAction, insertIssueAction, initDb, insertCycle } from "../src/db.js";
@@ -1346,5 +1346,9 @@ describe("triage constants", () => {
 
   it("TRIAGE_ACTION_NAME is 'triaged' (value-pinning)", () => {
     expect(TRIAGE_ACTION_NAME).toBe("triaged");
+  });
+
+  it("TRIAGE_BOARD_STATUS_DONE is 'Done' (value-pinning)", () => {
+    expect(TRIAGE_BOARD_STATUS_DONE).toBe("Done");
   });
 });

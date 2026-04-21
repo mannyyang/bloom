@@ -27,6 +27,11 @@ export const TRIAGE_ERROR_PREVIEW_CHARS = 200;
  *  exactly this string so hasIssueAction guards fire correctly. */
 export const TRIAGE_ACTION_NAME = "triaged";
 
+/** Board status string that signals a roadmap item is complete.
+ *  Gates issue-closing logic: issues are only closed when their linked
+ *  board item carries exactly this status (case-sensitive). */
+export const TRIAGE_BOARD_STATUS_DONE = "Done";
+
 // --- Types ---
 
 export interface TriageDecision {
@@ -158,7 +163,7 @@ export async function triageIssues(
   const alreadyOnBoard = issues.filter((i) => boardIssueNumbers.has(i.number));
   const closeCandidates = alreadyOnBoard.filter((issue) => {
     const linkedItem = boardItems.find((item) => item.linkedIssueNumber === issue.number);
-    if (!linkedItem || linkedItem.status !== "Done") return false;
+    if (!linkedItem || linkedItem.status !== TRIAGE_BOARD_STATUS_DONE) return false;
     if (db && hasIssueAction(db, issue.number, TRIAGE_ACTION_NAME)) return false;
     return true;
   });
@@ -294,7 +299,7 @@ export async function triageIssues(
         decision.action === "already_done" &&
         !boardItems.some(
           (item) =>
-            item.status === "Done" &&
+            item.status === TRIAGE_BOARD_STATUS_DONE &&
             item.linkedIssueNumber === decision.issueNumber,
         )
           ? "add_to_backlog"
