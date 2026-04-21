@@ -5,8 +5,15 @@ import {
   createOutcome,
   formatOutcomeForJournal,
   classifyBuildFailure,
+  OUTCOME_METRICS_HEADER,
 } from "../src/outcomes.js";
 import { makeOutcome } from "./helpers.js";
+
+describe("OUTCOME_METRICS_HEADER", () => {
+  it("has the expected value (value-pin)", () => {
+    expect(OUTCOME_METRICS_HEADER).toBe("### Outcome Metrics");
+  });
+});
 
 // Literal vitest v1/v2 summary block copied from a real run — pins the exact
 // column-aligned format so parser regressions are caught immediately.

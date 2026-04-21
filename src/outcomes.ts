@@ -6,6 +6,13 @@
 import type { ErrorCategory } from "./errors.js";
 import { formatDurationSec } from "./usage.js";
 
+/**
+ * Markdown section header written at the top of every formatted outcome block.
+ * Exported so tests can pin its exact value and callers can reference it without
+ * relying on a hard-coded string literal.
+ */
+export const OUTCOME_METRICS_HEADER = "### Outcome Metrics";
+
 export interface CycleOutcome {
   cycleNumber: number;
   preflightPassed: boolean;
@@ -100,7 +107,7 @@ export function createOutcome(cycleNumber: number): CycleOutcome {
  * Format a CycleOutcome for inclusion in a journal entry.
  */
 export function formatOutcomeForJournal(outcome: CycleOutcome): string {
-  const lines: string[] = ["### Outcome Metrics", ""];
+  const lines: string[] = [OUTCOME_METRICS_HEADER, ""];
 
   lines.push(`- **Preflight**: ${outcome.preflightPassed ? "passed" : "failed"}`);
   lines.push(
