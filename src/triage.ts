@@ -32,6 +32,10 @@ export const TRIAGE_ACTION_NAME = "triaged";
  *  board item carries exactly this status (case-sensitive). */
 export const TRIAGE_BOARD_STATUS_DONE = "Done";
 
+/** Comment posted when closing an issue that is already tracked on the
+ *  Bloom Evolution Roadmap board. */
+export const TRIAGE_ALREADY_ON_BOARD_COMMENT = "This issue is already tracked on the Bloom Evolution Roadmap.";
+
 // --- Types ---
 
 export interface TriageDecision {
@@ -188,7 +192,7 @@ export async function triageIssues(
       closeIssueWithComment(
         issue.number,
         cycleCount,
-        "This issue is already tracked on the Bloom Evolution Roadmap.",
+        TRIAGE_ALREADY_ON_BOARD_COMMENT,
         db,
         "closed",
         repo ?? undefined,
