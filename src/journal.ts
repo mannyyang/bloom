@@ -14,7 +14,24 @@
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import type Database from "better-sqlite3";
-import { initDb, exportJournalJson, type JournalExportEntry } from "./db.js";
+import {
+  initDb,
+  exportJournalJson,
+  type JournalExportEntry,
+  JOURNAL_ATTEMPTED_HEADER,
+  JOURNAL_SUCCEEDED_HEADER,
+  JOURNAL_FAILED_HEADER,
+  JOURNAL_LEARNINGS_HEADER,
+  JOURNAL_STRATEGIC_CONTEXT_HEADER,
+} from "./db.js";
+
+export {
+  JOURNAL_ATTEMPTED_HEADER,
+  JOURNAL_SUCCEEDED_HEADER,
+  JOURNAL_FAILED_HEADER,
+  JOURNAL_LEARNINGS_HEADER,
+  JOURNAL_STRATEGIC_CONTEXT_HEADER,
+};
 
 /**
  * Format journal entries as Markdown.
@@ -30,27 +47,27 @@ export function formatJournalMarkdown(entries: JournalExportEntry[]): string {
     lines.push(`## Cycle ${entry.cycleNumber} — ${entry.date}`);
     lines.push("");
     if (entry.attempted) {
-      lines.push("### What was attempted");
+      lines.push(JOURNAL_ATTEMPTED_HEADER);
       lines.push(entry.attempted);
       lines.push("");
     }
     if (entry.succeeded) {
-      lines.push("### What succeeded");
+      lines.push(JOURNAL_SUCCEEDED_HEADER);
       lines.push(entry.succeeded);
       lines.push("");
     }
     if (entry.failed) {
-      lines.push("### What failed");
+      lines.push(JOURNAL_FAILED_HEADER);
       lines.push(entry.failed);
       lines.push("");
     }
     if (entry.learnings) {
-      lines.push("### Learnings");
+      lines.push(JOURNAL_LEARNINGS_HEADER);
       lines.push(entry.learnings);
       lines.push("");
     }
     if (entry.strategic_context) {
-      lines.push("### Strategic Context");
+      lines.push(JOURNAL_STRATEGIC_CONTEXT_HEADER);
       lines.push(entry.strategic_context);
       lines.push("");
     }

@@ -31,6 +31,13 @@ export const JOURNAL_SUMMARY_MAX_CHARS = 4000;
 /** Default maximum number of cycles fetched by getRecentJournalSummary. */
 export const JOURNAL_SUMMARY_MAX_CYCLES = 5;
 
+/** Section-header strings used in journal Markdown output. */
+export const JOURNAL_ATTEMPTED_HEADER = "### What was attempted";
+export const JOURNAL_SUCCEEDED_HEADER = "### What succeeded";
+export const JOURNAL_FAILED_HEADER = "### What failed";
+export const JOURNAL_LEARNINGS_HEADER = "### Learnings";
+export const JOURNAL_STRATEGIC_CONTEXT_HEADER = "### Strategic Context";
+
 // --- Row validation helpers ---
 
 type FieldType = "number" | "number?" | "string" | "string?";
@@ -732,10 +739,10 @@ export function getRecentJournalSummary(db: Database.Database, maxChars: number 
 
   for (const entry of entries) {
     const parts: string[] = [`## Cycle ${entry.cycleNumber} — ${entry.date}`, ""];
-    if (entry.attempted) { parts.push("### What was attempted", entry.attempted, ""); }
-    if (entry.succeeded) { parts.push("### What succeeded", entry.succeeded, ""); }
-    if (entry.failed) { parts.push("### What failed", entry.failed, ""); }
-    if (entry.learnings) { parts.push("### Learnings", entry.learnings, ""); }
+    if (entry.attempted) { parts.push(JOURNAL_ATTEMPTED_HEADER, entry.attempted, ""); }
+    if (entry.succeeded) { parts.push(JOURNAL_SUCCEEDED_HEADER, entry.succeeded, ""); }
+    if (entry.failed) { parts.push(JOURNAL_FAILED_HEADER, entry.failed, ""); }
+    if (entry.learnings) { parts.push(JOURNAL_LEARNINGS_HEADER, entry.learnings, ""); }
     parts.push("---", "");
     const section = parts.join("\n");
     if (totalLen + section.length > maxChars && lines.length > 0) break;
