@@ -1,5 +1,5 @@
 import type Database from "better-sqlite3";
-import { type CommunityIssue, closeIssueWithComment, detectRepo, isValidRepo } from "./issues.js";
+import { type CommunityIssue, closeIssueWithComment, detectRepo, isValidRepo, ISSUES_DEFAULT_ACTION } from "./issues.js";
 import { hasIssueAction, insertIssueAction } from "./db.js";
 import { errorMessage } from "./errors.js";
 import { addLinkedItem, type ProjectConfig, type ProjectItem } from "./planning.js";
@@ -194,7 +194,7 @@ export async function triageIssues(
         cycleCount,
         TRIAGE_ALREADY_ON_BOARD_COMMENT,
         db,
-        "closed",
+        ISSUES_DEFAULT_ACTION,
         repo ?? undefined,
       )
         .then((wasClosed) => ({ issueNumber: issue.number, wasClosed }))
@@ -352,7 +352,7 @@ export async function triageIssues(
   // already_done / not_applicable decisions are returned in a single cycle.
   const decisionCloseResults = await Promise.all(
     closeTasks.map(({ issueNumber, comment }) =>
-      closeIssueWithComment(issueNumber, cycleCount, comment, db, "closed", repo ?? undefined)
+      closeIssueWithComment(issueNumber, cycleCount, comment, db, ISSUES_DEFAULT_ACTION, repo ?? undefined)
         .then((wasClosed) => ({ issueNumber, wasClosed }))
         .catch((err) => {
           console.error(`[triage] Failed to close issue #${issueNumber} (non-fatal): ${errorMessage(err)}`);
