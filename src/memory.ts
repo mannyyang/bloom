@@ -166,6 +166,12 @@ export const MAX_RELEVANT_LEARNINGS_TO_FETCH = 25;
  */
 export const MAX_MEMORY_CHARS = 1200;
 
+/** Markdown section header for the strategic context block in formatted memory output. */
+export const MEMORY_STRATEGIC_CONTEXT_HEADER = "## Strategic Context\n";
+
+/** Markdown section header for the key learnings block in formatted memory output. */
+export const MEMORY_KEY_LEARNINGS_HEADER = "## Key Learnings\n";
+
 /**
  * Format memory (learnings + strategic context) for inclusion in the assessment prompt.
  * Budget-aware: truncates to fit within maxChars.
@@ -183,7 +189,7 @@ export function formatMemoryForPrompt(
   // Strategic context first (most important)
   const strategic = getLatestStrategicContext(db);
   if (strategic) {
-    const section = `## Strategic Context\n${strategic}\n`;
+    const section = `${MEMORY_STRATEGIC_CONTEXT_HEADER}${strategic}\n`;
     sections.push(section);
     totalLen += section.length;
   }
@@ -203,7 +209,7 @@ export function formatMemoryForPrompt(
     // the final output never silently exceeds maxChars.
     const separatorLen = sections.length > 0 ? 1 : 0;
 
-    const learningSectionHeader = "## Key Learnings\n";
+    const learningSectionHeader = MEMORY_KEY_LEARNINGS_HEADER;
     let learningSection = learningSectionHeader;
     let budgetExhausted = false;
     for (const [category, items] of grouped) {
