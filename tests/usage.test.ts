@@ -8,8 +8,15 @@ import {
   formatUsageForJournal,
   formatDurationSec,
   COST_DECIMAL_PLACES,
+  RESOURCE_USAGE_HEADER,
   PhaseUsage,
 } from "../src/usage.js";
+
+describe("RESOURCE_USAGE_HEADER", () => {
+  it("has the expected value (value-pin)", () => {
+    expect(RESOURCE_USAGE_HEADER).toBe("### Resource Usage");
+  });
+});
 
 describe("extractResultText", () => {
   it("extracts result string from a valid result message", () => {

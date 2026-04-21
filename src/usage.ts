@@ -30,6 +30,13 @@ export interface CycleUsage {
 export const COST_DECIMAL_PLACES = 4;
 
 /**
+ * Markdown section header written at the top of every formatted resource-usage block.
+ * Exported so tests can pin its exact value and callers can reference it without
+ * relying on a hard-coded string literal.
+ */
+export const RESOURCE_USAGE_HEADER = "### Resource Usage";
+
+/**
  * Format a millisecond duration as seconds with one decimal place.
  * e.g. 1234 → "1.2s"
  */
@@ -128,7 +135,7 @@ export function formatCycleUsage(cu: CycleUsage): string {
  * Format usage data for inclusion in a journal entry.
  */
 export function formatUsageForJournal(cu: CycleUsage): string {
-  const lines: string[] = ["### Resource Usage", ""];
+  const lines: string[] = [RESOURCE_USAGE_HEADER, ""];
   for (const p of cu.phases) {
     const cost = p.totalCostUsd.toFixed(COST_DECIMAL_PLACES);
     const duration = formatDurationSec(p.durationMs);
