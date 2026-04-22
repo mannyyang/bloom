@@ -110,11 +110,11 @@ export function storeLearnings(
       seen.add(key);
       try {
         return !exists.get(content);
-      } catch {
+      } catch (err) {
         // Transient IO error (disk full, WAL corruption, locked DB) — treat
         // as new learning and skip dedup to keep the evolution cycle alive.
         dedupSkipped++;
-        console.warn("[memory] storeLearnings: DB lookup failed, skipping dedup for this learning (non-fatal)");
+        console.warn("[memory] storeLearnings: DB lookup failed, skipping dedup for this learning (non-fatal)", err);
         return true;
       }
     });

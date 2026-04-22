@@ -268,6 +268,7 @@ describe("storeLearnings", () => {
     expect(result.dedupSkipped).toBe(1);
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("[memory] storeLearnings: DB lookup failed"),
+      expect.any(Error),
     );
 
     vi.restoreAllMocks();
