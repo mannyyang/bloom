@@ -41,6 +41,13 @@ describe("parseTestCount", () => {
     expect(parseTestCount("Tests  490 passed")).toBe(490);
   });
 
+  it("ignores Test Files line and only matches Tests line", () => {
+    // Real vitest output has both "Test Files  N passed" and "Tests  N passed".
+    // The parser must match only the "Tests" line (not "Test Files").
+    const output = " Test Files  3 passed (3)\n      Tests  101 passed (101)\n";
+    expect(parseTestCount(output)).toBe(101);
+  });
+
   it("parses from multiline vitest output", () => {
     const output = `
  Test Files  7 passed (7)
@@ -108,6 +115,13 @@ describe("parseTestCount", () => {
 describe("parseTestTotal", () => {
   it("parses total from passed-only output", () => {
     expect(parseTestTotal("Tests  490 passed (490)")).toBe(490);
+  });
+
+  it("ignores Test Files line and only matches Tests line", () => {
+    // Real vitest output has both "Test Files  N passed (N)" and "Tests  N passed (N)".
+    // parseTestTotal must extract the count from the "Tests" line, not "Test Files".
+    const output = " Test Files  3 passed (3)\n      Tests  101 passed (101)\n";
+    expect(parseTestTotal(output)).toBe(101);
   });
 
   it("parses total from real vitest output block", () => {
