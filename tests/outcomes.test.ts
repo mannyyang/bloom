@@ -410,6 +410,14 @@ describe("parseTestCount/parseTestTotal null propagation round-trip", () => {
     expect(result).not.toContain("total:");
   });
 
+  it("only testCountAfter available (before is null) → journal shows after count unavailable branch", () => {
+    // Third branch: testCountBefore === null, testCountAfter !== null.
+    // Exercises the "after (before count unavailable)" code path.
+    const outcome = makeOutcome({ testCountBefore: null, testCountAfter: 55 });
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).toContain("**Tests**: 55 after (before count unavailable)");
+  });
+
   it("changed vitest format (no Tests keyword) → null parse → journal omits Tests line gracefully", () => {
     // Simulate a vitest format change where the summary keyword changes
     const raw = "Suites  5 passed (5)\n  Specs  490 all green (490)";
