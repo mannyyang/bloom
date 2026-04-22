@@ -13,6 +13,7 @@ import { resolve } from "node:path";
 import type Database from "better-sqlite3";
 import { initDb, getCycleStats, formatCycleStats, getLatestCycleNumber } from "./db.js";
 import { formatMemoryForPrompt } from "./memory.js";
+import { CYCLE_SUMMARY_SEPARATOR } from "./orchestrator.js";
 
 /**
  * Number of characters of memory to include in the stats preview.
@@ -38,10 +39,10 @@ export function generateStatsOutput(db: Database.Database): string[] {
   const formatted = formatCycleStats(stats);
 
   lines.push("");
-  lines.push("========================================");
+  lines.push(CYCLE_SUMMARY_SEPARATOR);
   lines.push("  Bloom Evolution Statistics");
   lines.push(`  Latest cycle: ${latestCycle}`);
-  lines.push("========================================");
+  lines.push(CYCLE_SUMMARY_SEPARATOR);
   lines.push("");
   lines.push(formatted);
 

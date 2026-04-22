@@ -1,5 +1,9 @@
 import type Database from "better-sqlite3";
 import { insertJournalEntry } from "./db.js";
+
+/** Separator line used at the top and bottom of cycle summary blocks. */
+export const CYCLE_SUMMARY_SEPARATOR = "========================================";
+
 import { errorMessage } from "./errors.js";
 import { parseEvolutionResult, countImprovements, type EvolutionSections } from "./evolve.js";
 import { extractLearnings, storeLearnings, storeStrategicContext } from "./memory.js";
@@ -122,7 +126,7 @@ export function formatCycleSummaryWithDuration(
   totalMs: number,
 ): string {
   const lines = [
-    `========================================`,
+    CYCLE_SUMMARY_SEPARATOR,
     `  Cycle ${cycleCount} — ${hadError ? "FAILED" : "COMPLETE"}`,
     `  Duration: ${formatDurationSec(totalMs)}`,
     `  Improvements: ${outcome.improvementsSucceeded}/${outcome.improvementsAttempted}`,
@@ -130,7 +134,7 @@ export function formatCycleSummaryWithDuration(
     `  Build: ${outcome.buildVerificationPassed ? "PASSED" : "FAILED"}`,
     ...(outcome.failureCategory !== "none" ? [`  Failure: ${outcome.failureCategory}`] : []),
     `  Push: ${outcome.pushSucceeded ? "OK" : "FAILED"}`,
-    `========================================`,
+    CYCLE_SUMMARY_SEPARATOR,
   ];
   return lines.join("\n");
 }

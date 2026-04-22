@@ -4,9 +4,17 @@ import { initDb, getJournalEntries } from "../src/db.js";
 import {
   processEvolutionResult,
   formatCycleSummaryWithDuration,
+  CYCLE_SUMMARY_SEPARATOR,
 } from "../src/orchestrator.js";
 import { insertCycle } from "../src/db.js";
 import { makeOutcome } from "./helpers.js";
+
+describe("CYCLE_SUMMARY_SEPARATOR", () => {
+  it("is a 40-character equals-sign line", () => {
+    expect(CYCLE_SUMMARY_SEPARATOR).toBe("========================================");
+    expect(CYCLE_SUMMARY_SEPARATOR).toHaveLength(40);
+  });
+});
 
 describe("orchestrator", () => {
   describe("processEvolutionResult", () => {
