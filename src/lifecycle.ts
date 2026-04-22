@@ -1,14 +1,26 @@
 import { execSync, execFileSync } from "child_process";
 import { execSyncOutput } from "./errors.js";
 
+/**
+ * Parse a timeout value from an environment variable string.
+ * Falls back to `defaultMs` when the value is absent, non-numeric, non-finite,
+ * zero, or negative — all of which would produce undefined execSync behaviour.
+ * Exported for unit testing.
+ */
+export function parseTimeoutEnv(envValue: string | undefined, defaultMs: number): number {
+  if (envValue === undefined) return defaultMs;
+  const parsed = Number(envValue);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : defaultMs;
+}
+
 /** Timeout for `pnpm build && pnpm test` (2 minutes). Override with BLOOM_BUILD_TIMEOUT_MS. */
-export const BUILD_TIMEOUT_MS = Number(process.env.BLOOM_BUILD_TIMEOUT_MS ?? 120_000);
+export const BUILD_TIMEOUT_MS = parseTimeoutEnv(process.env.BLOOM_BUILD_TIMEOUT_MS, 120_000);
 /** Timeout for git add/commit/tag operations (30 seconds). Override with BLOOM_GIT_OP_TIMEOUT_MS. */
-export const GIT_OP_TIMEOUT_MS = Number(process.env.BLOOM_GIT_OP_TIMEOUT_MS ?? 30_000);
+export const GIT_OP_TIMEOUT_MS = parseTimeoutEnv(process.env.BLOOM_GIT_OP_TIMEOUT_MS, 30_000);
 /** Timeout for git push operations (60 seconds). Override with BLOOM_GIT_PUSH_TIMEOUT_MS. */
-export const GIT_PUSH_TIMEOUT_MS = Number(process.env.BLOOM_GIT_PUSH_TIMEOUT_MS ?? 60_000);
+export const GIT_PUSH_TIMEOUT_MS = parseTimeoutEnv(process.env.BLOOM_GIT_PUSH_TIMEOUT_MS, 60_000);
 /** Timeout for git checkout/clean/reset operations (10 seconds). Override with BLOOM_GIT_REVERT_TIMEOUT_MS. */
-export const GIT_REVERT_TIMEOUT_MS = Number(process.env.BLOOM_GIT_REVERT_TIMEOUT_MS ?? 10_000);
+export const GIT_REVERT_TIMEOUT_MS = parseTimeoutEnv(process.env.BLOOM_GIT_REVERT_TIMEOUT_MS, 10_000);
 
 /** Default maximum number of build verification attempts before hard-resetting to the safety tag. */
 export const BUILD_MAX_ATTEMPTS = 3;

@@ -22,6 +22,7 @@ import {
   isValidGitRef,
   createSafetyTag,
   runBuildVerification,
+  parseTimeoutEnv,
   BUILD_TIMEOUT_MS,
   GIT_OP_TIMEOUT_MS,
   GIT_PUSH_TIMEOUT_MS,
@@ -39,6 +40,40 @@ describe("lifecycle helpers", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  describe("parseTimeoutEnv", () => {
+    it("returns defaultMs when envValue is undefined", () => {
+      expect(parseTimeoutEnv(undefined, 120_000)).toBe(120_000);
+    });
+
+    it("parses a valid positive number string", () => {
+      expect(parseTimeoutEnv("180000", 120_000)).toBe(180_000);
+    });
+
+    it("rounds a fractional value to the nearest integer", () => {
+      expect(parseTimeoutEnv("1500.7", 120_000)).toBe(1501);
+    });
+
+    it("falls back to default for NaN (non-numeric string)", () => {
+      expect(parseTimeoutEnv("abc", 120_000)).toBe(120_000);
+    });
+
+    it("falls back to default for empty string", () => {
+      expect(parseTimeoutEnv("", 120_000)).toBe(120_000);
+    });
+
+    it("falls back to default for zero", () => {
+      expect(parseTimeoutEnv("0", 120_000)).toBe(120_000);
+    });
+
+    it("falls back to default for negative value", () => {
+      expect(parseTimeoutEnv("-1000", 120_000)).toBe(120_000);
+    });
+
+    it("falls back to default for Infinity", () => {
+      expect(parseTimeoutEnv("Infinity", 120_000)).toBe(120_000);
+    });
   });
 
   describe("timeout constants", () => {
