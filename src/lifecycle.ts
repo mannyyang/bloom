@@ -10,6 +10,9 @@ export const GIT_PUSH_TIMEOUT_MS = Number(process.env.BLOOM_GIT_PUSH_TIMEOUT_MS 
 /** Timeout for git checkout/clean/reset operations (10 seconds). Override with BLOOM_GIT_REVERT_TIMEOUT_MS. */
 export const GIT_REVERT_TIMEOUT_MS = Number(process.env.BLOOM_GIT_REVERT_TIMEOUT_MS ?? 10_000);
 
+/** Default maximum number of build verification attempts before hard-resetting to the safety tag. */
+export const BUILD_MAX_ATTEMPTS = 3;
+
 /** Git author/committer name for bot-authored commits. */
 export const GIT_BOT_NAME = "bloom[bot]";
 /** Git author/committer email for bot-authored commits (GitHub no-reply format). */
@@ -168,7 +171,7 @@ export function createSafetyTag(cycleCount: number): boolean {
  */
 export function runBuildVerification(
   cycleCount: number,
-  maxAttempts: number = 3,
+  maxAttempts: number = BUILD_MAX_ATTEMPTS,
 ): BuildResult {
   let lastResult: BuildResult = { passed: false, output: "" };
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {

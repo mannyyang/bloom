@@ -28,6 +28,7 @@ import {
   GIT_REVERT_TIMEOUT_MS,
   GIT_BOT_NAME,
   GIT_BOT_EMAIL,
+  BUILD_MAX_ATTEMPTS,
 } from "../src/lifecycle.js";
 
 describe("lifecycle helpers", () => {
@@ -46,6 +47,12 @@ describe("lifecycle helpers", () => {
       expect(GIT_OP_TIMEOUT_MS).toBe(30_000);
       expect(GIT_PUSH_TIMEOUT_MS).toBe(60_000);
       expect(GIT_REVERT_TIMEOUT_MS).toBe(10_000);
+    });
+  });
+
+  describe("BUILD_MAX_ATTEMPTS", () => {
+    it("is 3", () => {
+      expect(BUILD_MAX_ATTEMPTS).toBe(3);
     });
   });
 
