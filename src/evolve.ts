@@ -26,7 +26,7 @@ ${ctx.cycleStatsText ? `\nYour track record:\n${ctx.cycleStatsText}\n` : ""}${ct
 }
 
 /** Options passed to buildEvolutionPrompt for injecting resource-usage and outcome sections. */
-interface EvolutionPromptContext {
+export interface EvolutionPromptContext {
   usageContext?: string;
   outcomeContext?: string;
 }
