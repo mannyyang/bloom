@@ -42,10 +42,6 @@ export interface EvolutionSections {
   strategic_context: string;
 }
 
-/**
- * Parse the structured summary from an evolution result.
- * Extracts ATTEMPTED, SUCCEEDED, FAILED, LEARNINGS, and STRATEGIC_CONTEXT sections.
- */
 /** Maps uppercase marker names to their EvolutionSections keys. */
 const SECTION_MAP: Record<string, keyof EvolutionSections> = {
   ATTEMPTED:        "attempted",
@@ -55,6 +51,10 @@ const SECTION_MAP: Record<string, keyof EvolutionSections> = {
   STRATEGIC_CONTEXT: "strategic_context",
 };
 
+/**
+ * Parse the structured summary from an evolution result.
+ * Extracts ATTEMPTED, SUCCEEDED, FAILED, LEARNINGS, and STRATEGIC_CONTEXT sections.
+ */
 export function parseEvolutionResult(result: string): EvolutionSections {
   const sections: EvolutionSections = {
     attempted: "",
