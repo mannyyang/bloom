@@ -459,4 +459,10 @@ describe("classifyBuildFailure", () => {
     // "Tests  3 skipped (3)" has no "failed" token so the regex does not match — pin this.
     expect(classifyBuildFailure("Tests  3 skipped (3)")).toBe("build_failure");
   });
+
+  it("returns build_failure when only 'Test Files N failed' line is present (no Tests line)", () => {
+    // "Test Files  2 failed (2)" is the per-file summary line, NOT the per-test line.
+    // classifyBuildFailure must not treat it as a test_failure — pin this contract.
+    expect(classifyBuildFailure("Test Files  2 failed (2)")).toBe("build_failure");
+  });
 });
