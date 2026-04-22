@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach, afterAll, beforeAll, beforeEach } from "vitest";
-import { buildTriagePrompt, parseTriageResponse, triageIssues, PROMPT_BODY_PREVIEW_CHARS, TRIAGE_MAX_TURNS, TRIAGE_MAX_BUDGET_USD, TRIAGE_REASON_MAX_CHARS, TRIAGE_ERROR_PREVIEW_CHARS, TRIAGE_ACTION_NAME, TRIAGE_BOARD_STATUS_DONE, TRIAGE_ALREADY_ON_BOARD_COMMENT } from "../src/triage.js";
+import { buildTriagePrompt, parseTriageResponse, triageIssues, PROMPT_BODY_PREVIEW_CHARS, PROMPT_TITLE_PREVIEW_CHARS, TRIAGE_MAX_TURNS, TRIAGE_MAX_BUDGET_USD, TRIAGE_REASON_MAX_CHARS, TRIAGE_ERROR_PREVIEW_CHARS, TRIAGE_ACTION_NAME, TRIAGE_BOARD_STATUS_DONE, TRIAGE_ALREADY_ON_BOARD_COMMENT } from "../src/triage.js";
 import type { CommunityIssue } from "../src/issues.js";
 import { closeIssueWithComment, detectRepo, isValidRepo } from "../src/issues.js";
 import { hasIssueAction, insertIssueAction, initDb, insertCycle } from "../src/db.js";
@@ -124,6 +124,24 @@ describe("buildTriagePrompt", () => {
   it("PROMPT_BODY_PREVIEW_CHARS is a positive integer", () => {
     expect(Number.isInteger(PROMPT_BODY_PREVIEW_CHARS)).toBe(true);
     expect(PROMPT_BODY_PREVIEW_CHARS).toBeGreaterThan(0);
+  });
+
+  it("PROMPT_TITLE_PREVIEW_CHARS is a positive integer", () => {
+    expect(Number.isInteger(PROMPT_TITLE_PREVIEW_CHARS)).toBe(true);
+    expect(PROMPT_TITLE_PREVIEW_CHARS).toBeGreaterThan(0);
+  });
+
+  it("truncates long issue titles to PROMPT_TITLE_PREVIEW_CHARS characters", () => {
+    const longTitle = "T".repeat(300);
+    const prompt = buildTriagePrompt([makeIssue({ title: longTitle })], []);
+    expect(prompt).not.toContain("T".repeat(PROMPT_TITLE_PREVIEW_CHARS + 1));
+    expect(prompt).toContain("T".repeat(PROMPT_TITLE_PREVIEW_CHARS));
+  });
+
+  it("leaves short titles intact (no truncation under PROMPT_TITLE_PREVIEW_CHARS chars)", () => {
+    const shortTitle = "Short title";
+    const prompt = buildTriagePrompt([makeIssue({ title: shortTitle })], []);
+    expect(prompt).toContain(shortTitle);
   });
 
   it("truncates long issue bodies", () => {

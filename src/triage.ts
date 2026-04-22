@@ -10,6 +10,11 @@ import { extractResultText } from "./usage.js";
 // affecting stored content (cf. ITEM_BODY_LIMIT in planning.ts which is 500).
 export const PROMPT_BODY_PREVIEW_CHARS = 200;
 
+// Prompt-preview cap for issue titles. GitHub allows up to 256 characters per
+// title; this explicit cap keeps the triage prompt size predictable even if
+// a title approaches that limit.
+export const PROMPT_TITLE_PREVIEW_CHARS = 120;
+
 /** Maximum LLM turns allowed per triage call. */
 export const TRIAGE_MAX_TURNS = 3;
 
@@ -59,7 +64,7 @@ export function buildTriagePrompt(
   const issueList = issues
     .map(
       (i) =>
-        `- #${i.number}: "${i.title}" (${i.reactions} reactions)\n  ${i.body.slice(0, PROMPT_BODY_PREVIEW_CHARS)}`,
+        `- #${i.number}: "${i.title.slice(0, PROMPT_TITLE_PREVIEW_CHARS)}" (${i.reactions} reactions)\n  ${i.body.slice(0, PROMPT_BODY_PREVIEW_CHARS)}`,
     )
     .join("\n");
 
