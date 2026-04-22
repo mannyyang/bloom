@@ -283,4 +283,56 @@ describe("generateStatsOutput", () => {
       expect(stats.failureCategoryBreakdown).toEqual({});
     });
   });
+
+  describe("getCycleStats testCountTrend", () => {
+    it("is null when no cycles have test counts", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      const stats = getCycleStats(db);
+      expect(stats.testCountTrend).toBeNull();
+    });
+
+    it("equals testCountAfter minus testCountBefore for a single cycle", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1, testCountBefore: 10, testCountAfter: 13 }));
+      const stats = getCycleStats(db);
+      expect(stats.testCountTrend).toBe(3);
+    });
+
+    it("can be negative when test count decreased", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1, testCountBefore: 20, testCountAfter: 18 }));
+      const stats = getCycleStats(db);
+      expect(stats.testCountTrend).toBe(-2);
+    });
+
+    it("uses newest.testCountAfter minus oldest.testCountBefore across multiple cycles", () => {
+      // Rows returned DESC by cycle_number: cycle 2 is newest, cycle 1 is oldest
+      insertCycle(db, makeOutcome({ cycleNumber: 1, testCountBefore: 10, testCountAfter: 13 }));
+      insertCycle(db, makeOutcome({ cycleNumber: 2, testCountBefore: 13, testCountAfter: 17 }));
+      const stats = getCycleStats(db);
+      // newest.testCountAfter (17) - oldest.testCountBefore (10) = 7
+      expect(stats.testCountTrend).toBe(7);
+    });
+  });
+
+  describe("getCycleStats avgDurationMinutes", () => {
+    it("is null when no cycles have duration data", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1, durationMs: null }));
+      const stats = getCycleStats(db);
+      expect(stats.avgDurationMinutes).toBeNull();
+    });
+
+    it("converts milliseconds to minutes and rounds to 1 decimal place", () => {
+      // 90000 ms = 1.5 minutes exactly
+      insertCycle(db, makeOutcome({ cycleNumber: 1, durationMs: 90000 }));
+      const stats = getCycleStats(db);
+      expect(stats.avgDurationMinutes).toBe(1.5);
+    });
+
+    it("averages duration across multiple cycles", () => {
+      // 60000 ms = 1 min, 120000 ms = 2 min → avg = 1.5 min
+      insertCycle(db, makeOutcome({ cycleNumber: 1, durationMs: 60000 }));
+      insertCycle(db, makeOutcome({ cycleNumber: 2, durationMs: 120000 }));
+      const stats = getCycleStats(db);
+      expect(stats.avgDurationMinutes).toBe(1.5);
+    });
+  });
 });
