@@ -335,4 +335,43 @@ describe("generateStatsOutput", () => {
       expect(stats.avgDurationMinutes).toBe(1.5);
     });
   });
+
+  describe("getCycleStats recentFailures", () => {
+    it("is 0 when all recent cycles succeeded", () => {
+      for (let i = 1; i <= 3; i++) {
+        insertCycle(db, makeOutcome({ cycleNumber: i, buildVerificationPassed: true, pushSucceeded: true }));
+      }
+      const stats = getCycleStats(db);
+      expect(stats.recentFailures).toBe(0);
+    });
+
+    it("counts only failures in the most recent RECENT_FAILURES_WINDOW cycles", () => {
+      // 7 cycles: oldest two succeed, then fail/fail/succeed/succeed/fail
+      // Most recent 5 (window) are cycles 7,6,5,4,3 → 3 failures
+      for (let i = 1; i <= 2; i++) {
+        insertCycle(db, makeOutcome({ cycleNumber: i, buildVerificationPassed: true, pushSucceeded: true }));
+      }
+      insertCycle(db, makeOutcome({ cycleNumber: 3, buildVerificationPassed: false, pushSucceeded: false }));
+      insertCycle(db, makeOutcome({ cycleNumber: 4, buildVerificationPassed: false, pushSucceeded: false }));
+      insertCycle(db, makeOutcome({ cycleNumber: 5, buildVerificationPassed: true, pushSucceeded: true }));
+      insertCycle(db, makeOutcome({ cycleNumber: 6, buildVerificationPassed: true, pushSucceeded: true }));
+      insertCycle(db, makeOutcome({ cycleNumber: 7, buildVerificationPassed: false, pushSucceeded: false }));
+      const stats = getCycleStats(db);
+      expect(stats.recentFailures).toBe(3);
+    });
+  });
+
+  describe("getCycleStats avgConversionRate single-attempt boundary", () => {
+    it("is 100 when 1 improvement was attempted and 1 succeeded", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1 }));
+      const stats = getCycleStats(db);
+      expect(stats.avgConversionRate).toBe(100);
+    });
+
+    it("is 0 when 1 improvement was attempted and 0 succeeded", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 0 }));
+      const stats = getCycleStats(db);
+      expect(stats.avgConversionRate).toBe(0);
+    });
+  });
 });
