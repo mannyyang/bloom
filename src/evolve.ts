@@ -97,9 +97,12 @@ export function parseEvolutionResult(result: string): EvolutionSections {
 export function countImprovements(text: string): number {
   if (!text) return 0;
 
+  // Split once and reuse for both the line count loop and nonEmptyLines check.
+  const lines = text.split("\n");
+
   // Count lines starting with "- ", "* ", "N. ", or "N) "
   let lineCount = 0;
-  for (const line of text.split("\n")) {
+  for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed.match(/^(?:[-*]\s|\d+[.)]\s)/)) {
       lineCount++;
@@ -114,7 +117,7 @@ export function countImprovements(text: string): number {
   // This prevents prose references like "item 2) matters" from inflating the total.
   // For single-line input (e.g., "1) foo. 2) bar. 3) baz"), fall back to Math.max
   // so inline-only formats are still counted correctly.
-  const nonEmptyLines = text.split("\n").filter((l) => l.trim()).length;
+  const nonEmptyLines = lines.filter((l) => l.trim()).length;
   if (lineCount > 0 && nonEmptyLines > 1) {
     return lineCount;
   }
