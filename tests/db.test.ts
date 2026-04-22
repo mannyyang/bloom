@@ -36,11 +36,15 @@ import {
   JOURNAL_LEARNINGS_HEADER,
   JOURNAL_STRATEGIC_CONTEXT_HEADER,
   JOURNAL_SECTIONS_PER_CYCLE,
+  DEFAULT_DB_PATH,
 } from "../src/db.js";
 import Database from "better-sqlite3";
 import { makeOutcome } from "./helpers.js";
 
 describe("db constants (value-pinning)", () => {
+  it("DEFAULT_DB_PATH is bloom.db", () => {
+    expect(DEFAULT_DB_PATH).toBe("bloom.db");
+  });
   it("CYCLE_STATS_HISTORY_LIMIT is 20", () => {
     expect(CYCLE_STATS_HISTORY_LIMIT).toBe(20);
   });

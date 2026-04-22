@@ -2,7 +2,7 @@ import Database from "better-sqlite3";
 import type { CycleOutcome } from "./outcomes.js";
 import type { PhaseUsage } from "./usage.js";
 
-const DEFAULT_DB_PATH = "bloom.db";
+export const DEFAULT_DB_PATH = "bloom.db";
 
 export const CYCLE_STATS_HISTORY_LIMIT = 20;
 export const RELEVANT_LEARNINGS_LIMIT = 20;
