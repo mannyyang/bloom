@@ -19,6 +19,9 @@ import {
   validateRow,
   validateOptionalRow,
   validateRows,
+  insertLearning,
+  decayLearningRelevance,
+  pruneLowRelevanceLearnings,
   CYCLE_STATS_HISTORY_LIMIT,
   RELEVANT_LEARNINGS_LIMIT,
   STRATEGIC_CONTEXT_KEEP_LAST,
@@ -1416,6 +1419,109 @@ describe("db", () => {
       // "boolean" is not a valid FieldType; the default branch must catch it
       expect(() => validateRow({ flag: true }, { flag: "boolean" as never }, "test"))
         .toThrow('unknown field spec "boolean" for key "flag"');
+    });
+  });
+
+  describe("decayLearningRelevance", () => {
+    function getRelevance(db: Database.Database, content: string): number {
+      const row = db.prepare("SELECT relevance FROM learnings WHERE content = ?").get(content) as { relevance: number };
+      return row.relevance;
+    }
+
+    it("applies per-category rate for 'pattern' (0.98)", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertLearning(db, 1, "pattern", "use interfaces");
+      decayLearningRelevance(db);
+      expect(getRelevance(db, "use interfaces")).toBeCloseTo(0.98, 10);
+    });
+
+    it("applies per-category rate for 'anti-pattern' (0.97)", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertLearning(db, 1, "anti-pattern", "avoid globals");
+      decayLearningRelevance(db);
+      expect(getRelevance(db, "avoid globals")).toBeCloseTo(0.97, 10);
+    });
+
+    it("applies per-category rate for 'process' (0.93)", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertLearning(db, 1, "process", "run tests first");
+      decayLearningRelevance(db);
+      expect(getRelevance(db, "run tests first")).toBeCloseTo(0.93, 10);
+    });
+
+    it("applies per-category rate for 'tool-usage' (0.93)", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertLearning(db, 1, "tool-usage", "use grep");
+      decayLearningRelevance(db);
+      expect(getRelevance(db, "use grep")).toBeCloseTo(0.93, 10);
+    });
+
+    it("applies DECAY_DEFAULT_RATE (0.95) for unknown categories", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertLearning(db, 1, "unknown-category", "some insight");
+      decayLearningRelevance(db);
+      expect(getRelevance(db, "some insight")).toBeCloseTo(DECAY_DEFAULT_RATE, 10);
+    });
+
+    it("applies different rates to multiple categories in one call", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertLearning(db, 1, "pattern", "keep it simple");
+      insertLearning(db, 1, "process", "commit often");
+      decayLearningRelevance(db);
+      expect(getRelevance(db, "keep it simple")).toBeCloseTo(0.98, 10);
+      expect(getRelevance(db, "commit often")).toBeCloseTo(0.93, 10);
+    });
+
+    it("applies explicit uniform decay factor when provided", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertLearning(db, 1, "pattern", "explicit decay test");
+      decayLearningRelevance(db, 0.5);
+      expect(getRelevance(db, "explicit decay test")).toBeCloseTo(0.5, 10);
+    });
+  });
+
+  describe("pruneLowRelevanceLearnings", () => {
+    function insertWithRelevance(db: Database.Database, content: string, relevance: number): void {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertLearning(db, 1, "domain", content);
+      db.prepare("UPDATE learnings SET relevance = ? WHERE content = ?").run(relevance, content);
+    }
+
+    function count(db: Database.Database): number {
+      return (db.prepare("SELECT COUNT(*) as n FROM learnings").get() as { n: number }).n;
+    }
+
+    it("removes entries strictly below PRUNE_MIN_RELEVANCE", () => {
+      insertWithRelevance(db, "low", 0.04);
+      pruneLowRelevanceLearnings(db);
+      expect(count(db)).toBe(0);
+    });
+
+    it("keeps entries at exactly PRUNE_MIN_RELEVANCE", () => {
+      insertWithRelevance(db, "at-threshold", PRUNE_MIN_RELEVANCE);
+      pruneLowRelevanceLearnings(db);
+      expect(count(db)).toBe(1);
+    });
+
+    it("keeps entries above PRUNE_MIN_RELEVANCE", () => {
+      insertWithRelevance(db, "high", 0.9);
+      pruneLowRelevanceLearnings(db);
+      expect(count(db)).toBe(1);
+    });
+
+    it("prunes only the low-relevance entries when mixed", () => {
+      insertWithRelevance(db, "below", 0.01);
+      db.prepare("INSERT INTO learnings (cycle_number, category, content, relevance) VALUES (1, 'domain', 'above', 0.8)").run();
+      pruneLowRelevanceLearnings(db);
+      expect(count(db)).toBe(1);
+      const remaining = db.prepare("SELECT content FROM learnings").get() as { content: string };
+      expect(remaining.content).toBe("above");
+    });
+
+    it("respects a custom minRelevance threshold", () => {
+      insertWithRelevance(db, "mid", 0.3);
+      pruneLowRelevanceLearnings(db, 0.5);
+      expect(count(db)).toBe(0);
     });
   });
 });
