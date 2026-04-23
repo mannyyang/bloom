@@ -462,9 +462,15 @@ export function pickNextItem(items: ProjectItem[]): ProjectItem | null {
       .sort((a, b) => {
         const rxDiff = b.reactions - a.reactions;
         if (rxDiff !== 0) return rxDiff;
-        const aNum = parseInt(a.id.replace(/^item-/, ""), 10);
-        const bNum = parseInt(b.id.replace(/^item-/, ""), 10);
-        return aNum - bNum;
+        // Guard against NaN: only use numeric comparison when both IDs match
+        // the canonical item-N format; fall back to stable string comparison
+        // for non-standard IDs so the sort remains deterministic.
+        const aMatch = a.id.match(/^item-(\d+)$/);
+        const bMatch = b.id.match(/^item-(\d+)$/);
+        if (aMatch && bMatch) {
+          return parseInt(aMatch[1], 10) - parseInt(bMatch[1], 10);
+        }
+        return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
       });
     if (candidates.length > 0) return candidates[0];
   }
