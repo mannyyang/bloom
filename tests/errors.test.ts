@@ -104,4 +104,18 @@ describe("execSyncOutput", () => {
   it("returns empty string when both stdout and stderr are whitespace-only", () => {
     expect(execSyncOutput({ stdout: "  ", stderr: "  " })).toBe("");
   });
+
+  it("returns empty string when stdout property exists but is null", () => {
+    // SpawnError objects can have stdout: null when the process never produced output.
+    // toStr(null) must return "" rather than throwing or misformatting.
+    expect(execSyncOutput({ stdout: null })).toBe("");
+  });
+
+  it("returns empty string when stderr property exists but is null", () => {
+    expect(execSyncOutput({ stderr: null })).toBe("");
+  });
+
+  it("returns empty string when both stdout and stderr are null", () => {
+    expect(execSyncOutput({ stdout: null, stderr: null })).toBe("");
+  });
 });
