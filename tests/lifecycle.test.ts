@@ -626,4 +626,70 @@ describe("lifecycle helpers", () => {
       errorSpy.mockRestore();
     });
   });
+
+  describe("lazy timeout evaluation via process.env", () => {
+    const envKeys = [
+      "BLOOM_BUILD_TIMEOUT_MS",
+      "BLOOM_GIT_OP_TIMEOUT_MS",
+      "BLOOM_GIT_PUSH_TIMEOUT_MS",
+      "BLOOM_GIT_REVERT_TIMEOUT_MS",
+    ] as const;
+
+    afterEach(() => {
+      for (const key of envKeys) delete process.env[key];
+    });
+
+    it("runPreflightCheck uses BLOOM_BUILD_TIMEOUT_MS when set", () => {
+      process.env.BLOOM_BUILD_TIMEOUT_MS = "5000";
+      mockedExecSync.mockReturnValue("ok");
+      runPreflightCheck();
+      expect(mockedExecSync).toHaveBeenCalledWith(
+        "pnpm build && pnpm test",
+        expect.objectContaining({ timeout: 5000 }),
+      );
+    });
+
+    it("runPreflightCheck falls back to 120_000 when BLOOM_BUILD_TIMEOUT_MS is absent", () => {
+      delete process.env.BLOOM_BUILD_TIMEOUT_MS;
+      mockedExecSync.mockReturnValue("ok");
+      runPreflightCheck();
+      expect(mockedExecSync).toHaveBeenCalledWith(
+        "pnpm build && pnpm test",
+        expect.objectContaining({ timeout: 120_000 }),
+      );
+    });
+
+    it("commitDb uses BLOOM_GIT_OP_TIMEOUT_MS when set", () => {
+      process.env.BLOOM_GIT_OP_TIMEOUT_MS = "8000";
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+      commitDb(1);
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["add", "bloom.db"],
+        expect.objectContaining({ timeout: 8000 }),
+      );
+    });
+
+    it("pushChanges uses BLOOM_GIT_PUSH_TIMEOUT_MS when set", () => {
+      process.env.BLOOM_GIT_PUSH_TIMEOUT_MS = "12000";
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+      pushChanges();
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["push", "origin", "main"],
+        expect.objectContaining({ timeout: 12000 }),
+      );
+    });
+
+    it("revertUncommitted uses BLOOM_GIT_REVERT_TIMEOUT_MS when set", () => {
+      process.env.BLOOM_GIT_REVERT_TIMEOUT_MS = "3000";
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+      revertUncommitted();
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["checkout", "."],
+        expect.objectContaining({ timeout: 3000 }),
+      );
+    });
+  });
 });

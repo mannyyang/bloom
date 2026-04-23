@@ -38,10 +38,13 @@ export interface BuildResult {
 /**
  * Run `pnpm build && pnpm test` and return pass/fail status with captured output.
  * Shared implementation for both preflight and post-evolution verification.
+ * Reads BLOOM_BUILD_TIMEOUT_MS at call time so tests can override via process.env
+ * without requiring module re-initialisation.
  */
 function runBuildAndTest(): BuildResult {
+  const timeout = parseTimeoutEnv(process.env.BLOOM_BUILD_TIMEOUT_MS, 120_000);
   try {
-    const output = execSync("pnpm build && pnpm test", { encoding: "utf-8", timeout: BUILD_TIMEOUT_MS });
+    const output = execSync("pnpm build && pnpm test", { encoding: "utf-8", timeout });
     return { passed: true, output };
   } catch (err: unknown) {
     return { passed: false, output: execSyncOutput(err) };
@@ -77,12 +80,14 @@ export function setGitBotIdentity(): void {
 /**
  * Stage and commit the bloom.db file. Returns true on success, false if
  * the commit fails (e.g. nothing to commit).
+ * Reads BLOOM_GIT_OP_TIMEOUT_MS at call time for test flexibility.
  */
 export function commitDb(cycleCount: number, label?: string): boolean {
+  const timeout = parseTimeoutEnv(process.env.BLOOM_GIT_OP_TIMEOUT_MS, 30_000);
   try {
     const msg = label ? `cycle ${cycleCount}: ${label}` : `cycle ${cycleCount}`;
-    execFileSync("git", ["add", "bloom.db"], { stdio: "inherit", timeout: GIT_OP_TIMEOUT_MS });
-    execFileSync("git", ["commit", "-m", msg], { stdio: "inherit", timeout: GIT_OP_TIMEOUT_MS });
+    execFileSync("git", ["add", "bloom.db"], { stdio: "inherit", timeout });
+    execFileSync("git", ["commit", "-m", msg], { stdio: "inherit", timeout });
     return true;
   } catch {
     return false;
@@ -93,16 +98,18 @@ export function commitDb(cycleCount: number, label?: string): boolean {
  * Stage and commit the ROADMAP.md file (and regenerate docs/index.html if
  * the generate-pages script is available). Returns true on success, false if
  * the commit fails (e.g. nothing to commit).
+ * Reads BLOOM_GIT_OP_TIMEOUT_MS at call time for test flexibility.
  */
 export function commitRoadmap(cycleCount: number): boolean {
+  const timeout = parseTimeoutEnv(process.env.BLOOM_GIT_OP_TIMEOUT_MS, 30_000);
   try {
-    execFileSync("git", ["add", "ROADMAP.md"], { stdio: "inherit", timeout: GIT_OP_TIMEOUT_MS });
+    execFileSync("git", ["add", "ROADMAP.md"], { stdio: "inherit", timeout });
     // Regenerate the GitHub Pages viewer so it stays in sync; non-fatal if unavailable.
     try {
-      execFileSync("pnpm", ["generate-pages"], { stdio: "inherit", timeout: GIT_OP_TIMEOUT_MS });
-      execFileSync("git", ["add", "docs/index.html"], { stdio: "ignore", timeout: GIT_OP_TIMEOUT_MS });
+      execFileSync("pnpm", ["generate-pages"], { stdio: "inherit", timeout });
+      execFileSync("git", ["add", "docs/index.html"], { stdio: "ignore", timeout });
     } catch { /* non-fatal: script may not exist or docs/index.html may be unchanged */ }
-    execFileSync("git", ["commit", "-m", `cycle ${cycleCount}: update roadmap`], { stdio: "inherit", timeout: GIT_OP_TIMEOUT_MS });
+    execFileSync("git", ["commit", "-m", `cycle ${cycleCount}: update roadmap`], { stdio: "inherit", timeout });
     return true;
   } catch {
     return false;
@@ -111,10 +118,12 @@ export function commitRoadmap(cycleCount: number): boolean {
 
 /**
  * Push local commits to origin main. Returns true on success, false on failure.
+ * Reads BLOOM_GIT_PUSH_TIMEOUT_MS at call time for test flexibility.
  */
 export function pushChanges(): boolean {
+  const timeout = parseTimeoutEnv(process.env.BLOOM_GIT_PUSH_TIMEOUT_MS, 60_000);
   try {
-    execFileSync("git", ["push", "origin", "main"], { stdio: "inherit", timeout: GIT_PUSH_TIMEOUT_MS });
+    execFileSync("git", ["push", "origin", "main"], { stdio: "inherit", timeout });
     return true;
   } catch {
     return false;
@@ -123,10 +132,12 @@ export function pushChanges(): boolean {
 
 /**
  * Push tags to origin. Returns true on success, false on failure.
+ * Reads BLOOM_GIT_PUSH_TIMEOUT_MS at call time for test flexibility.
  */
 export function pushTags(): boolean {
+  const timeout = parseTimeoutEnv(process.env.BLOOM_GIT_PUSH_TIMEOUT_MS, 60_000);
   try {
-    execFileSync("git", ["push", "--tags"], { stdio: "inherit", timeout: GIT_PUSH_TIMEOUT_MS });
+    execFileSync("git", ["push", "--tags"], { stdio: "inherit", timeout });
     return true;
   } catch {
     return false;
@@ -147,26 +158,30 @@ export function verifyBuild(): BuildResult {
 
 /**
  * Revert uncommitted changes.
+ * Reads BLOOM_GIT_REVERT_TIMEOUT_MS at call time for test flexibility.
  */
 export function revertUncommitted(): void {
+  const timeout = parseTimeoutEnv(process.env.BLOOM_GIT_REVERT_TIMEOUT_MS, 10_000);
   try {
-    execFileSync("git", ["checkout", "."], { stdio: "inherit", timeout: GIT_REVERT_TIMEOUT_MS });
+    execFileSync("git", ["checkout", "."], { stdio: "inherit", timeout });
   } catch { /* ignore */ }
   try {
-    execFileSync("git", ["clean", "-fd"], { stdio: "inherit", timeout: GIT_REVERT_TIMEOUT_MS });
+    execFileSync("git", ["clean", "-fd"], { stdio: "inherit", timeout });
   } catch { /* ignore */ }
 }
 
 /**
  * Create a safety tag for the given cycle. Uses execFileSync to avoid shell
  * injection. Returns true on success, false on failure (tag creation is optional).
+ * Reads BLOOM_GIT_OP_TIMEOUT_MS at call time for test flexibility.
  */
 export function createSafetyTag(cycleCount: number): boolean {
   if (!Number.isInteger(cycleCount) || cycleCount < 1) {
     return false;
   }
+  const timeout = parseTimeoutEnv(process.env.BLOOM_GIT_OP_TIMEOUT_MS, 30_000);
   try {
-    execFileSync("git", ["tag", "-f", `pre-evolution-cycle-${cycleCount}`], { stdio: "inherit", timeout: GIT_OP_TIMEOUT_MS });
+    execFileSync("git", ["tag", "-f", `pre-evolution-cycle-${cycleCount}`], { stdio: "inherit", timeout });
     return true;
   } catch {
     return false;
@@ -212,10 +227,12 @@ export function isValidGitRef(ref: string): boolean {
 /**
  * Hard reset to a specific ref (e.g. a tag).
  * Uses execFileSync to avoid shell injection and validates the ref format.
+ * Reads BLOOM_GIT_REVERT_TIMEOUT_MS at call time for test flexibility.
  */
 export function hardResetTo(ref: string): void {
   if (!isValidGitRef(ref)) {
     throw new Error(`Invalid git ref: ${ref}`);
   }
-  execFileSync("git", ["reset", "--hard", ref], { stdio: "inherit", timeout: GIT_REVERT_TIMEOUT_MS });
+  const timeout = parseTimeoutEnv(process.env.BLOOM_GIT_REVERT_TIMEOUT_MS, 10_000);
+  execFileSync("git", ["reset", "--hard", ref], { stdio: "inherit", timeout });
 }
