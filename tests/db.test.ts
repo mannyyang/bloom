@@ -695,6 +695,12 @@ describe("db", () => {
       expect(summary).not.toContain("Cycle 4");
       expect(summary).not.toContain("Cycle 3");
     });
+
+    it("returns empty string when exportJournalJson throws (e.g. corrupt schema)", () => {
+      // Dropping the underlying table forces the SQL query inside exportJournalJson to throw.
+      db.exec("DROP TABLE journal_entries");
+      expect(getRecentJournalSummary(db)).toBe("");
+    });
   });
 
   describe("insertPhaseUsage", () => {

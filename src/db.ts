@@ -737,7 +737,13 @@ export function pruneStrategicContext(
 }
 
 export function getRecentJournalSummary(db: Database.Database, maxChars: number = JOURNAL_SUMMARY_MAX_CHARS, maxCycles: number = JOURNAL_SUMMARY_MAX_CYCLES): string {
-  const entries = exportJournalJson(db, maxCycles);
+  let entries: JournalExportEntry[];
+  try {
+    entries = exportJournalJson(db, maxCycles);
+  } catch (err) {
+    console.warn("[db] getRecentJournalSummary: failed to export journal entries:", err);
+    return "";
+  }
   const lines: string[] = [];
   let totalLen = 0;
 
