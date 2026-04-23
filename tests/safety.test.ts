@@ -696,6 +696,16 @@ describe("isDangerousCommand", () => {
     ["brew install <pkg> with flag", "brew install --cask evil-app", "untrusted-package-installation"],
     ["snap install <pkg>", "snap install evil-snap", "untrusted-package-installation"],
     ["snap install <pkg> with flag", "snap install --dangerous evil-snap", "untrusted-package-installation"],
+    // system-package-removal: apt/brew/snap removal commands
+    ["apt remove <pkg>", "apt remove git", "system-package-removal"],
+    ["apt-get remove <pkg>", "apt-get remove git", "system-package-removal"],
+    ["apt purge <pkg>", "apt purge nodejs", "system-package-removal"],
+    ["apt-get purge <pkg> with flag", "apt-get purge -y evil-pkg", "system-package-removal"],
+    ["apt autoremove <pkg>", "apt autoremove build-essential", "system-package-removal"],
+    ["brew uninstall <pkg>", "brew uninstall node", "system-package-removal"],
+    ["brew uninstall <pkg> with flag", "brew uninstall --force evil-formula", "system-package-removal"],
+    ["snap remove <pkg>", "snap remove git", "system-package-removal"],
+    ["snap revert <pkg>", "snap revert node", "system-package-removal"],
     ["git stash clear", "git stash clear", "git-stash-destruction"],
     ["git stash drop", "git stash drop stash@{0}", "git-stash-destruction"],
     ["xargs sed", "find . -name '*.ts' | xargs sed -i 's/old/new/g'", "xargs-command-execution"],
@@ -1167,6 +1177,10 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "apt-get install evil-pkg",
       "brew install evil-formula",
       "snap install evil-snap",
+      // system-package-removal
+      "apt remove git",
+      "brew uninstall node",
+      "snap remove evil-snap",
     ];
 
     expect(PROBES).toHaveLength(DANGEROUS_PATTERNS.length);

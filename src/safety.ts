@@ -266,6 +266,15 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bbrew\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
   // snap install <pkg> — Snap package manager installs persistent system-level applications.
   { pattern: /\bsnap\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  // apt/apt-get remove/purge/autoremove <pkg> — Removing system-level packages can destroy
+  // build tooling Bloom depends on (e.g. git, node), with no recovery path within the cycle.
+  { pattern: /\bapt(?:-get)?\s+(?:remove|purge|autoremove)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "system-package-removal" },
+  // brew uninstall <pkg> — Homebrew package removal; can silently destroy persistent OS-level
+  // tooling that the evolution cycle depends on.
+  { pattern: /\bbrew\s+uninstall\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "system-package-removal" },
+  // snap remove/revert <pkg> — Snap removal or version-revert can destroy persistent system
+  // applications without a recovery path inside the cycle.
+  { pattern: /\bsnap\s+(?:remove|revert)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "system-package-removal" },
 ];
 
 /**
