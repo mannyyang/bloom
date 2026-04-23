@@ -10,6 +10,16 @@ describe("extractLearnings", () => {
     expect(extractLearnings("   ")).toEqual({ learnings: [] });
   });
 
+  it("returns empty for null input without throwing (runtime safety guard)", () => {
+    // At runtime a DB row with a NULL learnings column can bypass the string
+    // type annotation. The guard must prevent a TypeError from .trim().
+    expect(extractLearnings(null as unknown as string)).toEqual({ learnings: [] });
+  });
+
+  it("returns empty for undefined input without throwing (runtime safety guard)", () => {
+    expect(extractLearnings(undefined as unknown as string)).toEqual({ learnings: [] });
+  });
+
   it("parses categorized learnings with [category] prefix", () => {
     const text = `- [pattern] Writing tests before implementation catches edge cases
 - [anti-pattern] Avoid modifying multiple files in one commit

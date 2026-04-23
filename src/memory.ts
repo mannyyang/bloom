@@ -33,7 +33,7 @@ export interface ExtractedLearnings {
  * Falls back to "domain" if no category prefix is found.
  */
 export function extractLearnings(learningsText: string): ExtractedLearnings {
-  if (!learningsText.trim()) return { learnings: [] };
+  if (!learningsText || !learningsText.trim()) return { learnings: [] };
 
   const result: ExtractedLearnings = { learnings: [] };
   for (const line of learningsText.split("\n")) {
