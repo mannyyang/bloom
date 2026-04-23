@@ -87,7 +87,8 @@ export function generateJournalOutput(
   options: { format?: "json" | "md"; limit?: number } = {},
 ): string {
   const { format = "json", limit } = options;
-  const entries = exportJournalJson(db, limit && limit > 0 ? limit : undefined);
+  const safeLimit = limit !== undefined ? Math.floor(limit) : undefined;
+  const entries = exportJournalJson(db, safeLimit && safeLimit > 0 ? safeLimit : undefined);
 
   if (format === "md") {
     return formatJournalMarkdown(entries);

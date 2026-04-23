@@ -84,6 +84,32 @@ describe("generateJournalOutput", () => {
     const parsed = JSON.parse(output);
     expect(parsed).toHaveLength(2);
   });
+
+  it("floors fractional limit (3.7 behaves like 3)", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 3 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 4 }));
+    insertJournalEntry(db, 1, "attempted", "Entry 1");
+    insertJournalEntry(db, 2, "attempted", "Entry 2");
+    insertJournalEntry(db, 3, "attempted", "Entry 3");
+    insertJournalEntry(db, 4, "attempted", "Entry 4");
+
+    const output = generateJournalOutput(db, { limit: 3.7 });
+    const parsed = JSON.parse(output);
+    expect(parsed).toHaveLength(3);
+  });
+
+  it("treats fractional limit below 1 (0.5) as no limit", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    insertJournalEntry(db, 1, "attempted", "Entry 1");
+    insertJournalEntry(db, 2, "attempted", "Entry 2");
+
+    const output = generateJournalOutput(db, { limit: 0.5 });
+    const parsed = JSON.parse(output);
+    expect(parsed).toHaveLength(2);
+  });
 });
 
 describe("journal header constants (value-pinning)", () => {
