@@ -89,6 +89,18 @@ describe("execSyncOutput", () => {
     expect(execSyncOutput({ stdout: Buffer.from("out"), stderr: Buffer.from("err") })).toBe("out\nerr");
   });
 
+  it("returns empty string when stdout/stderr are empty Buffers", () => {
+    // Buffer.from("").toString() === "" — toStr must handle the empty-Buffer case
+    // without producing a spurious newline or throwing.
+    expect(execSyncOutput({ stdout: Buffer.from(""), stderr: Buffer.from("") })).toBe("");
+  });
+
+  it("handles mixed string stdout and Buffer stderr", () => {
+    // Real-world Node execSync errors can mix encoding: the captured stream
+    // types depend on whether `encoding` was set per-stream.
+    expect(execSyncOutput({ stdout: "text output", stderr: Buffer.from("buf error") })).toBe("text output\nbuf error");
+  });
+
   it("returns empty string when stdout/stderr are non-string non-Buffer types", () => {
     expect(execSyncOutput({ stdout: 123, stderr: 456 })).toBe("");
   });
