@@ -102,6 +102,23 @@ describe("extractLearnings", () => {
     expect(result.learnings).toHaveLength(0);
   });
 
+  it("silently drops bullet lines with bare [unknown-category] and no trailing content", () => {
+    // `- [unknown]` passes the bullet guard and the categoryMatch regex, but
+    // categoryMatch[2] is "" (not undefined — `.*` always matches, making
+    // `?? content` on line 63 of memory.ts permanently dead code).
+    // cleanContent.trim() === "" so the guard at line 67 discards the entry.
+    const result = extractLearnings("- [unknown]");
+    expect(result).toEqual({ learnings: [] });
+  });
+
+  it("produces zero learnings for a mix of bare unknown and known empty tags", () => {
+    // Exercises the dead-code note: every `??` branch is bypassed because
+    // `.*` captures "" for all entries; all are dropped by the empty-content guard.
+    const text = "- [unknown]\n- [mystery]\n- [pattern]";
+    const result = extractLearnings(text);
+    expect(result.learnings).toHaveLength(0);
+  });
+
   it("strips N) bullet prefix and extracts category correctly", () => {
     const text = "1) [pattern] Use incremental commits for safer rollback";
     const result = extractLearnings(text);
