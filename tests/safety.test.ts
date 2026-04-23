@@ -510,6 +510,9 @@ describe("blockDangerousCommands", () => {
     ["apt update (no package)", "apt update"],
     ["apt-get update (no package)", "apt-get update"],
     ["brew upgrade (no package)", "brew upgrade"],
+    ["apt upgrade (no package)", "apt upgrade"],
+    ["apt-get upgrade (no package)", "apt-get upgrade"],
+    ["snap refresh (no package)", "snap refresh"],
     ["npm install && npm run build", "npm install && npm run build"],
     ["npm install --legacy-peer-deps", "npm install --legacy-peer-deps"],
     ["npm install --save-dev", "npm install --save-dev"],
@@ -706,6 +709,12 @@ describe("isDangerousCommand", () => {
     ["brew uninstall <pkg> with flag", "brew uninstall --force evil-formula", "system-package-removal"],
     ["snap remove <pkg>", "snap remove git", "system-package-removal"],
     ["snap revert <pkg>", "snap revert node", "system-package-removal"],
+    // named package upgrades (equivalent to fresh remote-code install)
+    ["brew upgrade <pkg>", "brew upgrade evil-formula", "untrusted-package-installation"],
+    ["brew upgrade <pkg> with flag", "brew upgrade --greedy evil-formula", "untrusted-package-installation"],
+    ["apt upgrade <pkg>", "apt upgrade evil-pkg", "untrusted-package-installation"],
+    ["apt-get upgrade <pkg> with flag", "apt-get upgrade -y evil-pkg", "untrusted-package-installation"],
+    ["snap refresh <pkg>", "snap refresh evil-snap", "untrusted-package-installation"],
     ["git stash clear", "git stash clear", "git-stash-destruction"],
     ["git stash drop", "git stash drop stash@{0}", "git-stash-destruction"],
     ["xargs sed", "find . -name '*.ts' | xargs sed -i 's/old/new/g'", "xargs-command-execution"],
@@ -1181,6 +1190,10 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "apt remove git",
       "brew uninstall node",
       "snap remove evil-snap",
+      // untrusted-package-installation (named upgrades)
+      "brew upgrade evil-formula",
+      "apt-get upgrade evil-pkg",
+      "snap refresh evil-snap",
     ];
 
     expect(PROBES).toHaveLength(DANGEROUS_PATTERNS.length);

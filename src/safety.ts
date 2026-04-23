@@ -275,6 +275,15 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // snap remove/revert <pkg> — Snap removal or version-revert can destroy persistent system
   // applications without a recovery path inside the cycle.
   { pattern: /\bsnap\s+(?:remove|revert)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "system-package-removal" },
+  // brew upgrade <pkg> — Upgrading a named Homebrew package fetches and installs remote code,
+  // functionally equivalent to a fresh install. bare `brew upgrade` (no package) is allowed.
+  { pattern: /\bbrew\s+upgrade\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  // apt/apt-get upgrade <pkg> — Named package upgrade pulls and installs remote code.
+  // bare `apt upgrade` / `apt-get upgrade` (full system upgrade, no package token) is allowed.
+  { pattern: /\bapt(?:-get)?\s+upgrade\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  // snap refresh <pkg> — Named snap refresh fetches and installs remote code from the Snap Store.
+  // bare `snap refresh` (refreshes all installed snaps) is allowed.
+  { pattern: /\bsnap\s+refresh\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
 ];
 
 /**
