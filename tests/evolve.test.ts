@@ -447,6 +447,33 @@ This content too`;
     expect(result.attempted).toBe("");
     expect(result.succeeded).toBe("");
   });
+
+  it("concatenates both blocks when the same section header appears twice", () => {
+    // When SUCCEEDED appears twice, both blocks are accumulated into the same
+    // key (concatenation semantics). This test documents and locks in that
+    // behaviour so a future last-wins refactor is caught immediately.
+    const input = `ATTEMPTED: First attempt
+SUCCEEDED: First success block
+FAILED: none
+SUCCEEDED: Second success block`;
+    const result = parseEvolutionResult(input);
+    expect(result.succeeded).toContain("First success block");
+    expect(result.succeeded).toContain("Second success block");
+  });
+
+  it("ignores unrecognised section headers mid-parse and keeps accumulating into the last known section", () => {
+    // An unrecognised header (e.g. NOTES:) does not match HEADER_RE's known
+    // keyword set, so no section switch occurs — subsequent lines continue
+    // to accumulate into the previously active section.
+    const input = `ATTEMPTED: Real content
+NOTES: This is not a known header
+Still part of attempted`;
+    const result = parseEvolutionResult(input);
+    // "NOTES:" line and the line after it should both land in attempted
+    expect(result.attempted).toContain("Real content");
+    expect(result.attempted).toContain("NOTES: This is not a known header");
+    expect(result.attempted).toContain("Still part of attempted");
+  });
 });
 
 describe("countImprovements", () => {
