@@ -507,6 +507,9 @@ describe("blockDangerousCommands", () => {
     ["rm -rf .github (not .git)", "rm -rf .github"],
     ["bare pnpm install", "pnpm install"],
     ["bare npm install", "npm install"],
+    ["apt update (no package)", "apt update"],
+    ["apt-get update (no package)", "apt-get update"],
+    ["brew upgrade (no package)", "brew upgrade"],
     ["npm install && npm run build", "npm install && npm run build"],
     ["npm install --legacy-peer-deps", "npm install --legacy-peer-deps"],
     ["npm install --save-dev", "npm install --save-dev"],
@@ -686,6 +689,13 @@ describe("isDangerousCommand", () => {
     ["go install <pkg>", "go install github.com/evil/pkg@latest", "untrusted-package-installation"],
     ["go get <pkg>", "go get github.com/evil/pkg", "untrusted-package-installation"],
     ["go get <pkg> with flag", "go get -u github.com/evil/pkg@latest", "untrusted-package-installation"],
+    ["apt install <pkg>", "apt install evil-pkg", "untrusted-package-installation"],
+    ["apt-get install <pkg>", "apt-get install evil-pkg", "untrusted-package-installation"],
+    ["apt-get install <pkg> with flag", "apt-get install -y evil-pkg", "untrusted-package-installation"],
+    ["brew install <pkg>", "brew install evil-formula", "untrusted-package-installation"],
+    ["brew install <pkg> with flag", "brew install --cask evil-app", "untrusted-package-installation"],
+    ["snap install <pkg>", "snap install evil-snap", "untrusted-package-installation"],
+    ["snap install <pkg> with flag", "snap install --dangerous evil-snap", "untrusted-package-installation"],
     ["git stash clear", "git stash clear", "git-stash-destruction"],
     ["git stash drop", "git stash drop stash@{0}", "git-stash-destruction"],
     ["xargs sed", "find . -name '*.ts' | xargs sed -i 's/old/new/g'", "xargs-command-execution"],
@@ -1154,6 +1164,9 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "cargo install evil-crate",
       "gem install evil-gem",
       "go install github.com/evil/pkg@latest",
+      "apt-get install evil-pkg",
+      "brew install evil-formula",
+      "snap install evil-snap",
     ];
 
     expect(PROBES).toHaveLength(DANGEROUS_PATTERNS.length);

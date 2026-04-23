@@ -259,6 +259,13 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // go install / go get <pkg> — Go module installation pulls arbitrary code from public registries.
   // Matches both subcommands with optional flags before the module path.
   { pattern: /\bgo\s+(?:install|get)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  // apt / apt-get install <pkg> — Debian/Ubuntu system-level package installation. Installs
+  // persistent OS binaries that outlast the evolution cycle and bypass the sandbox.
+  { pattern: /\bapt(?:-get)?\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  // brew install <pkg> — Homebrew macOS/Linux package manager; installs persistent system binaries.
+  { pattern: /\bbrew\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  // snap install <pkg> — Snap package manager installs persistent system-level applications.
+  { pattern: /\bsnap\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
 ];
 
 /**
