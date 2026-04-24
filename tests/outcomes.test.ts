@@ -287,6 +287,22 @@ describe("formatOutcomeForJournal", () => {
     expect(result).not.toContain("before,");
   });
 
+  it("has exactly 7 lines for testCountBefore-only branch with failureCategory none and no duration", () => {
+    // Pins the structural invariant: header + blank + preflight + improvements +
+    // build + push + "before (after count unavailable)" = 7 lines.
+    // A regression that inserts a spurious blank line would change this count.
+    const outcome = makeOutcome({
+      testCountBefore: 100,
+      testCountAfter: null,
+      failureCategory: "none",
+      durationMs: null,
+    });
+    const result = formatOutcomeForJournal(outcome);
+    const lines = result.split("\n");
+    expect(lines).toHaveLength(7);
+    expect(lines[lines.length - 1]).toContain("before (after count unavailable)");
+  });
+
   it("handles both test counts null", () => {
     const outcome = makeOutcome({
       preflightPassed: false,
