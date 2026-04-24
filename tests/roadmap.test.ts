@@ -176,6 +176,20 @@ describe("generateRoadmapOutput", () => {
     // The SAMPLE_ROADMAP items all have 0 reactions (parser default)
     expect(joined).not.toContain("★");
   });
+
+  it("preserves parse-order for multiple items within the same status section", () => {
+    // SAMPLE_ROADMAP has two Backlog items in this order:
+    //   1. "Improve prompt efficiency"
+    //   2. "Track conversion rate (#99)"
+    // The output must preserve that order.
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP);
+    const joined = output.join("\n");
+    const idxFirst = joined.indexOf("Improve prompt efficiency");
+    const idxSecond = joined.indexOf("Track conversion rate");
+    expect(idxFirst).toBeGreaterThanOrEqual(0);
+    expect(idxSecond).toBeGreaterThanOrEqual(0);
+    expect(idxFirst).toBeLessThan(idxSecond);
+  });
 });
 
 describe("parseRoadmap", () => {
