@@ -439,6 +439,66 @@ describe("formatCycleUsage", () => {
     expect(lines[0]).toContain("[Total]");
     expect(lines[0]).toContain("$0.0000");
   });
+
+  it("produces exactly 2 lines for 1 phase (1 phase line + Total)", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.5,
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 10000,
+        numTurns: 5,
+      },
+    ]);
+    const lines = formatCycleUsage(cu).split("\n");
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toContain("[Assessment]");
+    expect(lines[1]).toContain("[Total]");
+  });
+
+  it("produces exactly 4 lines for 3 phases (3 phase lines + Total)", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.5,
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 10000,
+        numTurns: 5,
+      },
+      {
+        phase: "Evolution",
+        totalCostUsd: 1.0,
+        inputTokens: 5000,
+        outputTokens: 2000,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 30000,
+        numTurns: 15,
+      },
+      {
+        phase: "Verification",
+        totalCostUsd: 0.25,
+        inputTokens: 500,
+        outputTokens: 250,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 5000,
+        numTurns: 3,
+      },
+    ]);
+    const lines = formatCycleUsage(cu).split("\n");
+    expect(lines).toHaveLength(4);
+    expect(lines[0]).toContain("[Assessment]");
+    expect(lines[1]).toContain("[Evolution]");
+    expect(lines[2]).toContain("[Verification]");
+    expect(lines[3]).toContain("[Total]");
+  });
 });
 
 describe("formatUsageForJournal", () => {
