@@ -193,4 +193,18 @@ describe("parseRoadmap", () => {
     expect(items).toHaveLength(1);
     expect(items[0].title).toBe("Real backlog item");
   });
+
+  it("parses item with both a linked issue number and an indented body description", () => {
+    const content = `# Bloom Evolution Roadmap
+
+## Backlog
+- [ ] Task with desc (#12)
+  indented detail
+`;
+    const items = parseRoadmap(content);
+    expect(items).toHaveLength(1);
+    expect(items[0].title).toBe("Task with desc");
+    expect(items[0].linkedIssueNumber).toBe(12);
+    expect(items[0].body).toBe("indented detail");
+  });
 });
