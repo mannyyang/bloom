@@ -135,6 +135,29 @@ describe("generateRoadmapOutput", () => {
     expect(joined).toContain("x".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS));
   });
 
+  it("does not truncate a body of exactly ROADMAP_BODY_PREVIEW_MAX_CHARS characters", () => {
+    const exactBody = "y".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS);
+    const roadmap = `# Bloom Evolution Roadmap\n\n## Backlog\n- [ ] Exact boundary item\n  ${exactBody}\n`;
+    const output = generateRoadmapOutput(roadmap);
+    const joined = output.join("\n");
+    // No ellipsis — body is exactly at the limit, not over it
+    expect(joined).not.toContain("…");
+    // Full body should appear
+    expect(joined).toContain("y".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS));
+  });
+
+  it("truncates a body of ROADMAP_BODY_PREVIEW_MAX_CHARS + 1 characters with ellipsis", () => {
+    const overBody = "z".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS + 1);
+    const roadmap = `# Bloom Evolution Roadmap\n\n## Backlog\n- [ ] Over boundary item\n  ${overBody}\n`;
+    const output = generateRoadmapOutput(roadmap);
+    const joined = output.join("\n");
+    // Ellipsis must appear
+    expect(joined).toContain("…");
+    // Only first ROADMAP_BODY_PREVIEW_MAX_CHARS chars should be in output
+    expect(joined).toContain("z".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS));
+    expect(joined).not.toContain("z".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS + 1));
+  });
+
   it("renders multi-line body as separate indented lines", () => {
     const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
       {
