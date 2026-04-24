@@ -498,6 +498,18 @@ STRATEGIC_CONTEXT: Focus on testing`;
       expect(summary).toContain("Build:");
       expect(summary).toContain("Push:");
     });
+
+    it("produces exactly 8 lines when failureCategory is none", () => {
+      const outcome = makeOutcome({ failureCategory: "none" });
+      const summary = formatCycleSummaryWithDuration(1, outcome, false, 5000);
+      expect(summary.split("\n")).toHaveLength(8);
+    });
+
+    it("produces exactly 9 lines when failureCategory is not none", () => {
+      const outcome = makeOutcome({ failureCategory: "build_failure" });
+      const summary = formatCycleSummaryWithDuration(1, outcome, true, 5000);
+      expect(summary.split("\n")).toHaveLength(9);
+    });
   });
 
 });
