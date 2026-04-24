@@ -548,5 +548,15 @@ describe("countImprovements", () => {
     // to avoid prose back-references like "3) Inline" inflating the total.
     expect(countImprovements("1) First\n2) Second. 3) Inline")).toBe(2);
   });
+
+  it("multi-line branch fires at minimum threshold of exactly 2 non-empty lines", () => {
+    // "1) foo. 2) bar.\nsome prose" has:
+    //   lineCount = 1  (only line 1 starts with "N) ")
+    //   nonEmptyLines = 2  (both lines are non-empty → threshold met)
+    //   inlineCount = 2  (two "N) " matches across the whole text)
+    // Since lineCount > 0 && nonEmptyLines > 1 is true, the multi-line branch
+    // fires and returns lineCount (1), not Math.max(1, 2) = 2.
+    expect(countImprovements("1) foo. 2) bar.\nsome prose")).toBe(1);
+  });
 });
 
