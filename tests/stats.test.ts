@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats } from "../src/db.js";
 import { generateStatsOutput, STATS_MEMORY_PREVIEW_CHARS } from "../src/stats.js";
+import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { makeOutcome } from "./helpers.js";
 
 describe("STATS_MEMORY_PREVIEW_CHARS", () => {
@@ -90,6 +91,25 @@ describe("generateStatsOutput", () => {
     expect(joined).toContain("Bloom Evolution Statistics");
     // formatMemoryForPrompt returns "" when no learnings/context exist,
     // so no extra memory block should appear
+  });
+
+  it("has exactly 8 entries when one cycle exists and no memory is present", () => {
+    // Structural pin: "", separator, title, latest-cycle, separator, "", formatted, ""
+    // When no learnings or strategic context exist the memory block is omitted.
+    // Any regression that adds/removes a blank line or separator will break this.
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    const output = generateStatsOutput(db);
+    expect(output).toHaveLength(8);
+  });
+
+  it("output[1] and output[4] are exactly CYCLE_SUMMARY_SEPARATOR", () => {
+    // Value-pin: the separator constant must appear at the header and footer
+    // positions of the stats block. toContain() checks won't catch a separator
+    // that drifts to a different index or gets duplicated/removed.
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    const output = generateStatsOutput(db);
+    expect(output[1]).toBe(CYCLE_SUMMARY_SEPARATOR);
+    expect(output[4]).toBe(CYCLE_SUMMARY_SEPARATOR);
   });
 
   it("includes success rate in output", () => {
