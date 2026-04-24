@@ -207,6 +207,22 @@ STRATEGIC_CONTEXT: Strategic info`;
       expect(processed).toHaveProperty("strategicContextStored");
     });
 
+    it("succeededSummary is an exact alias of journalSections.succeeded", () => {
+      const result = `ATTEMPTED: - Improvement A
+- Improvement B
+SUCCEEDED: - Improvement A
+- Improvement B
+FAILED: Nothing
+LEARNINGS: - [pattern] Aliases must stay in sync
+STRATEGIC_CONTEXT: Focus on consistency`;
+
+      const processed = processEvolutionResult(db, 1, result);
+
+      expect(processed.succeededSummary).toBe(processed.journalSections.succeeded);
+      // Ensure the value is non-trivially non-empty so the assertion is meaningful
+      expect(processed.succeededSummary.length).toBeGreaterThan(0);
+    });
+
     it("logs error and continues when insertJournalEntry throws (transaction rolled back)", async () => {
       const dbModule = await import("../src/db.js");
       const spy = vi.spyOn(dbModule, "insertJournalEntry").mockImplementation(() => {
