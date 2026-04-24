@@ -287,6 +287,31 @@ describe("formatOutcomeForJournal", () => {
     expect(result).not.toContain("before,");
   });
 
+  it("has exactly 8 lines for full happy-path with duration and both test counts but no totals", () => {
+    // Pins the structural invariant for the most common success path:
+    // header + blank + preflight + improvements + build + push + duration + tests = 8 lines.
+    // failureCategory "none" is omitted; testTotals null suppresses the total suffix.
+    // A regression that adds a spurious blank line or extra field would break this.
+    const outcome = makeOutcome({
+      preflightPassed: true,
+      improvementsAttempted: 2,
+      improvementsSucceeded: 2,
+      buildVerificationPassed: true,
+      pushSucceeded: true,
+      failureCategory: "none",
+      durationMs: 60000,
+      testCountBefore: 100,
+      testCountAfter: 103,
+      testTotalBefore: null,
+      testTotalAfter: null,
+    });
+    const result = formatOutcomeForJournal(outcome);
+    const lines = result.split("\n");
+    expect(lines).toHaveLength(8);
+    expect(lines[0]).toBe("### Outcome Metrics");
+    expect(lines[lines.length - 1]).toContain("103 after (+3)");
+  });
+
   it("has exactly 7 lines for testCountBefore-only branch with failureCategory none and no duration", () => {
     // Pins the structural invariant: header + blank + preflight + improvements +
     // build + push + "before (after count unavailable)" = 7 lines.
