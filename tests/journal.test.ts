@@ -221,6 +221,57 @@ describe("formatJournalMarkdown", () => {
     expect(output).toContain("Second attempt");
     expect(output).toContain("---");
   });
+
+  it("produces exactly N '---' separators for N entries", () => {
+    const entries = [
+      {
+        cycleNumber: 1,
+        date: "2025-01-01",
+        attempted: "Alpha",
+        succeeded: "Done",
+        failed: "",
+        learnings: "",
+        strategic_context: "",
+      },
+      {
+        cycleNumber: 2,
+        date: "2025-01-02",
+        attempted: "Beta",
+        succeeded: "",
+        failed: "Oops",
+        learnings: "Lesson",
+        strategic_context: "Stay focused",
+      },
+    ];
+    const output = formatJournalMarkdown(entries);
+    // Count standalone '---' separator lines (not part of other content)
+    const separatorCount = output.split("\n").filter((line) => line === "---").length;
+    expect(separatorCount).toBe(2);
+  });
+
+  it("renders sections in the correct order: attempted, succeeded, failed, learnings, strategic_context", () => {
+    const entries = [
+      {
+        cycleNumber: 1,
+        date: "2025-01-01",
+        attempted: "ATTEMPTED_TEXT",
+        succeeded: "SUCCEEDED_TEXT",
+        failed: "FAILED_TEXT",
+        learnings: "LEARNINGS_TEXT",
+        strategic_context: "STRATEGIC_TEXT",
+      },
+    ];
+    const output = formatJournalMarkdown(entries);
+    const idxAttempted = output.indexOf("ATTEMPTED_TEXT");
+    const idxSucceeded = output.indexOf("SUCCEEDED_TEXT");
+    const idxFailed = output.indexOf("FAILED_TEXT");
+    const idxLearnings = output.indexOf("LEARNINGS_TEXT");
+    const idxStrategic = output.indexOf("STRATEGIC_TEXT");
+    expect(idxAttempted).toBeLessThan(idxSucceeded);
+    expect(idxSucceeded).toBeLessThan(idxFailed);
+    expect(idxFailed).toBeLessThan(idxLearnings);
+    expect(idxLearnings).toBeLessThan(idxStrategic);
+  });
 });
 
 describe("parseArgs", () => {
