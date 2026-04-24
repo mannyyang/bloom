@@ -171,6 +171,28 @@ describe("formatJournalMarkdown", () => {
     expect(output).not.toContain(JOURNAL_FAILED_HEADER);
   });
 
+  it("emits only heading and separator when all optional fields are empty strings", () => {
+    const entries = [
+      {
+        cycleNumber: 1,
+        date: "2026-01-01",
+        attempted: "",
+        succeeded: "",
+        failed: "",
+        learnings: "",
+        strategic_context: "",
+      },
+    ];
+    const output = formatJournalMarkdown(entries);
+    expect(output).toContain("## Cycle 1 — 2026-01-01");
+    expect(output).toContain("---");
+    expect(output).not.toContain(JOURNAL_ATTEMPTED_HEADER);
+    expect(output).not.toContain(JOURNAL_SUCCEEDED_HEADER);
+    expect(output).not.toContain(JOURNAL_FAILED_HEADER);
+    expect(output).not.toContain(JOURNAL_LEARNINGS_HEADER);
+    expect(output).not.toContain(JOURNAL_STRATEGIC_CONTEXT_HEADER);
+  });
+
   it("renders multiple entries with separators and correct cycle headers", () => {
     const entries = [
       {
