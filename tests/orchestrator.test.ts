@@ -444,6 +444,15 @@ STRATEGIC_CONTEXT: Focus on testing`;
       expect(lines[lines.length - 1]).toContain("====");
     });
 
+    it("separator lines are exactly CYCLE_SUMMARY_SEPARATOR (value-pin)", () => {
+      const outcome = makeOutcome();
+      const summary = formatCycleSummaryWithDuration(1, outcome, false, 1000);
+      const lines = summary.split("\n");
+
+      expect(lines[0]).toBe(CYCLE_SUMMARY_SEPARATOR);
+      expect(lines[lines.length - 1]).toBe(CYCLE_SUMMARY_SEPARATOR);
+    });
+
     it("shows ? for testCountBefore but number for testCountAfter", () => {
       const outcome = makeOutcome({
         testCountBefore: null,
