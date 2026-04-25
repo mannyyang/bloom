@@ -356,6 +356,24 @@ describe("formatPhaseUsage", () => {
     expect(line).toContain("Turns: 10");
     expect(line).toContain("30.0s");
   });
+
+  it("returns exactly one line (never emits multi-line output)", () => {
+    // Structural pin: formatPhaseUsage is a single-line formatter.
+    // Any regression that introduces a newline (e.g. appending a cache suffix
+    // on a separate line rather than inline) would be caught immediately.
+    const pu: PhaseUsage = {
+      phase: "Assessment",
+      totalCostUsd: 1.2345,
+      inputTokens: 5000,
+      outputTokens: 2000,
+      cacheReadInputTokens: 500,
+      cacheCreationInputTokens: 200,
+      durationMs: 30000,
+      numTurns: 10,
+    };
+    const result = formatPhaseUsage(pu);
+    expect(result.split("\n")).toHaveLength(1);
+  });
 });
 
 describe("formatCycleUsage", () => {
