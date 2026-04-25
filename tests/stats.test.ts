@@ -102,6 +102,17 @@ describe("generateStatsOutput", () => {
     expect(output).toHaveLength(8);
   });
 
+  it("has exactly 10 entries when one cycle exists and one learning is present", () => {
+    // Structural pin: with memory present the layout is:
+    // "", separator, title, latest-cycle, separator, "", formatted, "", memory, "" = 10 entries.
+    // No-memory path is already pinned to 8 entries. This pin covers the memory branch,
+    // catching regressions that add/remove blank lines around the memory block.
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertLearning(db, 1, "pattern", "Always run tests before committing");
+    const output = generateStatsOutput(db);
+    expect(output).toHaveLength(10);
+  });
+
   it("output[1] and output[4] are exactly CYCLE_SUMMARY_SEPARATOR", () => {
     // Value-pin: the separator constant must appear at the header and footer
     // positions of the stats block. toContain() checks won't catch a separator
