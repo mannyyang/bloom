@@ -1063,6 +1063,10 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
+  it("has exactly 99 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(99);
+  });
+
   it("every pattern fires on at least one probe command", () => {
     // One representative command per DANGEROUS_PATTERNS entry (same order).
     // Adding a new pattern without a probe here will cause this test to fail,
