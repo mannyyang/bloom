@@ -557,6 +557,11 @@ describe("formatUsageForJournal", () => {
     ]);
 
     const md = formatUsageForJournal(cu);
+    const lines = md.split("\n");
+    // Structural pin: single-phase with cache = header + blank + phase line + Total = 4 lines
+    expect(lines).toHaveLength(4);
+    expect(lines[0]).toBe(RESOURCE_USAGE_HEADER);
+    expect(lines[1]).toBe("");
     expect(md).toContain("cache:");
     expect(md).toContain("read");
     expect(md).toContain("created");
