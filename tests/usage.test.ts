@@ -596,6 +596,36 @@ describe("formatUsageForJournal", () => {
     expect(phaseLines).toHaveLength(0);
   });
 
+  it("two-phase no-cache output has exactly 5 lines and Total at last position", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.34,
+        inputTokens: 1917,
+        outputTokens: 2565,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 44600,
+        numTurns: 14,
+      },
+      {
+        phase: "Evolution",
+        totalCostUsd: 1.20,
+        inputTokens: 8000,
+        outputTokens: 4000,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 90000,
+        numTurns: 25,
+      },
+    ]);
+    const lines = formatUsageForJournal(cu).split("\n");
+    // Structural pin: header + blank + 2 phase lines + Total = 5 lines
+    expect(lines).toHaveLength(5);
+    // Last line must be the Total entry
+    expect(lines[lines.length - 1]).toMatch(/^- \*\*Total\*\*/);
+  });
+
   it("single-phase no-cache output has exactly 4 lines with header at [0] and blank at [1]", () => {
     const cu = aggregateUsage([
       {
