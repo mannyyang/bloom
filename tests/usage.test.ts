@@ -653,6 +653,48 @@ describe("formatUsageForJournal", () => {
     expect(lines[lines.length - 1]).toMatch(/^- \*\*Total\*\*/);
   });
 
+  it("three-phase no-cache output has exactly 6 lines (structural pin)", () => {
+    // Pattern: header + blank + n_phases + Total = n_phases + 3
+    // 3 phases → 3 + 3 = 6 lines
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.20,
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 10000,
+        numTurns: 5,
+      },
+      {
+        phase: "Evolution",
+        totalCostUsd: 0.80,
+        inputTokens: 4000,
+        outputTokens: 2000,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 40000,
+        numTurns: 20,
+      },
+      {
+        phase: "Verification",
+        totalCostUsd: 0.10,
+        inputTokens: 500,
+        outputTokens: 250,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 5000,
+        numTurns: 3,
+      },
+    ]);
+    const lines = formatUsageForJournal(cu).split("\n");
+    expect(lines).toHaveLength(6);
+    expect(lines[0]).toBe(RESOURCE_USAGE_HEADER);
+    expect(lines[1]).toBe("");
+    expect(lines[lines.length - 1]).toMatch(/^- \*\*Total\*\*/);
+  });
+
   it("single-phase no-cache output has exactly 4 lines with header at [0] and blank at [1]", () => {
     const cu = aggregateUsage([
       {
