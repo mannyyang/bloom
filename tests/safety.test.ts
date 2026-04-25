@@ -792,6 +792,16 @@ describe("buildProtectedFilePatterns", () => {
     return patterns.some((p) => p.test(command));
   }
 
+  describe("structural count pin", () => {
+    it("returns exactly 15 patterns (no-append mode)", () => {
+      expect(buildProtectedFilePatterns("X.md")).toHaveLength(15);
+    });
+
+    it("returns exactly 15 patterns (allowAppend mode)", () => {
+      expect(buildProtectedFilePatterns("X.md", { allowAppend: true })).toHaveLength(15);
+    });
+  });
+
   describe("automatic regex escaping", () => {
     it("plain dot in filename is escaped (no false positives)", () => {
       const patterns = buildProtectedFilePatterns("IDENTITY.md");
