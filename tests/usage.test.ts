@@ -599,6 +599,10 @@ describe("formatUsageForJournal", () => {
       (l) => l.startsWith("- **") && !l.includes("**Total**"),
     );
     expect(phaseLines).toHaveLength(0);
+    // Structural pin: zero-phase = header + blank + Total = 3 lines
+    expect(lines).toHaveLength(3);
+    expect(lines[0]).toBe(RESOURCE_USAGE_HEADER);
+    expect(lines[1]).toBe("");
   });
 
   it("two-phase no-cache output has exactly 5 lines and Total at last position", () => {
