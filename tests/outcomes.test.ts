@@ -328,6 +328,32 @@ describe("formatOutcomeForJournal", () => {
     expect(lines[lines.length - 1]).toContain("before (after count unavailable)");
   });
 
+  it("has exactly 8 lines for failure-category branch with test counts but no duration", () => {
+    // Pins the structural invariant for the non-"none" failureCategory path:
+    // header + blank + preflight + improvements + build + push + failureCategory + tests = 8 lines.
+    // No duration (durationMs null) and no totals (testTotalBefore/After null).
+    // A regression inserting a spurious blank or reordering fields would break this.
+    const outcome = makeOutcome({
+      preflightPassed: false,
+      improvementsAttempted: 1,
+      improvementsSucceeded: 0,
+      buildVerificationPassed: false,
+      pushSucceeded: false,
+      failureCategory: "build_failure",
+      durationMs: null,
+      testCountBefore: 100,
+      testCountAfter: 100,
+      testTotalBefore: null,
+      testTotalAfter: null,
+    });
+    const result = formatOutcomeForJournal(outcome);
+    const lines = result.split("\n");
+    expect(lines).toHaveLength(8);
+    expect(lines[0]).toBe("### Outcome Metrics");
+    expect(lines[6]).toContain("**Failure category**: build_failure");
+    expect(lines[7]).toContain("**Tests**");
+  });
+
   it("handles both test counts null", () => {
     const outcome = makeOutcome({
       preflightPassed: false,
