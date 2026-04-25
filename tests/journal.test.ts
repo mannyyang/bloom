@@ -249,6 +249,27 @@ describe("formatJournalMarkdown", () => {
     expect(separatorCount).toBe(2);
   });
 
+  it("single all-fields entry produces exactly 21 lines with title at [0] and blank at [1]", () => {
+    // Structure: ["# Bloom Evolution Journal", ""] (2)
+    //   + heading + blank (2) + 5 × (header + content + blank) (15) + "---" + blank (2) = 21
+    const entries = [
+      {
+        cycleNumber: 5,
+        date: "2025-01-15",
+        attempted: "Add feature",
+        succeeded: "Feature added",
+        failed: "Nothing",
+        learnings: "Learned something",
+        strategic_context: "Focus on testing",
+      },
+    ];
+    const output = formatJournalMarkdown(entries);
+    const lines = output.split("\n");
+    expect(lines).toHaveLength(21);
+    expect(lines[0]).toBe("# Bloom Evolution Journal");
+    expect(lines[1]).toBe("");
+  });
+
   it("renders sections in the correct order: attempted, succeeded, failed, learnings, strategic_context", () => {
     const entries = [
       {
