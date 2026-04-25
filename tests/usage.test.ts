@@ -595,6 +595,27 @@ describe("formatUsageForJournal", () => {
     );
     expect(phaseLines).toHaveLength(0);
   });
+
+  it("single-phase no-cache output has exactly 4 lines with header at [0] and blank at [1]", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.3384,
+        inputTokens: 1917,
+        outputTokens: 2565,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 44600,
+        numTurns: 14,
+      },
+    ]);
+    const lines = formatUsageForJournal(cu).split("\n");
+    // Structural pin: header + blank + 1 phase line + Total = 4 lines
+    expect(lines).toHaveLength(4);
+    // Position pins: header must be at index 0, blank separator at index 1
+    expect(lines[0]).toBe(RESOURCE_USAGE_HEADER);
+    expect(lines[1]).toBe("");
+  });
 });
 
 describe("formatDurationSec", () => {
