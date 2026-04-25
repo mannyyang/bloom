@@ -215,6 +215,27 @@ describe("formatJournalMarkdown", () => {
     expect(lines[4]).toBe("---");
   });
 
+  it("single 1-field entry produces exactly 9 lines (structural pin)", () => {
+    // Structure: doc-header (2) + heading + blank (2)
+    //   + 1 × (header + content + blank) (3) + "---" + blank (2) = 9
+    const entries = [
+      {
+        cycleNumber: 2,
+        date: "2026-02-01",
+        attempted: "Add a feature",
+        succeeded: "",
+        failed: "",
+        learnings: "",
+        strategic_context: "",
+      },
+    ];
+    const lines = formatJournalMarkdown(entries).split("\n");
+    expect(lines).toHaveLength(9);
+    expect(lines[0]).toBe("# Bloom Evolution Journal");
+    expect(lines[1]).toBe("");
+    expect(lines[2]).toBe("## Cycle 2 — 2026-02-01");
+  });
+
   it("renders multiple entries with separators and correct cycle headers", () => {
     const entries = [
       {
