@@ -155,7 +155,7 @@ export function parseRoadmap(content: string): ProjectItem[] {
     }
 
     // Body lines (indented under an item)
-    if (currentItem && line.match(/^\s{2,}/) && line.trim()) {
+    if (currentItem && line.match(/^\s+/) && line.trim()) {
       currentItem.body = currentItem.body
         ? `${currentItem.body}\n${line.trim()}`
         : line.trim();
