@@ -252,6 +252,17 @@ describe("formatPlanningContext", () => {
     expect(backlogMatches!.length).toBe(2);
   });
 
+  it("excludes the (N+1)th item when exactly maxItemsPerSection+1 items exist in one section", () => {
+    // Boundary test: 6 Backlog items with maxItemsPerSection=5 — the 5th must appear,
+    // the 6th must not, exercising the slice boundary exactly.
+    const items = Array.from({ length: 6 }, (_, i) =>
+      makeItem({ id: `item-${i}`, title: `Boundary Item ${i}`, status: "Backlog" }),
+    );
+    const result = formatPlanningContext(items, null, 10000, 5);
+    expect(result).toContain("- Boundary Item 4"); // 5th item (index 4) must appear
+    expect(result).not.toContain("- Boundary Item 5"); // 6th item must be cut
+  });
+
   it("uses truncated string as-is when no newline found (single long line)", () => {
     // A single item whose title is long enough to exceed maxChars, with no
     // embedded newline, so lastNewline is -1 — exercises the fallback branch.
