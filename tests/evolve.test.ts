@@ -536,6 +536,16 @@ describe("countImprovements", () => {
     expect(countImprovements("   \n  ")).toBe(0);
   });
 
+  it("returns 0 for null input without throwing (runtime safety guard)", () => {
+    // At runtime a DB row or LLM response field can be null despite the string type annotation.
+    // The `if (!text) return 0` guard must prevent a TypeError from .split().
+    expect(countImprovements(null as unknown as string)).toBe(0);
+  });
+
+  it("returns 0 for undefined input without throwing (runtime safety guard)", () => {
+    expect(countImprovements(undefined as unknown as string)).toBe(0);
+  });
+
   it("counts single-line inline items with N) format (falls through to Math.max)", () => {
     // Single-line input: lineCount=1 (first "1) " at start), nonEmptyLines=1,
     // so lineCount > 0 && nonEmptyLines > 1 is false → Math.max(1, 2) = 2
