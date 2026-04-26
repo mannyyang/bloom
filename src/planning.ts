@@ -502,7 +502,9 @@ export function formatPlanningContext(
     lines.push(`\n**Current focus**: ${currentItem.title}`);
     if (currentItem.body) {
       const cleanBody = currentItem.body.replace(/\n?\[since:\s*\d+\]/g, "");
-      lines.push(cleanBody.slice(0, PLANNING_BODY_PREVIEW_CHARS));
+      if (cleanBody.trim()) {
+        lines.push(cleanBody.slice(0, PLANNING_BODY_PREVIEW_CHARS));
+      }
     }
   }
 
