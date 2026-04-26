@@ -8,6 +8,7 @@
  * Usage: pnpm assess
  */
 import { fileURLToPath } from "url";
+import { resolve } from "node:path";
 import { readFileSync } from "fs";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import {
@@ -120,7 +121,7 @@ export async function main() {
 }
 
 // Only auto-run when executed directly (not when imported by tests).
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   main().catch((err) => {
     console.error("Assessment failed:", errorMessage(err));
     process.exit(1);
