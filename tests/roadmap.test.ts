@@ -103,6 +103,17 @@ describe("generateRoadmapOutput", () => {
     expect(joined).toContain("No items on the roadmap yet.");
   });
 
+  it("empty roadmap output has exactly 7 entries (structural pin)", () => {
+    // Empty path always produces: ["", sep, title, sep, "", "  No items on the roadmap yet.", ""]
+    // Mirrors the stats.test.ts position-pin pattern (8 lines no memory, 10 with memory).
+    // Any addition of a blank line or extra section in the empty branch would break this.
+    const output = generateRoadmapOutput(EMPTY_ROADMAP);
+    expect(output).toHaveLength(7);
+    expect(output[1]).toBe("========================================");
+    expect(output[3]).toBe("========================================");
+    expect(output[5]).toBe("  No items on the roadmap yet.");
+  });
+
   it("skips status sections that have no items", () => {
     const output = generateRoadmapOutput(EMPTY_ROADMAP);
     const joined = output.join("\n");
