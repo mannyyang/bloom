@@ -354,6 +354,54 @@ describe("formatOutcomeForJournal", () => {
     expect(lines[7]).toContain("**Tests**");
   });
 
+  it("has exactly 6 lines for base case with no optional sections (structural pin)", () => {
+    // Arithmetic series base: header + blank + preflight + improvements + build + push = 6 lines.
+    // All optional fields absent: failureCategory "none", durationMs null, both test counts null.
+    // Any future addition of a spurious blank line or extra field would break this count.
+    const outcome = makeOutcome({
+      preflightPassed: true,
+      improvementsAttempted: 1,
+      improvementsSucceeded: 1,
+      buildVerificationPassed: true,
+      pushSucceeded: true,
+      failureCategory: "none",
+      durationMs: null,
+      testCountBefore: null,
+      testCountAfter: null,
+    });
+    const result = formatOutcomeForJournal(outcome);
+    const lines = result.split("\n");
+    expect(lines).toHaveLength(6);
+    expect(lines[0]).toBe("### Outcome Metrics");
+    expect(lines[5]).toContain("**Push**");
+  });
+
+  it("has exactly 9 lines for all-optionals case (structural pin)", () => {
+    // Arithmetic series top: header + blank + 4 fixed + failureCategory + duration + tests = 9 lines.
+    // Mirrors the base-6 pin: every optional section adds exactly +1 line.
+    // A regression that merges or splits any optional section would break this count.
+    const outcome = makeOutcome({
+      preflightPassed: false,
+      improvementsAttempted: 2,
+      improvementsSucceeded: 1,
+      buildVerificationPassed: false,
+      pushSucceeded: false,
+      failureCategory: "test_failure",
+      durationMs: 90000,
+      testCountBefore: 100,
+      testCountAfter: 98,
+      testTotalBefore: null,
+      testTotalAfter: null,
+    });
+    const result = formatOutcomeForJournal(outcome);
+    const lines = result.split("\n");
+    expect(lines).toHaveLength(9);
+    expect(lines[0]).toBe("### Outcome Metrics");
+    expect(lines[6]).toContain("**Failure category**");
+    expect(lines[7]).toContain("**Duration**");
+    expect(lines[8]).toContain("**Tests**");
+  });
+
   it("handles both test counts null", () => {
     const outcome = makeOutcome({
       preflightPassed: false,
