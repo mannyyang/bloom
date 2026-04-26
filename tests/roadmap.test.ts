@@ -211,6 +211,43 @@ describe("generateRoadmapOutput", () => {
     expect(joined).not.toContain("★");
   });
 
+  it("does not display [since: N] annotations in CLI output", () => {
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "In-progress item",
+        status: "In Progress",
+        body: "Some description\n[since: 330]",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP);
+    const joined = output.join("\n");
+    expect(joined).toContain("Some description");
+    expect(joined).not.toContain("[since:");
+    spy.mockRestore();
+  });
+
+  it("omits body display entirely when body is only a [since: N] annotation", () => {
+    // An item with no real body — only the staleness annotation — should emit no body lines.
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Annotation-only item",
+        status: "In Progress",
+        body: "[since: 334]",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP);
+    const joined = output.join("\n");
+    expect(joined).toContain("Annotation-only item");
+    expect(joined).not.toContain("[since:");
+    spy.mockRestore();
+  });
+
   it("preserves parse-order for multiple items within the same status section", () => {
     // SAMPLE_ROADMAP has two Backlog items in this order:
     //   1. "Improve prompt efficiency"

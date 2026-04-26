@@ -50,10 +50,15 @@ function generateRoadmapOutput(content: string): string[] {
       const check = item.status === "Done" ? "✓" : "○";
       lines.push(`  ${check} ${item.title}${issue}${reactions}`);
       if (item.body) {
-        // Indent and wrap the body description
-        const preview = item.body.length > ROADMAP_BODY_PREVIEW_MAX_CHARS ? item.body.slice(0, ROADMAP_BODY_PREVIEW_MAX_CHARS) + "…" : item.body;
-        for (const bodyLine of preview.split("\n")) {
-          lines.push(`      ${bodyLine}`);
+        // Strip internal [since: N] staleness annotations before display —
+        // these are planning metadata and should not appear in human-readable output.
+        const displayBody = item.body.replace(/\n?\[since:\s*\d+\]/g, "").trim();
+        if (displayBody) {
+          // Indent and wrap the body description
+          const preview = displayBody.length > ROADMAP_BODY_PREVIEW_MAX_CHARS ? displayBody.slice(0, ROADMAP_BODY_PREVIEW_MAX_CHARS) + "…" : displayBody;
+          for (const bodyLine of preview.split("\n")) {
+            lines.push(`      ${bodyLine}`);
+          }
         }
       }
     }
