@@ -161,6 +161,18 @@ describe("formatPlanningContext", () => {
     expect(result).toContain(exactBody);
   });
 
+  it("strips [since: N] annotation from current focus body preview", () => {
+    const current = makeItem({ title: "Task", body: "Real content\n[since: 42]" });
+    const result = formatPlanningContext([], current);
+    expect(result).not.toContain("[since: 42]");
+  });
+
+  it("preserves real body content when stripping [since: N] annotation", () => {
+    const current = makeItem({ title: "Task", body: "Real content\n[since: 42]" });
+    const result = formatPlanningContext([], current);
+    expect(result).toContain("Real content");
+  });
+
   it("groups items by status", () => {
     const items = [
       makeItem({ title: "Backlog A", status: "Backlog" }),

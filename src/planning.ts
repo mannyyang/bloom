@@ -501,7 +501,8 @@ export function formatPlanningContext(
   if (currentItem) {
     lines.push(`\n**Current focus**: ${currentItem.title}`);
     if (currentItem.body) {
-      lines.push(currentItem.body.slice(0, PLANNING_BODY_PREVIEW_CHARS));
+      const cleanBody = currentItem.body.replace(/\n?\[since:\s*\d+\]/g, "");
+      lines.push(cleanBody.slice(0, PLANNING_BODY_PREVIEW_CHARS));
     }
   }
 
