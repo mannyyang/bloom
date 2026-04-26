@@ -448,6 +448,36 @@ describe("parseRoadmap", () => {
     expect(items[0].title).toBe("Checked but still Backlog");
     expect(items[0].status).toBe("Backlog");
   });
+
+  it("captures body lines indented with exactly 1 space", () => {
+    // Regression guard: the body-continuation regex must accept \s+ (not \s{2,})
+    // so that 1-space-indented lines are not silently dropped.
+    const content = `## Backlog
+- [ ] My task
+ single space detail
+`;
+    const items = parseRoadmap(content);
+    expect(items).toHaveLength(1);
+    expect(items[0].body).toBe("single space detail");
+  });
+
+  it("every item produced by parseRoadmap has reactions === 0", () => {
+    // reactions are sourced from GitHub, not from ROADMAP.md.
+    // Pinning this default prevents a regression where someone embeds
+    // reactions in the file format and accidentally changes the default.
+    const content = `## Backlog
+- [ ] Item one
+- [ ] Item two (#5)
+
+## Up Next
+- [ ] Item three
+`;
+    const items = parseRoadmap(content);
+    expect(items.length).toBeGreaterThan(0);
+    for (const item of items) {
+      expect(item.reactions).toBe(0);
+    }
+  });
 });
 
 describe("serializeRoadmap", () => {
