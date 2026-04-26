@@ -173,6 +173,15 @@ describe("formatPlanningContext", () => {
     expect(result).toContain("Real content");
   });
 
+  it("does not push blank line when body is only a [since: N] annotation", () => {
+    const current = makeItem({ title: "Task", body: "[since: 337]" });
+    const result = formatPlanningContext([], current);
+    // After stripping the annotation the body is empty; the result should end
+    // with the title line and not have a trailing newline from an empty body push.
+    expect(result).not.toContain("[since: 337]");
+    expect(result.endsWith("**Current focus**: Task")).toBe(true);
+  });
+
   it("groups items by status", () => {
     const items = [
       makeItem({ title: "Backlog A", status: "Backlog" }),
