@@ -584,6 +584,14 @@ describe("parseInProgressSinceCycle", () => {
   it("returns N when currentCycle is not provided (no upper-bound validation)", () => {
     expect(parseInProgressSinceCycle("[since: 99999]")).toBe(99999);
   });
+
+  it("returns N when N === currentCycle (exact-equal boundary is valid)", () => {
+    expect(parseInProgressSinceCycle("[since: 50]", 50)).toBe(50);
+  });
+
+  it("returns null when N === currentCycle + 1 (one-ahead boundary is invalid)", () => {
+    expect(parseInProgressSinceCycle("[since: 51]", 50)).toBeNull();
+  });
 });
 
 describe("detectStaleInProgressItems", () => {
