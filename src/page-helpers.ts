@@ -114,10 +114,10 @@ export function parseRoadmapSections(content: string): RoadmapSection[] {
     }
 
     // [since: N] line — skip
-    if (rawLine.match(/^\s+\[since:\s*\d+\]$/)) continue;
+    if (/^\s+\[since:\s*\d+\]$/.test(rawLine)) continue;
 
     // Indented description line
-    if (rawLine.match(/^\s{2,}/) && currentItem) {
+    if (/^\s{2,}/.test(rawLine) && currentItem) {
       const desc = rawLine.trim();
       if (desc) {
         currentItem.description = currentItem.description
