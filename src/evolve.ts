@@ -104,7 +104,7 @@ export function countImprovements(text: string): number {
   let lineCount = 0;
   for (const line of lines) {
     const trimmed = line.trim();
-    if (trimmed.match(/^(?:[-*]\s|\d+[.)]\s)/)) {
+    if (/^(?:[-*]\s|\d+[.)]\s)/.test(trimmed)) {
       lineCount++;
     }
   }
