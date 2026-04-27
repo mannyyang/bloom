@@ -170,6 +170,12 @@ describe("buildTriagePrompt", () => {
     expect(prompt).toContain("#10");
     expect(prompt).toContain("0 reactions");
   });
+
+  it("includes non-zero reaction count in prompt", () => {
+    const prompt = buildTriagePrompt([makeIssue({ number: 11, reactions: 5 })], []);
+    expect(prompt).toContain("#11");
+    expect(prompt).toContain("5 reactions");
+  });
 });
 
 describe("parseTriageResponse", () => {
