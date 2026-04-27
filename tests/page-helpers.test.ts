@@ -38,6 +38,11 @@ describe("escapeHtml", () => {
   it("handles empty string", () => {
     expect(escapeHtml("")).toBe("");
   });
+  it("does not escape single quotes (only double-quoted attribute context is used)", () => {
+    // Single quotes are intentionally left unescaped — all HTML attributes in
+    // page-helpers.ts use double quotes, so ' is safe and must not become &#39;.
+    expect(escapeHtml("it's fine")).toBe("it's fine");
+  });
 });
 
 // ---------------------------------------------------------------------------
