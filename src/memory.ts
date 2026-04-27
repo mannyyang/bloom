@@ -38,7 +38,7 @@ export function extractLearnings(learningsText: string): ExtractedLearnings {
   const result: ExtractedLearnings = { learnings: [] };
   for (const line of learningsText.split("\n")) {
     const trimmed = line.trim();
-    if (!trimmed || !trimmed.match(/^[-*\d]/)) continue;
+    if (!trimmed || !/^[-*\d]/.test(trimmed)) continue;
 
     // Strip leading "- " or "* " or "1. " or "1) " etc.
     const content = trimmed.replace(/^[-*]\s+/, "").replace(/^\d+[.)]\s+/, "");
