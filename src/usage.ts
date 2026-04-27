@@ -95,14 +95,19 @@ export function extractUsage(
  * Aggregate multiple phase usages into a cycle-level summary.
  */
 export function aggregateUsage(phases: PhaseUsage[]): CycleUsage {
-  return {
-    phases,
-    totalCostUsd: phases.reduce((sum, p) => sum + p.totalCostUsd, 0),
-    totalInputTokens: phases.reduce((sum, p) => sum + p.inputTokens, 0),
-    totalOutputTokens: phases.reduce((sum, p) => sum + p.outputTokens, 0),
-    totalCacheReadTokens: phases.reduce((sum, p) => sum + p.cacheReadInputTokens, 0),
-    totalCacheCreationTokens: phases.reduce((sum, p) => sum + p.cacheCreationInputTokens, 0),
-  };
+  let totalCostUsd = 0;
+  let totalInputTokens = 0;
+  let totalOutputTokens = 0;
+  let totalCacheReadTokens = 0;
+  let totalCacheCreationTokens = 0;
+  for (const p of phases) {
+    totalCostUsd += p.totalCostUsd;
+    totalInputTokens += p.inputTokens;
+    totalOutputTokens += p.outputTokens;
+    totalCacheReadTokens += p.cacheReadInputTokens;
+    totalCacheCreationTokens += p.cacheCreationInputTokens;
+  }
+  return { phases, totalCostUsd, totalInputTokens, totalOutputTokens, totalCacheReadTokens, totalCacheCreationTokens };
 }
 
 /**
