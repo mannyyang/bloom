@@ -13,6 +13,7 @@ vi.mock("../src/lifecycle.js", () => ({
 vi.mock("../src/planning.js", () => ({
   updateItemStatus: vi.fn(),
   demoteStaleInProgressItems: vi.fn().mockReturnValue([]),
+  STALE_IN_PROGRESS_THRESHOLD_CYCLES: 3,
 }));
 
 // Mock issues module
@@ -24,7 +25,7 @@ vi.mock("../src/issues.js", () => ({
 
 import { runBuildVerificationPhase, updatePlanningStatus, pushChangesPhase, demoteStaleItemsPhase, DEMOTE_STALE_THRESHOLD } from "../src/phases.js";
 import { runBuildVerification, pushChanges, commitRoadmap } from "../src/lifecycle.js";
-import { updateItemStatus, demoteStaleInProgressItems } from "../src/planning.js";
+import { updateItemStatus, demoteStaleInProgressItems, STALE_IN_PROGRESS_THRESHOLD_CYCLES } from "../src/planning.js";
 import { closeIssueWithComment } from "../src/issues.js";
 
 function createOutcome(overrides: Partial<CycleOutcome> = {}): CycleOutcome {
@@ -449,6 +450,14 @@ describe("demoteStaleItemsPhase", () => {
     demoteStaleItemsPhase(projectConfig, 10);
     expect(demoteStaleInProgressItems).toHaveBeenCalledWith(projectConfig, 10, DEMOTE_STALE_THRESHOLD);
     expect(DEMOTE_STALE_THRESHOLD).toBe(3);
+  });
+
+  it("DEMOTE_STALE_THRESHOLD matches STALE_IN_PROGRESS_THRESHOLD_CYCLES to prevent drift", () => {
+    // Both constants govern "how many cycles before an In Progress item is demoted".
+    // context.ts calls demoteStaleInProgressItems() with the planning.ts default;
+    // phases.ts calls it with DEMOTE_STALE_THRESHOLD. They must always be equal or
+    // the two call sites will silently use different thresholds.
+    expect(DEMOTE_STALE_THRESHOLD).toBe(STALE_IN_PROGRESS_THRESHOLD_CYCLES);
   });
 });
 
