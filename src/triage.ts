@@ -100,7 +100,7 @@ Respond with ONLY a JSON array of objects. No other text. Example:
 export function parseTriageResponse(text: string): TriageDecision[] {
   // Extract JSON from potentially fenced markdown
   const fenceMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
-  const jsonStr = fenceMatch ? fenceMatch[1] : text.trim();
+  const jsonStr = fenceMatch ? (fenceMatch[1] ?? text.trim()) : text.trim();
 
   try {
     const parsed = JSON.parse(jsonStr);
