@@ -42,13 +42,11 @@ export function parseTestCount(output: string): number | null {
     return parseInt(passedMatch[1], 10);
   }
   // All tests failed: "Tests  5 failed (5)" with no "passed" token
-  const allFailedMatch = output.match(/Tests\s+\d+\s+failed\s+\(\d+\)/);
-  if (allFailedMatch) {
+  if (/Tests\s+\d+\s+failed\s+\(\d+\)/.test(output)) {
     return 0;
   }
   // All tests skipped: "Tests  3 skipped (3)" with no "passed" or "failed" token
-  const allSkippedMatch = output.match(/Tests\s+\d+\s+skipped\s+\(\d+\)/);
-  if (allSkippedMatch) {
+  if (/Tests\s+\d+\s+skipped\s+\(\d+\)/.test(output)) {
     return 0;
   }
   return null;
