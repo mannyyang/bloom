@@ -482,6 +482,12 @@ describe("formatOutcomeForJournal", () => {
     expect(result).toContain("**Failure category**: test_failure");
   });
 
+  it("includes failure category line when failureCategory is llm_error", () => {
+    const outcome = makeOutcome({ failureCategory: "llm_error" });
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).toContain("**Failure category**: llm_error");
+  });
+
   it("omits failure category line when failureCategory is none", () => {
     const outcome = makeOutcome({ failureCategory: "none" });
     const result = formatOutcomeForJournal(outcome);
