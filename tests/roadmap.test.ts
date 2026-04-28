@@ -292,4 +292,18 @@ describe("parseRoadmap", () => {
     expect(items[0].linkedIssueNumber).toBe(12);
     expect(items[0].body).toBe("indented detail");
   });
+
+  it("assigns section status (not 'Done') to a [x] checkbox item under a non-Done heading", () => {
+    // Status comes from the ## heading, not the [ ]/[x] checkbox state.
+    // A checked item under ## Backlog must parse as status "Backlog", not "Done".
+    const content = `# Bloom Evolution Roadmap
+
+## Backlog
+- [x] Accidentally-checked backlog item
+`;
+    const items = parseRoadmap(content);
+    expect(items).toHaveLength(1);
+    expect(items[0].status).toBe("Backlog");
+    expect(items[0].title).toBe("Accidentally-checked backlog item");
+  });
 });
