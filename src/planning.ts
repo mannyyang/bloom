@@ -41,6 +41,14 @@ export const STATUS_UP_NEXT = "Up Next" as const satisfies StatusColumn;
 export const STATUS_DONE = "Done" as const satisfies StatusColumn;
 
 /**
+ * Canonical string for the "Backlog" status column.
+ * Completes the set of exported status constants alongside STATUS_IN_PROGRESS,
+ * STATUS_UP_NEXT, and STATUS_DONE so every StatusColumn value has a typed
+ * constant and bare string drift is eliminated everywhere.
+ */
+export const STATUS_BACKLOG = "Backlog" as const satisfies StatusColumn;
+
+/**
  * The canonical H1 header written at the top of every ROADMAP.md file.
  * Exported so tests can pin its value and callers can reference it without
  * relying on a hard-coded string literal.
@@ -324,7 +332,7 @@ export function addLinkedItem(
   issueNumber: number,
   title: string,
   body: string,
-  status: StatusColumn = "Backlog",
+  status: StatusColumn = STATUS_BACKLOG,
 ): string {
   const filePath = resolve(process.cwd(), _config.filePath);
   return withRoadmapItems(filePath, (items, markDirty) => {
@@ -347,7 +355,7 @@ export function addDraftItem(
   _config: ProjectConfig,
   title: string,
   body: string,
-  status: StatusColumn = "Backlog",
+  status: StatusColumn = STATUS_BACKLOG,
 ): string {
   const filePath = resolve(process.cwd(), _config.filePath);
   return withRoadmapItems(filePath, (items, markDirty) => {
@@ -474,7 +482,7 @@ export function demoteStaleInProgressItems(
  * Priority: "In Progress" first (resume unfinished work), then "Up Next", then "Backlog".
  */
 export function pickNextItem(items: ProjectItem[]): ProjectItem | null {
-  const statusPriority = [STATUS_IN_PROGRESS, STATUS_UP_NEXT, "Backlog"] as const;
+  const statusPriority = [STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG] as const;
   for (const status of statusPriority) {
     const candidates = items
       .filter((i) => i.status === status)
