@@ -226,6 +226,18 @@ describe("formatPlanningContext", () => {
     expect(result).toContain("[#42]");
   });
 
+  it("maxItemsPerSection cap excludes items beyond the limit and raising it makes them visible", () => {
+    const items = Array.from({ length: 6 }, (_, i) =>
+      makeItem({ id: `item-${i}`, title: `Backlog item ${i}`, status: "Backlog" }),
+    );
+    // Default cap is 5 — the 6th item should be absent
+    const resultDefault = formatPlanningContext(items, null);
+    expect(resultDefault).not.toContain("Backlog item 5");
+    // Raising cap to 6 — the 6th item should now appear
+    const resultRaised = formatPlanningContext(items, null, PLANNING_CONTEXT_MAX_CHARS, 6);
+    expect(resultRaised).toContain("Backlog item 5");
+  });
+
   it("respects maxChars limit", () => {
     const items = Array.from({ length: 20 }, (_, i) =>
       makeItem({ id: `item-${i}`, title: `Very long item title number ${i} with lots of detail`, status: "Backlog" }),
