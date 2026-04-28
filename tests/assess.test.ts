@@ -35,6 +35,8 @@ vi.mock("../src/planning.js", () => ({
   ensureProject: vi.fn(),
   getProjectItems: vi.fn(),
   formatPlanningContext: vi.fn(),
+  STATUS_IN_PROGRESS: "In Progress",
+  STATUS_DONE: "Done",
 }));
 
 vi.mock("../src/usage.js", () => ({

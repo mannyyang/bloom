@@ -2,7 +2,7 @@ import type Database from "better-sqlite3";
 import { type CommunityIssue, closeIssueWithComment, detectRepo, isValidRepo, ISSUES_DEFAULT_ACTION } from "./issues.js";
 import { hasIssueAction, insertIssueAction } from "./db.js";
 import { errorMessage } from "./errors.js";
-import { addLinkedItem, type ProjectConfig, type ProjectItem } from "./planning.js";
+import { addLinkedItem, type ProjectConfig, type ProjectItem, STATUS_DONE } from "./planning.js";
 import { type QueryFn, resolveModel } from "./agent-phases.js";
 import { extractResultText } from "./usage.js";
 
@@ -34,8 +34,10 @@ export const TRIAGE_ACTION_NAME = "triaged";
 
 /** Board status string that signals a roadmap item is complete.
  *  Gates issue-closing logic: issues are only closed when their linked
- *  board item carries exactly this status (case-sensitive). */
-export const TRIAGE_BOARD_STATUS_DONE = "Done";
+ *  board item carries exactly this status (case-sensitive).
+ *  Delegates to STATUS_DONE from planning.ts so a future StatusColumn change
+ *  is caught by the type checker here too. */
+export const TRIAGE_BOARD_STATUS_DONE = STATUS_DONE;
 
 /** Comment posted when closing an issue that is already tracked on the
  *  Bloom Evolution Roadmap board. */
