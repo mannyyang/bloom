@@ -13,6 +13,7 @@ import { resolve } from "node:path";
 import {
   parseRoadmap,
   readRoadmap,
+  STATUS_BACKLOG,
   STATUS_IN_PROGRESS,
   STATUS_UP_NEXT,
   STATUS_DONE,
@@ -24,7 +25,7 @@ export { generateRoadmapOutput };
 
 export const ROADMAP_BODY_PREVIEW_MAX_CHARS = 120;
 
-const STATUS_ORDER: StatusColumn[] = [STATUS_IN_PROGRESS, STATUS_UP_NEXT, "Backlog", STATUS_DONE];
+const STATUS_ORDER: StatusColumn[] = [STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, STATUS_DONE];
 
 /**
  * Core roadmap display logic, accepting raw markdown for testability.
