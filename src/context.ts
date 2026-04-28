@@ -12,6 +12,7 @@ import {
   updateItemStatus,
   demoteStaleInProgressItems,
   formatPlanningContext,
+  STATUS_IN_PROGRESS,
   type ProjectConfig,
   type ProjectItem,
 } from "./planning.js";
@@ -153,7 +154,7 @@ export async function loadEvolutionContext(
 
     currentItem = pickNextItem(projectItems);
     if (currentItem) {
-      const markedInProgress = updateItemStatus(projectConfig, currentItem.id, "In Progress", undefined, cycleCount);
+      const markedInProgress = updateItemStatus(projectConfig, currentItem.id, STATUS_IN_PROGRESS, undefined, cycleCount);
       if (markedInProgress) {
         console.log(`[planning] Selected: "${currentItem.title}" → marked In Progress (since cycle ${cycleCount})`);
       } else {

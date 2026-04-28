@@ -33,6 +33,7 @@ vi.mock("../src/planning.js", () => ({
   updateItemStatus: vi.fn(),
   demoteStaleInProgressItems: vi.fn().mockReturnValue([]),
   formatPlanningContext: vi.fn(),
+  STATUS_IN_PROGRESS: "In Progress",
 }));
 
 vi.mock("../src/errors.js", () => ({

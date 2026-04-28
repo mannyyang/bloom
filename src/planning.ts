@@ -22,6 +22,13 @@ const ROADMAP_FILE = "ROADMAP.md";
 const STATUS_COLUMNS = ["Backlog", "Up Next", "In Progress", "Done"] as const;
 
 /**
+ * Canonical string for the "In Progress" status column.
+ * Exported so callers (e.g. context.ts) can reference it without repeating
+ * the bare string literal and risking silent divergence from the source of truth.
+ */
+export const STATUS_IN_PROGRESS = "In Progress" as const satisfies StatusColumn;
+
+/**
  * The canonical H1 header written at the top of every ROADMAP.md file.
  * Exported so tests can pin its value and callers can reference it without
  * relying on a hard-coded string literal.
@@ -371,7 +378,7 @@ export function updateItemStatus(
     item.status = status;
     if (status === "Done" && completionNote) {
       item.body = completionNote;
-    } else if (status === "In Progress" && sinceCycle !== undefined) {
+    } else if (status === STATUS_IN_PROGRESS && sinceCycle !== undefined) {
       // Preserve an existing [since: N] annotation so the staleness clock isn't
       // reset every cycle. Only stamp a new annotation when none is present yet
       // (i.e., the item is freshly transitioning into In Progress).
@@ -420,7 +427,7 @@ export function detectStaleInProgressItems(
   threshold: number = STALE_IN_PROGRESS_THRESHOLD_CYCLES,
 ): ProjectItem[] {
   return items.filter((item) => {
-    if (item.status !== "In Progress") return false;
+    if (item.status !== STATUS_IN_PROGRESS) return false;
     const since = parseInProgressSinceCycle(item.body, currentCycle);
     if (since === null) return true; // no annotation (or invalid) → always stale
     return currentCycle - since > threshold;
@@ -455,7 +462,7 @@ export function demoteStaleInProgressItems(
  * Priority: "In Progress" first (resume unfinished work), then "Up Next", then "Backlog".
  */
 export function pickNextItem(items: ProjectItem[]): ProjectItem | null {
-  const statusPriority = ["In Progress", "Up Next", "Backlog"] as const;
+  const statusPriority = [STATUS_IN_PROGRESS, "Up Next", "Backlog"] as const;
   for (const status of statusPriority) {
     const candidates = items
       .filter((i) => i.status === status)
