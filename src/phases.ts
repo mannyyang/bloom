@@ -10,7 +10,7 @@ import {
 import { parseTestCount, parseTestTotal, classifyBuildFailure } from "./outcomes.js";
 import { errorMessage } from "./errors.js";
 import { formatDurationSec } from "./usage.js";
-import { updateItemStatus, demoteStaleInProgressItems, STATUS_UP_NEXT, STATUS_DONE, type ProjectConfig, type ProjectItem } from "./planning.js";
+import { updateItemStatus, demoteStaleInProgressItems, STALE_IN_PROGRESS_THRESHOLD_CYCLES, STATUS_UP_NEXT, STATUS_DONE, type ProjectConfig, type ProjectItem } from "./planning.js";
 import type { CycleOutcome } from "./outcomes.js";
 import { closeIssueWithComment } from "./issues.js";
 import type Database from "better-sqlite3";
@@ -101,8 +101,11 @@ export async function updatePlanningStatus(
   }
 }
 
-/** Number of cycles an item can remain In Progress before being demoted back to Up Next. */
-export const DEMOTE_STALE_THRESHOLD = 3;
+/**
+ * Re-export under the phases-facing alias so callers don't need to import
+ * directly from planning.ts, and there is only one source of truth for the value.
+ */
+export const DEMOTE_STALE_THRESHOLD = STALE_IN_PROGRESS_THRESHOLD_CYCLES;
 
 /**
  * Demote any In Progress items stuck beyond the staleness threshold back to Up Next.
