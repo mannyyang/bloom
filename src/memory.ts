@@ -57,10 +57,10 @@ export function extractLearnings(learningsText: string): ExtractedLearnings {
         (LEARNING_CATEGORIES as readonly string[]).includes(candidate)
       ) {
         category = candidate as LearningCategory;
-        cleanContent = remainder ?? "";
+        cleanContent = remainder;
       } else {
         // Unknown category prefix — strip the bracket tag but keep the text
-        cleanContent = remainder ?? content;
+        cleanContent = remainder;
       }
     }
 
