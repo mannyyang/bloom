@@ -11,7 +11,7 @@ const mockReadFileSync = vi.mocked(readFileSync);
 const mockWriteFileSync = vi.mocked(writeFileSync);
 const mockExistsSync = vi.mocked(existsSync);
 
-import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, getProjectItems, PLANNING_BODY_PREVIEW_CHARS, ITEM_BODY_LIMIT, PLANNING_CONTEXT_MAX_CHARS, PLANNING_CONTEXT_MAX_ITEMS, STALE_IN_PROGRESS_THRESHOLD_CYCLES, ROADMAP_HEADER, type ProjectItem } from "../src/planning.js";
+import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, getProjectItems, PLANNING_BODY_PREVIEW_CHARS, ITEM_BODY_LIMIT, PLANNING_CONTEXT_MAX_CHARS, PLANNING_CONTEXT_MAX_ITEMS, STALE_IN_PROGRESS_THRESHOLD_CYCLES, ROADMAP_HEADER, STATUS_BACKLOG, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_DONE, type ProjectItem } from "../src/planning.js";
 
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
@@ -48,6 +48,22 @@ describe("planning.ts constants", () => {
 
   it('ROADMAP_HEADER is pinned to "# Bloom Evolution Roadmap"', () => {
     expect(ROADMAP_HEADER).toBe("# Bloom Evolution Roadmap");
+  });
+
+  it('STATUS_BACKLOG is pinned to "Backlog"', () => {
+    expect(STATUS_BACKLOG).toBe("Backlog");
+  });
+
+  it('STATUS_IN_PROGRESS is pinned to "In Progress"', () => {
+    expect(STATUS_IN_PROGRESS).toBe("In Progress");
+  });
+
+  it('STATUS_UP_NEXT is pinned to "Up Next"', () => {
+    expect(STATUS_UP_NEXT).toBe("Up Next");
+  });
+
+  it('STATUS_DONE is pinned to "Done"', () => {
+    expect(STATUS_DONE).toBe("Done");
   });
 });
 
