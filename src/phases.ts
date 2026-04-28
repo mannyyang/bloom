@@ -10,7 +10,7 @@ import {
 import { parseTestCount, parseTestTotal, classifyBuildFailure } from "./outcomes.js";
 import { errorMessage } from "./errors.js";
 import { formatDurationSec } from "./usage.js";
-import { updateItemStatus, demoteStaleInProgressItems, type ProjectConfig, type ProjectItem } from "./planning.js";
+import { updateItemStatus, demoteStaleInProgressItems, STATUS_UP_NEXT, STATUS_DONE, type ProjectConfig, type ProjectItem } from "./planning.js";
 import type { CycleOutcome } from "./outcomes.js";
 import { closeIssueWithComment } from "./issues.js";
 import type Database from "better-sqlite3";
@@ -72,7 +72,7 @@ export async function updatePlanningStatus(
           succeeded = false;
         }
       }
-      const newStatus = succeeded ? "Done" : "Up Next";
+      const newStatus = succeeded ? STATUS_DONE : STATUS_UP_NEXT;
       const completionNote = succeeded
         ? `Completed in cycle ${cycleCount}: ${processed.improvementsSucceeded}/${processed.improvementsAttempted} improvements succeeded.`
         : undefined;
@@ -82,7 +82,7 @@ export async function updatePlanningStatus(
         commitRoadmap(cycleCount);
         // Close the linked GitHub issue now that work is confirmed Done, providing
         // proof of resolution rather than closing prematurely at triage time.
-        if (newStatus === "Done" && n !== null) {
+        if (newStatus === STATUS_DONE && n !== null) {
           const closeComment = `${completionNote}\n\nThis issue has been resolved — the linked roadmap item is now marked Done.`;
           await closeIssueWithComment(
             n,

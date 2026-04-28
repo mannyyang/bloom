@@ -14,6 +14,8 @@ vi.mock("../src/planning.js", () => ({
   updateItemStatus: vi.fn(),
   demoteStaleInProgressItems: vi.fn().mockReturnValue([]),
   STALE_IN_PROGRESS_THRESHOLD_CYCLES: 3,
+  STATUS_UP_NEXT: "Up Next",
+  STATUS_DONE: "Done",
 }));
 
 // Mock issues module

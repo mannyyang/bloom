@@ -13,6 +13,9 @@ import { resolve } from "node:path";
 import {
   parseRoadmap,
   readRoadmap,
+  STATUS_IN_PROGRESS,
+  STATUS_UP_NEXT,
+  STATUS_DONE,
   type StatusColumn,
 } from "./planning.js";
 
@@ -21,7 +24,7 @@ export { generateRoadmapOutput };
 
 export const ROADMAP_BODY_PREVIEW_MAX_CHARS = 120;
 
-const STATUS_ORDER: StatusColumn[] = ["In Progress", "Up Next", "Backlog", "Done"];
+const STATUS_ORDER: StatusColumn[] = [STATUS_IN_PROGRESS, STATUS_UP_NEXT, "Backlog", STATUS_DONE];
 
 /**
  * Core roadmap display logic, accepting raw markdown for testability.
@@ -47,7 +50,7 @@ function generateRoadmapOutput(content: string): string[] {
     for (const item of statusItems) {
       const issue = item.linkedIssueNumber ? ` (#${item.linkedIssueNumber})` : "";
       const reactions = item.reactions > 0 ? ` [${item.reactions} ★]` : "";
-      const check = item.status === "Done" ? "✓" : "○";
+      const check = item.status === STATUS_DONE ? "✓" : "○";
       lines.push(`  ${check} ${item.title}${issue}${reactions}`);
       if (item.body) {
         // Strip internal [since: N] staleness annotations before display —

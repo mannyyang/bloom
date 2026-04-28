@@ -29,6 +29,18 @@ const STATUS_COLUMNS = ["Backlog", "Up Next", "In Progress", "Done"] as const;
 export const STATUS_IN_PROGRESS = "In Progress" as const satisfies StatusColumn;
 
 /**
+ * Canonical string for the "Up Next" status column.
+ * Exported so callers can reference it without bare string literals.
+ */
+export const STATUS_UP_NEXT = "Up Next" as const satisfies StatusColumn;
+
+/**
+ * Canonical string for the "Done" status column.
+ * Exported so callers can reference it without bare string literals.
+ */
+export const STATUS_DONE = "Done" as const satisfies StatusColumn;
+
+/**
  * The canonical H1 header written at the top of every ROADMAP.md file.
  * Exported so tests can pin its value and callers can reference it without
  * relying on a hard-coded string literal.
@@ -204,7 +216,7 @@ export function serializeRoadmap(items: ProjectItem[]): string {
       continue;
     }
     for (const item of statusItems) {
-      const check = status === "Done" ? "x" : " ";
+      const check = status === STATUS_DONE ? "x" : " ";
       const issueRef = item.linkedIssueNumber
         ? ` (#${item.linkedIssueNumber})`
         : "";
@@ -376,7 +388,7 @@ export function updateItemStatus(
     const oldBody = item.body;
 
     item.status = status;
-    if (status === "Done" && completionNote) {
+    if (status === STATUS_DONE && completionNote) {
       item.body = completionNote;
     } else if (status === STATUS_IN_PROGRESS && sinceCycle !== undefined) {
       // Preserve an existing [since: N] annotation so the staleness clock isn't
@@ -447,7 +459,7 @@ export function demoteStaleInProgressItems(
   return withRoadmapItems(filePath, (items, markDirty) => {
     const stale = detectStaleInProgressItems(items, currentCycle, threshold);
     for (const item of stale) {
-      item.status = "Up Next";
+      item.status = STATUS_UP_NEXT;
       item.body = item.body.replace(/\n?\[since:\s*\d+\]/g, "").trim();
     }
     if (stale.length > 0) markDirty();
@@ -462,7 +474,7 @@ export function demoteStaleInProgressItems(
  * Priority: "In Progress" first (resume unfinished work), then "Up Next", then "Backlog".
  */
 export function pickNextItem(items: ProjectItem[]): ProjectItem | null {
-  const statusPriority = [STATUS_IN_PROGRESS, "Up Next", "Backlog"] as const;
+  const statusPriority = [STATUS_IN_PROGRESS, STATUS_UP_NEXT, "Backlog"] as const;
   for (const status of statusPriority) {
     const candidates = items
       .filter((i) => i.status === status)
@@ -516,7 +528,7 @@ export function formatPlanningContext(
   }
 
   for (const status of STATUS_COLUMNS) {
-    if (status === "Done") continue;
+    if (status === STATUS_DONE) continue;
     // Filter out currentItem from the In Progress section — it's already rendered above
     const statusItems = items
       .filter((i) => i.status === status)
