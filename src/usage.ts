@@ -149,8 +149,11 @@ export function formatUsageForJournal(cu: CycleUsage): string {
   for (const p of cu.phases) {
     const cost = p.totalCostUsd.toFixed(COST_DECIMAL_PLACES);
     const duration = formatDurationSec(p.durationMs);
+    const phaseCacheSuffix = (p.cacheReadInputTokens > 0 || p.cacheCreationInputTokens > 0)
+      ? ` (cache: ${p.cacheReadInputTokens.toLocaleString()} read, ${p.cacheCreationInputTokens.toLocaleString()} created)`
+      : "";
     lines.push(
-      `- **${p.phase}**: $${cost} — ${p.inputTokens.toLocaleString()} input tokens, ${p.outputTokens.toLocaleString()} output tokens, ${p.numTurns} turns, ${duration}`,
+      `- **${p.phase}**: $${cost} — ${p.inputTokens.toLocaleString()} input tokens, ${p.outputTokens.toLocaleString()} output tokens${phaseCacheSuffix}, ${p.numTurns} turns, ${duration}`,
     );
   }
   const cacheSuffix = (cu.totalCacheReadTokens > 0 || cu.totalCacheCreationTokens > 0)
