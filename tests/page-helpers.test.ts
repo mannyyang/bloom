@@ -372,6 +372,24 @@ describe("renderNav", () => {
     expect(html).toContain("color:#2563eb");   // non-active links
     expect(html).toContain("font-weight:700"); // active link
   });
+
+  it("renderNav('journal') bolds the journal link and leaves index/stats links plain", () => {
+    const html = renderNav("journal");
+    // Active journal link must contain bold style
+    expect(html).toContain('href="journal.html" style="color:#111827;font-weight:700');
+    // Non-active links must use the plain link colour, not bold
+    expect(html).toContain('href="index.html" style="color:#2563eb');
+    expect(html).toContain('href="stats.html" style="color:#2563eb');
+  });
+
+  it("renderNav('index') bolds the index link and leaves journal/stats links plain", () => {
+    const html = renderNav("index");
+    // Active index link must contain bold style
+    expect(html).toContain('href="index.html" style="color:#111827;font-weight:700');
+    // Non-active links must use the plain link colour, not bold
+    expect(html).toContain('href="journal.html" style="color:#2563eb');
+    expect(html).toContain('href="stats.html" style="color:#2563eb');
+  });
 });
 
 // ---------------------------------------------------------------------------
