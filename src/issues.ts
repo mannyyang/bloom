@@ -1,4 +1,4 @@
-import { execFileSync } from "child_process";
+import { execFileSync } from "node:child_process";
 import type Database from "better-sqlite3";
 import { errorMessage } from "./errors.js";
 import { githubApiRequest } from "./github-app.js";

@@ -9,7 +9,7 @@
  */
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
-import { readFileSync } from "fs";
+import { readFileSync } from "node:fs";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import {
   initDb,

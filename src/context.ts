@@ -1,4 +1,4 @@
-import { readFileSync } from "fs";
+import { readFileSync } from "node:fs";
 import type Database from "better-sqlite3";
 import { getRecentJournalSummary, getCycleStats, formatCycleStats } from "./db.js";
 import { fetchCommunityIssues, syncReactionsToItems, type CommunityIssue } from "./issues.js";

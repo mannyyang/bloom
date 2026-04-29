@@ -1,4 +1,4 @@
-import { execSync, execFileSync } from "child_process";
+import { execSync, execFileSync } from "node:child_process";
 import { execSyncOutput } from "./errors.js";
 
 /**

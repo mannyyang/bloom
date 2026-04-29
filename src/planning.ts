@@ -1,5 +1,5 @@
-import { readFileSync, writeFileSync, existsSync } from "fs";
-import { resolve } from "path";
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { resolve } from "node:path";
 
 // --- Types ---
 

@@ -1,6 +1,6 @@
-import { readFileSync } from "fs";
-import { createSign } from "crypto";
-import { resolve, dirname } from "path";
+import { readFileSync } from "node:fs";
+import { createSign } from "node:crypto";
+import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateRow } from "./db.js";
 
