@@ -273,6 +273,20 @@ describe("renderStatsSection", () => {
     expect(row).toBeDefined();
     expect(row).toContain("<strong>75%</strong>");
   });
+
+  it("avg-improvements row contains exact <strong>1.5</strong> value in <td>", () => {
+    const html = renderStatsSection(baseStats);
+    const row = html.split("\n").find(l => l.includes("Avg improvements / cycle"))!;
+    expect(row).toBeDefined();
+    expect(row).toContain("<strong>1.5</strong>");
+  });
+
+  it("recent-failures row contains exact <strong>1</strong> value in <td>", () => {
+    const html = renderStatsSection(baseStats);
+    const row = html.split("\n").find(l => l.includes("Recent failures (last 5 cycles)"))!;
+    expect(row).toBeDefined();
+    expect(row).toContain("<strong>1</strong>");
+  });
 });
 
 // ---------------------------------------------------------------------------
