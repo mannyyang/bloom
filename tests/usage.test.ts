@@ -637,6 +637,50 @@ describe("formatCycleUsage", () => {
     expect(phaseLine).not.toContain("Cache:");
   });
 
+  it("pins exact full Total line string for no-cache case", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 1.0,
+        inputTokens: 5000,
+        outputTokens: 2000,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 20000,
+        numTurns: 8,
+      },
+      {
+        phase: "Evolution",
+        totalCostUsd: 3.0,
+        inputTokens: 15000,
+        outputTokens: 8000,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 60000,
+        numTurns: 30,
+      },
+    ]);
+    const totalLine = formatCycleUsage(cu).split("\n").find(l => l.includes("[Total]"))!;
+    expect(totalLine).toBe("[Total] Cost: $4.0000 | Tokens: 20,000 in / 10,000 out");
+  });
+
+  it("pins exact full Total line string for cache case", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 1.0,
+        inputTokens: 5000,
+        outputTokens: 2000,
+        cacheReadInputTokens: 1000,
+        cacheCreationInputTokens: 500,
+        durationMs: 20000,
+        numTurns: 8,
+      },
+    ]);
+    const totalLine = formatCycleUsage(cu).split("\n").find(l => l.includes("[Total]"))!;
+    expect(totalLine).toBe("[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Cache: 1,000 read / 500 created");
+  });
+
   it("pins exact cache values on phase line when only read tokens are non-zero", () => {
     const cu = aggregateUsage([
       {
