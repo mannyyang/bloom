@@ -390,6 +390,15 @@ describe("renderNav", () => {
     expect(html).toContain('href="journal.html" style="color:#2563eb');
     expect(html).toContain('href="stats.html" style="color:#2563eb');
   });
+
+  it("renderNav('stats') bolds the stats link and leaves index/journal links plain", () => {
+    const html = renderNav("stats");
+    // Active stats link must contain bold style
+    expect(html).toContain('href="stats.html" style="color:#111827;font-weight:700');
+    // Non-active links must use the plain link colour, not bold
+    expect(html).toContain('href="index.html" style="color:#2563eb');
+    expect(html).toContain('href="journal.html" style="color:#2563eb');
+  });
 });
 
 // ---------------------------------------------------------------------------
