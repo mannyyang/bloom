@@ -374,6 +374,68 @@ describe("formatPhaseUsage", () => {
     const result = formatPhaseUsage(pu);
     expect(result.split("\n")).toHaveLength(1);
   });
+
+  it("includes inline cache suffix when cache tokens are non-zero", () => {
+    const pu: PhaseUsage = {
+      phase: "Evolution",
+      totalCostUsd: 0.5,
+      inputTokens: 1000,
+      outputTokens: 400,
+      cacheReadInputTokens: 8000,
+      cacheCreationInputTokens: 300,
+      durationMs: 15000,
+      numTurns: 5,
+    };
+    const result = formatPhaseUsage(pu);
+    expect(result).toContain("Cache: 8,000 read / 300 created");
+    // Cache suffix appears before Turns (inline ordering)
+    expect(result.indexOf("Cache:")).toBeLessThan(result.indexOf("Turns:"));
+  });
+
+  it("omits cache suffix when both cache token counts are zero", () => {
+    const pu: PhaseUsage = {
+      phase: "Assessment",
+      totalCostUsd: 0.1,
+      inputTokens: 500,
+      outputTokens: 200,
+      cacheReadInputTokens: 0,
+      cacheCreationInputTokens: 0,
+      durationMs: 5000,
+      numTurns: 3,
+    };
+    const result = formatPhaseUsage(pu);
+    expect(result).not.toContain("Cache:");
+  });
+
+  it("includes cache suffix when only cache read tokens are non-zero", () => {
+    const pu: PhaseUsage = {
+      phase: "Test",
+      totalCostUsd: 0.02,
+      inputTokens: 0,
+      outputTokens: 100,
+      cacheReadInputTokens: 5000,
+      cacheCreationInputTokens: 0,
+      durationMs: 2000,
+      numTurns: 2,
+    };
+    const result = formatPhaseUsage(pu);
+    expect(result).toContain("Cache: 5,000 read / 0 created");
+  });
+
+  it("includes cache suffix when only cache creation tokens are non-zero", () => {
+    const pu: PhaseUsage = {
+      phase: "Test",
+      totalCostUsd: 0.03,
+      inputTokens: 200,
+      outputTokens: 50,
+      cacheReadInputTokens: 0,
+      cacheCreationInputTokens: 1500,
+      durationMs: 3000,
+      numTurns: 1,
+    };
+    const result = formatPhaseUsage(pu);
+    expect(result).toContain("Cache: 0 read / 1,500 created");
+  });
 });
 
 describe("formatCycleUsage", () => {

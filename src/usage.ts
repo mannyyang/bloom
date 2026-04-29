@@ -112,13 +112,18 @@ export function aggregateUsage(phases: PhaseUsage[]): CycleUsage {
 
 /**
  * Format a PhaseUsage into a human-readable log line.
+ * Includes a cache suffix inline when either cache token count is non-zero,
+ * keeping the output single-line while surfacing per-phase cache efficiency.
  */
 export function formatPhaseUsage(pu: PhaseUsage): string {
   const cost = pu.totalCostUsd.toFixed(COST_DECIMAL_PLACES);
   const input = pu.inputTokens.toLocaleString();
   const output = pu.outputTokens.toLocaleString();
   const duration = formatDurationSec(pu.durationMs);
-  return `[${pu.phase}] Cost: $${cost} | Tokens: ${input} in / ${output} out | Turns: ${pu.numTurns} | Duration: ${duration}`;
+  const cachePart = (pu.cacheReadInputTokens > 0 || pu.cacheCreationInputTokens > 0)
+    ? ` | Cache: ${pu.cacheReadInputTokens.toLocaleString()} read / ${pu.cacheCreationInputTokens.toLocaleString()} created`
+    : "";
+  return `[${pu.phase}] Cost: $${cost} | Tokens: ${input} in / ${output} out${cachePart} | Turns: ${pu.numTurns} | Duration: ${duration}`;
 }
 
 /**
