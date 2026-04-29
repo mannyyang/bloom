@@ -997,6 +997,66 @@ describe("formatUsageForJournal", () => {
     expect(lines[0]).toBe(RESOURCE_USAGE_HEADER);
     expect(lines[1]).toBe("");
   });
+
+  it("pins exact cache values on Total line when only read tokens are non-zero", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.5,
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheReadInputTokens: 5000,
+        cacheCreationInputTokens: 0,
+        durationMs: 5000,
+        numTurns: 3,
+      },
+    ]);
+    const totalLine = formatUsageForJournal(cu).split("\n").find(l => l.includes("**Total**"))!;
+    expect(totalLine).toBeDefined();
+    expect(totalLine).toContain("cache:");
+    expect(totalLine).toContain("5,000 read");
+    expect(totalLine).toContain("0 created");
+  });
+
+  it("pins exact cache values on Total line when only creation tokens are non-zero", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Evolution",
+        totalCostUsd: 1.0,
+        inputTokens: 3000,
+        outputTokens: 1200,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 2500,
+        durationMs: 15000,
+        numTurns: 7,
+      },
+    ]);
+    const totalLine = formatUsageForJournal(cu).split("\n").find(l => l.includes("**Total**"))!;
+    expect(totalLine).toBeDefined();
+    expect(totalLine).toContain("cache:");
+    expect(totalLine).toContain("0 read");
+    expect(totalLine).toContain("2,500 created");
+  });
+
+  it("pins exact cache values on Total line when both read and creation tokens are non-zero", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.8,
+        inputTokens: 4000,
+        outputTokens: 2000,
+        cacheReadInputTokens: 8000,
+        cacheCreationInputTokens: 1500,
+        durationMs: 20000,
+        numTurns: 10,
+      },
+    ]);
+    const totalLine = formatUsageForJournal(cu).split("\n").find(l => l.includes("**Total**"))!;
+    expect(totalLine).toBeDefined();
+    expect(totalLine).toContain("cache:");
+    expect(totalLine).toContain("8,000 read");
+    expect(totalLine).toContain("1,500 created");
+  });
 });
 
 describe("formatDurationSec", () => {
