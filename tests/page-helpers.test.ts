@@ -252,6 +252,27 @@ describe("renderStatsSection", () => {
     const html = renderStatsSection({ ...baseStats, recentFailures: 2 });
     expect(html).toContain("Recent failures");
   });
+
+  it("total-cycles row contains exact <strong>50</strong> value in <td>", () => {
+    const html = renderStatsSection(baseStats);
+    const row = html.split("\n").find(l => l.includes("Total cycles"))!;
+    expect(row).toBeDefined();
+    expect(row).toContain("<strong>50</strong>");
+  });
+
+  it("success-rate row contains exact <strong>80%</strong> value in <td>", () => {
+    const html = renderStatsSection(baseStats);
+    const row = html.split("\n").find(l => l.includes("Success rate"))!;
+    expect(row).toBeDefined();
+    expect(row).toContain("<strong>80%</strong>");
+  });
+
+  it("conversion-rate row contains exact <strong>75%</strong> value when provided", () => {
+    const html = renderStatsSection({ ...baseStats, avgConversionRate: 75 });
+    const row = html.split("\n").find(l => l.includes("conversion rate"))!;
+    expect(row).toBeDefined();
+    expect(row).toContain("<strong>75%</strong>");
+  });
 });
 
 // ---------------------------------------------------------------------------
