@@ -511,6 +511,140 @@ describe("formatCycleUsage", () => {
     expect(output).not.toContain("Cache:");
   });
 
+  it("Total line has no cache suffix when all cache tokens are zero (narrow extraction)", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.5,
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 5000,
+        numTurns: 3,
+      },
+    ]);
+    const totalLine = formatCycleUsage(cu).split("\n").find(l => l.includes("[Total]"))!;
+    expect(totalLine).toBeDefined();
+    expect(totalLine).not.toContain("Cache:");
+  });
+
+  it("pins exact cache values on Total line when only read tokens are non-zero", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.5,
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheReadInputTokens: 5000,
+        cacheCreationInputTokens: 0,
+        durationMs: 5000,
+        numTurns: 3,
+      },
+    ]);
+    const totalLine = formatCycleUsage(cu).split("\n").find(l => l.includes("[Total]"))!;
+    expect(totalLine).toContain("Cache:");
+    expect(totalLine).toContain("5,000 read");
+    expect(totalLine).toContain("0 created");
+  });
+
+  it("pins exact cache values on Total line when only creation tokens are non-zero", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Evolution",
+        totalCostUsd: 1.0,
+        inputTokens: 3000,
+        outputTokens: 1200,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 2500,
+        durationMs: 15000,
+        numTurns: 7,
+      },
+    ]);
+    const totalLine = formatCycleUsage(cu).split("\n").find(l => l.includes("[Total]"))!;
+    expect(totalLine).toContain("Cache:");
+    expect(totalLine).toContain("0 read");
+    expect(totalLine).toContain("2,500 created");
+  });
+
+  it("pins exact cache values on phase line when phase has non-zero cache tokens", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Evolution",
+        totalCostUsd: 2.0,
+        inputTokens: 10000,
+        outputTokens: 5000,
+        cacheReadInputTokens: 3000,
+        cacheCreationInputTokens: 1500,
+        durationMs: 40000,
+        numTurns: 15,
+      },
+    ]);
+    const phaseLine = formatCycleUsage(cu).split("\n").find(l => l.includes("[Evolution]"))!;
+    expect(phaseLine).toBeDefined();
+    expect(phaseLine).toContain("Cache:");
+    expect(phaseLine).toContain("3,000 read");
+    expect(phaseLine).toContain("1,500 created");
+  });
+
+  it("omits cache suffix on phase line when phase has zero cache tokens", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.5,
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 5000,
+        numTurns: 3,
+      },
+    ]);
+    const phaseLine = formatCycleUsage(cu).split("\n").find(l => l.includes("[Assessment]"))!;
+    expect(phaseLine).toBeDefined();
+    expect(phaseLine).not.toContain("Cache:");
+  });
+
+  it("pins exact cache values on phase line when only read tokens are non-zero", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Planning",
+        totalCostUsd: 0.3,
+        inputTokens: 2000,
+        outputTokens: 800,
+        cacheReadInputTokens: 4500,
+        cacheCreationInputTokens: 0,
+        durationMs: 10000,
+        numTurns: 5,
+      },
+    ]);
+    const phaseLine = formatCycleUsage(cu).split("\n").find(l => l.includes("[Planning]"))!;
+    expect(phaseLine).toBeDefined();
+    expect(phaseLine).toContain("Cache:");
+    expect(phaseLine).toContain("4,500 read");
+    expect(phaseLine).toContain("0 created");
+  });
+
+  it("pins exact cache values on phase line when only creation tokens are non-zero", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Evolution",
+        totalCostUsd: 0.6,
+        inputTokens: 3000,
+        outputTokens: 1200,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 2200,
+        durationMs: 15000,
+        numTurns: 7,
+      },
+    ]);
+    const phaseLine = formatCycleUsage(cu).split("\n").find(l => l.includes("[Evolution]"))!;
+    expect(phaseLine).toBeDefined();
+    expect(phaseLine).toContain("Cache:");
+    expect(phaseLine).toContain("0 read");
+    expect(phaseLine).toContain("2,200 created");
+  });
+
   it("produces just a Total line when there are zero phases", () => {
     const cu = aggregateUsage([]);
     const output = formatCycleUsage(cu);
