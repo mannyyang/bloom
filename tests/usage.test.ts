@@ -647,6 +647,92 @@ describe("formatUsageForJournal", () => {
     expect(md).toContain("created");
   });
 
+  it("includes cache suffix on the phase line itself (not only on Total)", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Evolution",
+        totalCostUsd: 2.0,
+        inputTokens: 10000,
+        outputTokens: 5000,
+        cacheReadInputTokens: 3000,
+        cacheCreationInputTokens: 1500,
+        durationMs: 40000,
+        numTurns: 15,
+      },
+    ]);
+
+    const md = formatUsageForJournal(cu);
+    const phaseLine = md.split("\n").find((l) => l.includes("**Evolution**"))!;
+    expect(phaseLine).toBeDefined();
+    expect(phaseLine).toContain("cache:");
+    expect(phaseLine).toContain("3,000 read");
+    expect(phaseLine).toContain("1,500 created");
+  });
+
+  it("omits cache suffix from phase line when both cache token counts are zero", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.5,
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 5000,
+        numTurns: 3,
+      },
+    ]);
+
+    const md = formatUsageForJournal(cu);
+    const phaseLine = md.split("\n").find((l) => l.includes("**Assessment**"))!;
+    expect(phaseLine).toBeDefined();
+    expect(phaseLine).not.toContain("cache:");
+  });
+
+  it("includes cache suffix on phase line when only read tokens are non-zero", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Planning",
+        totalCostUsd: 0.3,
+        inputTokens: 2000,
+        outputTokens: 800,
+        cacheReadInputTokens: 5000,
+        cacheCreationInputTokens: 0,
+        durationMs: 10000,
+        numTurns: 5,
+      },
+    ]);
+
+    const md = formatUsageForJournal(cu);
+    const phaseLine = md.split("\n").find((l) => l.includes("**Planning**"))!;
+    expect(phaseLine).toBeDefined();
+    expect(phaseLine).toContain("cache:");
+    expect(phaseLine).toContain("5,000 read");
+    expect(phaseLine).toContain("0 created");
+  });
+
+  it("includes cache suffix on phase line when only creation tokens are non-zero", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Evolution",
+        totalCostUsd: 0.6,
+        inputTokens: 3000,
+        outputTokens: 1200,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 2500,
+        durationMs: 15000,
+        numTurns: 7,
+      },
+    ]);
+
+    const md = formatUsageForJournal(cu);
+    const phaseLine = md.split("\n").find((l) => l.includes("**Evolution**"))!;
+    expect(phaseLine).toBeDefined();
+    expect(phaseLine).toContain("cache:");
+    expect(phaseLine).toContain("0 read");
+    expect(phaseLine).toContain("2,500 created");
+  });
+
   it("omits cache suffix when all cache tokens are zero", () => {
     const cu = aggregateUsage([
       {
