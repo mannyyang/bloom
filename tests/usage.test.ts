@@ -436,6 +436,38 @@ describe("formatPhaseUsage", () => {
     const result = formatPhaseUsage(pu);
     expect(result).toContain("Cache: 0 read / 1,500 created");
   });
+
+  it("pins exact full output string for no-cache case", () => {
+    const pu: PhaseUsage = {
+      phase: "Assessment",
+      totalCostUsd: 1.2345,
+      inputTokens: 5000,
+      outputTokens: 2000,
+      cacheReadInputTokens: 0,
+      cacheCreationInputTokens: 0,
+      durationMs: 30000,
+      numTurns: 10,
+    };
+    expect(formatPhaseUsage(pu)).toBe(
+      "[Assessment] Cost: $1.2345 | Tokens: 5,000 in / 2,000 out | Turns: 10 | Duration: 30.0s"
+    );
+  });
+
+  it("pins exact full output string for cache case", () => {
+    const pu: PhaseUsage = {
+      phase: "Evolution",
+      totalCostUsd: 0.5,
+      inputTokens: 1000,
+      outputTokens: 400,
+      cacheReadInputTokens: 8000,
+      cacheCreationInputTokens: 300,
+      durationMs: 15000,
+      numTurns: 5,
+    };
+    expect(formatPhaseUsage(pu)).toBe(
+      "[Evolution] Cost: $0.5000 | Tokens: 1,000 in / 400 out | Cache: 8,000 read / 300 created | Turns: 5 | Duration: 15.0s"
+    );
+  });
 });
 
 describe("formatCycleUsage", () => {
