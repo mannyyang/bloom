@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import { createSign } from "crypto";
 import { resolve, dirname } from "path";
-import { fileURLToPath } from "url";
+import { fileURLToPath } from "node:url";
 import { validateRow } from "./db.js";
 
 const APP_ID = "3021184";

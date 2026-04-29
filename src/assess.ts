@@ -7,7 +7,7 @@
  *
  * Usage: pnpm assess
  */
-import { fileURLToPath } from "url";
+import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { readFileSync } from "fs";
 import { query } from "@anthropic-ai/claude-agent-sdk";
