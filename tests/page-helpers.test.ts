@@ -287,6 +287,20 @@ describe("renderStatsSection", () => {
     expect(row).toBeDefined();
     expect(row).toContain("<strong>1</strong>");
   });
+
+  it("cost row contains exact <strong>$3.14</strong> value when positive", () => {
+    const html = renderStatsSection({ ...baseStats, totalCostUsd: 3.14 });
+    const row = html.split("\n").find(l => l.includes("Total cost"))!;
+    expect(row).toBeDefined();
+    expect(row).toContain("<strong>$3.14</strong>");
+  });
+
+  it("duration row contains exact <strong>12 min</strong> value when provided", () => {
+    const html = renderStatsSection({ ...baseStats, avgDurationMinutes: 12 });
+    const row = html.split("\n").find(l => l.includes("Avg cycle duration"))!;
+    expect(row).toBeDefined();
+    expect(row).toContain("<strong>12 min</strong>");
+  });
 });
 
 // ---------------------------------------------------------------------------
