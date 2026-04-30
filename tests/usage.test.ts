@@ -1242,6 +1242,28 @@ describe("formatUsageForJournal", () => {
     const totalLine = formatUsageForJournal(cu).split("\n").find(l => l.includes("**Total**"))!;
     expect(totalLine).toBe("- **Total**: $1.5000 — 3,000 input + 1,500 output tokens (cache: 2,000 read, 500 created)");
   });
+
+  it("pins full output string for single-phase no-cache case (round numbers)", () => {
+    // Uses round numbers to avoid any toLocaleString locale ambiguity.
+    // Pins the phase line and Total line formats together end-to-end.
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.5,
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 5000,
+        numTurns: 3,
+      },
+    ]);
+    expect(formatUsageForJournal(cu)).toBe(
+      "### Resource Usage\n\n" +
+      "- **Assessment**: $0.5000 — 1,000 input tokens, 500 output tokens, 3 turns, 5.0s\n" +
+      "- **Total**: $0.5000 — 1,000 input + 500 output tokens"
+    );
+  });
 });
 
 describe("formatDurationSec", () => {
