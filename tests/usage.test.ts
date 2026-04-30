@@ -1133,6 +1133,40 @@ describe("formatUsageForJournal", () => {
     expect(totalLine).toContain("8,000 read");
     expect(totalLine).toContain("1,500 created");
   });
+
+  it("pins exact Total line string for no-cache case", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 4.0,
+        inputTokens: 20000,
+        outputTokens: 10000,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 1000,
+        numTurns: 5,
+      },
+    ]);
+    const totalLine = formatUsageForJournal(cu).split("\n").find(l => l.includes("**Total**"))!;
+    expect(totalLine).toBe("- **Total**: $4.0000 — 20,000 input + 10,000 output tokens");
+  });
+
+  it("pins exact Total line string for cache case", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 1.5,
+        inputTokens: 3000,
+        outputTokens: 1500,
+        cacheReadInputTokens: 2000,
+        cacheCreationInputTokens: 500,
+        durationMs: 1000,
+        numTurns: 3,
+      },
+    ]);
+    const totalLine = formatUsageForJournal(cu).split("\n").find(l => l.includes("**Total**"))!;
+    expect(totalLine).toBe("- **Total**: $1.5000 — 3,000 input + 1,500 output tokens (cache: 2,000 read, 500 created)");
+  });
 });
 
 describe("formatDurationSec", () => {
