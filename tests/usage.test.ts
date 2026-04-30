@@ -721,6 +721,44 @@ describe("formatCycleUsage", () => {
     expect(phaseLine).toContain("2,200 created");
   });
 
+  it("pins exact full phase line string for no-cache case", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 1.0,
+        inputTokens: 5000,
+        outputTokens: 2000,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 20000,
+        numTurns: 8,
+      },
+    ]);
+    const lines = formatCycleUsage(cu).split("\n");
+    expect(lines[0]).toBe(
+      "[Assessment] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Turns: 8 | Duration: 20.0s"
+    );
+  });
+
+  it("pins exact full phase line string for cache case", () => {
+    const cu = aggregateUsage([
+      {
+        phase: "Evolution",
+        totalCostUsd: 2.0,
+        inputTokens: 10000,
+        outputTokens: 5000,
+        cacheReadInputTokens: 3000,
+        cacheCreationInputTokens: 1500,
+        durationMs: 40000,
+        numTurns: 15,
+      },
+    ]);
+    const lines = formatCycleUsage(cu).split("\n");
+    expect(lines[0]).toBe(
+      "[Evolution] Cost: $2.0000 | Tokens: 10,000 in / 5,000 out | Cache: 3,000 read / 1,500 created | Turns: 15 | Duration: 40.0s"
+    );
+  });
+
   it("produces just a Total line when there are zero phases", () => {
     const cu = aggregateUsage([]);
     const output = formatCycleUsage(cu);
