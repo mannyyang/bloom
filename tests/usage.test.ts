@@ -766,6 +766,8 @@ describe("formatCycleUsage", () => {
     expect(lines).toHaveLength(1);
     expect(lines[0]).toContain("[Total]");
     expect(lines[0]).toContain("$0.0000");
+    // Full-output pin: catches spacing, separator char, and cost-decimal drift
+    expect(output).toBe("[Total] Cost: $0.0000 | Tokens: 0 in / 0 out");
   });
 
   it("produces exactly 2 lines for 1 phase (1 phase line + Total)", () => {
