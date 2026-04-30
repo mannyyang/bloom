@@ -1266,6 +1266,28 @@ describe("formatUsageForJournal", () => {
       "- **Total**: $0.5000 — 1,000 input + 500 output tokens"
     );
   });
+
+  it("pins full output string for single-phase WITH cache case (round numbers)", () => {
+    // Closes the single-phase pin matrix: with-cache case pins phase line + Total together
+    // so separator char drift, extra whitespace, or cache suffix formatting is caught.
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 1.5,
+        inputTokens: 3000,
+        outputTokens: 1500,
+        cacheReadInputTokens: 2000,
+        cacheCreationInputTokens: 500,
+        durationMs: 1000,
+        numTurns: 3,
+      },
+    ]);
+    expect(formatUsageForJournal(cu)).toBe(
+      "### Resource Usage\n\n" +
+      "- **Assessment**: $1.5000 — 3,000 input tokens, 1,500 output tokens (cache: 2,000 read, 500 created), 3 turns, 1.0s\n" +
+      "- **Total**: $1.5000 — 3,000 input + 1,500 output tokens (cache: 2,000 read, 500 created)"
+    );
+  });
 });
 
 describe("formatDurationSec", () => {
