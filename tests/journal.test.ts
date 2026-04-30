@@ -207,7 +207,11 @@ describe("formatJournalMarkdown", () => {
         strategic_context: "",
       },
     ];
-    const lines = formatJournalMarkdown(entries).split("\n");
+    const output = formatJournalMarkdown(entries);
+    expect(output).toBe(
+      "# Bloom Evolution Journal\n\n## Cycle 1 — 2026-01-01\n\n---\n",
+    );
+    const lines = output.split("\n");
     expect(lines).toHaveLength(6);
     expect(lines[0]).toBe("# Bloom Evolution Journal");
     expect(lines[1]).toBe("");
