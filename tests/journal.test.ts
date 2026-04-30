@@ -233,7 +233,11 @@ describe("formatJournalMarkdown", () => {
         strategic_context: "",
       },
     ];
-    const lines = formatJournalMarkdown(entries).split("\n");
+    const output = formatJournalMarkdown(entries);
+    expect(output).toBe(
+      "# Bloom Evolution Journal\n\n## Cycle 2 — 2026-02-01\n\n### What was attempted\nAdd a feature\n\n---\n",
+    );
+    const lines = output.split("\n");
     expect(lines).toHaveLength(9);
     expect(lines[0]).toBe("# Bloom Evolution Journal");
     expect(lines[1]).toBe("");
