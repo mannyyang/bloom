@@ -1053,6 +1053,39 @@ describe("formatUsageForJournal", () => {
     expect(lines[lines.length - 1]).toMatch(/^- \*\*Total\*\*/);
   });
 
+  it("pins full output string for two-phase no-cache case (round numbers)", () => {
+    // Uses round numbers to pin phase-line bodies, Total line body, and blank separator
+    // in a single strict equality check — catches any multi-phase output drift.
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.2,
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 10000,
+        numTurns: 5,
+      },
+      {
+        phase: "Evolution",
+        totalCostUsd: 0.8,
+        inputTokens: 4000,
+        outputTokens: 2000,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 40000,
+        numTurns: 20,
+      },
+    ]);
+    expect(formatUsageForJournal(cu)).toBe(
+      "### Resource Usage\n\n" +
+      "- **Assessment**: $0.2000 — 1,000 input tokens, 500 output tokens, 5 turns, 10.0s\n" +
+      "- **Evolution**: $0.8000 — 4,000 input tokens, 2,000 output tokens, 20 turns, 40.0s\n" +
+      "- **Total**: $1.0000 — 5,000 input + 2,500 output tokens"
+    );
+  });
+
   it("three-phase no-cache output has exactly 6 lines (structural pin)", () => {
     // Pattern: header + blank + n_phases + Total = n_phases + 3
     // 3 phases → 3 + 3 = 6 lines
