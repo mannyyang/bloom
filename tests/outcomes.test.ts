@@ -211,6 +211,18 @@ describe("formatOutcomeForJournal", () => {
     expect(result).toContain("**Build verification**: passed");
     expect(result).toContain("**Push**: succeeded");
     expect(result).toContain("**Tests**: 490 before, 505 after (+15)");
+    // Exact full-output pin: catches silent text drift (label renames, punctuation changes)
+    // that toContain() misses. makeOutcome defaults: preflightPassed=true, durationMs=null,
+    // testTotalBefore/After=null, failureCategory="none".
+    expect(result).toBe(
+      "### Outcome Metrics\n" +
+      "\n" +
+      "- **Preflight**: passed\n" +
+      "- **Improvements**: 3/3 succeeded\n" +
+      "- **Build verification**: passed\n" +
+      "- **Push**: succeeded\n" +
+      "- **Tests**: 490 before, 505 after (+15)"
+    );
   });
 
   it("formats a partially failed outcome", () => {
