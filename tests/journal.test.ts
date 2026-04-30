@@ -397,4 +397,11 @@ describe("parseArgs", () => {
     const result = parseArgs(["--limit", "3.7"]);
     expect(result).toEqual({ format: "json", limit: 3 });
   });
+
+  it("treats --limit '0.9' as undefined (parseInt → 0, fails > 0 guard)", () => {
+    // parseInt("0.9", 10) === 0; 0 > 0 is false, so treated as no limit.
+    // Completes the fractional parseInt edge-case matrix alongside the "3.7" case above.
+    const result = parseArgs(["--limit", "0.9"]);
+    expect(result).toEqual({ format: "json", limit: undefined });
+  });
 });
