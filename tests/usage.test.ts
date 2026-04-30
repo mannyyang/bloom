@@ -1017,6 +1017,8 @@ describe("formatUsageForJournal", () => {
     expect(lines).toHaveLength(3);
     expect(lines[0]).toBe(RESOURCE_USAGE_HEADER);
     expect(lines[1]).toBe("");
+    // Full-output pin: catches Total-line formatting drift (spacing, separator chars, cost decimal)
+    expect(md).toBe("### Resource Usage\n\n- **Total**: $0.0000 — 0 input + 0 output tokens");
   });
 
   it("two-phase no-cache output has exactly 5 lines and Total at last position", () => {
