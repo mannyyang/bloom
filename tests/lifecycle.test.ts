@@ -59,6 +59,12 @@ describe("lifecycle helpers", () => {
       expect(parseTimeoutEnv("abc", 120_000)).toBe(120_000);
     });
 
+    it("falls back to default for string \"NaN\" (Number(\"NaN\") === NaN gotcha)", () => {
+      // Number("NaN") returns NaN, which is non-finite — must fall back to default.
+      // This is a common gotcha distinct from a generic non-numeric string.
+      expect(parseTimeoutEnv("NaN", 120_000)).toBe(120_000);
+    });
+
     it("falls back to default for empty string", () => {
       expect(parseTimeoutEnv("", 120_000)).toBe(120_000);
     });
