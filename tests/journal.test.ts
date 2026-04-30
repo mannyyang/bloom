@@ -391,4 +391,10 @@ describe("parseArgs", () => {
     const result = parseArgs(["--limit", "-1"]);
     expect(result).toEqual({ format: "json", limit: undefined });
   });
+
+  it("truncates fractional --limit '3.7' to 3 via parseInt", () => {
+    // parseInt("3.7", 10) === 3; passes the > 0 && !isNaN guard, so limit is 3
+    const result = parseArgs(["--limit", "3.7"]);
+    expect(result).toEqual({ format: "json", limit: 3 });
+  });
 });
