@@ -535,6 +535,37 @@ STRATEGIC_CONTEXT: Focus on testing`;
       const summary = formatCycleSummaryWithDuration(1, outcome, true, 5000);
       expect(summary.split("\n")).toHaveLength(9);
     });
+
+    it("full-output pin: exact string when failureCategory is none (no-failure path)", () => {
+      const outcome = makeOutcome({ failureCategory: "none" });
+      const summary = formatCycleSummaryWithDuration(1, outcome, false, 5000);
+      expect(summary).toBe(
+        "========================================\n" +
+        "  Cycle 1 — COMPLETE\n" +
+        "  Duration: 5.0s\n" +
+        "  Improvements: 0/0\n" +
+        "  Tests: ? → ?\n" +
+        "  Build: FAILED\n" +
+        "  Push: FAILED\n" +
+        "========================================"
+      );
+    });
+
+    it("full-output pin: exact string when failureCategory is build_failure (with-failure path)", () => {
+      const outcome = makeOutcome({ failureCategory: "build_failure" });
+      const summary = formatCycleSummaryWithDuration(1, outcome, true, 5000);
+      expect(summary).toBe(
+        "========================================\n" +
+        "  Cycle 1 — FAILED\n" +
+        "  Duration: 5.0s\n" +
+        "  Improvements: 0/0\n" +
+        "  Tests: ? → ?\n" +
+        "  Build: FAILED\n" +
+        "  Failure: build_failure\n" +
+        "  Push: FAILED\n" +
+        "========================================"
+      );
+    });
   });
 
 });
