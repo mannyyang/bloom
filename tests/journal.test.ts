@@ -320,6 +320,28 @@ describe("formatJournalMarkdown", () => {
       },
     ];
     const output = formatJournalMarkdown(entries);
+    expect(output).toBe(
+      "# Bloom Evolution Journal\n" +
+      "\n" +
+      "## Cycle 5 — 2025-01-15\n" +
+      "\n" +
+      "### What was attempted\n" +
+      "Add feature\n" +
+      "\n" +
+      "### What succeeded\n" +
+      "Feature added\n" +
+      "\n" +
+      "### What failed\n" +
+      "Nothing\n" +
+      "\n" +
+      "### Learnings\n" +
+      "Learned something\n" +
+      "\n" +
+      "### Strategic Context\n" +
+      "Focus on testing\n" +
+      "\n" +
+      "---\n",
+    );
     const lines = output.split("\n");
     expect(lines).toHaveLength(21);
     expect(lines[0]).toBe("# Bloom Evolution Journal");
