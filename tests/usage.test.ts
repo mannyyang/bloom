@@ -1395,6 +1395,39 @@ describe("formatUsageForJournal", () => {
       "- **Total**: $1.5000 — 3,000 input + 1,500 output tokens (cache: 2,000 read, 500 created)"
     );
   });
+
+  it("pins full output string for two-phase with-cache case (round numbers)", () => {
+    // Closes the formatUsageForJournal pin matrix: with-cache in both phase lines and
+    // the Total line are caught together so cache suffix formatting drift is detected.
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.2,
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheReadInputTokens: 2000,
+        cacheCreationInputTokens: 500,
+        durationMs: 10000,
+        numTurns: 5,
+      },
+      {
+        phase: "Evolution",
+        totalCostUsd: 0.8,
+        inputTokens: 4000,
+        outputTokens: 2000,
+        cacheReadInputTokens: 8000,
+        cacheCreationInputTokens: 1000,
+        durationMs: 40000,
+        numTurns: 20,
+      },
+    ]);
+    expect(formatUsageForJournal(cu)).toBe(
+      "### Resource Usage\n\n" +
+      "- **Assessment**: $0.2000 — 1,000 input tokens, 500 output tokens (cache: 2,000 read, 500 created), 5 turns, 10.0s\n" +
+      "- **Evolution**: $0.8000 — 4,000 input tokens, 2,000 output tokens (cache: 8,000 read, 1,000 created), 20 turns, 40.0s\n" +
+      "- **Total**: $1.0000 — 5,000 input + 2,500 output tokens (cache: 10,000 read, 1,500 created)"
+    );
+  });
 });
 
 describe("formatDurationSec", () => {
