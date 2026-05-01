@@ -266,11 +266,28 @@ describe("formatJournalMarkdown", () => {
       },
     ];
     const output = formatJournalMarkdown(entries);
-    expect(output).toContain("## Cycle 1 — 2025-01-01");
-    expect(output).toContain("## Cycle 2 — 2025-01-02");
-    expect(output).toContain("First attempt");
-    expect(output).toContain("Second attempt");
-    expect(output).toContain("---");
+    // Exact pin: anchors inter-entry separator placement, blank-line boundaries,
+    // doc-header prefix, and section ordering for both entries.
+    expect(output).toBe(
+      "# Bloom Evolution Journal\n" +
+      "\n" +
+      "## Cycle 1 — 2025-01-01\n" +
+      "\n" +
+      "### What was attempted\n" +
+      "First attempt\n" +
+      "\n" +
+      "---\n" +
+      "\n" +
+      "## Cycle 2 — 2025-01-02\n" +
+      "\n" +
+      "### What was attempted\n" +
+      "Second attempt\n" +
+      "\n" +
+      "### What succeeded\n" +
+      "It worked\n" +
+      "\n" +
+      "---\n",
+    );
     // Structural pin: doc header (2) + entry1 attempted-only (7) + entry2 attempted+succeeded (10) = 19 lines
     const lines = output.split("\n");
     expect(lines).toHaveLength(19);
