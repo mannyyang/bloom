@@ -432,4 +432,35 @@ describe("formatCycleStats", () => {
       "- **Recent failures** (last 5): 0",
     );
   });
+
+  it("all-fields case: pins exact 9-line output covering every optional branch", () => {
+    // Covers: conversionRate, testCountTrend (positive), avgDurationMinutes,
+    // Cost line with · separator and abbreviated token counts, recentFailures > 0,
+    // and failure breakdown. Validates branch ordering and separator character.
+    const stats: CycleStats = {
+      totalCycles: 2,
+      successRate: 50,
+      avgImprovements: 1,
+      avgConversionRate: 50,
+      testCountTrend: 3,
+      recentFailures: 1,
+      avgDurationMinutes: 1.5,
+      totalCostUsd: 0.15,
+      avgCostPerCycle: 0.08,
+      totalInputTokens: 150000,
+      totalOutputTokens: 80000,
+      failureCategoryBreakdown: { build_failure: 1 },
+    };
+    expect(formatCycleStats(stats)).toBe(
+      "- **Cycles tracked**: 2\n" +
+      "- **Success rate**: 50% (build passed + pushed)\n" +
+      "- **Avg improvements/cycle**: 1\n" +
+      "- **Conversion rate**: 50% (improvements that succeed)\n" +
+      "- **Test count trend**: +3\n" +
+      "- **Avg cycle duration**: 1.5 min\n" +
+      "- **Cost**: $0.15 total / $0.08 avg · 150k in / 80k out tokens\n" +
+      "- **Recent failures** (last 5): 1\n" +
+      "- **Failure breakdown** (across all 2 tracked cycles): 1 build_failure",
+    );
+  });
 });
