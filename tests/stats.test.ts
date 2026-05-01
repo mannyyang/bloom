@@ -22,8 +22,7 @@ describe("generateStatsOutput", () => {
 
   it("returns a single message when no cycles exist", () => {
     const output = generateStatsOutput(db);
-    expect(output).toHaveLength(1);
-    expect(output[0]).toBe("No evolution cycles recorded yet.");
+    expect(output).toEqual(["No evolution cycles recorded yet."]);
   });
 
   it("includes header with latest cycle number", () => {
