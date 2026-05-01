@@ -829,6 +829,48 @@ describe("formatCycleUsage", () => {
     expect(lines[2]).toContain("[Verification]");
     expect(lines[3]).toContain("[Total]");
   });
+
+  it("pins full output string for one-phase no-cache case (round numbers)", () => {
+    // Closes the single-phase no-cache slot in the formatCycleUsage matrix.
+    // A single toBe catches newline ordering and separator drift that per-line pins miss.
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 1.0,
+        inputTokens: 5000,
+        outputTokens: 2000,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 20000,
+        numTurns: 8,
+      },
+    ]);
+    expect(formatCycleUsage(cu)).toBe(
+      "[Assessment] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Turns: 8 | Duration: 20.0s\n" +
+      "[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out"
+    );
+  });
+
+  it("pins full output string for one-phase with-cache case (round numbers)", () => {
+    // Closes the single-phase with-cache slot in the formatCycleUsage matrix.
+    // A single toBe catches newline ordering and separator drift that per-line pins miss.
+    const cu = aggregateUsage([
+      {
+        phase: "Evolution",
+        totalCostUsd: 2.0,
+        inputTokens: 10000,
+        outputTokens: 5000,
+        cacheReadInputTokens: 3000,
+        cacheCreationInputTokens: 1500,
+        durationMs: 40000,
+        numTurns: 15,
+      },
+    ]);
+    expect(formatCycleUsage(cu)).toBe(
+      "[Evolution] Cost: $2.0000 | Tokens: 10,000 in / 5,000 out | Cache: 3,000 read / 1,500 created | Turns: 15 | Duration: 40.0s\n" +
+      "[Total] Cost: $2.0000 | Tokens: 10,000 in / 5,000 out | Cache: 3,000 read / 1,500 created"
+    );
+  });
 });
 
 describe("formatUsageForJournal", () => {
