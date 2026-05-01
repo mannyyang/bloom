@@ -830,6 +830,38 @@ describe("formatCycleUsage", () => {
     expect(lines[3]).toContain("[Total]");
   });
 
+  it("pins full output string for two-phase no-cache case (round numbers)", () => {
+    // Closes the two-phase no-cache slot in the formatCycleUsage matrix.
+    // Uses the IEEE 754-safe 0.2+0.8=1.0 pairing to avoid floating-point drift.
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.2,
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 10000,
+        numTurns: 5,
+      },
+      {
+        phase: "Evolution",
+        totalCostUsd: 0.8,
+        inputTokens: 4000,
+        outputTokens: 2000,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 40000,
+        numTurns: 20,
+      },
+    ]);
+    expect(formatCycleUsage(cu)).toBe(
+      "[Assessment] Cost: $0.2000 | Tokens: 1,000 in / 500 out | Turns: 5 | Duration: 10.0s\n" +
+      "[Evolution] Cost: $0.8000 | Tokens: 4,000 in / 2,000 out | Turns: 20 | Duration: 40.0s\n" +
+      "[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,500 out"
+    );
+  });
+
   it("pins full output string for one-phase no-cache case (round numbers)", () => {
     // Closes the single-phase no-cache slot in the formatCycleUsage matrix.
     // A single toBe catches newline ordering and separator drift that per-line pins miss.
