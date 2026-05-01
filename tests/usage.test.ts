@@ -1448,6 +1448,19 @@ describe("formatDurationSec", () => {
     expect(formatDurationSec(1460)).toBe("1.5s");
   });
 
+  it("handles sub-second values", () => {
+    expect(formatDurationSec(500)).toBe("0.5s");
+    expect(formatDurationSec(100)).toBe("0.1s");
+  });
+
+  it("rounds 999ms up to 1.0s (toFixed boundary)", () => {
+    expect(formatDurationSec(999)).toBe("1.0s");
+  });
+
+  it("rounds 1500ms to 1.5s", () => {
+    expect(formatDurationSec(1500)).toBe("1.5s");
+  });
+
   it("handles large values", () => {
     expect(formatDurationSec(123456)).toBe("123.5s");
   });
