@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
-import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats } from "../src/db.js";
+import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats } from "../src/db.js";
+import type { CycleStats } from "../src/db.js";
 import { generateStatsOutput, STATS_MEMORY_PREVIEW_CHARS } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { makeOutcome } from "./helpers.js";
@@ -403,5 +404,32 @@ describe("generateStatsOutput", () => {
       const stats = getCycleStats(db);
       expect(stats.avgConversionRate).toBe(0);
     });
+  });
+});
+
+describe("formatCycleStats", () => {
+  it("minimal case: pins exact 4-line output when all optional fields are absent", () => {
+    // No conversion rate, no test trend, no duration, zero cost/tokens, zero failures.
+    // Any label rename, format change, or markdown drift will break this pin.
+    const stats: CycleStats = {
+      totalCycles: 1,
+      successRate: 0,
+      avgImprovements: 0,
+      avgConversionRate: null,
+      testCountTrend: null,
+      recentFailures: 0,
+      avgDurationMinutes: null,
+      totalCostUsd: 0,
+      avgCostPerCycle: 0,
+      totalInputTokens: 0,
+      totalOutputTokens: 0,
+      failureCategoryBreakdown: {},
+    };
+    expect(formatCycleStats(stats)).toBe(
+      "- **Cycles tracked**: 1\n" +
+      "- **Success rate**: 0% (build passed + pushed)\n" +
+      "- **Avg improvements/cycle**: 0\n" +
+      "- **Recent failures** (last 5): 0",
+    );
   });
 });
