@@ -138,9 +138,10 @@ STRATEGIC_CONTEXT: Focus on refactoring next`;
       expect(sections).toContain("strategic_context");
     });
 
-    it("handles duplicate section headers by keeping last value", () => {
-      // parseEvolutionResult uses a regex that captures until the next marker,
-      // so a duplicate header would overwrite the first
+    it("handles duplicate section headers by concatenating both blocks", () => {
+      // parseEvolutionResult accumulates content via += as it streams lines,
+      // so a second ATTEMPTED: header appends to the first block rather than
+      // replacing it. Both blocks end up in journalSections.attempted.
       const result = `ATTEMPTED: First attempt
 SUCCEEDED: First success
 ATTEMPTED: Second attempt
@@ -150,8 +151,9 @@ STRATEGIC_CONTEXT: Context`;
 
       const processed = processEvolutionResult(db, 1, result);
 
-      // The parsing behavior should not crash regardless of duplicate handling
-      expect(processed.journalSections).toBeDefined();
+      // Both blocks must appear in the concatenated attempted section
+      expect(processed.journalSections.attempted).toContain("First attempt");
+      expect(processed.journalSections.attempted).toContain("Second attempt");
       expect(processed.improvementsAttempted).toBeGreaterThanOrEqual(0);
     });
 
