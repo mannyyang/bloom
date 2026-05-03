@@ -375,12 +375,12 @@ describe("lifecycle helpers", () => {
   });
 
   describe("revertUncommitted", () => {
-    it("runs git checkout . and git clean -fd using execFileSync", () => {
+    it("runs git checkout -- . and git clean -fd using execFileSync", () => {
       mockedExecFileSync.mockReturnValue(Buffer.from(""));
       revertUncommitted();
       expect(mockedExecFileSync).toHaveBeenCalledWith(
         "git",
-        ["checkout", "."],
+        ["checkout", "--", "."],
         expect.objectContaining({ timeout: GIT_REVERT_TIMEOUT_MS }),
       );
       expect(mockedExecFileSync).toHaveBeenCalledWith(
@@ -693,7 +693,7 @@ describe("lifecycle helpers", () => {
       revertUncommitted();
       expect(mockedExecFileSync).toHaveBeenCalledWith(
         "git",
-        ["checkout", "."],
+        ["checkout", "--", "."],
         expect.objectContaining({ timeout: 3000 }),
       );
     });

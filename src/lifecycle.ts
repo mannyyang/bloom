@@ -163,7 +163,7 @@ export function verifyBuild(): BuildResult {
 export function revertUncommitted(): void {
   const timeout = parseTimeoutEnv(process.env.BLOOM_GIT_REVERT_TIMEOUT_MS, 10_000);
   try {
-    execFileSync("git", ["checkout", "."], { stdio: "inherit", timeout });
+    execFileSync("git", ["checkout", "--", "."], { stdio: "inherit", timeout });
   } catch { /* ignore */ }
   try {
     execFileSync("git", ["clean", "-fd"], { stdio: "inherit", timeout });
