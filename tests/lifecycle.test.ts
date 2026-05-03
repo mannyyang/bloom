@@ -427,10 +427,11 @@ describe("lifecycle helpers", () => {
       expect(createSafetyTag(42)).toBe(false);
     });
 
-    it("returns false for non-positive integers", () => {
+    it("returns false for non-positive integers, floats, and NaN", () => {
       expect(createSafetyTag(0)).toBe(false);
       expect(createSafetyTag(-1)).toBe(false);
       expect(createSafetyTag(1.5)).toBe(false);
+      expect(createSafetyTag(NaN)).toBe(false);
       expect(mockedExecFileSync).not.toHaveBeenCalled();
     });
   });
