@@ -460,7 +460,7 @@ describe("formatOutcomeForJournal", () => {
     expect(result).toContain("**Duration**: 0.0s");
   });
 
-  it("omits total when testTotalBefore is set but testTotalAfter is null", () => {
+  it("omits total when testTotalBefore is set but testTotalAfter is null (both counts present)", () => {
     const outcome = makeOutcome({
       cycleNumber: 46, improvementsAttempted: 2, improvementsSucceeded: 2,
       buildVerificationPassed: true, pushSucceeded: true,
@@ -471,7 +471,7 @@ describe("formatOutcomeForJournal", () => {
     expect(result).not.toContain("total:");
   });
 
-  it("omits total when testTotalAfter is set but testTotalBefore is null", () => {
+  it("omits total when testTotalAfter is set but testTotalBefore is null (both counts present)", () => {
     const outcome = makeOutcome({
       cycleNumber: 46, improvementsAttempted: 2, improvementsSucceeded: 2,
       buildVerificationPassed: true, pushSucceeded: true,
@@ -479,6 +479,52 @@ describe("formatOutcomeForJournal", () => {
       testTotalBefore: null, testTotalAfter: 505,
     });
     const result = formatOutcomeForJournal(outcome);
+    expect(result).not.toContain("total:");
+  });
+
+  it("appends total when only testCountBefore is available and testTotalBefore is non-null", () => {
+    const outcome = makeOutcome({
+      cycleNumber: 47, improvementsAttempted: 1, improvementsSucceeded: 0,
+      buildVerificationPassed: false, pushSucceeded: false,
+      testCountBefore: 490, testCountAfter: null,
+      testTotalBefore: 510, testTotalAfter: null,
+    });
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).toContain("490 before (after count unavailable) — total: 510");
+  });
+
+  it("omits total suffix in before-only branch when testTotalBefore is null", () => {
+    const outcome = makeOutcome({
+      cycleNumber: 47, improvementsAttempted: 1, improvementsSucceeded: 0,
+      buildVerificationPassed: false, pushSucceeded: false,
+      testCountBefore: 490, testCountAfter: null,
+      testTotalBefore: null, testTotalAfter: null,
+    });
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).toContain("490 before (after count unavailable)");
+    expect(result).not.toContain("total:");
+  });
+
+  it("appends total when only testCountAfter is available and testTotalAfter is non-null", () => {
+    const outcome = makeOutcome({
+      cycleNumber: 48, improvementsAttempted: 1, improvementsSucceeded: 0,
+      buildVerificationPassed: false, pushSucceeded: false,
+      testCountBefore: null, testCountAfter: 500,
+      testTotalBefore: null, testTotalAfter: 510,
+    });
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).toContain("500 after (before count unavailable) — total: 510");
+  });
+
+  it("omits total suffix in after-only branch when testTotalAfter is null", () => {
+    const outcome = makeOutcome({
+      cycleNumber: 48, improvementsAttempted: 1, improvementsSucceeded: 0,
+      buildVerificationPassed: false, pushSucceeded: false,
+      testCountBefore: null, testCountAfter: 500,
+      testTotalBefore: null, testTotalAfter: null,
+    });
+    const result = formatOutcomeForJournal(outcome);
+    expect(result).toContain("500 after (before count unavailable)");
     expect(result).not.toContain("total:");
   });
 
@@ -559,10 +605,10 @@ describe("parseTestCount/parseTestTotal null propagation round-trip", () => {
     expect(count).toBeNull();
     expect(total).toBeNull();
     const outcome = makeOutcome({ testCountBefore: 400, testCountAfter: count, testTotalBefore: 405, testTotalAfter: total });
-    // Only before is available — should use the "after count unavailable" branch
+    // Only before is available — should use the "after count unavailable" branch.
+    // When testTotalBefore is non-null the available total is appended.
     const result = formatOutcomeForJournal(outcome);
-    expect(result).toContain("400 before (after count unavailable)");
-    expect(result).not.toContain("total:");
+    expect(result).toContain("400 before (after count unavailable) — total: 405");
   });
 });
 

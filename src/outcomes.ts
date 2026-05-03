@@ -133,9 +133,17 @@ export function formatOutcomeForJournal(outcome: CycleOutcome): string {
     }
     lines.push(testLine);
   } else if (outcome.testCountBefore !== null) {
-    lines.push(`- **Tests**: ${outcome.testCountBefore} before (after count unavailable)`);
+    let beforeLine = `- **Tests**: ${outcome.testCountBefore} before (after count unavailable)`;
+    if (outcome.testTotalBefore !== null) {
+      beforeLine += ` — total: ${outcome.testTotalBefore}`;
+    }
+    lines.push(beforeLine);
   } else if (outcome.testCountAfter !== null) {
-    lines.push(`- **Tests**: ${outcome.testCountAfter} after (before count unavailable)`);
+    let afterLine = `- **Tests**: ${outcome.testCountAfter} after (before count unavailable)`;
+    if (outcome.testTotalAfter !== null) {
+      afterLine += ` — total: ${outcome.testTotalAfter}`;
+    }
+    lines.push(afterLine);
   }
 
   return lines.join("\n");
