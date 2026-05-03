@@ -200,6 +200,7 @@ export function runBuildVerification(
   cycleCount: number,
   maxAttempts: number = BUILD_MAX_ATTEMPTS,
 ): BuildResult {
+  if (maxAttempts < 1) return { passed: false, output: "" };
   let lastResult: BuildResult = { passed: false, output: "" };
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     lastResult = verifyBuild();

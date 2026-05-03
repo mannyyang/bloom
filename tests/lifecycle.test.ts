@@ -549,6 +549,15 @@ describe("lifecycle helpers", () => {
       expect(() => runBuildVerification(42, 3)).toThrow();
     });
 
+    it("returns passed=false immediately without calling verifyBuild or hardResetTo when maxAttempts=0", () => {
+      const result = runBuildVerification(42, 0);
+      expect(result.passed).toBe(false);
+      expect(result.output).toBe("");
+      // No build attempted, no reset performed
+      expect(mockedExecSync).not.toHaveBeenCalled();
+      expect(mockedExecFileSync).not.toHaveBeenCalled();
+    });
+
     it("reverts once and hard-resets when maxAttempts=1", () => {
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       mockedExecSync.mockImplementation(() => { throw new Error("build failed"); });
