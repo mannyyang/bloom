@@ -207,9 +207,7 @@ export function runBuildVerification(
       return lastResult;
     }
     console.error(`Build verification failed (attempt ${attempt}/${maxAttempts})`);
-    if (attempt < maxAttempts) {
-      revertUncommitted();
-    }
+    revertUncommitted();
   }
 
   console.error("Build broken after all attempts. Reverting to pre-evolution state.");

@@ -496,7 +496,7 @@ describe("lifecycle helpers", () => {
       expect(errorSpy).toHaveBeenCalledTimes(1);
     });
 
-    it("reverts between attempts but not after last attempt", () => {
+    it("reverts after every failed attempt (including the last) before hard reset", () => {
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       mockedExecSync.mockImplementation(() => {
         throw new Error("build failed");
@@ -505,16 +505,16 @@ describe("lifecycle helpers", () => {
       // All 3 builds fail → hard reset
       const result = runBuildVerification(42, 3);
       expect(result.passed).toBe(false);
-      // revertUncommitted runs checkout + clean; count checkout calls
+      // revertUncommitted runs checkout + clean after EACH failed attempt (including the last)
       const checkoutCount = mockedExecFileSync.mock.calls.filter(
         (args) => args[0] === "git" && Array.isArray(args[1]) && (args[1] as string[])[0] === "checkout"
       ).length;
-      expect(checkoutCount).toBe(2);
+      expect(checkoutCount).toBe(3);
       // Also verify git clean -fd was called for each revert
       const cleanCount = mockedExecFileSync.mock.calls.filter(
         (args) => args[0] === "git" && Array.isArray(args[1]) && (args[1] as string[])[0] === "clean"
       ).length;
-      expect(cleanCount).toBe(2);
+      expect(cleanCount).toBe(3);
       expect(errorSpy).toHaveBeenCalledWith("Build verification failed (attempt 1/3)");
       expect(errorSpy).toHaveBeenCalledWith("Build broken after all attempts. Reverting to pre-evolution state.");
       errorSpy.mockRestore();
@@ -549,7 +549,7 @@ describe("lifecycle helpers", () => {
       expect(() => runBuildVerification(42, 3)).toThrow();
     });
 
-    it("skips revert and hard-resets immediately when maxAttempts=1", () => {
+    it("reverts once and hard-resets when maxAttempts=1", () => {
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       mockedExecSync.mockImplementation(() => { throw new Error("build failed"); });
       mockedExecFileSync.mockReturnValue(Buffer.from(""));
@@ -557,15 +557,15 @@ describe("lifecycle helpers", () => {
       const result = runBuildVerification(42, 1);
 
       expect(result.passed).toBe(false);
-      // No revert (checkout/clean) since there are no retries with maxAttempts=1
+      // revertUncommitted runs once (for the single failed attempt) before hardResetTo
       const checkoutCount = mockedExecFileSync.mock.calls.filter(
         (args) => args[0] === "git" && Array.isArray(args[1]) && (args[1] as string[])[0] === "checkout",
       ).length;
-      expect(checkoutCount).toBe(0);
+      expect(checkoutCount).toBe(1);
       const cleanCount = mockedExecFileSync.mock.calls.filter(
         (args) => args[0] === "git" && Array.isArray(args[1]) && (args[1] as string[])[0] === "clean",
       ).length;
-      expect(cleanCount).toBe(0);
+      expect(cleanCount).toBe(1);
       // Hard reset IS still called after the single failed attempt
       expect(mockedExecFileSync).toHaveBeenCalledWith(
         "git",
