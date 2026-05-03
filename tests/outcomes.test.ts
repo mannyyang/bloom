@@ -340,6 +340,24 @@ describe("formatOutcomeForJournal", () => {
     expect(lines[lines.length - 1]).toContain("before (after count unavailable)");
   });
 
+  it("has exactly 8 lines for testCountBefore-only branch with durationMs non-null (structural pin)", () => {
+    // Mirrors the 7-line no-duration pin: adding durationMs shifts line count to 8.
+    // Structure: header + blank + 4 fixed + duration + before-line = 8 lines.
+    // Completes the before-only branch matrix: 7 lines (no duration), 8 lines (with duration).
+    const outcome = makeOutcome({
+      testCountBefore: 100,
+      testCountAfter: null,
+      failureCategory: "none",
+      durationMs: 60000,
+    });
+    const result = formatOutcomeForJournal(outcome);
+    const lines = result.split("\n");
+    expect(lines).toHaveLength(8);
+    expect(lines[0]).toBe("### Outcome Metrics");
+    expect(lines[6]).toContain("**Duration**: 60.0s");
+    expect(lines[7]).toContain("before (after count unavailable)");
+  });
+
   it("has exactly 8 lines for failure-category branch with test counts but no duration", () => {
     // Pins the structural invariant for the non-"none" failureCategory path:
     // header + blank + preflight + improvements + build + push + failureCategory + tests = 8 lines.
