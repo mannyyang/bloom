@@ -358,6 +358,41 @@ describe("formatOutcomeForJournal", () => {
     expect(lines[7]).toContain("before (after count unavailable)");
   });
 
+  it("has exactly 7 lines for testCountAfter-only branch with failureCategory none and no duration", () => {
+    // Mirrors the before-only 7-line pin for the symmetric after-only branch:
+    // header + blank + preflight + improvements + build + push +
+    // "after (before count unavailable)" = 7 lines.
+    // A regression that inserts a spurious blank line would change this count.
+    const outcome = makeOutcome({
+      testCountBefore: null,
+      testCountAfter: 100,
+      failureCategory: "none",
+      durationMs: null,
+    });
+    const result = formatOutcomeForJournal(outcome);
+    const lines = result.split("\n");
+    expect(lines).toHaveLength(7);
+    expect(lines[lines.length - 1]).toContain("after (before count unavailable)");
+  });
+
+  it("has exactly 8 lines for testCountAfter-only branch with durationMs non-null (structural pin)", () => {
+    // Mirrors the before-only 8-line pin for the symmetric after-only branch.
+    // Structure: header + blank + 4 fixed + duration + after-line = 8 lines.
+    // Completes the after-only branch matrix: 7 lines (no duration), 8 lines (with duration).
+    const outcome = makeOutcome({
+      testCountBefore: null,
+      testCountAfter: 100,
+      failureCategory: "none",
+      durationMs: 60000,
+    });
+    const result = formatOutcomeForJournal(outcome);
+    const lines = result.split("\n");
+    expect(lines).toHaveLength(8);
+    expect(lines[0]).toBe("### Outcome Metrics");
+    expect(lines[6]).toContain("**Duration**: 60.0s");
+    expect(lines[7]).toContain("after (before count unavailable)");
+  });
+
   it("has exactly 8 lines for failure-category branch with test counts but no duration", () => {
     // Pins the structural invariant for the non-"none" failureCategory path:
     // header + blank + preflight + improvements + build + push + failureCategory + tests = 8 lines.
