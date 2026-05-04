@@ -288,6 +288,17 @@ describe("blockDangerousCommands", () => {
     ["chmod on bare .git (no trailing slash)", "chmod 777 .git"],
     ["chmod -R on bare .git", "chmod -R 000 .git"],
     ["chown on bare .git (no trailing slash)", "chown root .git"],
+    // Dangerous recursive chmod/chown on whole-tree paths
+    ["chmod -R on root /", "chmod -R 777 /"],
+    ["chmod -R on home ~", "chmod -R 000 ~"],
+    ["chmod -R on current dir .", "chmod -R 755 ."],
+    ["chmod --recursive on root /", "chmod --recursive 777 /"],
+    ["chmod -R on parent dir ..", "chmod -R 777 .."],
+    ["chown -R on root /", "chown -R root /"],
+    ["chown -R on home ~", "chown -R user:group ~"],
+    ["chown -R on current dir .", "chown -R root ."],
+    ["chown --recursive on root /", "chown --recursive root /"],
+    ["chown -R on parent dir ..", "chown -R root .."],
     // Disk destruction
     ["dd to /dev/sda", "dd if=/dev/zero of=/dev/sda bs=1M"],
     ["dd to /dev/nvme0n1", "dd if=/dev/urandom of=/dev/nvme0n1"],
@@ -1076,8 +1087,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 100 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(100);
+  it("has exactly 102 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(102);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1137,6 +1148,9 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "rm -rf .git",
       "chmod 777 .git/config",
       "chown root .git/",
+      // dangerous-recursive-chmod / dangerous-recursive-chown
+      "chmod -R 777 /",
+      "chown -R root ~",
       // disk-destruction
       "dd if=/dev/zero of=/dev/sda",
       "mkfs.ext4 /dev/sda",
@@ -1369,6 +1383,48 @@ describe("category: git-internals-tampering", () => {
   });
   it("allows chmod on non-.git paths", () => {
     expect(isDangerousCommand("chmod +x dist/index.js")).toBeNull();
+  });
+});
+
+describe("category: dangerous-recursive-chmod", () => {
+  it("blocks chmod -R on /", () => {
+    expect(isDangerousCommand("chmod -R 777 /")).toBe("dangerous-recursive-chmod");
+  });
+  it("blocks chmod -R on ~", () => {
+    expect(isDangerousCommand("chmod -R 000 ~")).toBe("dangerous-recursive-chmod");
+  });
+  it("blocks chmod -R on current dir .", () => {
+    expect(isDangerousCommand("chmod -R 755 .")).toBe("dangerous-recursive-chmod");
+  });
+  it("blocks chmod --recursive on /", () => {
+    expect(isDangerousCommand("chmod --recursive 777 /")).toBe("dangerous-recursive-chmod");
+  });
+  it("allows chmod without recursive flag", () => {
+    expect(isDangerousCommand("chmod 755 /usr/local/bin/myscript")).toBeNull();
+  });
+  it("allows chmod -R on a specific subdirectory", () => {
+    expect(isDangerousCommand("chmod -R 755 /home/user/project/dist")).toBeNull();
+  });
+});
+
+describe("category: dangerous-recursive-chown", () => {
+  it("blocks chown -R on /", () => {
+    expect(isDangerousCommand("chown -R root /")).toBe("dangerous-recursive-chown");
+  });
+  it("blocks chown -R on ~", () => {
+    expect(isDangerousCommand("chown -R user:group ~")).toBe("dangerous-recursive-chown");
+  });
+  it("blocks chown -R on current dir .", () => {
+    expect(isDangerousCommand("chown -R root .")).toBe("dangerous-recursive-chown");
+  });
+  it("blocks chown --recursive on /", () => {
+    expect(isDangerousCommand("chown --recursive root /")).toBe("dangerous-recursive-chown");
+  });
+  it("allows chown without recursive flag", () => {
+    expect(isDangerousCommand("chown user:group myfile.txt")).toBeNull();
+  });
+  it("allows chown -R on a specific subdirectory", () => {
+    expect(isDangerousCommand("chown -R user:group /home/user/project/dist")).toBeNull();
   });
 });
 

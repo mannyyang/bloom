@@ -161,6 +161,10 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Git internals tampering — changing permissions/ownership of .git/ or bare .git dir
   { pattern: /\bchmod\s+.*\.git(?:\/|\s|$|;|&|\|)/, category: "git-internals-tampering" },
   { pattern: /\bchown\s+.*\.git(?:\/|\s|$|;|&|\|)/, category: "git-internals-tampering" },
+  // Dangerous recursive chmod — -R/--recursive on /, ~, ., or .. can corrupt system-wide permissions
+  { pattern: /\bchmod\b(?=.*(?:-[a-zA-Z]*R\b|--recursive\b))(?=.*\s(?:\/(?:\s|$|\*)|~\/?(?:\s|$|\*)|\.(?:\/\*{0,2})?(?:\s|$)|\.\.(?:\/)?(?:\s|$)))/, category: "dangerous-recursive-chmod" },
+  // Dangerous recursive chown — -R/--recursive on /, ~, ., or .. can corrupt system-wide ownership
+  { pattern: /\bchown\b(?=.*(?:-[a-zA-Z]*R\b|--recursive\b))(?=.*\s(?:\/(?:\s|$|\*)|~\/?(?:\s|$|\*)|\.(?:\/\*{0,2})?(?:\s|$)|\.\.(?:\/)?(?:\s|$)))/, category: "dangerous-recursive-chown" },
   // Disk/partition destruction — writing to raw devices or reformatting
   { pattern: /\bdd\s+.*of=\/dev\//, category: "disk-destruction" },
   { pattern: /\bmkfs\b/, category: "disk-destruction" },
