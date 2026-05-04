@@ -743,6 +743,7 @@ describe("isDangerousCommand", () => {
     ["find -exec tee (overwrites via tee)", "find . -exec tee /dev/null \\;", "find-exec-destructive"],
     ["find -exec sed -i (bulk in-place edit)", "find . -name '*.ts' -exec sed -i 's/x/y/g' {} \\;", "find-exec-destructive"],
     ["find -execdir sed -i (in-place via execdir)", "find src -execdir sed -i '' 's/foo/bar/' {} \\;", "find-exec-destructive"],
+    ["find -exec install (bulk-copies without -m flag)", "find dist -name '*.so' -exec install {} /usr/local/lib/ \\;", "find-exec-destructive"],
     ["find -delete (deletes matched files without -exec)", "find . -name '*.tmp' -delete", "find-exec-destructive"],
     ["find -delete with type filter", "find /tmp -type f -delete", "find-exec-destructive"],
     ["install -m", "install -m 777 src dst", "file-permission-tampering"],
