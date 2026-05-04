@@ -236,6 +236,9 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
     pattern: /\bfind\b.*-exec(?:dir)?\s+(?:rm|unlink|chmod|chown|mv|cp|dd|truncate|tee|sed)\b/,
     category: "find-exec-destructive",
   },
+  // find -delete — built-in find action that deletes matched files/dirs without requiring -exec rm;
+  // functionally equivalent to `find ... -exec rm -rf {} +` but faster and harder to detect
+  { pattern: /\bfind\b.*-delete\b/, category: "find-exec-destructive" },
   // Untrusted package installation — adding deps pulls arbitrary code
   { pattern: /\bpnpm\s+add\b/, category: "untrusted-package-installation" },
   { pattern: /\bpnpm\s+(?:install|i)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },

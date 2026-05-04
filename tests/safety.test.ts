@@ -743,6 +743,8 @@ describe("isDangerousCommand", () => {
     ["find -exec tee (overwrites via tee)", "find . -exec tee /dev/null \\;", "find-exec-destructive"],
     ["find -exec sed -i (bulk in-place edit)", "find . -name '*.ts' -exec sed -i 's/x/y/g' {} \\;", "find-exec-destructive"],
     ["find -execdir sed -i (in-place via execdir)", "find src -execdir sed -i '' 's/foo/bar/' {} \\;", "find-exec-destructive"],
+    ["find -delete (deletes matched files without -exec)", "find . -name '*.tmp' -delete", "find-exec-destructive"],
+    ["find -delete with type filter", "find /tmp -type f -delete", "find-exec-destructive"],
     ["install -m", "install -m 777 src dst", "file-permission-tampering"],
     ["unlink src/safety.ts (bare file-deletion)", "unlink src/safety.ts", "file-deletion"],
     ["awk system() call", "awk 'system(\"rm -rf /\")'", "awk-code-execution"],
@@ -1073,8 +1075,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 99 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(99);
+  it("has exactly 100 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(100);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1186,6 +1188,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "find . -exec bash {} \\;",
       // find-exec-destructive
       "find . -name '*.tmp' -exec rm {} +",
+      "find . -name '*.tmp' -delete",
       // untrusted-package-installation
       "pnpm add evil-pkg",
       "pnpm install evil-pkg",
