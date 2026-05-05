@@ -713,6 +713,7 @@ describe("isDangerousCommand", () => {
     ["node -e", "node -e 'process.exit(1)'", "inline-code-execution"],
     ["deno -e", "deno -e 'Deno.run({cmd:[\"id\"]})'", "inline-code-execution"],
     ["bun -e", 'bun -e "require(\'child_process\').execSync(\'id\')"', "inline-code-execution"],
+    ["lua -e", "lua -e 'os.execute(\"id\")'", "inline-code-execution"],
     // deno eval / bun eval are caught by \beval\s before reaching any deno/bun-specific pattern
     ["deno eval", "deno eval 'Deno.run({cmd:[\"id\"]})'", "arbitrary-code-execution"],
     ["bun eval", 'bun eval "require(\'child_process\').execSync(\'id\')"', "arbitrary-code-execution"],
@@ -1144,8 +1145,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 109 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(109);
+  it("has exactly 110 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(110);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1192,6 +1193,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "ruby -e 'exec(\"id\")'",
       "deno -e 'Deno.run({cmd:[\"id\"]})'",
       "bun -e 'require(\"child_process\").execSync(\"id\")'",
+      "lua -e 'os.execute(\"id\")'",
       // shell-script-execution
       "source /tmp/evil.sh",
       ". /tmp/evil.sh",

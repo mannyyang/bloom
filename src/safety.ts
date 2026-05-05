@@ -151,6 +151,9 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // deno -e / bun -e — inline code execution flags; peer to node -e, ruby -e, perl -e
   { pattern: /\bdeno\s+-e\b/, category: "inline-code-execution" },
   { pattern: /\bbun\s+-e\b/, category: "inline-code-execution" },
+  // lua -e — executes arbitrary Lua code inline; `lua -e 'os.execute("id")'` is functionally
+  // identical to `python3 -c` or `node -e` and is available in many CI/Linux environments.
+  { pattern: /\blua\s+-e\b/, category: "inline-code-execution" },
   // Shell script execution — source and dot-script (`. `) execute arbitrary files
   { pattern: /(?:^|[;&|]\s*)source\s/, category: "shell-script-execution" },
   { pattern: /(?:^|[;&|]\s*)\.\s+\S/, category: "shell-script-execution" },
