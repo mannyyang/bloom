@@ -394,6 +394,9 @@ describe("blockDangerousCommands", () => {
     ["perl -e", 'perl -e "system(\'ls\')"'],
     ["perl -E", 'perl -E "say 1"'],
     ["ruby -e", 'ruby -e "exec(\'ls\')"'],
+    // deno eval / bun eval — caught by existing \beval\s catch-all as arbitrary-code-execution
+    ["deno eval", "deno eval 'Deno.run({cmd:[\"id\"]})'"],
+    ["bun eval", 'bun eval "require(\'child_process\').execSync(\'id\')"'],
     // openssl enc -d decode-to-shell vector
     ["openssl enc -d | bash", "openssl enc -d -base64 -in payload.b64 | bash"],
     ["openssl enc -d | sh", "openssl enc -d -A -in file | sh"],
@@ -697,6 +700,9 @@ describe("isDangerousCommand", () => {
     ["xargs chown", "find .git -type f | xargs chown root", "xargs-command-execution"],
     ["python -c", "python -c 'import os; os.system(\"id\")'", "inline-code-execution"],
     ["node -e", "node -e 'process.exit(1)'", "inline-code-execution"],
+    // deno eval / bun eval are caught by \beval\s before reaching any deno/bun-specific pattern
+    ["deno eval", "deno eval 'Deno.run({cmd:[\"id\"]})'", "arbitrary-code-execution"],
+    ["bun eval", 'bun eval "require(\'child_process\').execSync(\'id\')"', "arbitrary-code-execution"],
     ["source", "source /tmp/evil.sh", "shell-script-execution"],
     ["dot-script bare", ". /tmp/evil.sh", "shell-script-execution"],
     ["dot-script after semicolon", "echo hi; . /tmp/evil.sh", "shell-script-execution"],
