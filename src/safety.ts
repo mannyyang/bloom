@@ -92,8 +92,8 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Git history destruction — hard reset to arbitrary ref loses uncommitted work
   { pattern: /git\s+reset\s+--hard\s+(?!HEAD(?:\s*$|\s*[;&|]))/, category: "git-history-destruction" },
   // Remote code execution — piping downloaded content into a shell
-  { pattern: /\bcurl\b.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k|a)?sh/, category: "remote-code-execution" },
-  { pattern: /\bwget\b.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k|a)?sh/, category: "remote-code-execution" },
+  { pattern: /\bcurl\b.*\|\s*(?:[\w./]*\/)?(?:(?:ba|z|da|k|a)?sh|fish)/, category: "remote-code-execution" },
+  { pattern: /\bwget\b.*\|\s*(?:[\w./]*\/)?(?:(?:ba|z|da|k|a)?sh|fish)/, category: "remote-code-execution" },
   // Remote code execution — process substitution download-and-execute
   { pattern: /(?:[\w./]*\/)?(?:ba|z|da|k|a)?sh\s+<\(\s*(?:curl|wget)\b/, category: "remote-code-execution" },
   // Remote code execution — here-string with command substitution downloads and executes remote content
@@ -102,12 +102,12 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Remote code execution — base64 decode piped into a shell interpreter
   // e.g. echo "BASE64" | base64 -d | bash  or  base64 -d payload.txt | sh
   // Covers both short (-d) and long (--decode) flags, with optional openssl variant
-  { pattern: /\bbase64\s+(?:-d\b|--decode\b).*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k|a)?sh\b/, category: "remote-code-execution" },
+  { pattern: /\bbase64\s+(?:-d\b|--decode\b).*\|\s*(?:[\w./]*\/)?(?:(?:ba|z|da|k|a)?sh|fish)\b/, category: "remote-code-execution" },
   { pattern: /\bbase64\s+(?:-d\b|--decode\b).*\|\s*(?:[\w./]*\/)?(?:python3?|perl|ruby|node|deno|bun)\b/, category: "remote-code-execution" },
   // Remote code execution — openssl enc -d piped into a shell or scripting interpreter
   // e.g. openssl enc -d -base64 -in payload.b64 | bash  or  openssl enc -d -A -in file | sh
   // Peer to base64 -d | bash: both decode arbitrary bytes from stdin and pipe to a shell.
-  { pattern: /\bopenssl\s+enc\b.*-d\b.*\|\s*(?:[\w./]*\/)?(?:ba|z|da|k|a)?sh\b/, category: "remote-code-execution" },
+  { pattern: /\bopenssl\s+enc\b.*-d\b.*\|\s*(?:[\w./]*\/)?(?:(?:ba|z|da|k|a)?sh|fish)\b/, category: "remote-code-execution" },
   { pattern: /\bopenssl\s+enc\b.*-d\b.*\|\s*(?:[\w./]*\/)?(?:python3?|perl|ruby|node|deno|bun)\b/, category: "remote-code-execution" },
   // Remote code execution — output process substitution >(interpreter) pipes data into arbitrary code
   // Covers: tee >(bash), cmd > >(sh -c …), output | tee >(python3 exploit.py), etc.
