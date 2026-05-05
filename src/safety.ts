@@ -141,6 +141,8 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /(?:[\w./]*\/)?(?:ba|z|da|k|a)?sh\s+-c\b/, category: "arbitrary-code-execution" },
   // Fish shell -c — executes arbitrary code identically to sh -c but was previously unmatched
   { pattern: /\bfish\s+-c\b/, category: "arbitrary-code-execution" },
+  // csh/tcsh -c — executes arbitrary code identically to sh -c; peer to the fish -c entry above
+  { pattern: /\bt?csh\s+-c\b/, category: "arbitrary-code-execution" },
   // Inline interpreter code execution — functionally equivalent to sh -c
   { pattern: /\b(?:python3?|python3\.\d+)\s+-c\b/, category: "inline-code-execution" },
   { pattern: /\bnode\s+(?:-e|--eval)\b/, category: "inline-code-execution" },

@@ -239,6 +239,8 @@ describe("blockDangerousCommands", () => {
     ["/usr/bin/ksh -c", '/usr/bin/ksh -c "malicious"'],
     ["ash -c (Alpine shell)", 'ash -c "malicious command"'],
     ["fish -c", "fish -c 'rm -rf /'"],
+    ["csh -c", "csh -c 'malicious'"],
+    ["tcsh -c", "tcsh -c 'cmd'"],
     // Untrusted package execution
     ["npx some-untrusted-package", "npx some-untrusted-package"],
     ["npm exec some-package", "npm exec some-package"],
@@ -816,6 +818,8 @@ describe("isDangerousCommand", () => {
     ["awk pipe to bun", "awk '{print | \"bun exploit.ts\"}'", "awk-code-execution"],
     ["awk pipe to csh", "awk '{print | \"csh\"}'", "awk-code-execution"],
     ["awk pipe to tcsh", "awk '{print | \"tcsh\"}'", "awk-code-execution"],
+    ["csh -c arbitrary code", "csh -c 'malicious'", "arbitrary-code-execution"],
+    ["tcsh -c arbitrary code", "tcsh -c 'cmd'", "arbitrary-code-execution"],
     ["process substitution tee >(bash)", "tee >(bash)", "process-substitution-execution"],
     ["process substitution tee >(sh)", "echo hello | tee >(sh)", "process-substitution-execution"],
     ["process substitution >(python)", "cmd > >(python exploit.py)", "process-substitution-execution"],
@@ -1140,8 +1144,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 108 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(108);
+  it("has exactly 109 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(109);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1180,6 +1184,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "eval something",
       "bash -c 'malicious'",
       "fish -c 'rm -rf /'",
+      "csh -c 'malicious'",
       // inline-code-execution
       "python3 -c 'import os'",
       "node -e 'process.exit(1)'",
