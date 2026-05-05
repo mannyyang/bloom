@@ -145,6 +145,9 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bnode\s+(?:-e|--eval)\b/, category: "inline-code-execution" },
   { pattern: /\bperl\s+(?:-e|-E)\b/, category: "inline-code-execution" },
   { pattern: /\bruby\s+-e\b/, category: "inline-code-execution" },
+  // deno -e / bun -e — inline code execution flags; peer to node -e, ruby -e, perl -e
+  { pattern: /\bdeno\s+-e\b/, category: "inline-code-execution" },
+  { pattern: /\bbun\s+-e\b/, category: "inline-code-execution" },
   // Shell script execution — source and dot-script (`. `) execute arbitrary files
   { pattern: /(?:^|[;&|]\s*)source\s/, category: "shell-script-execution" },
   { pattern: /(?:^|[;&|]\s*)\.\s+\S/, category: "shell-script-execution" },

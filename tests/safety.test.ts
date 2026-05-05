@@ -700,6 +700,8 @@ describe("isDangerousCommand", () => {
     ["xargs chown", "find .git -type f | xargs chown root", "xargs-command-execution"],
     ["python -c", "python -c 'import os; os.system(\"id\")'", "inline-code-execution"],
     ["node -e", "node -e 'process.exit(1)'", "inline-code-execution"],
+    ["deno -e", "deno -e 'Deno.run({cmd:[\"id\"]})'", "inline-code-execution"],
+    ["bun -e", 'bun -e "require(\'child_process\').execSync(\'id\')"', "inline-code-execution"],
     // deno eval / bun eval are caught by \beval\s before reaching any deno/bun-specific pattern
     ["deno eval", "deno eval 'Deno.run({cmd:[\"id\"]})'", "arbitrary-code-execution"],
     ["bun eval", 'bun eval "require(\'child_process\').execSync(\'id\')"', "arbitrary-code-execution"],
@@ -1121,8 +1123,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 105 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(106);
+  it("has exactly 107 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(108);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1166,6 +1168,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "node -e 'process.exit(1)'",
       "perl -e 'system(\"id\")'",
       "ruby -e 'exec(\"id\")'",
+      "deno -e 'Deno.run({cmd:[\"id\"]})'",
+      "bun -e 'require(\"child_process\").execSync(\"id\")'",
       // shell-script-execution
       "source /tmp/evil.sh",
       ". /tmp/evil.sh",
