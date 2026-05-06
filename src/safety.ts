@@ -224,7 +224,7 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Shell shorthand: (ba|z|da|k|a)?sh covers bash/zsh/dash/ksh/ash/sh; fish and t?csh are explicit
   { pattern: /\bxargs\s+.*(?:[\w./]*\/)?(?:(?:ba|z|da|k|a)?sh|fish|t?csh)\b/, category: "xargs-command-execution" },
   // xargs with scripting interpreters — parallel to find -exec interpreter block (cycle 244)
-  { pattern: /\bxargs\s+.*(?:[\w./]*\/)?(?:python3?|perl|ruby|node|deno|bun)\b/, category: "xargs-command-execution" },
+  { pattern: /\bxargs\s+.*(?:[\w./]*\/)?(?:python3?|perl|ruby|node|deno|bun|lua|php)\b/, category: "xargs-command-execution" },
   { pattern: /\bxargs\s+.*\brm\s/, category: "xargs-command-execution" },
   // xargs chmod/chown bypass — evades direct .git pattern by placing .git before the command
   { pattern: /\bxargs\s+.*\bchmod\b/, category: "xargs-command-execution" },
