@@ -154,6 +154,9 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // lua -e — executes arbitrary Lua code inline; `lua -e 'os.execute("id")'` is functionally
   // identical to `python3 -c` or `node -e` and is available in many CI/Linux environments.
   { pattern: /\blua\s+-e\b/, category: "inline-code-execution" },
+  // PHP's -r flag — executes arbitrary PHP code inline; `php -r 'system("id");'` is functionally
+  // identical to `python3 -c` or `ruby -e` and PHP is ubiquitous on Linux/CI systems.
+  { pattern: /\bphp\s+-r\b/, category: "inline-code-execution" },
   // Shell script execution — source and dot-script (`. `) execute arbitrary files
   { pattern: /(?:^|[;&|]\s*)source\s/, category: "shell-script-execution" },
   { pattern: /(?:^|[;&|]\s*)\.\s+\S/, category: "shell-script-execution" },
