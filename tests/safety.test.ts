@@ -848,6 +848,8 @@ describe("isDangerousCommand", () => {
     ["process substitution >(node)", "output | tee >(node -e 'require(\"child_process\")')", "process-substitution-execution"],
     ["process substitution >(zsh)", "cmd > >(zsh)", "process-substitution-execution"],
     ["process substitution >(bun)", "cmd > >(bun run exploit.ts)", "process-substitution-execution"],
+    ["process substitution >(awk -f)", "tee >(awk -f exploit.awk)", "process-substitution-execution"],
+    ["process substitution >(awk inline)", "cmd > >(awk '{system(\"id\")}')", "process-substitution-execution"],
     ["truncate -s 0 (file-truncation)", "truncate -s 0 src/safety.ts", "file-truncation"],
     ["truncate --size=0 (file-truncation)", "truncate --size=0 src/triage.ts", "file-truncation"],
   ])("detects %s → %s", (_desc, command, category) => {

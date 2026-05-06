@@ -111,9 +111,10 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bopenssl\s+enc\b.*-d\b.*\|\s*(?:[\w./]*\/)?(?:(?:ba|z|da|k|a)?sh|fish|t?csh)\b/, category: "remote-code-execution" },
   { pattern: /\bopenssl\s+enc\b.*-d\b.*\|\s*(?:[\w./]*\/)?(?:python3?|perl|ruby|node|deno|bun|lua|php)\b/, category: "remote-code-execution" },
   // Remote code execution — output process substitution >(interpreter) pipes data into arbitrary code
-  // Covers: tee >(bash), cmd > >(sh -c …), output | tee >(python3 exploit.py), etc.
+  // Covers: tee >(bash), cmd > >(sh -c …), output | tee >(python3 exploit.py), tee >(awk …), etc.
   // False-positive analysis: >(basename …), >(wc -l), >(grep …) are safe — none match the interpreter list.
-  { pattern: />\(\s*(?:[\w./]*\/)?(?:bash|sh|zsh|fish|dash|ksh|csh|tcsh|ash|python3?|perl|ruby|node|deno|bun|lua|php)\b/, category: "process-substitution-execution" },
+  // awk added for symmetry with find-exec guard: `tee >(awk -f exploit.awk)` is a real obfuscation vector.
+  { pattern: />\(\s*(?:[\w./]*\/)?(?:bash|sh|zsh|fish|dash|ksh|csh|tcsh|ash|awk|python3?|perl|ruby|node|deno|bun|lua|php)\b/, category: "process-substitution-execution" },
   // Remote code execution — piping downloaded content into script interpreters
   { pattern: /\bcurl\b.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby|deno|bun|lua|php)\b/, category: "remote-code-execution" },
   { pattern: /\bwget\b.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby|deno|bun|lua|php)\b/, category: "remote-code-execution" },
