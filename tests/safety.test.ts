@@ -821,6 +821,8 @@ describe("isDangerousCommand", () => {
     ["awk pipe to bun", "awk '{print | \"bun exploit.ts\"}'", "awk-code-execution"],
     ["awk pipe to csh", "awk '{print | \"csh\"}'", "awk-code-execution"],
     ["awk pipe to tcsh", "awk '{print | \"tcsh\"}'", "awk-code-execution"],
+    ["awk pipe to lua", "awk '{print | \"lua\"}'", "awk-code-execution"],
+    ["awk pipe to php", "awk '{print | \"php\"}'", "awk-code-execution"],
     ["csh -c arbitrary code", "csh -c 'malicious'", "arbitrary-code-execution"],
     ["tcsh -c arbitrary code", "tcsh -c 'cmd'", "arbitrary-code-execution"],
     ["process substitution tee >(bash)", "tee >(bash)", "process-substitution-execution"],

@@ -257,7 +257,7 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bawk\b.*\bsystem\s*\(/, category: "awk-code-execution" },
   // awk piping to a shell or scripting interpreter — awk '{print | "bash"}' / awk '{print | "python3"}' etc.
   // Peers: curl/wget pipe guards already cover these interpreters; the awk pipe guard now matches them too.
-  { pattern: /\bawk\b.*\|\s*["']?(?:(?:ba|z|da|k|a)?sh|fish|t?csh|python3?|node|perl|ruby|deno|bun)\b/, category: "awk-code-execution" },
+  { pattern: /\bawk\b.*\|\s*["']?(?:(?:ba|z|da|k|a)?sh|fish|t?csh|python3?|node|perl|ruby|deno|bun|lua|php)\b/, category: "awk-code-execution" },
   // find -exec/-execdir with shell interpreters — executes arbitrary code without xargs
   {
     pattern: /\bfind\b.*-exec(?:dir)?\s+(?:sh|bash|zsh|fish|dash|ksh|csh|tcsh|ash|awk|perl|python3?|ruby|node|deno|bun|lua|php)\b/,
