@@ -220,6 +220,8 @@ describe("blockDangerousCommands", () => {
     ["find -execdir bun (bun via execdir)", "find . -execdir bun run {} \\;"],
     ["xargs deno (scripting interpreter bypass)", "find . -name '*.ts' | xargs deno run"],
     ["xargs bun (scripting interpreter bypass)", "find . -name '*.ts' | xargs bun run"],
+    ["xargs awk -f (file-based awk bypass)", "find . -name '*.log' | xargs awk -f evil.awk"],
+    ["xargs awk inline (scripting interpreter bypass)", "find . | xargs awk '{print}'"],
     ["xargs csh (csh execution bypass)", "find . -name '*.sh' | xargs csh"],
     ["xargs tcsh (tcsh execution bypass)", "find . -name '*.sh' | xargs tcsh"],
     // Process substitution
