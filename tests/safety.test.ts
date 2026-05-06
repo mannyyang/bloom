@@ -1453,6 +1453,10 @@ describe("here-string RCE vector", () => {
     expect(isDangerousCommand('deno <<< "Deno.run({cmd:[\'id\']})"')).toBe("remote-code-execution");
   });
 
+  it("blocks lua here-string execution", () => {
+    expect(isDangerousCommand('lua <<< "os.execute(\'id\')"')).toBe("remote-code-execution");
+  });
+
   it("allows heredoc redirect (<<) which is not a here-string (<<<)", () => {
     expect(isDangerousCommand("cat << EOF\nhello\nEOF")).toBeNull();
   });
