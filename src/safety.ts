@@ -103,13 +103,13 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Remote code execution — base64 decode piped into a shell interpreter
   // e.g. echo "BASE64" | base64 -d | bash  or  base64 -d payload.txt | sh
   // Covers both short (-d) and long (--decode) flags, with optional openssl variant
-  { pattern: /\bbase64\s+(?:-d\b|--decode\b).*\|\s*(?:[\w./]*\/)?(?:(?:ba|z|da|k|a)?sh|fish|t?csh)\b/, category: "remote-code-execution" },
-  { pattern: /\bbase64\s+(?:-d\b|--decode\b).*\|\s*(?:[\w./]*\/)?(?:python3?|perl|ruby|node|deno|bun|lua|php)\b/, category: "remote-code-execution" },
+  { pattern: /\bbase64\s+(?:-d\b|--decode\b).*\|\s*(?:[\w./]*\/)?(?:(?:ba|z|da|k|a)?sh|fish|t?csh|awk)\b/, category: "remote-code-execution" },
+  { pattern: /\bbase64\s+(?:-d\b|--decode\b).*\|\s*(?:[\w./]*\/)?(?:python3?|perl|ruby|node|deno|bun|lua|php|awk)\b/, category: "remote-code-execution" },
   // Remote code execution — openssl enc -d piped into a shell or scripting interpreter
   // e.g. openssl enc -d -base64 -in payload.b64 | bash  or  openssl enc -d -A -in file | sh
   // Peer to base64 -d | bash: both decode arbitrary bytes from stdin and pipe to a shell.
-  { pattern: /\bopenssl\s+enc\b.*-d\b.*\|\s*(?:[\w./]*\/)?(?:(?:ba|z|da|k|a)?sh|fish|t?csh)\b/, category: "remote-code-execution" },
-  { pattern: /\bopenssl\s+enc\b.*-d\b.*\|\s*(?:[\w./]*\/)?(?:python3?|perl|ruby|node|deno|bun|lua|php)\b/, category: "remote-code-execution" },
+  { pattern: /\bopenssl\s+enc\b.*-d\b.*\|\s*(?:[\w./]*\/)?(?:(?:ba|z|da|k|a)?sh|fish|t?csh|awk)\b/, category: "remote-code-execution" },
+  { pattern: /\bopenssl\s+enc\b.*-d\b.*\|\s*(?:[\w./]*\/)?(?:python3?|perl|ruby|node|deno|bun|lua|php|awk)\b/, category: "remote-code-execution" },
   // Remote code execution — output process substitution >(interpreter) pipes data into arbitrary code
   // Covers: tee >(bash), cmd > >(sh -c …), output | tee >(python3 exploit.py), tee >(awk …), etc.
   // False-positive analysis: >(basename …), >(wc -l), >(grep …) are safe — none match the interpreter list.

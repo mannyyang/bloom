@@ -1401,6 +1401,22 @@ describe("base64 decode pipe execution", () => {
   it("allows base64 encode (no decode flag)", () => {
     expect(isDangerousCommand("base64 file.txt | cat")).toBeNull();
   });
+
+  it("blocks base64 -d piped into awk (shell-pattern symmetry)", () => {
+    expect(isDangerousCommand("base64 -d payload.b64 | awk -f /dev/stdin")).toBe("remote-code-execution");
+  });
+
+  it("blocks base64 --decode piped into awk (interpreter-pattern symmetry)", () => {
+    expect(isDangerousCommand("base64 --decode exploit.b64 | awk -f exploit.awk")).toBe("remote-code-execution");
+  });
+
+  it("blocks openssl enc -d piped into awk (shell-pattern symmetry)", () => {
+    expect(isDangerousCommand("openssl enc -d -base64 | awk -f /dev/stdin")).toBe("remote-code-execution");
+  });
+
+  it("blocks openssl enc -d piped into awk (interpreter-pattern symmetry)", () => {
+    expect(isDangerousCommand("openssl enc -d -base64 -in payload.b64 | awk -f evil.awk")).toBe("remote-code-execution");
+  });
 });
 
 describe("two-step write-then-execute RCE vector", () => {
