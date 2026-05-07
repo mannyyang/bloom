@@ -161,6 +161,15 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bfish\s+-c\b/, category: "arbitrary-code-execution" },
   // csh/tcsh -c — executes arbitrary code identically to sh -c; peer to the fish -c entry above
   { pattern: /\bt?csh\s+-c\b/, category: "arbitrary-code-execution" },
+  // env-based interpreter bypass — `env bash -c '…'` / `env python3 -c '…'` use `env` as the
+  // first token to invoke interpreters, bypassing the direct `sh -c` and `python3 -c` guards.
+  // Anchored to command boundaries (^, ;, &, |) to avoid false positives in commit messages or
+  // documentation strings where "env bash -c" appears as text, not as an executed command.
+  // The (?:\S+\s+)* group allows for VAR=value env-var settings or flags before the interpreter.
+  {
+    pattern: /(?:^|[;&|]\s*)env\s+(?:\S+\s+)*(?:[\w./]*\/)?(?:(?:ba|z|da|k|a)?sh|fish|t?csh|python3?|perl|ruby|node|deno|bun|lua|php)\s+(?:-c\b|-e\b|-E\b|-r\b|--eval\b)/,
+    category: "env-interpreter-bypass",
+  },
   // Inline interpreter code execution — functionally equivalent to sh -c
   { pattern: /\b(?:python3?|python3\.\d+)\s+-c\b/, category: "inline-code-execution" },
   { pattern: /\bnode\s+(?:-e|--eval)\b/, category: "inline-code-execution" },

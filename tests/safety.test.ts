@@ -1165,8 +1165,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 114 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(114);
+  it("has exactly 115 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(115);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1212,6 +1212,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "bash -c 'malicious'",
       "fish -c 'rm -rf /'",
       "csh -c 'malicious'",
+      // env-interpreter-bypass
+      "env bash -c 'malicious'",
       // inline-code-execution
       "python3 -c 'import os'",
       "node -e 'process.exit(1)'",
