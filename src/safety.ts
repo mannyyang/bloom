@@ -384,6 +384,12 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // install cron jobs that execute outside the agent session, bypassing PreToolUse hooks.
   // `\bcrontab\b` covers all forms; crontab has no legitimate use in Bloom's pipeline.
   { pattern: /\bcrontab\b/, category: "persistence" },
+  // Dynamic linker injection — LD_PRELOAD=/tmp/evil.so loads an attacker-controlled shared
+  // library into the next process, silently hijacking system calls or git hooks.
+  // LD_LIBRARY_PATH=/tmp/evil_libs: achieves the same effect by prepending a directory.
+  // Both assignments have no legitimate use in Bloom's pipeline; false-positive risk is low.
+  { pattern: /\bLD_PRELOAD\s*=/, category: "env-var-injection" },
+  { pattern: /\bLD_LIBRARY_PATH\s*=/, category: "env-var-injection" },
   // Data-exfiltration server — these commands start an HTTP server that serves Bloom's source tree
   // to any external host. None have legitimate use in Bloom's build/test pipeline.
   // `python3 -m http.server` and `python -m http.server` — Python's built-in HTTP server

@@ -1190,8 +1190,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 131 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(131);
+  it("has exactly 133 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(133);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1363,6 +1363,9 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "at midnight",
       "batch",
       "crontab -e",
+      // env-var-injection
+      "LD_PRELOAD=/tmp/evil.so command",
+      "LD_LIBRARY_PATH=/tmp/evil_libs:$LD_LIBRARY_PATH command",
       // data-exfiltration-server
       "python3 -m http.server 8080",
       "php -S 0.0.0.0:8080",
@@ -1795,6 +1798,18 @@ describe("category: persistence (crontab)", () => {
   });
   it("blocks crontab /tmp/evil", () => {
     expect(isDangerousCommand("crontab /tmp/evil")).toBe("persistence");
+  });
+});
+
+describe("category: env-var-injection", () => {
+  it("blocks LD_PRELOAD= shared-library injection", () => {
+    expect(isDangerousCommand("LD_PRELOAD=/tmp/evil.so command")).toBe("env-var-injection");
+  });
+  it("blocks LD_LIBRARY_PATH= injection", () => {
+    expect(isDangerousCommand("LD_LIBRARY_PATH=/tmp/evil_libs:$LD_LIBRARY_PATH command")).toBe("env-var-injection");
+  });
+  it("allows plain env var assignment without LD_PRELOAD/LD_LIBRARY_PATH", () => {
+    expect(isDangerousCommand("NODE_ENV=production pnpm build")).toBeNull();
   });
 });
 
