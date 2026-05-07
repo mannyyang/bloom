@@ -380,6 +380,10 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // `batch` is blocked unconditionally; neither command has legitimate use in Bloom.
   { pattern: /\bat\s+\S/, category: "persistence" },
   { pattern: /\bbatch\b/, category: "persistence" },
+  // Persistence via cron — `crontab -e`, `echo "…" | crontab -`, and `crontab /tmp/evil` all
+  // install cron jobs that execute outside the agent session, bypassing PreToolUse hooks.
+  // `\bcrontab\b` covers all forms; crontab has no legitimate use in Bloom's pipeline.
+  { pattern: /\bcrontab\b/, category: "persistence" },
   // Data-exfiltration server — these commands start an HTTP server that serves Bloom's source tree
   // to any external host. None have legitimate use in Bloom's build/test pipeline.
   // `python3 -m http.server` and `python -m http.server` — Python's built-in HTTP server

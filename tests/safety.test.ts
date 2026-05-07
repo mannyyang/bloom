@@ -1190,8 +1190,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 130 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(130);
+  it("has exactly 131 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(131);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1362,6 +1362,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       // persistence
       "at midnight",
       "batch",
+      "crontab -e",
       // data-exfiltration-server
       "python3 -m http.server 8080",
       "php -S 0.0.0.0:8080",
@@ -1782,6 +1783,18 @@ describe("category: persistence (at/batch scheduling)", () => {
   });
   it("allows cat file (at is not a word boundary match for cat)", () => {
     expect(isDangerousCommand("cat file.txt")).toBeNull();
+  });
+});
+
+describe("category: persistence (crontab)", () => {
+  it("blocks crontab -e", () => {
+    expect(isDangerousCommand("crontab -e")).toBe("persistence");
+  });
+  it("blocks echo pipe to crontab -", () => {
+    expect(isDangerousCommand("echo '* * * * * id' | crontab -")).toBe("persistence");
+  });
+  it("blocks crontab /tmp/evil", () => {
+    expect(isDangerousCommand("crontab /tmp/evil")).toBe("persistence");
   });
 });
 
