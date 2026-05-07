@@ -583,6 +583,14 @@ describe("blockDangerousCommands", () => {
     ["tee --append to JOURNAL.md", "echo x | tee --append JOURNAL.md"],
     ["cat JOURNAL.md", "cat JOURNAL.md"],
     ["grep on JOURNAL.md", "grep something JOURNAL.md"],
+    // Dangerous token sequences embedded in benign string arguments must not fire.
+    // These act as regression guards for all boundary-anchored patterns (like the env bypass).
+    // Cases where env+interpreter appear mid-string (no command-boundary anchor):
+    ["commit message mentioning env bash", 'git commit -m "use env bash for cross-platform scripting"'],
+    ["echo string describing env node usage", 'echo "env node runs with clean environment vars"'],
+    // Anchoring regression: mid-command env reference after non-separator text must not trigger
+    ["grep output containing env word", 'grep "env python" config.txt'],
+    ["echo env var assignment (not a spawn)", 'echo "env PATH=/usr/bin node script.js"'],
   ])("allows %s", async (_desc, command) => {
     expectAllowed(await blockDangerousCommands(makeBashInput(command), "tool-1", hookOpts));
   });
