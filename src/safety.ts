@@ -286,6 +286,15 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // awk piping to a shell or scripting interpreter — awk '{print | "bash"}' / awk '{print | "python3"}' etc.
   // Peers: curl/wget pipe guards already cover these interpreters; the awk pipe guard now matches them too.
   { pattern: /\bawk\b.*\|\s*["']?(?:(?:ba|z|da|k|a)?sh|fish|t?csh|python3?|node|perl|ruby|deno|bun|lua|php)\b/, category: "awk-code-execution" },
+  // script command interpreter spawn — the Unix `script` utility can spawn an interactive shell
+  // bypassing all interpreter-based guards. e.g. `script -c "bash" /dev/null` or
+  // `script -q /dev/null bash`. Present in virtually all Linux/CI environments.
+  // Anchored to command boundaries to avoid matching filenames like `bash script.sh`
+  // or `./script.sh` where "script" appears as part of a path, not as the command.
+  {
+    pattern: /(?:^|[;&|]\s*)script\b.*(?:-c\b|(?:bash|sh|zsh|fish|dash|ksh|ash)\b)/,
+    category: "script-interpreter-spawn",
+  },
   // find -exec/-execdir with shell interpreters — executes arbitrary code without xargs
   {
     pattern: /\bfind\b.*-exec(?:dir)?\s+(?:sh|bash|zsh|fish|dash|ksh|csh|tcsh|ash|awk|perl|python3?|ruby|node|deno|bun|lua|php)\b/,

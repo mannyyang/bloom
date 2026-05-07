@@ -1173,8 +1173,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 115 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(115);
+  it("has exactly 116 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(116);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1306,6 +1306,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       // awk-code-execution
       "awk 'system(\"id\")'",
       "awk '{print | \"bash\"}'",
+      // script-interpreter-spawn
+      "script -c \"bash\" /dev/null",
       // find-exec-shell
       "find . -exec bash {} \\;",
       // find-exec-destructive
@@ -1709,6 +1711,27 @@ describe("category: git-working-tree-destruction", () => {
   });
   it("blocks git worktree remove --force", () => {
     expect(isDangerousCommand("git worktree remove --force my-worktree")).toBe("git-working-tree-destruction");
+  });
+});
+
+describe("category: script-interpreter-spawn", () => {
+  it("blocks script -c bash /dev/null (shell spawn via -c)", () => {
+    expect(isDangerousCommand('script -c "bash" /dev/null')).toBe("script-interpreter-spawn");
+  });
+  it("blocks script -q /dev/null bash (shell as argument)", () => {
+    expect(isDangerousCommand("script -q /dev/null bash")).toBe("script-interpreter-spawn");
+  });
+  it("blocks script after semicolon (command boundary)", () => {
+    expect(isDangerousCommand("echo hi; script -c sh /dev/null")).toBe("script-interpreter-spawn");
+  });
+  it("allows bash script.sh (script is a filename, not the command)", () => {
+    expect(isDangerousCommand("bash script.sh")).toBeNull();
+  });
+  it("allows ./script.sh (dot-slash invocation, not script utility)", () => {
+    expect(isDangerousCommand("./script.sh")).toBeNull();
+  });
+  it("allows node run-script.js (script in a filename)", () => {
+    expect(isDangerousCommand("node run-script.js")).toBeNull();
   });
 });
 
