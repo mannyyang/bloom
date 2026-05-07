@@ -802,6 +802,9 @@ describe("isDangerousCommand", () => {
     ["apt upgrade <pkg>", "apt upgrade evil-pkg", "untrusted-package-installation"],
     ["apt-get upgrade <pkg> with flag", "apt-get upgrade -y evil-pkg", "untrusted-package-installation"],
     ["snap refresh <pkg>", "snap refresh evil-snap", "untrusted-package-installation"],
+    ["nsenter host namespace escape", "nsenter -t 1 -m -u -i -n bash", "namespace-escape"],
+    ["chroot filesystem escape", "chroot /host /bin/bash", "namespace-escape"],
+    ["unshare user namespace shell", "unshare --user bash", "namespace-escape"],
     ["git stash clear", "git stash clear", "git-stash-destruction"],
     ["git stash drop", "git stash drop stash@{0}", "git-stash-destruction"],
     ["xargs sed", "find . -name '*.ts' | xargs sed -i 's/old/new/g'", "xargs-command-execution"],
@@ -1181,8 +1184,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 118 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(118);
+  it("has exactly 121 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(121);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1345,6 +1348,10 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "brew upgrade evil-formula",
       "apt-get upgrade evil-pkg",
       "snap refresh evil-snap",
+      // namespace-escape
+      "nsenter -t 1 -m -u -i -n bash",
+      "chroot /host /bin/bash",
+      "unshare --user bash",
     ];
 
     expect(PROBES).toHaveLength(DANGEROUS_PATTERNS.length);

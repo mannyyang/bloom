@@ -362,6 +362,13 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // snap refresh <pkg> — Named snap refresh fetches and installs remote code from the Snap Store.
   // bare `snap refresh` (refreshes all installed snaps) is allowed.
   { pattern: /\bsnap\s+refresh\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  // Container / namespace escape — these Linux tools bypass the sandbox entirely:
+  // nsenter -t 1 -m -u -i -n bash  → enters the host PID-1 namespace from inside a container
+  // chroot /host /bin/bash          → drops into a root filesystem shell
+  // unshare --user bash             → creates an unprivileged user-namespace shell
+  { pattern: /\bnsenter\b/, category: "namespace-escape" },
+  { pattern: /\bchroot\b/, category: "namespace-escape" },
+  { pattern: /\bunshare\b/, category: "namespace-escape" },
 ];
 
 /**
