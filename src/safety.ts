@@ -390,6 +390,10 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Both assignments have no legitimate use in Bloom's pipeline; false-positive risk is low.
   { pattern: /\bLD_PRELOAD\s*=/, category: "env-var-injection" },
   { pattern: /\bLD_LIBRARY_PATH\s*=/, category: "env-var-injection" },
+  // Persistent service installation — `systemctl enable/start/restart/daemon-reload` can install
+  // a backdoor service that persists across reboots, well beyond the session boundary.
+  // Read-only subcommands (status, is-active, is-enabled) are intentionally left unblocked.
+  { pattern: /\bsystemctl\s+(?:enable|start|restart|daemon-reload)\b/, category: "persistence" },
   // Data-exfiltration server — these commands start an HTTP server that serves Bloom's source tree
   // to any external host. None have legitimate use in Bloom's build/test pipeline.
   // `python3 -m http.server` and `python -m http.server` — Python's built-in HTTP server

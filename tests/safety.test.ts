@@ -1190,8 +1190,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 133 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(133);
+  it("has exactly 134 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(134);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1366,6 +1366,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       // env-var-injection
       "LD_PRELOAD=/tmp/evil.so command",
       "LD_LIBRARY_PATH=/tmp/evil_libs:$LD_LIBRARY_PATH command",
+      // persistence (systemctl)
+      "systemctl enable evil.service",
       // data-exfiltration-server
       "python3 -m http.server 8080",
       "php -S 0.0.0.0:8080",
@@ -1798,6 +1800,27 @@ describe("category: persistence (crontab)", () => {
   });
   it("blocks crontab /tmp/evil", () => {
     expect(isDangerousCommand("crontab /tmp/evil")).toBe("persistence");
+  });
+});
+
+describe("category: persistence (systemctl)", () => {
+  it("blocks systemctl enable", () => {
+    expect(isDangerousCommand("systemctl enable evil.service")).toBe("persistence");
+  });
+  it("blocks systemctl start", () => {
+    expect(isDangerousCommand("systemctl start evil.service")).toBe("persistence");
+  });
+  it("blocks systemctl restart", () => {
+    expect(isDangerousCommand("systemctl restart evil.service")).toBe("persistence");
+  });
+  it("blocks systemctl daemon-reload", () => {
+    expect(isDangerousCommand("systemctl daemon-reload")).toBe("persistence");
+  });
+  it("allows systemctl status (read-only)", () => {
+    expect(isDangerousCommand("systemctl status sshd")).toBeNull();
+  });
+  it("allows systemctl is-active (read-only)", () => {
+    expect(isDangerousCommand("systemctl is-active nginx")).toBeNull();
   });
 });
 
