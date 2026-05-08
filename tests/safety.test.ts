@@ -2072,3 +2072,70 @@ describe("category: data-exfiltration", () => {
     expect(isDangerousCommand("curl https://api.example.com/status")).toBeNull();
   });
 });
+
+describe("category: arbitrary-code-execution", () => {
+  it.each([
+    ["eval with rm payload", 'eval "rm -rf /"'],
+    ["eval with variable expansion", "eval $PAYLOAD"],
+    ["sh with -c flag", 'sh -c "malicious command"'],
+    ["/bin/sh with -c flag", '/bin/sh -c "malicious"'],
+    ["/usr/bin/sh with -c flag", '/usr/bin/sh -c "malicious"'],
+    ["fish with -c flag", "fish -c 'rm -rf /'"],
+    ["csh with -c flag", "csh -c 'malicious'"],
+    ["tcsh with -c flag", "tcsh -c 'cmd'"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("arbitrary-code-execution");
+  });
+
+  it("does not flag a plain echo with no shell invocation", () => {
+    expect(isDangerousCommand("echo 'hello world'")).toBeNull();
+  });
+});
+
+describe("category: inline-code-execution", () => {
+  it.each([
+    ["python -c inline", 'python -c "import os; os.system(\'ls\')"'],
+    ["python3 -c inline", 'python3 -c "import subprocess"'],
+    ["python3.11 -c inline", 'python3.11 -c "print(1)"'],
+    ["node -e inline", 'node -e "console.log(1)"'],
+    ["perl -e inline", 'perl -e "system(\'ls\')"'],
+    ["perl -E inline", 'perl -E "say 1"'],
+    ["ruby -e inline", 'ruby -e "exec(\'ls\')"'],
+    ["deno -e inline", "deno -e 'Deno.exit()'"],
+    ["bun -e inline", 'bun -e "process.exit()"'],
+    ["lua -e inline", 'lua -e "os.execute(\"id\")"'],
+    ["php -r inline", 'php -r "system(\'id\');"'],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("inline-code-execution");
+  });
+
+  it("does not flag plain node invocation without -e/-c flags", () => {
+    expect(isDangerousCommand("node index.js")).toBeNull();
+  });
+});
+
+describe("category: git-history-rewriting", () => {
+  it.each([
+    ["git filter-branch bare", "git filter-branch"],
+    ["git filter-branch with args", "git filter-branch --tree-filter 'rm secret' HEAD"],
+    ["git filter-repo bare", "git filter-repo"],
+    ["git filter-repo with args", "git filter-repo --path secret.txt --invert-paths"],
+    ["git rebase -i", "git rebase -i"],
+    ["git rebase -i with ref", "git rebase -i main"],
+    ["git rebase --interactive", "git rebase --interactive"],
+    ["git rebase --interactive with ref", "git rebase --interactive HEAD~3"],
+    ["git commit --amend bare", "git commit --amend"],
+    ["git commit --amend --no-edit", "git commit --amend --no-edit"],
+    ["git commit -a --amend", "git commit -a --amend"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("git-history-rewriting");
+  });
+
+  it("does not flag a plain git commit without --amend", () => {
+    expect(isDangerousCommand('git commit -m "fix: normal commit"')).toBeNull();
+  });
+
+  it("does not flag git rebase without -i or --interactive", () => {
+    expect(isDangerousCommand("git rebase main")).toBeNull();
+  });
+});
