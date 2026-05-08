@@ -909,6 +909,66 @@ describe("isDangerousCommand", () => {
   });
 });
 
+describe("category: privilege-escalation", () => {
+  it.each([
+    ["sudo rm -rf /", "sudo rm -rf /"],
+    ["sudo -n flag variant", "sudo -n apt-get upgrade"],
+    ["su -c variant", "su -c 'rm -rf /'"],
+    ["pkexec bash", "pkexec bash"],
+    ["pkexec with full path", "pkexec /usr/bin/bash"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("privilege-escalation");
+  });
+
+  it("does not flag su without -c flag", () => {
+    expect(isDangerousCommand("su root")).toBeNull();
+  });
+});
+
+describe("category: process-tracing", () => {
+  it.each([
+    ["strace attach to pid", "strace -p 1234"],
+    ["strace trace program", "strace ./myprogram"],
+    ["ltrace attach to pid", "ltrace -p 1234"],
+    ["ltrace trace program", "ltrace ./myprogram"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("process-tracing");
+  });
+
+  it("does not flag reading proc filesystem directly", () => {
+    expect(isDangerousCommand("cat /proc/1/maps")).toBeNull();
+  });
+});
+
+describe("category: kernel-module-loading", () => {
+  it.each([
+    ["insmod module file", "insmod evil.ko"],
+    ["modprobe module name", "modprobe evil_module"],
+    ["modprobe with -r flag", "modprobe -r evil_module"],
+    ["modprobe with --force flag", "modprobe --force evil_module"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("kernel-module-loading");
+  });
+
+  it("does not flag lsmod (read-only module listing)", () => {
+    expect(isDangerousCommand("lsmod")).toBeNull();
+  });
+});
+
+describe("category: kernel-parameter-tampering", () => {
+  it.each([
+    ["sysctl -w perf param", "sysctl -w kernel.perf_event_paranoid=0"],
+    ["sysctl --write vm param", "sysctl --write vm.overcommit_memory=1"],
+    ["sysctl -w net param", "sysctl -w net.ipv4.ip_forward=1"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("kernel-parameter-tampering");
+  });
+
+  it("does not flag sysctl read-only query (no -w)", () => {
+    expect(isDangerousCommand("sysctl vm.swappiness")).toBeNull();
+  });
+});
+
 describe("buildProtectedFilePatterns", () => {
   function matchesAny(patterns: RegExp[], command: string): boolean {
     return patterns.some((p) => p.test(command));
