@@ -873,6 +873,11 @@ describe("isDangerousCommand", () => {
     ["process substitution >(awk inline)", "cmd > >(awk '{system(\"id\")}')", "process-substitution-execution"],
     ["truncate -s 0 (file-truncation)", "truncate -s 0 src/safety.ts", "file-truncation"],
     ["truncate --size=0 (file-truncation)", "truncate --size=0 src/triage.ts", "file-truncation"],
+    ["sudo (privilege-escalation)", "sudo rm -rf /", "privilege-escalation"],
+    ["su -c (privilege-escalation)", "su -c 'rm -rf /'", "privilege-escalation"],
+    ["pkexec (privilege-escalation)", "pkexec bash", "privilege-escalation"],
+    ["strace (process-tracing)", "strace -p 1234", "process-tracing"],
+    ["ltrace (process-tracing)", "ltrace -p 1234", "process-tracing"],
   ])("detects %s → %s", (_desc, command, category) => {
     expect(isDangerousCommand(command)).toBe(category);
   });
