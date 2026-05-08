@@ -433,6 +433,11 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bsudo\b/, category: "privilege-escalation" },
   { pattern: /\bsu\b.*-c\b/, category: "privilege-escalation" },
   { pattern: /\bpkexec\b/, category: "privilege-escalation" },
+  // Process tracing — `strace -p <pid>` and `ltrace -p <pid>` attach to running processes via
+  // ptrace, dumping arbitrary memory contents, credentials, file descriptors, and syscalls in
+  // real time without network access. Neither has legitimate use in Bloom's pipeline.
+  { pattern: /\bstrace\b/, category: "process-tracing" },
+  { pattern: /\bltrace\b/, category: "process-tracing" },
 ];
 
 /**

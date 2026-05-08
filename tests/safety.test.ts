@@ -1190,8 +1190,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 144 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(144);
+  it("has exactly 146 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(146);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1390,6 +1390,9 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "sudo rm -rf /",
       "su -c 'rm -rf /'",
       "pkexec bash",
+      // process-tracing
+      "strace -p 1234",
+      "ltrace -p 1234",
     ];
 
     expect(PROBES).toHaveLength(DANGEROUS_PATTERNS.length);
