@@ -2181,3 +2181,25 @@ describe("category: shell-script-execution", () => {
     expect(isDangerousCommand("cat ./setup.sh")).toBeNull();
   });
 });
+
+describe("category: git-stash-destruction", () => {
+  it.each([
+    ["git stash clear", "git stash clear"],
+    ["git stash drop bare", "git stash drop"],
+    ["git stash drop with ref", "git stash drop stash@{0}"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("git-stash-destruction");
+  });
+
+  it("does not flag git stash push", () => {
+    expect(isDangerousCommand("git stash push -m 'WIP'")).toBeNull();
+  });
+
+  it("does not flag git stash pop", () => {
+    expect(isDangerousCommand("git stash pop")).toBeNull();
+  });
+
+  it("does not flag git stash list", () => {
+    expect(isDangerousCommand("git stash list")).toBeNull();
+  });
+});
