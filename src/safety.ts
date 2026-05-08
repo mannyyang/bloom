@@ -427,6 +427,12 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Neither has legitimate use in Bloom's pipeline.
   { pattern: /\bnohup\b/, category: "persistence" },
   { pattern: /\bdisown\b/, category: "persistence" },
+  // Privilege escalation — `sudo cmd` / `su -c cmd` / `pkexec cmd` run child processes as root,
+  // meaning every DANGEROUS_PATTERNS guard is silently bypassed for the elevated child process
+  // (PreToolUse never inspects it). None have legitimate use in Bloom's pipeline.
+  { pattern: /\bsudo\b/, category: "privilege-escalation" },
+  { pattern: /\bsu\b.*-c\b/, category: "privilege-escalation" },
+  { pattern: /\bpkexec\b/, category: "privilege-escalation" },
 ];
 
 /**

@@ -1190,8 +1190,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 141 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(141);
+  it("has exactly 144 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(144);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1386,6 +1386,10 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       // persistence (session-detach)
       "nohup ./backdoor.sh &",
       "disown %1",
+      // privilege-escalation
+      "sudo rm -rf /",
+      "su -c 'rm -rf /'",
+      "pkexec bash",
     ];
 
     expect(PROBES).toHaveLength(DANGEROUS_PATTERNS.length);
