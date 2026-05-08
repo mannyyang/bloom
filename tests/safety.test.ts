@@ -969,6 +969,56 @@ describe("category: kernel-parameter-tampering", () => {
   });
 });
 
+describe("category: namespace-escape", () => {
+  it.each([
+    ["nsenter host pid-1 namespace", "nsenter -t 1 -m -u -i -n bash"],
+    ["nsenter with --target flag", "nsenter --target 1 --mount bash"],
+    ["chroot filesystem escape", "chroot /host /bin/bash"],
+    ["chroot minimal (one arg)", "chroot /newroot"],
+    ["unshare user namespace", "unshare --user bash"],
+    ["unshare network namespace", "unshare --net bash"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("namespace-escape");
+  });
+
+  it("does not flag reading namespace info via /proc", () => {
+    expect(isDangerousCommand("ls /proc/1/ns")).toBeNull();
+  });
+});
+
+describe("category: persistence (nohup/disown)", () => {
+  it.each([
+    ["nohup with background ampersand", "nohup ./backdoor.sh &"],
+    ["nohup without ampersand", "nohup ./script.sh"],
+    ["nohup with redirect", "nohup long-task > out.log 2>&1 &"],
+    ["disown job by id", "disown %1"],
+    ["disown bare", "disown"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("persistence");
+  });
+
+  it("does not flag an unrelated foreground build command", () => {
+    expect(isDangerousCommand("pnpm build && pnpm test")).toBeNull();
+  });
+});
+
+describe("category: persistence (screen/tmux multiplexer)", () => {
+  it.each([
+    ["screen -dm combined flag", "screen -dm bash evil.sh"],
+    ["screen -d -m separate flags", "screen -d -m bash evil.sh"],
+    ["screen -mds combined with name", "screen -mds evil bash evil.sh"],
+    ["tmux new-session -d flag", "tmux new-session -d -s evil"],
+    ["tmux new (short) -d flag", "tmux new -d -s session"],
+    ["tmux new-session --detach long flag", "tmux new-session --detach -s evil"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("persistence");
+  });
+
+  it("does not flag screen -ls (read-only session listing)", () => {
+    expect(isDangerousCommand("screen -ls")).toBeNull();
+  });
+});
+
 describe("buildProtectedFilePatterns", () => {
   function matchesAny(patterns: RegExp[], command: string): boolean {
     return patterns.some((p) => p.test(command));
