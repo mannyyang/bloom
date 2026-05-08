@@ -425,7 +425,7 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // kernel parameters: e.g. re-enabling disabled profiling interfaces
   // (kernel.perf_event_paranoid=0) or destabilising memory accounting
   // (vm.overcommit_memory). Has no legitimate use in Bloom's pipeline.
-  { pattern: /\bsysctl\b.*(?:-w\b|--write\b)/, category: "kernel-module-loading" },
+  { pattern: /\bsysctl\b.*(?:-w\b|--write\b)/, category: "kernel-parameter-tampering" },
   // Session-persistence via job control — `nohup cmd &` detaches a running process from the
   // agent session, letting it outlive the evolution cycle entirely. `disown` achieves the same
   // by removing a background job from the shell's job table. Same threat model as `at`/`batch`.

@@ -1383,6 +1383,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       // kernel-module-loading
       "insmod evil.ko",
       "modprobe evil_module",
+      // kernel-parameter-tampering
       "sysctl -w kernel.perf_event_paranoid=0",
       // persistence (session-detach)
       "nohup ./backdoor.sh &",
