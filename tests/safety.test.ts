@@ -1190,8 +1190,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 146 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(146);
+  it("has exactly 147 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(147);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1383,6 +1383,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       // kernel-module-loading
       "insmod evil.ko",
       "modprobe evil_module",
+      "sysctl -w kernel.perf_event_paranoid=0",
       // persistence (session-detach)
       "nohup ./backdoor.sh &",
       "disown %1",

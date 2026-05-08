@@ -421,6 +421,11 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // observed or blocked by userspace hook interception. Neither has legitimate use in Bloom.
   { pattern: /\binsmod\b/, category: "kernel-module-loading" },
   { pattern: /\bmodprobe\b/, category: "kernel-module-loading" },
+  // Kernel parameter tampering — `sysctl -w key=val` / `sysctl --write key=val` modifies live
+  // kernel parameters: e.g. re-enabling disabled profiling interfaces
+  // (kernel.perf_event_paranoid=0) or destabilising memory accounting
+  // (vm.overcommit_memory). Has no legitimate use in Bloom's pipeline.
+  { pattern: /\bsysctl\b.*(?:-w\b|--write\b)/, category: "kernel-module-loading" },
   // Session-persistence via job control — `nohup cmd &` detaches a running process from the
   // agent session, letting it outlive the evolution cycle entirely. `disown` achieves the same
   // by removing a background job from the shell's job table. Same threat model as `at`/`batch`.
