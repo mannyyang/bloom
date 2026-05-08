@@ -409,6 +409,11 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bnsenter\b/, category: "namespace-escape" },
   { pattern: /\bchroot\b/, category: "namespace-escape" },
   { pattern: /\bunshare\b/, category: "namespace-escape" },
+  // Kernel-module loading — `insmod` and `modprobe` load native code directly into ring-0.
+  // A loaded module persists across reboots, can intercept any syscall, and cannot be
+  // observed or blocked by userspace hook interception. Neither has legitimate use in Bloom.
+  { pattern: /\binsmod\b/, category: "kernel-module-loading" },
+  { pattern: /\bmodprobe\b/, category: "kernel-module-loading" },
 ];
 
 /**
