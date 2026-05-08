@@ -421,6 +421,12 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // observed or blocked by userspace hook interception. Neither has legitimate use in Bloom.
   { pattern: /\binsmod\b/, category: "kernel-module-loading" },
   { pattern: /\bmodprobe\b/, category: "kernel-module-loading" },
+  // Session-persistence via job control — `nohup cmd &` detaches a running process from the
+  // agent session, letting it outlive the evolution cycle entirely. `disown` achieves the same
+  // by removing a background job from the shell's job table. Same threat model as `at`/`batch`.
+  // Neither has legitimate use in Bloom's pipeline.
+  { pattern: /\bnohup\b/, category: "persistence" },
+  { pattern: /\bdisown\b/, category: "persistence" },
 ];
 
 /**
