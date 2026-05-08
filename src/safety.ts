@@ -443,6 +443,12 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // real time without network access. Neither has legitimate use in Bloom's pipeline.
   { pattern: /\bstrace\b/, category: "process-tracing" },
   { pattern: /\bltrace\b/, category: "process-tracing" },
+  // Session-persistence via multiplexer — `screen -dm cmd` and `tmux new-session -d` both spawn
+  // fully detached processes that outlive the evolution cycle; identical threat model to nohup/disown.
+  // `screen -dm` uses lookaheads to match both -d and -m flags in any combined or separate form.
+  // Neither has legitimate use in Bloom's pipeline.
+  { pattern: /\bscreen\b(?=.*-[a-zA-Z]*d)(?=.*-[a-zA-Z]*m)/, category: "persistence" },
+  { pattern: /\btmux\b.*\bnew(?:-session)?\b.*(?:-[a-zA-Z]*d[a-zA-Z]*\b|--detach\b)/, category: "persistence" },
 ];
 
 /**

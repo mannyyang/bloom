@@ -1190,8 +1190,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 147 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(147);
+  it("has exactly 149 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(149);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1394,6 +1394,9 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       // process-tracing
       "strace -p 1234",
       "ltrace -p 1234",
+      // persistence (multiplexer detach)
+      "screen -dm bash evil.sh",
+      "tmux new-session -d -s evil",
     ];
 
     expect(PROBES).toHaveLength(DANGEROUS_PATTERNS.length);
