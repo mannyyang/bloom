@@ -2162,3 +2162,22 @@ describe("category: git-history-destruction", () => {
     expect(isDangerousCommand("git reset --hard HEAD")).toBeNull();
   });
 });
+
+describe("category: shell-script-execution", () => {
+  it.each([
+    ["source /tmp/payload.sh", "source /tmp/payload.sh"],
+    ["source ./setup.sh", "source ./setup.sh"],
+    ["dot-script bare", ". /tmp/evil.sh"],
+    ["dot-script after semicolon", "echo hi; . /tmp/evil.sh"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("shell-script-execution");
+  });
+
+  it("does not flag a plain echo command", () => {
+    expect(isDangerousCommand("echo hello")).toBeNull();
+  });
+
+  it("does not flag git source-related output reading", () => {
+    expect(isDangerousCommand("cat ./setup.sh")).toBeNull();
+  });
+});
