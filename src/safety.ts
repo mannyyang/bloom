@@ -409,6 +409,13 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bnsenter\b/, category: "namespace-escape" },
   { pattern: /\bchroot\b/, category: "namespace-escape" },
   { pattern: /\bunshare\b/, category: "namespace-escape" },
+  // Interpreter search-path injection — setting PYTHONPATH=/tmp/evil causes every subsequent
+  // `python3` invocation to import from an attacker-controlled directory, silently hijacking
+  // standard-library modules such as `subprocess` or `os`. NODE_PATH and PERL5LIB are identical
+  // vectors for Node and Perl respectively. None have legitimate use in Bloom's pipeline.
+  { pattern: /\bPYTHONPATH\s*=/, category: "env-var-injection" },
+  { pattern: /\bNODE_PATH\s*=/, category: "env-var-injection" },
+  { pattern: /\bPERL5LIB\s*=/, category: "env-var-injection" },
   // Kernel-module loading — `insmod` and `modprobe` load native code directly into ring-0.
   // A loaded module persists across reboots, can intercept any syscall, and cannot be
   // observed or blocked by userspace hook interception. Neither has legitimate use in Bloom.

@@ -1190,8 +1190,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 136 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(136);
+  it("has exactly 139 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(139);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1376,6 +1376,10 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "nsenter -t 1 -m -u -i -n bash",
       "chroot /host /bin/bash",
       "unshare --user bash",
+      // env-var-injection (interpreter search-path)
+      "PYTHONPATH=/tmp/evil python3 app.py",
+      "NODE_PATH=/tmp/evil node index.js",
+      "PERL5LIB=/tmp/evil perl script.pl",
       // kernel-module-loading
       "insmod evil.ko",
       "modprobe evil_module",
