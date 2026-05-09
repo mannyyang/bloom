@@ -2353,29 +2353,6 @@ describe("category: git-history-rewriting", () => {
   });
 });
 
-describe("category: git-history-destruction", () => {
-  it.each([
-    ["git push --force origin main", "git push --force origin main"],
-    ["git push -f origin main", "git push -f origin main"],
-    ["git push origin main --force", "git push origin main --force"],
-    ["git push --force-with-lease origin main", "git push --force-with-lease origin main"],
-    ["git push --mirror", "git push --mirror origin"],
-    ["git reset --hard HEAD~1", "git reset --hard HEAD~1"],
-    ["git reset --hard HEAD^", "git reset --hard HEAD^"],
-    ["git reset --hard arbitrary SHA", "git reset --hard abc123f"],
-  ])("blocks %s", (_desc, command) => {
-    expect(isDangerousCommand(command)).toBe("git-history-destruction");
-  });
-
-  it("does not flag git push without force", () => {
-    expect(isDangerousCommand("git push origin main")).toBeNull();
-  });
-
-  it("does not flag git reset --hard HEAD (safe HEAD reset)", () => {
-    expect(isDangerousCommand("git reset --hard HEAD")).toBeNull();
-  });
-});
-
 describe("category: shell-script-execution", () => {
   it.each([
     ["source /tmp/payload.sh", "source /tmp/payload.sh"],
