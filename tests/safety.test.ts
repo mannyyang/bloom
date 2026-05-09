@@ -444,6 +444,7 @@ describe("blockDangerousCommands", () => {
     ["tee to IDENTITY.md", "echo x | tee IDENTITY.md"],
     ["tee IDENTITY.md (bare, no pipe)", "tee IDENTITY.md"],
     ["tee --append to IDENTITY.md (no allowAppend)", "echo x | tee --append IDENTITY.md"],
+    ["tee -a to IDENTITY.md (short flag, no allowAppend)", "echo x | tee -a IDENTITY.md"],
     ["chmod on IDENTITY.md", "chmod 777 IDENTITY.md"],
     ["redirect to absolute path IDENTITY.md", "echo x > /repo/IDENTITY.md"],
     ["cp to IDENTITY.md in chain", "cp other.md IDENTITY.md && echo done"],
