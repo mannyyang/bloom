@@ -1592,8 +1592,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 149 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(149);
+  it("has exactly 152 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(152);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1782,6 +1782,9 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "PYTHONPATH=/tmp/evil python3 app.py",
       "NODE_PATH=/tmp/evil node index.js",
       "PERL5LIB=/tmp/evil perl script.pl",
+      "RUBYOPT=-r/tmp/evil ruby app.rb",
+      "RUBYLIB=/tmp/evil ruby app.rb",
+      "PYTHONSTARTUP=/tmp/evil.py python3",
       // kernel-module-loading
       "insmod evil.ko",
       "modprobe evil_module",
@@ -2263,6 +2266,18 @@ describe("category: env-var-injection", () => {
   });
   it("blocks PERL5LIB= interpreter search-path injection", () => {
     expect(isDangerousCommand("PERL5LIB=/tmp/evil perl script.pl")).toBe("env-var-injection");
+  });
+  it("blocks RUBYOPT= Ruby startup-file injection", () => {
+    expect(isDangerousCommand("RUBYOPT=-r/tmp/evil ruby app.rb")).toBe("env-var-injection");
+  });
+  it("blocks RUBYLIB= Ruby load-path injection", () => {
+    expect(isDangerousCommand("RUBYLIB=/tmp/evil ruby app.rb")).toBe("env-var-injection");
+  });
+  it("blocks PYTHONSTARTUP= Python startup-file injection", () => {
+    expect(isDangerousCommand("PYTHONSTARTUP=/tmp/evil.py python3")).toBe("env-var-injection");
+  });
+  it("does not flag echoing $RUBYOPT (read-only)", () => {
+    expect(isDangerousCommand("echo $RUBYOPT")).toBeNull();
   });
   it("allows plain env var assignment without LD_PRELOAD/LD_LIBRARY_PATH", () => {
     expect(isDangerousCommand("NODE_ENV=production pnpm build")).toBeNull();

@@ -416,6 +416,13 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bPYTHONPATH\s*=/, category: "env-var-injection" },
   { pattern: /\bNODE_PATH\s*=/, category: "env-var-injection" },
   { pattern: /\bPERL5LIB\s*=/, category: "env-var-injection" },
+  // Ruby interpreter search-path / startup injection:
+  // RUBYOPT=-r/tmp/evil  → Ruby loads an arbitrary file via -require before every script
+  // RUBYLIB=/tmp/evil    → prepends attacker directory to Ruby $LOAD_PATH (mirror of PERL5LIB)
+  // PYTHONSTARTUP=/tmp/evil.py → Python executes this file before every interactive session
+  { pattern: /\bRUBYOPT\s*=/, category: "env-var-injection" },
+  { pattern: /\bRUBYLIB\s*=/, category: "env-var-injection" },
+  { pattern: /\bPYTHONSTARTUP\s*=/, category: "env-var-injection" },
   // Kernel-module loading — `insmod` and `modprobe` load native code directly into ring-0.
   // A loaded module persists across reboots, can intercept any syscall, and cannot be
   // observed or blocked by userspace hook interception. Neither has legitimate use in Bloom.
