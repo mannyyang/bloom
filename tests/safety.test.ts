@@ -1251,6 +1251,33 @@ describe("category: remote-code-execution", () => {
   });
 });
 
+describe("category: arbitrary-code-execution", () => {
+  it.each([
+    ["eval", 'eval "rm -rf /"'],
+    ["bash -c", 'bash -c "malicious command"'],
+    ["sh -c", 'sh -c "malicious command"'],
+    ["/bin/bash -c", '/bin/bash -c "malicious"'],
+    ["/usr/bin/sh -c", '/usr/bin/sh -c "malicious"'],
+    ["zsh -c", 'zsh -c "malicious command"'],
+    ["dash -c", 'dash -c "malicious command"'],
+    ["ksh -c", 'ksh -c "malicious command"'],
+    ["ash -c (Alpine shell)", 'ash -c "malicious command"'],
+    ["fish -c", "fish -c 'rm -rf /'"],
+    ["csh -c", "csh -c 'malicious'"],
+    ["tcsh -c", "tcsh -c 'cmd'"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("arbitrary-code-execution");
+  });
+
+  it("does not flag bash running a named script file", () => {
+    expect(isDangerousCommand("bash script.sh")).toBeNull();
+  });
+
+  it("does not flag pnpm build (no eval or shell -c)", () => {
+    expect(isDangerousCommand("pnpm build && pnpm test")).toBeNull();
+  });
+});
+
 describe("category: git-history-destruction", () => {
   it.each([
     // git push --force variants
