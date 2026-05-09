@@ -1232,8 +1232,10 @@ describe("category: remote-code-execution", () => {
 describe("category: arbitrary-code-execution", () => {
   it.each([
     ["eval", 'eval "rm -rf /"'],
+    ["eval with variable expansion", "eval $PAYLOAD"],
     ["bash -c", 'bash -c "malicious command"'],
     ["sh -c", 'sh -c "malicious command"'],
+    ["/bin/sh -c", '/bin/sh -c "malicious"'],
     ["/bin/bash -c", '/bin/bash -c "malicious"'],
     ["/usr/bin/sh -c", '/usr/bin/sh -c "malicious"'],
     ["zsh -c", 'zsh -c "malicious command"'],
@@ -1253,6 +1255,10 @@ describe("category: arbitrary-code-execution", () => {
 
   it("does not flag pnpm build (no eval or shell -c)", () => {
     expect(isDangerousCommand("pnpm build && pnpm test")).toBeNull();
+  });
+
+  it("does not flag a plain echo with no shell invocation", () => {
+    expect(isDangerousCommand("echo 'hello world'")).toBeNull();
   });
 });
 
@@ -2296,25 +2302,6 @@ describe("category: data-exfiltration", () => {
   });
   it("allows plain curl GET (no data flags)", () => {
     expect(isDangerousCommand("curl https://api.example.com/status")).toBeNull();
-  });
-});
-
-describe("category: arbitrary-code-execution", () => {
-  it.each([
-    ["eval with rm payload", 'eval "rm -rf /"'],
-    ["eval with variable expansion", "eval $PAYLOAD"],
-    ["sh with -c flag", 'sh -c "malicious command"'],
-    ["/bin/sh with -c flag", '/bin/sh -c "malicious"'],
-    ["/usr/bin/sh with -c flag", '/usr/bin/sh -c "malicious"'],
-    ["fish with -c flag", "fish -c 'rm -rf /'"],
-    ["csh with -c flag", "csh -c 'malicious'"],
-    ["tcsh with -c flag", "tcsh -c 'cmd'"],
-  ])("blocks %s", (_desc, command) => {
-    expect(isDangerousCommand(command)).toBe("arbitrary-code-execution");
-  });
-
-  it("does not flag a plain echo with no shell invocation", () => {
-    expect(isDangerousCommand("echo 'hello world'")).toBeNull();
   });
 });
 
