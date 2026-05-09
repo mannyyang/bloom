@@ -2447,6 +2447,18 @@ describe("category: git-stash-destruction", () => {
   it("does not flag git stash list", () => {
     expect(isDangerousCommand("git stash list")).toBeNull();
   });
+
+  it("does not flag bare git stash (save)", () => {
+    expect(isDangerousCommand("git stash")).toBeNull();
+  });
+
+  it("does not flag git stash show", () => {
+    expect(isDangerousCommand("git stash show stash@{0}")).toBeNull();
+  });
+
+  it("does not flag git stash push with message", () => {
+    expect(isDangerousCommand("git stash push -m msg")).toBeNull();
+  });
 });
 
 describe("category: reverse-shell", () => {
