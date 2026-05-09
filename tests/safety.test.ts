@@ -2255,6 +2255,15 @@ describe("category: env-var-injection", () => {
   it("blocks LD_LIBRARY_PATH= injection", () => {
     expect(isDangerousCommand("LD_LIBRARY_PATH=/tmp/evil_libs:$LD_LIBRARY_PATH command")).toBe("env-var-injection");
   });
+  it("blocks PYTHONPATH= interpreter search-path injection", () => {
+    expect(isDangerousCommand("PYTHONPATH=/tmp/evil python3 app.py")).toBe("env-var-injection");
+  });
+  it("blocks NODE_PATH= interpreter search-path injection", () => {
+    expect(isDangerousCommand("NODE_PATH=/tmp/evil node index.js")).toBe("env-var-injection");
+  });
+  it("blocks PERL5LIB= interpreter search-path injection", () => {
+    expect(isDangerousCommand("PERL5LIB=/tmp/evil perl script.pl")).toBe("env-var-injection");
+  });
   it("allows plain env var assignment without LD_PRELOAD/LD_LIBRARY_PATH", () => {
     expect(isDangerousCommand("NODE_ENV=production pnpm build")).toBeNull();
   });
