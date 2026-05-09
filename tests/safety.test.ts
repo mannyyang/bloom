@@ -2498,6 +2498,12 @@ describe("category: reverse-shell", () => {
   ])("blocks %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("reverse-shell");
   });
+  it("does not flag nc -z port scan (no -e shell)", () => {
+    expect(isDangerousCommand("nc -z host.example.com 443")).toBeNull();
+  });
+  it("does not flag nc -l plain listener (no -e shell)", () => {
+    expect(isDangerousCommand("nc -l 8080")).toBeNull();
+  });
 });
 
 describe("category: process-substitution-execution", () => {
