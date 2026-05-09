@@ -2541,4 +2541,10 @@ describe("category: file-permission-tampering", () => {
   it("blocks install -m 777", () => {
     expect(isDangerousCommand("install -m 777 src dst")).toBe("file-permission-tampering");
   });
+  it("blocks install -Dm 755 (combined flags embed -m)", () => {
+    expect(isDangerousCommand("install -Dm 755 src dst")).toBe("file-permission-tampering");
+  });
+  it("allows install -D without -m flag (no permission override)", () => {
+    expect(isDangerousCommand("install -D src dst")).toBeNull();
+  });
 });
