@@ -2258,6 +2258,37 @@ describe("category: env-var-injection", () => {
   it("allows plain env var assignment without LD_PRELOAD/LD_LIBRARY_PATH", () => {
     expect(isDangerousCommand("NODE_ENV=production pnpm build")).toBeNull();
   });
+  it("does not flag reading LD_PRELOAD (printenv)", () => {
+    expect(isDangerousCommand("printenv LD_PRELOAD")).toBeNull();
+  });
+  it("does not flag echoing $NODE_PATH (read-only)", () => {
+    expect(isDangerousCommand("echo $NODE_PATH")).toBeNull();
+  });
+});
+
+describe("category: env-interpreter-bypass", () => {
+  it.each([
+    ["env python3 -c", "env python3 -c 'import os; os.system(\"id\")'"],
+    ["env node -e", "env node -e 'require(\"child_process\").exec(\"id\")'"],
+    ["env perl -e", "env perl -e 'system(\"id\")'"],
+    ["env ruby -e", "env ruby -e 'exec(\"id\")'"],
+    ["chained: ; env python3 -c", "setup.sh; env python3 -c 'payload'"],
+    ["chained: && env node -e", "echo hi && env node -e 'cmd'"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("env-interpreter-bypass");
+  });
+
+  it("does not flag bare env with no interpreter", () => {
+    expect(isDangerousCommand("env")).toBeNull();
+  });
+
+  it("does not flag env used to print variables", () => {
+    expect(isDangerousCommand("env | grep PATH")).toBeNull();
+  });
+
+  it("does not flag env interpreter without inline-code flag", () => {
+    expect(isDangerousCommand("env python3 script.py")).toBeNull();
+  });
 });
 
 describe("category: data-exfiltration-server", () => {
