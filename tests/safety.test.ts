@@ -861,17 +861,6 @@ describe("isDangerousCommand", () => {
     ["awk pipe to php", "awk '{print | \"php\"}'", "awk-code-execution"],
     ["csh -c arbitrary code", "csh -c 'malicious'", "arbitrary-code-execution"],
     ["tcsh -c arbitrary code", "tcsh -c 'cmd'", "arbitrary-code-execution"],
-    ["process substitution tee >(bash)", "tee >(bash)", "process-substitution-execution"],
-    ["process substitution tee >(sh)", "echo hello | tee >(sh)", "process-substitution-execution"],
-    ["process substitution >(python)", "cmd > >(python exploit.py)", "process-substitution-execution"],
-    ["process substitution >(python3)", "cmd > >(python3 exploit.py)", "process-substitution-execution"],
-    ["process substitution >(perl)", "cmd > >(perl -e 'exec(\"id\")')", "process-substitution-execution"],
-    ["process substitution >(ruby)", "cmd > >(ruby -e 'exec(\"id\")')", "process-substitution-execution"],
-    ["process substitution >(node)", "output | tee >(node -e 'require(\"child_process\")')", "process-substitution-execution"],
-    ["process substitution >(zsh)", "cmd > >(zsh)", "process-substitution-execution"],
-    ["process substitution >(bun)", "cmd > >(bun run exploit.ts)", "process-substitution-execution"],
-    ["process substitution >(awk -f)", "tee >(awk -f exploit.awk)", "process-substitution-execution"],
-    ["process substitution >(awk inline)", "cmd > >(awk '{system(\"id\")}')", "process-substitution-execution"],
     ["truncate -s 0 (file-truncation)", "truncate -s 0 src/safety.ts", "file-truncation"],
     ["truncate --size=0 (file-truncation)", "truncate --size=0 src/triage.ts", "file-truncation"],
     ["sudo (privilege-escalation)", "sudo rm -rf /", "privilege-escalation"],
@@ -2449,5 +2438,23 @@ describe("category: git-stash-destruction", () => {
 
   it("does not flag git stash list", () => {
     expect(isDangerousCommand("git stash list")).toBeNull();
+  });
+});
+
+describe("category: process-substitution-execution", () => {
+  it.each([
+    ["tee >(bash)", "tee >(bash)"],
+    ["tee >(sh)", "echo hello | tee >(sh)"],
+    [">(python)", "cmd > >(python exploit.py)"],
+    [">(python3)", "cmd > >(python3 exploit.py)"],
+    [">(perl)", "cmd > >(perl -e 'exec(\"id\")')"],
+    [">(ruby)", "cmd > >(ruby -e 'exec(\"id\")')"],
+    [">(node)", "output | tee >(node -e 'require(\"child_process\")')"],
+    [">(zsh)", "cmd > >(zsh)"],
+    [">(bun)", "cmd > >(bun run exploit.ts)"],
+    [">(awk -f)", "tee >(awk -f exploit.awk)"],
+    [">(awk inline)", "cmd > >(awk '{system(\"id\")}')"],
+  ])("blocks process substitution %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("process-substitution-execution");
   });
 });
