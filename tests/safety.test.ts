@@ -1250,6 +1250,50 @@ describe("category: remote-code-execution", () => {
   });
 });
 
+describe("category: git-history-destruction", () => {
+  it.each([
+    // git push --force variants
+    ["git push --force origin main", "git push --force origin main"],
+    ["git push -f origin main", "git push -f origin main"],
+    ["git push origin main --force", "git push origin main --force"],
+    ["git push origin main -f", "git push origin main -f"],
+    ["git push --force-with-lease origin main", "git push --force-with-lease origin main"],
+    ["git push origin main --force-with-lease", "git push origin main --force-with-lease"],
+    ["git push --force-if-includes origin main", "git push --force-if-includes origin main"],
+    ["git push --tags --force", "git push --tags --force"],
+    ["git push --tags -f", "git push --tags -f"],
+    ["git push -fu origin main (combined force+upstream)", "git push -fu origin main"],
+    // git push --mirror variants
+    ["git push --mirror", "git push --mirror"],
+    ["git push --mirror origin", "git push --mirror origin"],
+    ["git push origin --mirror", "git push origin --mirror"],
+    // git reset --hard to non-HEAD refs
+    ["git reset --hard HEAD~1", "git reset --hard HEAD~1"],
+    ["git reset --hard HEAD^", "git reset --hard HEAD^"],
+    ["git reset --hard HEAD~5", "git reset --hard HEAD~5"],
+    ["git reset --hard to arbitrary SHA", "git reset --hard abc123f"],
+    ["git reset --hard HEAD~1 in chain", "git reset --hard HEAD~1 && git push"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("git-history-destruction");
+  });
+
+  it("does not flag git push without force flags", () => {
+    expect(isDangerousCommand("git push origin main")).toBeNull();
+  });
+
+  it("does not flag git push with local:remote refspec (no force)", () => {
+    expect(isDangerousCommand("git push origin main:main")).toBeNull();
+  });
+
+  it("does not flag git reset --hard HEAD (safe reset to current HEAD)", () => {
+    expect(isDangerousCommand("git reset --hard HEAD")).toBeNull();
+  });
+
+  it("does not flag bare git reset --hard (safe reset to staged)", () => {
+    expect(isDangerousCommand("git reset --hard")).toBeNull();
+  });
+});
+
 describe("buildProtectedFilePatterns", () => {
   function matchesAny(patterns: RegExp[], command: string): boolean {
     return patterns.some((p) => p.test(command));
