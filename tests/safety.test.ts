@@ -2162,6 +2162,15 @@ describe("category: git-ref-destruction", () => {
   it("blocks colon-prefix refspec (delete remote ref without --delete)", () => {
     expect(isDangerousCommand("git push origin :refs/heads/main")).toBe("git-ref-destruction");
   });
+  it("does not flag git push origin main — safe push without delete flags", () => {
+    expect(isDangerousCommand("git push origin main")).toBeNull();
+  });
+  it("does not flag git branch -d feature — safe lowercase delete (merged only)", () => {
+    expect(isDangerousCommand("git branch -d feature-branch")).toBeNull();
+  });
+  it("does not flag git gc without prune flags — safe garbage collection", () => {
+    expect(isDangerousCommand("git gc")).toBeNull();
+  });
 });
 
 describe("category: git-working-tree-destruction", () => {
