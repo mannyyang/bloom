@@ -871,6 +871,10 @@ describe("isDangerousCommand", () => {
     ["xargs echo (safe)", "echo foo | xargs echo"],
     ["xargs wc (safe)", "find . -name '*.ts' | xargs wc -l"],
     ["xargs cat (safe)", "find . -name '*.log' | xargs cat"],
+    ["xargs sort (safe)", "find . -name '*.txt' | xargs sort"],
+    ["xargs head (safe)", "find . -name '*.log' | xargs head -n 5"],
+    ["xargs tail (safe)", "find . -name '*.log' | xargs tail -n 20"],
+    ["xargs find (safe)", "find . -name '*.ts' | xargs find . -name"],
     ["git stash push (safe)", "git stash push -m 'WIP'"],
     ["git stash list (safe)", "git stash list"],
     ["git stash pop (safe)", "git stash pop"],
@@ -1188,6 +1192,37 @@ describe("category: xargs-command-execution", () => {
 
   it("does not flag xargs cat (safe read-only)", () => {
     expect(isDangerousCommand("find . -name '*.log' | xargs cat")).toBeNull();
+  });
+
+  // Regression tests for the greedy-wildcard false-positive bug (cycle 415):
+  // `xargs grep <keyword>` must NOT be blocked even when the keyword matches a
+  // destroy-command name — the keyword is a grep argument, not the xargs command.
+  it("does not flag grep searching for 'truncate' keyword", () => {
+    expect(isDangerousCommand("find . | xargs grep truncate")).toBeNull();
+  });
+
+  it("does not flag grep searching for 'unlink' keyword", () => {
+    expect(isDangerousCommand("find . | xargs grep unlink")).toBeNull();
+  });
+
+  it("does not flag grep -r searching for 'truncate' keyword", () => {
+    expect(isDangerousCommand("find . | xargs grep -r truncate")).toBeNull();
+  });
+
+  it("does not flag grep searching for 'dd' keyword", () => {
+    expect(isDangerousCommand("find . | xargs grep dd")).toBeNull();
+  });
+
+  it("does not flag grep searching for 'mv' keyword", () => {
+    expect(isDangerousCommand("find . | xargs grep mv")).toBeNull();
+  });
+
+  it("does not flag xargs sort (safe read-only)", () => {
+    expect(isDangerousCommand("find . -name '*.txt' | xargs sort")).toBeNull();
+  });
+
+  it("does not flag xargs head (safe read-only)", () => {
+    expect(isDangerousCommand("find . -name '*.log' | xargs head -n 5")).toBeNull();
   });
 });
 
