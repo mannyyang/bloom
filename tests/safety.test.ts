@@ -2189,6 +2189,15 @@ describe("category: git-working-tree-destruction", () => {
   it("blocks git worktree remove --force", () => {
     expect(isDangerousCommand("git worktree remove --force my-worktree")).toBe("git-working-tree-destruction");
   });
+  it("does not flag git checkout -- src/index.ts — targeted single-file restore", () => {
+    expect(isDangerousCommand("git checkout -- src/index.ts")).toBeNull();
+  });
+  it("does not flag git restore src/index.ts — targeted single-file restore", () => {
+    expect(isDangerousCommand("git restore src/index.ts")).toBeNull();
+  });
+  it("does not flag git switch main — safe branch switch without discard flags", () => {
+    expect(isDangerousCommand("git switch main")).toBeNull();
+  });
 });
 
 describe("category: script-interpreter-spawn", () => {
