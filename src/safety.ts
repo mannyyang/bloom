@@ -307,14 +307,18 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
     category: "script-interpreter-spawn",
   },
   // find -exec/-execdir with shell interpreters — executes arbitrary code without xargs
+  // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives when
+  // `find` appears as a grep/arg string rather than as an executed command, e.g.:
+  //   bash grep 'find . -exec bash {} \;' tests/   ← `find` is inside a quoted argument
   {
-    pattern: /\bfind\b.*-exec(?:dir)?\s+(?:sh|bash|zsh|fish|dash|ksh|csh|tcsh|ash|awk|perl|python3?|ruby|node|deno|bun|lua|php)\b/,
+    pattern: /(?:^|[;&|]\s*)\bfind\b.*-exec(?:dir)?\s+(?:sh|bash|zsh|fish|dash|ksh|csh|tcsh|ash|awk|perl|python3?|ruby|node|deno|bun|lua|php)\b/,
     category: "find-exec-shell",
   },
   // find -exec/-execdir with destructive file commands — bypasses xargs guards
   // sed is included because `find -exec sed -i` can bulk-modify source files in-place
+  // Anchored to command-start boundaries (^, ;, &, |) — same rationale as find-exec-shell above.
   {
-    pattern: /\bfind\b.*-exec(?:dir)?\s+(?:rm|unlink|chmod|chown|mv|cp|dd|truncate|tee|sed|install)\b/,
+    pattern: /(?:^|[;&|]\s*)\bfind\b.*-exec(?:dir)?\s+(?:rm|unlink|chmod|chown|mv|cp|dd|truncate|tee|sed|install)\b/,
     category: "find-exec-destructive",
   },
   // find -delete — built-in find action that deletes matched files/dirs without requiring -exec rm;

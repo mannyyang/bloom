@@ -1037,6 +1037,16 @@ describe("category: find-exec-shell", () => {
   it("does not flag find with safe -print action", () => {
     expect(isDangerousCommand("find . -name '*.sh' -print")).toBeNull();
   });
+
+  // Regression tests: `find` appearing inside a grep argument must NOT be blocked
+  // (anchor fix: the pattern now requires find to follow ^, ;, &, or |)
+  it("does not flag grep with find-exec pattern as quoted argument", () => {
+    expect(isDangerousCommand("grep 'find . -exec bash' tests/safety.test.ts")).toBeNull();
+  });
+
+  it("does not flag echo of a find-exec command string", () => {
+    expect(isDangerousCommand("echo 'find . -exec bash {} \\;'")).toBeNull();
+  });
 });
 
 describe("category: find-exec-destructive", () => {
@@ -1055,6 +1065,15 @@ describe("category: find-exec-destructive", () => {
 
   it("does not flag find with safe -print action", () => {
     expect(isDangerousCommand("find . -name '*.log' -print")).toBeNull();
+  });
+
+  // Regression tests: `find` appearing inside a grep argument must NOT be blocked
+  it("does not flag grep with find-exec-rm pattern as quoted argument", () => {
+    expect(isDangerousCommand("grep 'find . -exec rm' tests/safety.test.ts")).toBeNull();
+  });
+
+  it("does not flag echo of a find-exec-sed command string", () => {
+    expect(isDangerousCommand("echo 'find . -exec sed -i s/x/y/ {} \\;'")).toBeNull();
   });
 });
 
