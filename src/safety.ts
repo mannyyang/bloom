@@ -249,10 +249,12 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bwget\s+.*--post-(data|file)\b/, category: "data-exfiltration" },
   // xargs command execution bypass — xargs can invoke dangerous commands from stdin
   // Shell shorthand: (ba|z|da|k|a)?sh covers bash/zsh/dash/ksh/ash/sh; fish and t?csh are explicit
-  { pattern: /\bxargs\s+.*(?:[\w./]*\/)?(?:(?:ba|z|da|k|a)?sh|fish|t?csh)\b/, category: "xargs-command-execution" },
+  // Flag-aware prefix prevents false positives like `xargs grep bash` or `xargs find sh`.
+  { pattern: /\bxargs\s+(?:-\S+(?:\s+\S+)?\s+)*(?:[\w./]*\/)?(?:(?:ba|z|da|k|a)?sh|fish|t?csh)\b/, category: "xargs-command-execution" },
   // xargs with scripting interpreters — parallel to find -exec interpreter block (cycle 244)
   // awk added for symmetry with find-exec guard: `find . | xargs awk -f evil.awk` is a real attack vector
-  { pattern: /\bxargs\s+.*(?:[\w./]*\/)?(?:awk|python3?|perl|ruby|node|deno|bun|lua|php)\b/, category: "xargs-command-execution" },
+  // Flag-aware prefix prevents false positives like `xargs cat node` or `xargs find python`.
+  { pattern: /\bxargs\s+(?:-\S+(?:\s+\S+)?\s+)*(?:[\w./]*\/)?(?:awk|python3?|perl|ruby|node|deno|bun|lua|php)\b/, category: "xargs-command-execution" },
   // Flag-aware prefix (same as dd/truncate/unlink/mv/cp/install/sed/tee fixed in cycle 415)
   // prevents false positives like `xargs grep rm somefile` where rm is a grep argument.
   { pattern: /\bxargs\s+(?:-\S+(?:\s+\S+)?\s+)*\brm\b/, category: "xargs-command-execution" },

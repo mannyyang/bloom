@@ -1235,6 +1235,20 @@ describe("category: xargs-command-execution", () => {
     expect(isDangerousCommand("find . | xargs ls -rm")).toBeNull();
   });
 
+  // Regression tests for greedy-wildcard false-positives in shell/interpreter patterns:
+  // shell and interpreter names appearing as grep/find arguments must NOT be blocked.
+  it("does not flag grep searching for 'bash' keyword", () => {
+    expect(isDangerousCommand("find . | xargs grep bash")).toBeNull();
+  });
+
+  it("does not flag find piped to xargs grep with 'sh' keyword", () => {
+    expect(isDangerousCommand("find . -name '*.txt' | xargs grep sh")).toBeNull();
+  });
+
+  it("does not flag grep searching for 'node' keyword", () => {
+    expect(isDangerousCommand("find . | xargs grep node")).toBeNull();
+  });
+
   it("does not flag xargs sort (safe read-only)", () => {
     expect(isDangerousCommand("find . -name '*.txt' | xargs sort")).toBeNull();
   });
