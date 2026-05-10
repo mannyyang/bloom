@@ -310,9 +310,10 @@ describe("blockDangerousCommands", () => {
     ["find -exec node (node code execution)", "find . -exec node -e 'require(\"child_process\").execSync(\"id\")' {} \\;"],
     ["find -exec ruby (ruby code execution)", "find . -exec ruby -e 'system(\"id\")' {} \\;"],
     // find -exec/-execdir with destructive file commands
-    // Note: `find -exec truncate` → "file-truncation" and `find -exec unlink` → "file-deletion"
-    // due to pattern-priority (bare \btruncate\b / \bunlink\b patterns fire before find-exec-destructive).
-    // These are still dangerous — just categorised by their primary command, not the find wrapper.
+    // Note: `find -exec truncate` and `find -exec unlink` → "find-exec-destructive"
+    // since the bare truncate/unlink patterns are now anchored to command-start boundaries
+    // (^, ;, &, |) and do not match when the command appears inside -exec/-execdir.
+    // These are still dangerous and blocked; only the category label reflects the find wrapper.
     ["find -exec rm (deletes matched files)", "find . -name '*.tmp' -exec rm {} +"],
     ["find -exec chmod (changes permissions)", "find . -exec chmod 777 {} \\;"],
     ["find -execdir unlink (unlinks via execdir)", "find . -name '*.log' -execdir unlink {} \\;"],
@@ -2553,20 +2554,39 @@ describe("category: process-substitution-execution", () => {
 
 describe("category: file-truncation", () => {
   it.each([
-    ["xargs truncate -s 0", "find logs -name '*.log' | xargs truncate -s 0"],
     ["truncate -s 0 on source file", "truncate -s 0 src/safety.ts"],
     ["truncate --size=0 on source file", "truncate --size=0 src/triage.ts"],
+    ["truncate after semicolon", "build.sh; truncate -s 0 src/foo.ts"],
+    ["truncate after pipe", "echo done | truncate -s 0 out.txt"],
   ])("blocks %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("file-truncation");
+  });
+
+  it.each([
+    ["grep truncate (argument, not command)", "grep truncate src/safety.ts"],
+    ["pnpm test --grep truncate (flag value)", "pnpm test -- --grep truncate"],
+    ["echo message with truncate word", "echo 'truncate is dangerous'"],
+    ["cat file named truncate.md", "cat truncate.md"],
+  ])("allows %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).not.toBe("file-truncation");
   });
 });
 
 describe("category: file-deletion", () => {
   it.each([
-    ["xargs unlink", "find . -name '*.tmp' | xargs unlink"],
     ["bare unlink on source file", "unlink src/safety.ts"],
+    ["unlink after semicolon", "build.sh; unlink src/foo.ts"],
+    ["unlink after ampersand chain", "make && unlink dist/old.js"],
   ])("blocks %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("file-deletion");
+  });
+
+  it.each([
+    ["grep unlink (argument, not command)", "grep unlink safety.ts"],
+    ["cat file named unlink.md", "cat unlink.md"],
+    ["echo message with unlink word", "echo 'unlink removes a file'"],
+  ])("allows %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).not.toBe("file-deletion");
   });
 });
 

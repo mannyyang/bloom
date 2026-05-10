@@ -259,10 +259,14 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bxargs\s+.*\bchown\b/, category: "xargs-command-execution" },
   // Bare file-truncation — silently zeroes or shrinks any file (e.g. truncate -s 0 src/foo.ts)
   // without requiring rm or xargs, bypassing all other path-based guards.
-  { pattern: /\btruncate\b/, category: "file-truncation" },
+  // Anchored to command-start boundaries (^, ;, &, |) to avoid false positives on commands
+  // that merely mention "truncate" as an argument (e.g. grep truncate src/safety.ts).
+  { pattern: /(?:^|[;&|]\s*)truncate\b/, category: "file-truncation" },
   // Bare file-deletion — unlink deletes a file directly (e.g. unlink src/foo.ts) without
   // requiring xargs, bypassing the xargs-command-execution guard already in place.
-  { pattern: /\bunlink\b/, category: "file-deletion" },
+  // Anchored to command-start boundaries (^, ;, &, |) to avoid false positives on commands
+  // that merely mention "unlink" as an argument (e.g. grep unlink safety.ts, cat unlink.md).
+  { pattern: /(?:^|[;&|]\s*)unlink\b/, category: "file-deletion" },
   // xargs with file-destroying commands — can wipe all matched files when fed paths from find
   { pattern: /\bxargs\s+.*\bdd\b/, category: "xargs-command-execution" },
   { pattern: /\bxargs\s+.*\btruncate\b/, category: "xargs-command-execution" },
