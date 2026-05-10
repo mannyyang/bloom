@@ -2245,6 +2245,18 @@ describe("category: persistence (at/batch scheduling)", () => {
   it("allows cat file (at is not a word boundary match for cat)", () => {
     expect(isDangerousCommand("cat file.txt")).toBeNull();
   });
+  it("allows git log --format with %at specifier (not a scheduling command)", () => {
+    expect(isDangerousCommand('git log --format="%at %H"')).toBeNull();
+  });
+  it("allows grep with 'at' as search argument (not a scheduling command)", () => {
+    expect(isDangerousCommand('grep "at " file.txt')).toBeNull();
+  });
+  it("allows git cat-file --batch (not a scheduling command)", () => {
+    expect(isDangerousCommand("git cat-file --batch")).toBeNull();
+  });
+  it("allows git cat-file --batch-check (not a scheduling command)", () => {
+    expect(isDangerousCommand("git cat-file --batch-check")).toBeNull();
+  });
 });
 
 describe("category: persistence (crontab)", () => {

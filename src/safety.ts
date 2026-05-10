@@ -380,10 +380,14 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bmkfifo\b/, category: "reverse-shell" },
   // Persistence via command scheduling — `at` and `batch` schedule commands to execute outside the
   // current agent session, completely bypassing PreToolUse hooks for the deferred invocation.
-  // `/\bat\s+\S/` requires at least one argument after `at` to avoid matching `cat`.
-  // `batch` is blocked unconditionally; neither command has legitimate use in Bloom.
-  { pattern: /\bat\s+\S/, category: "persistence" },
-  { pattern: /\bbatch\b/, category: "persistence" },
+  // Anchored to command-start boundaries (^, ;, &, |) to avoid false positives on commands
+  // that embed "at" as a format specifier (e.g. git log --format="%at %H") or as an argument
+  // (e.g. grep "at " file.txt). At least one non-space argument is required after `at` to
+  // avoid matching bare `cat`. `batch` is anchored identically to avoid blocking
+  // `git cat-file --batch` / `git cat-file --batch-check` where `batch` is not the command.
+  // Neither `at` nor `batch` has legitimate use in Bloom.
+  { pattern: /(?:^|[;&|]\s*)at\s+\S/, category: "persistence" },
+  { pattern: /(?:^|[;&|]\s*)batch\b/, category: "persistence" },
   // Persistence via cron — `crontab -e`, `echo "…" | crontab -`, and `crontab /tmp/evil` all
   // install cron jobs that execute outside the agent session, bypassing PreToolUse hooks.
   // `\bcrontab\b` covers all forms; crontab has no legitimate use in Bloom's pipeline.
