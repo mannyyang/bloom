@@ -1174,6 +1174,11 @@ describe("category: xargs-command-execution", () => {
     ["xargs mv", "find . -name '*.bak' | xargs mv /tmp/"],
     ["xargs dd", "find . -name 'disk.img' | xargs dd if=/dev/zero"],
     ["xargs install", "find dist -name '*.so' | xargs install -m 755"],
+    // Flag-aware prefix: common short flags before the dangerous command
+    ["xargs -I {} rm (replace-str flag)", "find . | xargs -I {} rm {}"],
+    ["xargs -0 rm (null-delimiter flag)", "find . -print0 | xargs -0 rm"],
+    ["xargs -n 1 bash (max-args flag)", "find . | xargs -n 1 bash"],
+    ["xargs -I MARK python3 (custom replace-str)", "find . | xargs -I MARK python3 MARK"],
   ])("blocks %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("xargs-command-execution");
   });
@@ -1255,6 +1260,15 @@ describe("category: xargs-command-execution", () => {
 
   it("does not flag xargs head (safe read-only)", () => {
     expect(isDangerousCommand("find . -name '*.log' | xargs head -n 5")).toBeNull();
+  });
+
+  // Flag-aware prefix: safe commands with short xargs flags must NOT be blocked
+  it("does not flag xargs -I {} grep TODO (safe replace-str with read-only cmd)", () => {
+    expect(isDangerousCommand("find . | xargs -I {} grep TODO {}")).toBeNull();
+  });
+
+  it("does not flag xargs -n 1 cat (safe max-args with read-only cmd)", () => {
+    expect(isDangerousCommand("find . -name '*.log' | xargs -n 1 cat")).toBeNull();
   });
 });
 
