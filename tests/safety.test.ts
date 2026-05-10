@@ -1179,6 +1179,10 @@ describe("category: xargs-command-execution", () => {
     ["xargs -0 rm (null-delimiter flag)", "find . -print0 | xargs -0 rm"],
     ["xargs -n 1 bash (max-args flag)", "find . | xargs -n 1 bash"],
     ["xargs -I MARK python3 (custom replace-str)", "find . | xargs -I MARK python3 MARK"],
+    // Flag-aware prefix: GNU long flags before the dangerous command
+    ["xargs --null rm (null-delimiter long flag)", "find . -print0 | xargs --null rm"],
+    ["xargs --replace={} bash (replace long flag)", "find . | xargs --replace={} bash"],
+    ["xargs --max-args=1 rm (max-args long flag)", "find . | xargs --max-args=1 rm"],
   ])("blocks %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("xargs-command-execution");
   });
