@@ -267,19 +267,22 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Anchored to command-start boundaries (^, ;, &, |) to avoid false positives on commands
   // that merely mention "unlink" as an argument (e.g. grep unlink safety.ts, cat unlink.md).
   { pattern: /(?:^|[;&|]\s*)unlink\b/, category: "file-deletion" },
-  // xargs with file-destroying commands — can wipe all matched files when fed paths from find
-  { pattern: /\bxargs\s+.*\bdd\b/, category: "xargs-command-execution" },
-  { pattern: /\bxargs\s+.*\btruncate\b/, category: "xargs-command-execution" },
-  { pattern: /\bxargs\s+.*\bunlink\b/, category: "xargs-command-execution" },
-  { pattern: /\bxargs\s+.*\bmv\b/, category: "xargs-command-execution" },
+  // xargs with file-destroying commands — can wipe all matched files when fed paths from find.
+  // Flag-aware prefix (?:-\S+(?:\s+\S+)?\s+)* allows xargs flags (e.g. -0, -I {}, -n 1) before
+  // the command word but prevents false positives like `xargs grep truncate` where truncate/dd/mv
+  // is a grep argument, not the xargs-executed command.
+  { pattern: /\bxargs\s+(?:-\S+(?:\s+\S+)?\s+)*dd\b/, category: "xargs-command-execution" },
+  { pattern: /\bxargs\s+(?:-\S+(?:\s+\S+)?\s+)*truncate\b/, category: "xargs-command-execution" },
+  { pattern: /\bxargs\s+(?:-\S+(?:\s+\S+)?\s+)*unlink\b/, category: "xargs-command-execution" },
+  { pattern: /\bxargs\s+(?:-\S+(?:\s+\S+)?\s+)*mv\b/, category: "xargs-command-execution" },
   // xargs cp — can bulk-overwrite protected targets (e.g. find /tmp | xargs cp IDENTITY.md)
-  { pattern: /\bxargs\s+.*\bcp\b/, category: "xargs-command-execution" },
+  { pattern: /\bxargs\s+(?:-\S+(?:\s+\S+)?\s+)*cp\b/, category: "xargs-command-execution" },
   // xargs install — bulk-copy files with arbitrary permissions; mirrors standalone install -m guard
-  { pattern: /\bxargs\s+.*\binstall\b/, category: "xargs-command-execution" },
+  { pattern: /\bxargs\s+(?:-\S+(?:\s+\S+)?\s+)*install\b/, category: "xargs-command-execution" },
   // xargs sed — bulk in-place rewrites all matched source files (e.g. find . | xargs sed -i 's/old/new/g')
-  { pattern: /\bxargs\s+.*\bsed\b/, category: "xargs-command-execution" },
+  { pattern: /\bxargs\s+(?:-\S+(?:\s+\S+)?\s+)*sed\b/, category: "xargs-command-execution" },
   // xargs tee — overwrites target files when fed paths from find (same risk as xargs cp)
-  { pattern: /\bxargs\s+.*\btee\b/, category: "xargs-command-execution" },
+  { pattern: /\bxargs\s+(?:-\S+(?:\s+\S+)?\s+)*tee\b/, category: "xargs-command-execution" },
   // Git stash destruction — clear destroys all stashes; drop destroys a named stash entry
   { pattern: /git\s+stash\s+clear\b/, category: "git-stash-destruction" },
   { pattern: /git\s+stash\s+drop\b/, category: "git-stash-destruction" },
