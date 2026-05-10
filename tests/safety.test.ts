@@ -1217,6 +1217,24 @@ describe("category: xargs-command-execution", () => {
     expect(isDangerousCommand("find . | xargs grep mv")).toBeNull();
   });
 
+  // Regression tests for the greedy-wildcard false-positive bug fixed after cycle 415:
+  // chmod, chown, and rm keywords as grep arguments must NOT be blocked.
+  it("does not flag grep searching for 'chmod' keyword", () => {
+    expect(isDangerousCommand("find . | xargs grep chmod")).toBeNull();
+  });
+
+  it("does not flag grep searching for 'chown' keyword", () => {
+    expect(isDangerousCommand("find . | xargs grep chown")).toBeNull();
+  });
+
+  it("does not flag grep searching for 'rm' keyword", () => {
+    expect(isDangerousCommand("find . | xargs grep rm")).toBeNull();
+  });
+
+  it("does not flag xargs ls with rm-like argument (safe listing)", () => {
+    expect(isDangerousCommand("find . | xargs ls -rm")).toBeNull();
+  });
+
   it("does not flag xargs sort (safe read-only)", () => {
     expect(isDangerousCommand("find . -name '*.txt' | xargs sort")).toBeNull();
   });
