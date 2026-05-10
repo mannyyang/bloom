@@ -253,10 +253,12 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // xargs with scripting interpreters — parallel to find -exec interpreter block (cycle 244)
   // awk added for symmetry with find-exec guard: `find . | xargs awk -f evil.awk` is a real attack vector
   { pattern: /\bxargs\s+.*(?:[\w./]*\/)?(?:awk|python3?|perl|ruby|node|deno|bun|lua|php)\b/, category: "xargs-command-execution" },
-  { pattern: /\bxargs\s+.*\brm\s/, category: "xargs-command-execution" },
+  // Flag-aware prefix (same as dd/truncate/unlink/mv/cp/install/sed/tee fixed in cycle 415)
+  // prevents false positives like `xargs grep rm somefile` where rm is a grep argument.
+  { pattern: /\bxargs\s+(?:-\S+(?:\s+\S+)?\s+)*\brm\b/, category: "xargs-command-execution" },
   // xargs chmod/chown bypass — evades direct .git pattern by placing .git before the command
-  { pattern: /\bxargs\s+.*\bchmod\b/, category: "xargs-command-execution" },
-  { pattern: /\bxargs\s+.*\bchown\b/, category: "xargs-command-execution" },
+  { pattern: /\bxargs\s+(?:-\S+(?:\s+\S+)?\s+)*\bchmod\b/, category: "xargs-command-execution" },
+  { pattern: /\bxargs\s+(?:-\S+(?:\s+\S+)?\s+)*\bchown\b/, category: "xargs-command-execution" },
   // Bare file-truncation — silently zeroes or shrinks any file (e.g. truncate -s 0 src/foo.ts)
   // without requiring rm or xargs, bypassing all other path-based guards.
   // Anchored to command-start boundaries (^, ;, &, |) to avoid false positives on commands
