@@ -2142,6 +2142,16 @@ describe("category: disk-destruction", () => {
   it("blocks dd writing to raw device", () => {
     expect(isDangerousCommand("dd if=/dev/urandom of=/dev/sda bs=1M")).toBe("disk-destruction");
   });
+
+  // Allowlist: only the dd pattern is precision-dependent (requires of=/dev/).
+  // mkfs/wipefs/fdisk/parted are blocked unconditionally — any invocation is dangerous in Bloom.
+  it.each([
+    ["dd copying between regular files", "dd if=input.bin of=output.bin bs=4k"],
+    ["dd reading from /dev/urandom to a regular file", "dd if=/dev/urandom of=/tmp/random.bin bs=1M count=1"],
+    ["dd with no of= argument at all", "dd if=source.img bs=512 count=1"],
+  ])("allows %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).not.toBe("disk-destruction");
+  });
 });
 
 describe("category: git-ref-destruction", () => {
