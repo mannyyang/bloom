@@ -2522,6 +2522,15 @@ describe("category: process-substitution-execution", () => {
   ])("blocks process substitution %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("process-substitution-execution");
   });
+  it("does not flag >(wc -l) — safe word-count process substitution", () => {
+    expect(isDangerousCommand("tee >(wc -l)")).toBeNull();
+  });
+  it("does not flag >(grep pattern) — safe grep process substitution", () => {
+    expect(isDangerousCommand("cmd | tee >(grep ERROR)")).toBeNull();
+  });
+  it("does not flag >(basename path) — safe basename process substitution", () => {
+    expect(isDangerousCommand("echo /usr/bin/env | tee >(basename -)")).toBeNull();
+  });
 });
 
 describe("category: file-truncation", () => {
