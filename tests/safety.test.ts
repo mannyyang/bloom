@@ -597,6 +597,17 @@ describe("blockDangerousCommands", () => {
     ["grep with find-exec-bash as quoted arg", "grep 'find . -exec bash' tests/safety.test.ts"],
     ["grep with find-exec-rm as quoted arg", "grep 'find . -exec rm' tests/safety.test.ts"],
     ["grep with find-built-in-action as quoted arg", "grep 'find . -name tmp -delete' tests/safety.test.ts"],
+    // Boundary-anchor regressions for pkg-exec patterns: exec/dlx tokens inside grep/echo are allowed.
+    ["grep with npx token as quoted arg", "grep 'npx ts-node' package.json"],
+    ["grep with pnpm-exec token as quoted arg", "grep 'pnpm exec vitest' README.md"],
+    ["echo string containing npx reference", "echo 'run via npx ts-node src/index.ts'"],
+    ["grep with yarn-dlx as quoted arg", "grep 'yarn dlx create-react-app' docs/setup.md"],
+    // Boundary-anchor regressions for pkg-install patterns: install/add tokens inside grep/echo are allowed.
+    ["grep with pnpm-add as quoted arg", "grep 'pnpm add react' README.md"],
+    ["grep with npm-install as quoted arg", "grep 'npm install lodash' docs/setup.md"],
+    ["echo string describing yarn add", "echo 'yarn add lodash'"],
+    ["grep with pip-install as quoted arg", "grep 'pip install requests' requirements.txt"],
+    ["grep with cargo-install as quoted arg", "grep 'cargo install sccache' .github/workflows/ci.yml"],
   ])("allows %s", async (_desc, command) => {
     expectAllowed(await blockDangerousCommands(makeBashInput(command), "tool-1", hookOpts));
   });
@@ -892,6 +903,17 @@ describe("isDangerousCommand", () => {
     ["process substitution basename (safe)", ">(basename /path/to/file)"],
     ["process substitution wc (safe)", "cmd > >(wc -l)"],
     ["process substitution grep (safe)", "cmd > >(grep error)"],
+    // Pkg-exec tokens as grep arguments must not trigger untrusted-package-execution.
+    ["grep with npx as arg", "grep 'npx ts-node' package.json"],
+    ["grep with pnpm-exec as arg", "grep 'pnpm exec vitest' README.md"],
+    ["grep with yarn-dlx as arg", "grep 'yarn dlx create-react-app' docs/setup.md"],
+    ["echo mentioning npx", "echo 'run via npx ts-node src/index.ts'"],
+    // Pkg-install tokens as grep/echo arguments must not trigger untrusted-package-installation.
+    ["grep with pnpm-add as arg", "grep 'pnpm add react' README.md"],
+    ["grep with npm-install as arg", "grep 'npm install lodash' docs/setup.md"],
+    ["echo describing yarn-add", "echo 'yarn add lodash'"],
+    ["grep with pip-install as arg", "grep 'pip install requests' requirements.txt"],
+    ["grep with cargo-install as arg", "grep 'cargo install sccache' .github/workflows/ci.yml"],
   ])("returns null for %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBeNull();
   });
