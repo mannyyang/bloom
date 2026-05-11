@@ -188,14 +188,16 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /(?:^|[;&|]\s*)source\s/, category: "shell-script-execution" },
   { pattern: /(?:^|[;&|]\s*)\.\s+\S/, category: "shell-script-execution" },
   // Untrusted package execution — npx/npm exec/pnpm exec/pnpm dlx/yarn dlx/bunx run arbitrary packages
-  { pattern: /\bnpx\s/, category: "untrusted-package-execution" },
-  { pattern: /\bnpm\s+exec\b/, category: "untrusted-package-execution" },
-  { pattern: /\bpnpm\s+exec\b/, category: "untrusted-package-execution" },
-  { pattern: /\bpnpm\s+dlx\s/, category: "untrusted-package-execution" },
-  { pattern: /\byarn\s+dlx\s/, category: "untrusted-package-execution" },
+  // Anchored to command-start boundaries (^, ;, &, |) to avoid false positives when these tokens
+  // appear as arguments, e.g. grep 'npx ts-node' package.json or grep 'pnpm exec vitest' README.md.
+  { pattern: /(?:^|[;&|]\s*)npx\s/, category: "untrusted-package-execution" },
+  { pattern: /(?:^|[;&|]\s*)npm\s+exec\b/, category: "untrusted-package-execution" },
+  { pattern: /(?:^|[;&|]\s*)pnpm\s+exec\b/, category: "untrusted-package-execution" },
+  { pattern: /(?:^|[;&|]\s*)pnpm\s+dlx\s/, category: "untrusted-package-execution" },
+  { pattern: /(?:^|[;&|]\s*)yarn\s+dlx\s/, category: "untrusted-package-execution" },
   // bunx / bun x — Bun's equivalent of npx; executes packages without permanent installation
-  { pattern: /\bbunx\s/, category: "untrusted-package-execution" },
-  { pattern: /\bbun\s+x\s/, category: "untrusted-package-execution" },
+  { pattern: /(?:^|[;&|]\s*)bunx\s/, category: "untrusted-package-execution" },
+  { pattern: /(?:^|[;&|]\s*)bun\s+x\s/, category: "untrusted-package-execution" },
   // Git ref destruction — force-delete branches, delete reflog, prune objects, delete tags, delete remote refs
   { pattern: /git\s+branch\s+(-D|--delete\s+--force)\b/, category: "git-ref-destruction" },
   { pattern: /git\s+push\s+(?:.*\s)?(?:-d\b|--delete\b)/, category: "git-ref-destruction" },
