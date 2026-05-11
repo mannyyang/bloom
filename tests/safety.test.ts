@@ -1075,6 +1075,16 @@ describe("category: find-exec-destructive", () => {
   it("does not flag echo of a find-exec-sed command string", () => {
     expect(isDangerousCommand("echo 'find . -exec sed -i s/x/y/ {} \\;'")).toBeNull();
   });
+
+  // Regression tests: `find ... -delete` inside a grep/echo argument must NOT be blocked
+  // (anchor fix: the pattern now requires find to follow ^, ;, &, or |)
+  it("does not flag grep with find-built-in-action as quoted argument", () => {
+    expect(isDangerousCommand("grep 'find . -name foo -delete' tests/safety.test.ts")).toBeNull();
+  });
+
+  it("does not flag echo of a find-built-in-action command string", () => {
+    expect(isDangerousCommand("echo 'find . -name \"*.tmp\" -delete'")).toBeNull();
+  });
 });
 
 describe("category: untrusted-package-execution", () => {
