@@ -530,7 +530,10 @@ export function formatPlanningContext(
     if (currentItem.body) {
       const cleanBody = currentItem.body.replace(/\n?\[since:\s*\d+\]/g, "");
       if (cleanBody.trim()) {
-        lines.push(cleanBody.slice(0, PLANNING_BODY_PREVIEW_CHARS));
+        const bodyPreview = cleanBody.length > PLANNING_BODY_PREVIEW_CHARS
+          ? cleanBody.slice(0, PLANNING_BODY_PREVIEW_CHARS) + "\u2026"
+          : cleanBody;
+        lines.push(bodyPreview);
       }
     }
   }
