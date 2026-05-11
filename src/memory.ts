@@ -237,6 +237,16 @@ export function formatMemoryForPrompt(
     }
     // Only include the learnings section if it contains more than just the header
     if (learningSection.length > learningSectionHeader.length) {
+      // When the budget was exhausted mid-list, append an ellipsis so the LLM
+      // knows the learnings were cut and should not assume completeness.
+      // The ellipsis is only appended when it fits within the remaining budget so
+      // that the output length invariant (result.length <= maxChars) is preserved.
+      if (budgetExhausted) {
+        const ellipsis = "…\n";
+        if (totalLen + separatorLen + learningSection.length + ellipsis.length <= maxChars) {
+          learningSection += ellipsis;
+        }
+      }
       sections.push(learningSection);
     }
   }
