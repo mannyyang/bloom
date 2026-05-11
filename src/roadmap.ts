@@ -54,9 +54,13 @@ function generateRoadmapOutput(content: string): string[] {
       const check = item.status === STATUS_DONE ? "✓" : "○";
       lines.push(`  ${check} ${item.title}${issue}${reactions}`);
       if (item.body) {
-        // Strip internal [since: N] staleness annotations before display —
-        // these are planning metadata and should not appear in human-readable output.
-        const displayBody = item.body.replace(/\n?\[since:\s*\d+\]/g, "").trim();
+        // Strip internal [since: N] staleness annotations and …[truncated] storage
+        // markers before display — these are planning metadata and should not appear
+        // in human-readable output.
+        const displayBody = item.body
+          .replace(/\n?\[since:\s*\d+\]/g, "")
+          .replace(/ …\[truncated\]$/, "")
+          .trim();
         if (displayBody) {
           // Indent and wrap the body description
           const preview = displayBody.length > ROADMAP_BODY_PREVIEW_MAX_CHARS ? displayBody.slice(0, ROADMAP_BODY_PREVIEW_MAX_CHARS) + "…" : displayBody;

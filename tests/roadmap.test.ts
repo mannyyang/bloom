@@ -248,6 +248,43 @@ describe("generateRoadmapOutput", () => {
     spy.mockRestore();
   });
 
+  it("strips …[truncated] storage marker from body before CLI display", () => {
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Truncated body item",
+        status: "Backlog",
+        body: "Some important description …[truncated]",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP);
+    const joined = output.join("\n");
+    expect(joined).toContain("Some important description");
+    expect(joined).not.toContain("…[truncated]");
+    spy.mockRestore();
+  });
+
+  it("strips …[truncated] marker even when combined with a [since: N] annotation", () => {
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Combined annotation item",
+        status: "In Progress",
+        body: "Real content\n[since: 400] …[truncated]",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP);
+    const joined = output.join("\n");
+    expect(joined).toContain("Real content");
+    expect(joined).not.toContain("[since:");
+    expect(joined).not.toContain("[truncated]");
+    spy.mockRestore();
+  });
+
   it("preserves parse-order for multiple items within the same status section", () => {
     // SAMPLE_ROADMAP has two Backlog items in this order:
     //   1. "Improve prompt efficiency"
