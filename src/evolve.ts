@@ -73,7 +73,9 @@ export function parseEvolutionResult(result: string): EvolutionSections {
     const trimmed = line.trim();
     const m = HEADER_RE.exec(trimmed);
     if (m) {
-      currentSection = SECTION_MAP[m[1]];
+      const mapped = SECTION_MAP[m[1]];
+      if (!mapped) continue;
+      currentSection = mapped;
       const rest = trimmed.slice(m[0].length);
       if (rest) sections[currentSection] += rest + "\n";
     } else if (currentSection) {
