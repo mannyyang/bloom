@@ -257,6 +257,7 @@ describe("blockDangerousCommands", () => {
     ["pnpm exec some-package", "pnpm exec some-package"],
     ["pnpm dlx malicious-package", "pnpm dlx malicious-package"],
     ["yarn dlx malicious-package", "yarn dlx malicious-package"],
+    ["yarn exec malicious-package", "yarn exec malicious-package"],
     // Git ref destruction
     ["git push -d origin main", "git push -d origin main"],
     ["git push --delete origin main", "git push --delete origin main"],
@@ -602,6 +603,7 @@ describe("blockDangerousCommands", () => {
     ["grep with pnpm-exec token as quoted arg", "grep 'pnpm exec vitest' README.md"],
     ["echo string containing npx reference", "echo 'run via npx ts-node src/index.ts'"],
     ["grep with yarn-dlx as quoted arg", "grep 'yarn dlx create-react-app' docs/setup.md"],
+    ["grep with yarn-exec as quoted arg", "grep 'yarn exec vitest' README.md"],
     // Boundary-anchor regressions for pkg-install patterns: install/add tokens inside grep/echo are allowed.
     ["grep with pnpm-add as quoted arg", "grep 'pnpm add react' README.md"],
     ["grep with npm-install as quoted arg", "grep 'npm install lodash' docs/setup.md"],
@@ -726,6 +728,7 @@ describe("isDangerousCommand", () => {
     ["pnpm exec", "pnpm exec some-package", "untrusted-package-execution"],
     ["pnpm dlx", "pnpm dlx malicious", "untrusted-package-execution"],
     ["yarn dlx", "yarn dlx malicious", "untrusted-package-execution"],
+    ["yarn exec", "yarn exec some-package", "untrusted-package-execution"],
     ["bunx", "bunx some-pkg", "untrusted-package-execution"],
     ["bun x", "bun x some-pkg", "untrusted-package-execution"],
     ["git filter-branch with args", "git filter-branch --tree-filter 'rm -f secret.txt' HEAD", "git-history-rewriting"],
@@ -907,6 +910,7 @@ describe("isDangerousCommand", () => {
     ["grep with npx as arg", "grep 'npx ts-node' package.json"],
     ["grep with pnpm-exec as arg", "grep 'pnpm exec vitest' README.md"],
     ["grep with yarn-dlx as arg", "grep 'yarn dlx create-react-app' docs/setup.md"],
+    ["grep with yarn-exec as arg", "grep 'yarn exec vitest' README.md"],
     ["echo mentioning npx", "echo 'run via npx ts-node src/index.ts'"],
     // Pkg-install tokens as grep/echo arguments must not trigger untrusted-package-installation.
     ["grep with pnpm-add as arg", "grep 'pnpm add react' README.md"],
@@ -1120,6 +1124,7 @@ describe("category: untrusted-package-execution", () => {
     ["pnpm exec arbitrary package", "pnpm exec some-package"],
     ["pnpm dlx arbitrary package", "pnpm dlx malicious"],
     ["yarn dlx arbitrary package", "yarn dlx malicious"],
+    ["yarn exec arbitrary package", "yarn exec some-package"],
     ["bunx arbitrary package", "bunx some-pkg"],
     ["bun x arbitrary package", "bun x some-pkg"],
   ])("blocks %s", (_desc, command) => {
@@ -1734,7 +1739,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
   });
 
   it("has exactly 152 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(152);
+    expect(DANGEROUS_PATTERNS).toHaveLength(153);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1800,6 +1805,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "pnpm exec some-pkg",
       "pnpm dlx malicious",
       "yarn dlx malicious",
+      "yarn exec some-package",
       "bunx some-pkg",
       "bun x some-pkg",
       // git-ref-destruction

@@ -195,6 +195,8 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /(?:^|[;&|]\s*)pnpm\s+exec\b/, category: "untrusted-package-execution" },
   { pattern: /(?:^|[;&|]\s*)pnpm\s+dlx\s/, category: "untrusted-package-execution" },
   { pattern: /(?:^|[;&|]\s*)yarn\s+dlx\s/, category: "untrusted-package-execution" },
+  // yarn exec — Yarn v2+ equivalent of npx; runs a command inside the Yarn context without permanent installation
+  { pattern: /(?:^|[;&|]\s*)yarn\s+exec\b/, category: "untrusted-package-execution" },
   // bunx / bun x — Bun's equivalent of npx; executes packages without permanent installation
   { pattern: /(?:^|[;&|]\s*)bunx\s/, category: "untrusted-package-execution" },
   { pattern: /(?:^|[;&|]\s*)bun\s+x\s/, category: "untrusted-package-execution" },
