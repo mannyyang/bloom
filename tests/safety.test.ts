@@ -593,6 +593,10 @@ describe("blockDangerousCommands", () => {
     // Anchoring regression: mid-command env reference after non-separator text must not trigger
     ["grep output containing env word", 'grep "env python" config.txt'],
     ["echo env var assignment (not a spawn)", 'echo "env PATH=/usr/bin node script.js"'],
+    // Boundary-anchor regressions for find patterns: find commands quoted as arguments must be allowed.
+    ["grep with find-exec-bash as quoted arg", "grep 'find . -exec bash' tests/safety.test.ts"],
+    ["grep with find-exec-rm as quoted arg", "grep 'find . -exec rm' tests/safety.test.ts"],
+    ["grep with find-built-in-action as quoted arg", "grep 'find . -name tmp -delete' tests/safety.test.ts"],
   ])("allows %s", async (_desc, command) => {
     expectAllowed(await blockDangerousCommands(makeBashInput(command), "tool-1", hookOpts));
   });
