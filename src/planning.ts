@@ -157,9 +157,9 @@ export function parseRoadmap(content: string): ProjectItem[] {
       continue;
     }
 
-    // Match item lines: - [ ] Title (#3) or - [x] Title
+    // Match item lines: - [ ] Title (#3) or - [x] Title or - [X] Title (GitHub renders both)
     const itemMatch = line.match(
-      /^-\s+\[[ x]\]\s+(.+)$/,
+      /^-\s+\[[ xX]\]\s+(.+)$/,
     );
     if (itemMatch && currentStatus) {
       // Flush previous item

@@ -500,6 +500,19 @@ describe("parseRoadmap", () => {
     expect(items[0].body).toBe("single space detail");
   });
 
+  it("parses uppercase [X] checkbox (GitHub renders both [x] and [X] as checked)", () => {
+    // GitHub Markdown renders both [x] and [X] as a checked checkbox.
+    // parseRoadmap must accept uppercase X so manually-edited ROADMAP.md files
+    // round-trip correctly even when edited outside Bloom's serializer.
+    const content = `## Done
+- [X] Uppercase checked item
+`;
+    const items = parseRoadmap(content);
+    expect(items).toHaveLength(1);
+    expect(items[0].title).toBe("Uppercase checked item");
+    expect(items[0].status).toBe("Done");
+  });
+
   it("every item produced by parseRoadmap has reactions === 0", () => {
     // reactions are sourced from GitHub, not from ROADMAP.md.
     // Pinning this default prevents a regression where someone embeds
