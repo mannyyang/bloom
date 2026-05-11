@@ -90,7 +90,8 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // while avoiding false positives on branch names like feature-fix (where - is preceded by a word char)
   { pattern: /git\s+push\s+.*((?<!\w)-[a-zA-Z]*f[a-zA-Z]*\b|--force\b|--force-with-lease\b|--force-if-includes\b|--mirror\b)/, category: "git-history-destruction" },
   // Git history destruction — hard reset to arbitrary ref loses uncommitted work
-  { pattern: /git\s+reset\s+--hard\s+(?!HEAD(?:\s*$|\s*[;&|]))/, category: "git-history-destruction" },
+  // HEAD, HEAD~0, and HEAD^0 are all safe resets to the current commit and are exempted.
+  { pattern: /git\s+reset\s+--hard\s+(?!HEAD(?:[~^]0)?(?:\s*$|\s*[;&|]))/, category: "git-history-destruction" },
   // Remote code execution — piping downloaded content into a shell
   // Shell shorthand: (ba|z|da|k|a)?sh covers bash/zsh/dash/ksh/ash/sh; fish and t?csh are explicit
   { pattern: /\bcurl\b.*\|\s*(?:[\w./]*\/)?(?:(?:ba|z|da|k|a)?sh|fish|t?csh)/, category: "remote-code-execution" },

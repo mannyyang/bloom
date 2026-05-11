@@ -520,11 +520,15 @@ describe("blockDangerousCommands", () => {
     ["git commit -m 'fix bug' (plain commit)", "git commit -m 'fix bug'"],
     ["git commit -m 'message' (plain commit)", "git commit -m 'message'"],
     ["git reset --hard HEAD", "git reset --hard HEAD"],
+    ["git reset --hard HEAD~0 (same as HEAD)", "git reset --hard HEAD~0"],
+    ["git reset --hard HEAD^0 (same as HEAD)", "git reset --hard HEAD^0"],
     ["bare git reset --hard", "git reset --hard"],
     ["git reset --hard HEAD && ...", "git reset --hard HEAD && git status"],
     ["git reset --hard HEAD; ...", "git reset --hard HEAD; echo done"],
     ["git reset --hard HEAD || ...", "git reset --hard HEAD || echo failed"],
     ["git reset --hard HEAD | cat", "git reset --hard HEAD | cat"],
+    ["git reset --hard HEAD~0 in chain", "git reset --hard HEAD~0 && git status"],
+    ["git reset --hard HEAD^0 in chain", "git reset --hard HEAD^0 && git status"],
     ["git checkout -- specific-file.ts (targeted restore)", "git checkout -- specific-file.ts"],
     ["git checkout -- ./src/index.ts (relative path)", "git checkout -- ./src/index.ts"],
     ["git restore src/index.ts (targeted restore)", "git restore src/index.ts"],
@@ -1445,6 +1449,14 @@ describe("category: git-history-destruction", () => {
 
   it("does not flag git reset --hard HEAD (safe reset to current HEAD)", () => {
     expect(isDangerousCommand("git reset --hard HEAD")).toBeNull();
+  });
+
+  it("does not flag git reset --hard HEAD~0 (same-commit reset)", () => {
+    expect(isDangerousCommand("git reset --hard HEAD~0")).toBeNull();
+  });
+
+  it("does not flag git reset --hard HEAD^0 (same-commit reset)", () => {
+    expect(isDangerousCommand("git reset --hard HEAD^0")).toBeNull();
   });
 
   it("does not flag bare git reset --hard (safe reset to staged)", () => {
