@@ -549,6 +549,30 @@ describe("formatMemoryForPrompt", () => {
     }
   });
 
+  it("appends ellipsis when learnings section is budget-truncated", () => {
+    // No strategic context — all budget goes to the learnings section.
+    for (let i = 0; i < 20; i++) {
+      insertLearning(db, 1, "pattern", `Pattern item ${i} with enough text to consume budget quickly`);
+    }
+    const fullResult = formatMemoryForPrompt(db, 100000);
+    // Use a budget that truncates mid-list but still leaves room for "…\n" (2 chars).
+    // The ellipsis fits when budget >= truncated-output-length + 2, so we try a range
+    // of tight budgets and verify that at least one of them produces the ellipsis.
+    const budgets = [100, 150, 200, 250, 300];
+    let ellipsisFound = false;
+    for (const budget of budgets) {
+      const result = formatMemoryForPrompt(db, budget);
+      if (result.length < fullResult.length && result.includes("…")) {
+        ellipsisFound = true;
+        // When the ellipsis appears it must be on its own line at the end.
+        expect(result.endsWith("…\n")).toBe(true);
+        // Output must not exceed budget
+        expect(result.length).toBeLessThanOrEqual(budget);
+      }
+    }
+    expect(ellipsisFound).toBe(true);
+  });
+
   it("truncated output always ends on a clean newline boundary (no mid-line cuts)", () => {
     // Regression guard: budget-aware truncation must stop at whole-line boundaries,
     // never slicing a learning item mid-text. Each included line ends with \n,
