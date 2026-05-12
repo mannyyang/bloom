@@ -220,7 +220,7 @@ export function runBuildVerification(
  * Validate that a string is a safe git ref (no shell metacharacters).
  */
 export function isValidGitRef(ref: string): boolean {
-  return /^[a-zA-Z0-9._\-/]+$/.test(ref);
+  return /^[a-zA-Z0-9._/-]+$/.test(ref);
 }
 
 /**
