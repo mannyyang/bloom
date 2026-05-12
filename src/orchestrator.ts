@@ -10,6 +10,13 @@ import { extractLearnings, storeLearnings, storeStrategicContext } from "./memor
 import type { CycleOutcome } from "./outcomes.js";
 import { formatDurationSec } from "./usage.js";
 
+/** Internal shape returned by the better-sqlite3 transaction in processEvolutionResult. */
+interface WriteResult {
+  learningsCount: number;
+  dedupSkipped: number;
+  strategicStored: boolean;
+}
+
 /**
  * Result returned by processEvolutionResult with parsed data and applied side-effects.
  */
@@ -57,12 +64,6 @@ export function processEvolutionResult(
   let learningsStored = 0;
   let dedupSkipped = 0;
   let strategicContextStored = false;
-
-  interface WriteResult {
-    learningsCount: number;
-    dedupSkipped: number;
-    strategicStored: boolean;
-  }
 
   const doWrites = db.transaction((): WriteResult => {
     // 1. Journal entries
