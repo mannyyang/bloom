@@ -111,6 +111,16 @@ export function aggregateUsage(phases: PhaseUsage[]): CycleUsage {
 }
 
 /**
+ * Format cache token counts as a console display suffix.
+ * Returns an empty string when both counts are zero (cache not used).
+ * Shared by formatPhaseUsage and formatCycleUsage to eliminate duplication.
+ */
+function formatCacheDisplaySuffix(readTokens: number, creationTokens: number): string {
+  if (readTokens === 0 && creationTokens === 0) return "";
+  return ` | Cache: ${readTokens.toLocaleString()} read / ${creationTokens.toLocaleString()} created`;
+}
+
+/**
  * Format a PhaseUsage into a human-readable log line.
  * Includes a cache suffix inline when either cache token count is non-zero,
  * keeping the output single-line while surfacing per-phase cache efficiency.
@@ -120,9 +130,7 @@ export function formatPhaseUsage(pu: PhaseUsage): string {
   const input = pu.inputTokens.toLocaleString();
   const output = pu.outputTokens.toLocaleString();
   const duration = formatDurationSec(pu.durationMs);
-  const cachePart = (pu.cacheReadInputTokens > 0 || pu.cacheCreationInputTokens > 0)
-    ? ` | Cache: ${pu.cacheReadInputTokens.toLocaleString()} read / ${pu.cacheCreationInputTokens.toLocaleString()} created`
-    : "";
+  const cachePart = formatCacheDisplaySuffix(pu.cacheReadInputTokens, pu.cacheCreationInputTokens);
   return `[${pu.phase}] Cost: $${cost} | Tokens: ${input} in / ${output} out${cachePart} | Turns: ${pu.numTurns} | Duration: ${duration}`;
 }
 
@@ -134,9 +142,7 @@ export function formatCycleUsage(cu: CycleUsage): string {
   const totalCost = cu.totalCostUsd.toFixed(COST_DECIMAL_PLACES);
   const totalIn = cu.totalInputTokens.toLocaleString();
   const totalOut = cu.totalOutputTokens.toLocaleString();
-  const cachePart = (cu.totalCacheReadTokens > 0 || cu.totalCacheCreationTokens > 0)
-    ? ` | Cache: ${cu.totalCacheReadTokens.toLocaleString()} read / ${cu.totalCacheCreationTokens.toLocaleString()} created`
-    : "";
+  const cachePart = formatCacheDisplaySuffix(cu.totalCacheReadTokens, cu.totalCacheCreationTokens);
   lines.push(`[Total] Cost: $${totalCost} | Tokens: ${totalIn} in / ${totalOut} out${cachePart}`);
   return lines.join("\n");
 }
