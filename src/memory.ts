@@ -51,16 +51,11 @@ export function extractLearnings(learningsText: string): ExtractedLearnings {
 
     if (categoryMatch) {
       const candidate = categoryMatch[1];
-      const remainder = categoryMatch[2];
-      if (
-        candidate &&
-        (LEARNING_CATEGORIES as readonly string[]).includes(candidate)
-      ) {
+      // Always strip the bracket tag from cleanContent regardless of whether
+      // the category is recognised.
+      cleanContent = categoryMatch[2];
+      if (candidate && (LEARNING_CATEGORIES as readonly string[]).includes(candidate)) {
         category = candidate as LearningCategory;
-        cleanContent = remainder;
-      } else {
-        // Unknown category prefix — strip the bracket tag but keep the text
-        cleanContent = remainder;
       }
     }
 
