@@ -102,6 +102,17 @@ export function createOutcome(cycleNumber: number): CycleOutcome {
 }
 
 /**
+ * Build a `- **Tests**: …` line, appending an optional total suffix when
+ * `totalSuffix` is non-null. Centralises the " — total: " append pattern
+ * shared by all three test-count branches in formatOutcomeForJournal.
+ */
+function buildTestLine(body: string, totalSuffix: string | null): string {
+  let line = `- **Tests**: ${body}`;
+  if (totalSuffix !== null) line += ` — total: ${totalSuffix}`;
+  return line;
+}
+
+/**
  * Format a CycleOutcome for inclusion in a journal entry.
  */
 export function formatOutcomeForJournal(outcome: CycleOutcome): string {
@@ -127,23 +138,19 @@ export function formatOutcomeForJournal(outcome: CycleOutcome): string {
   if (outcome.testCountBefore !== null && outcome.testCountAfter !== null) {
     const delta = outcome.testCountAfter - outcome.testCountBefore;
     const deltaStr = delta >= 0 ? `+${delta}` : `${delta}`;
-    let testLine = `- **Tests**: ${outcome.testCountBefore} before, ${outcome.testCountAfter} after (${deltaStr})`;
-    if (outcome.testTotalBefore !== null && outcome.testTotalAfter !== null) {
-      testLine += ` — total: ${outcome.testTotalBefore} → ${outcome.testTotalAfter}`;
-    }
-    lines.push(testLine);
+    const body = `${outcome.testCountBefore} before, ${outcome.testCountAfter} after (${deltaStr})`;
+    const totalSuffix = (outcome.testTotalBefore !== null && outcome.testTotalAfter !== null)
+      ? `${outcome.testTotalBefore} → ${outcome.testTotalAfter}`
+      : null;
+    lines.push(buildTestLine(body, totalSuffix));
   } else if (outcome.testCountBefore !== null) {
-    let beforeLine = `- **Tests**: ${outcome.testCountBefore} before (after count unavailable)`;
-    if (outcome.testTotalBefore !== null) {
-      beforeLine += ` — total: ${outcome.testTotalBefore}`;
-    }
-    lines.push(beforeLine);
+    const body = `${outcome.testCountBefore} before (after count unavailable)`;
+    const totalSuffix = outcome.testTotalBefore !== null ? `${outcome.testTotalBefore}` : null;
+    lines.push(buildTestLine(body, totalSuffix));
   } else if (outcome.testCountAfter !== null) {
-    let afterLine = `- **Tests**: ${outcome.testCountAfter} after (before count unavailable)`;
-    if (outcome.testTotalAfter !== null) {
-      afterLine += ` — total: ${outcome.testTotalAfter}`;
-    }
-    lines.push(afterLine);
+    const body = `${outcome.testCountAfter} after (before count unavailable)`;
+    const totalSuffix = outcome.testTotalAfter !== null ? `${outcome.testTotalAfter}` : null;
+    lines.push(buildTestLine(body, totalSuffix));
   }
 
   return lines.join("\n");
