@@ -118,14 +118,17 @@ src/
 ├── memory.ts       # Learning extraction, storage, and prompt formatting
 ├── planning.ts     # Local ROADMAP.md parsing and item CRUD via withRoadmapItems helper (collision-safe IDs, duplicate prevention)
 ├── db.ts           # SQLite persistence (bloom.db) with runtime row validation
+├── assess.ts       # Standalone read-only assessment CLI — runs assessment phase without modifying state (pnpm assess)
 ├── journal.ts      # CLI entry point for exporting journal entries (JSON/Markdown)
 ├── stats.ts        # CLI entry point for querying evolution statistics
+├── roadmap.ts      # CLI entry point for viewing the current roadmap grouped by status (pnpm roadmap)
 ├── triage.ts       # Issue triage and lifecycle management (injectable QueryFn for testability)
 ├── issues.ts       # GitHub issues integration
 ├── github-app.ts   # GitHub App JWT auth + REST API client
 ├── safety.ts       # Pre-tool-use hooks & dangerous command blocking
 ├── lifecycle.ts    # Git operations, build verification, safety tags
 ├── outcomes.ts     # Cycle metrics tracking (passed + total test counts, precise duration)
+├── page-helpers.ts # Pure HTML generation helpers for the GitHub Pages site (roadmap, journal, stats pages)
 └── usage.ts        # Token/cost/cache usage tracking — accepts unknown inputs with runtime guards
 ```
 
