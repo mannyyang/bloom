@@ -34,6 +34,19 @@ export {
 };
 
 /**
+ * Append a Markdown section (header + content + blank line) to `lines`
+ * if `content` is non-empty. Centralises the triple-push pattern used by
+ * every optional section in formatJournalMarkdown.
+ */
+function pushSection(lines: string[], header: string, content: string | null | undefined): void {
+  if (content) {
+    lines.push(header);
+    lines.push(content);
+    lines.push("");
+  }
+}
+
+/**
  * Format journal entries as Markdown.
  */
 export function formatJournalMarkdown(entries: JournalExportEntry[]): string {
@@ -46,31 +59,11 @@ export function formatJournalMarkdown(entries: JournalExportEntry[]): string {
   for (const entry of entries) {
     lines.push(`## Cycle ${entry.cycleNumber} — ${entry.date}`);
     lines.push("");
-    if (entry.attempted) {
-      lines.push(JOURNAL_ATTEMPTED_HEADER);
-      lines.push(entry.attempted);
-      lines.push("");
-    }
-    if (entry.succeeded) {
-      lines.push(JOURNAL_SUCCEEDED_HEADER);
-      lines.push(entry.succeeded);
-      lines.push("");
-    }
-    if (entry.failed) {
-      lines.push(JOURNAL_FAILED_HEADER);
-      lines.push(entry.failed);
-      lines.push("");
-    }
-    if (entry.learnings) {
-      lines.push(JOURNAL_LEARNINGS_HEADER);
-      lines.push(entry.learnings);
-      lines.push("");
-    }
-    if (entry.strategic_context) {
-      lines.push(JOURNAL_STRATEGIC_CONTEXT_HEADER);
-      lines.push(entry.strategic_context);
-      lines.push("");
-    }
+    pushSection(lines, JOURNAL_ATTEMPTED_HEADER, entry.attempted);
+    pushSection(lines, JOURNAL_SUCCEEDED_HEADER, entry.succeeded);
+    pushSection(lines, JOURNAL_FAILED_HEADER, entry.failed);
+    pushSection(lines, JOURNAL_LEARNINGS_HEADER, entry.learnings);
+    pushSection(lines, JOURNAL_STRATEGIC_CONTEXT_HEADER, entry.strategic_context);
     lines.push("---");
     lines.push("");
   }
