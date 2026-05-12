@@ -346,6 +346,37 @@ const CSS_BASE = `
 
 const FOOTER_LINK = `Generated from <code>ROADMAP.md</code> + <code>bloom.db</code> · <a href="https://github.com/anthropics/bloom" style="color:#9ca3af">github.com/anthropics/bloom</a>`;
 
+/**
+ * Build the shared HTML page shell used by all three page generators.
+ * Accepts the page title, active nav page, header HTML, and main body content.
+ * Produces the full DOCTYPE…</html> document so each generator only supplies
+ * what is unique to it.
+ */
+function buildPageShell(
+  title: string,
+  navPage: NavPage,
+  headerHtml: string,
+  bodyContent: string,
+): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${title}</title>
+  <style>${CSS_BASE}
+  </style>
+</head>
+<body>
+  ${renderNav(navPage)}
+  ${headerHtml}
+  ${bodyContent}
+  <footer>${FOOTER_LINK}</footer>
+</body>
+</html>
+`;
+}
+
 export function generateHtml(
   sections: RoadmapSection[],
   generatedAt: string,
@@ -353,28 +384,14 @@ export function generateHtml(
   journalSection: string,
 ): string {
   const sectionsHtml = sections.map(renderSection).join("\n");
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bloom Evolution Roadmap</title>
-  <style>${CSS_BASE}
-  </style>
-</head>
-<body>
-  ${renderNav("index")}
-  <header>
+  const headerHtml = `<header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
     <p>Last updated: ${escapeHtml(generatedAt)}</p>
-  </header>
-  ${sectionsHtml}
+  </header>`;
+  const bodyContent = `${sectionsHtml}
   ${statsSection}
-  ${journalSection}
-  <footer>${FOOTER_LINK}</footer>
-</body>
-</html>
-`;
+  ${journalSection}`;
+  return buildPageShell("Bloom Evolution Roadmap", "index", headerHtml, bodyContent);
 }
 
 export function generateJournalHtml(
@@ -382,53 +399,24 @@ export function generateJournalHtml(
   generatedAt: string,
 ): string {
   const cards = entries.length > 0 ? renderJournalCards(entries) : "<p>No journal entries yet.</p>";
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bloom Full Journal</title>
-  <style>${CSS_BASE}
-  </style>
-</head>
-<body>
-  ${renderNav("journal")}
-  <header>
+  const headerHtml = `<header>
     <h1>📓 Bloom Full Journal</h1>
     <p>Last updated: ${escapeHtml(generatedAt)}</p>
-  </header>
-  <section>
+  </header>`;
+  const bodyContent = `<section>
     <p class="stats-note">All recorded evolution cycle summaries.</p>
     ${cards}
-  </section>
-  <footer>${FOOTER_LINK}</footer>
-</body>
-</html>
-`;
+  </section>`;
+  return buildPageShell("Bloom Full Journal", "journal", headerHtml, bodyContent);
 }
 
 export function generateStatsHtml(stats: DbStats | null, generatedAt: string): string {
   const statsContent = stats
     ? renderStatsSection(stats)
     : `<section class="section"><p class="stats-note">No stats available yet.</p></section>`;
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bloom Cycle Stats</title>
-  <style>${CSS_BASE}
-  </style>
-</head>
-<body>
-  ${renderNav("stats")}
-  <header>
+  const headerHtml = `<header>
     <h1>📊 Bloom Cycle Stats</h1>
     <p>Last updated: ${escapeHtml(generatedAt)}</p>
-  </header>
-  ${statsContent}
-  <footer>${FOOTER_LINK}</footer>
-</body>
-</html>
-`;
+  </header>`;
+  return buildPageShell("Bloom Cycle Stats", "stats", headerHtml, statsContent);
 }
