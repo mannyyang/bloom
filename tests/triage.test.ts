@@ -1284,6 +1284,53 @@ describe("triageIssues with injected deps", () => {
       maxBudgetUsd: TRIAGE_MAX_BUDGET_USD,
     });
   });
+
+  it("warns and returns empty result when db is undefined and new issues exist", async () => {
+    // When db=undefined and issues are not on the board, the function must emit a
+    // console.warn explaining why triage is skipped and return empty arrays.
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const issues = [
+      makeIssue({ number: 10, title: "New feature A" }),
+      makeIssue({ number: 11, title: "New feature B" }),
+    ];
+    // No board items → both issues are "new" (not on board)
+    const result = await triageIssues(issues, [], 5, projectConfig, undefined);
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[triage] No database available"),
+    );
+    expect(result.addedToBacklog).toHaveLength(0);
+    expect(result.closed).toHaveLength(0);
+
+    warnSpy.mockRestore();
+  });
+
+  it("warns and skips duplicate LLM decision, keeping first occurrence", async () => {
+    // When the LLM returns two decisions for the same issue number, the second must
+    // be dropped with a console.warn and only the first decision processed.
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const issues = [makeIssue({ number: 1, title: "Duplicate decision issue" })];
+    // Inject two decisions for issue #1: first add_to_backlog, then not_applicable
+    const deps = makeDeps([
+      { issueNumber: 1, action: "add_to_backlog", reason: "Good idea" },
+      { issueNumber: 1, action: "not_applicable", reason: "Out of scope" },
+    ]);
+    const mockDb = {} as import("better-sqlite3").Database;
+
+    const result = await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Duplicate decision"),
+    );
+    // First decision (add_to_backlog) is processed — issue added to backlog
+    expect(result.addedToBacklog).toContain(1);
+    // Second decision (not_applicable) is ignored — issue not closed
+    expect(result.closed).not.toContain(1);
+
+    warnSpy.mockRestore();
+  });
 });
 
 describe("triageIssues real DB integration", () => {
