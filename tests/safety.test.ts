@@ -2008,6 +2008,27 @@ describe("escapeRegex", () => {
     expect(pattern.test("abc")).toBe(false);
     expect(pattern.test("")).toBe(false);
   });
+
+  it("escapes mixed alphanumeric and special chars: foo.bar[baz]", () => {
+    const input = "foo.bar[baz]";
+    const escaped = escapeRegex(input);
+    // dot and brackets must be escaped; plain chars unchanged
+    expect(escaped).toBe("foo\\.bar\\[baz\\]");
+    // The resulting pattern must match exactly the literal, not e.g. "fooXbarYbazZ"
+    const pattern = new RegExp(`^${escaped}$`);
+    expect(pattern.test(input)).toBe(true);
+    expect(pattern.test("fooXbarYbazZ")).toBe(false);
+  });
+
+  it("escapes mixed alphanumeric and special chars: a+b*c?", () => {
+    const input = "a+b*c?";
+    const escaped = escapeRegex(input);
+    expect(escaped).toBe("a\\+b\\*c\\?");
+    const pattern = new RegExp(`^${escaped}$`);
+    expect(pattern.test(input)).toBe(true);
+    // Without escaping, "a+b*c?" would match "aabbc" — confirm it doesn't
+    expect(pattern.test("aabbc")).toBe(false);
+  });
 });
 
 describe("base64 decode pipe execution", () => {
