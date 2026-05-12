@@ -158,21 +158,37 @@ function formatJournalCacheSuffix(readTokens: number, creationTokens: number): s
 }
 
 /**
+ * Format a single journal usage line with a label, cost, and a pre-built body string.
+ * Centralises the `- **label**: $cost — body` pattern shared by the per-phase and
+ * total lines in formatUsageForJournal, reducing the diff surface for future format changes.
+ */
+function formatJournalLine(label: string, costUsd: number, body: string): string {
+  return `- **${label}**: $${costUsd.toFixed(COST_DECIMAL_PLACES)} — ${body}`;
+}
+
+/**
  * Format usage data for inclusion in a journal entry.
  */
 export function formatUsageForJournal(cu: CycleUsage): string {
   const lines: string[] = [RESOURCE_USAGE_HEADER, ""];
   for (const p of cu.phases) {
-    const cost = p.totalCostUsd.toFixed(COST_DECIMAL_PLACES);
     const duration = formatDurationSec(p.durationMs);
     const phaseCacheSuffix = formatJournalCacheSuffix(p.cacheReadInputTokens, p.cacheCreationInputTokens);
     lines.push(
-      `- **${p.phase}**: $${cost} — ${p.inputTokens.toLocaleString()} input tokens, ${p.outputTokens.toLocaleString()} output tokens${phaseCacheSuffix}, ${p.numTurns} turns, ${duration}`,
+      formatJournalLine(
+        p.phase,
+        p.totalCostUsd,
+        `${p.inputTokens.toLocaleString()} input tokens, ${p.outputTokens.toLocaleString()} output tokens${phaseCacheSuffix}, ${p.numTurns} turns, ${duration}`,
+      ),
     );
   }
   const cacheSuffix = formatJournalCacheSuffix(cu.totalCacheReadTokens, cu.totalCacheCreationTokens);
   lines.push(
-    `- **Total**: $${cu.totalCostUsd.toFixed(COST_DECIMAL_PLACES)} — ${cu.totalInputTokens.toLocaleString()} input + ${cu.totalOutputTokens.toLocaleString()} output tokens${cacheSuffix}`,
+    formatJournalLine(
+      "Total",
+      cu.totalCostUsd,
+      `${cu.totalInputTokens.toLocaleString()} input + ${cu.totalOutputTokens.toLocaleString()} output tokens${cacheSuffix}`,
+    ),
   );
   return lines.join("\n");
 }
