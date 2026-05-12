@@ -148,6 +148,16 @@ export function formatCycleUsage(cu: CycleUsage): string {
 }
 
 /**
+ * Format cache token counts as a journal-entry suffix.
+ * Returns an empty string when both counts are zero (cache not used).
+ * Shared by formatUsageForJournal to eliminate duplicated inline ternaries.
+ */
+function formatJournalCacheSuffix(readTokens: number, creationTokens: number): string {
+  if (readTokens === 0 && creationTokens === 0) return "";
+  return ` (cache: ${readTokens.toLocaleString()} read, ${creationTokens.toLocaleString()} created)`;
+}
+
+/**
  * Format usage data for inclusion in a journal entry.
  */
 export function formatUsageForJournal(cu: CycleUsage): string {
@@ -155,16 +165,12 @@ export function formatUsageForJournal(cu: CycleUsage): string {
   for (const p of cu.phases) {
     const cost = p.totalCostUsd.toFixed(COST_DECIMAL_PLACES);
     const duration = formatDurationSec(p.durationMs);
-    const phaseCacheSuffix = (p.cacheReadInputTokens > 0 || p.cacheCreationInputTokens > 0)
-      ? ` (cache: ${p.cacheReadInputTokens.toLocaleString()} read, ${p.cacheCreationInputTokens.toLocaleString()} created)`
-      : "";
+    const phaseCacheSuffix = formatJournalCacheSuffix(p.cacheReadInputTokens, p.cacheCreationInputTokens);
     lines.push(
       `- **${p.phase}**: $${cost} — ${p.inputTokens.toLocaleString()} input tokens, ${p.outputTokens.toLocaleString()} output tokens${phaseCacheSuffix}, ${p.numTurns} turns, ${duration}`,
     );
   }
-  const cacheSuffix = (cu.totalCacheReadTokens > 0 || cu.totalCacheCreationTokens > 0)
-    ? ` (cache: ${cu.totalCacheReadTokens.toLocaleString()} read, ${cu.totalCacheCreationTokens.toLocaleString()} created)`
-    : "";
+  const cacheSuffix = formatJournalCacheSuffix(cu.totalCacheReadTokens, cu.totalCacheCreationTokens);
   lines.push(
     `- **Total**: $${cu.totalCostUsd.toFixed(COST_DECIMAL_PLACES)} — ${cu.totalInputTokens.toLocaleString()} input + ${cu.totalOutputTokens.toLocaleString()} output tokens${cacheSuffix}`,
   );
