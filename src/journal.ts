@@ -80,8 +80,12 @@ export function generateJournalOutput(
   options: { format?: "json" | "md"; limit?: number } = {},
 ): string {
   const { format = "json", limit } = options;
+  // Math.floor normalises fractional values (e.g. 3.7 → 3).
+  // The explicit `!== undefined` guard makes intent clear: 0 is not a valid
+  // limit (pass undefined to mean "no limit"), and `safeLimit > 0` already
+  // handles that — no need for a falsy short-circuit.
   const safeLimit = limit !== undefined ? Math.floor(limit) : undefined;
-  const entries = exportJournalJson(db, safeLimit && safeLimit > 0 ? safeLimit : undefined);
+  const entries = exportJournalJson(db, safeLimit !== undefined && safeLimit > 0 ? safeLimit : undefined);
 
   if (format === "md") {
     return formatJournalMarkdown(entries);
