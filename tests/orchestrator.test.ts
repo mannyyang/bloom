@@ -341,6 +341,30 @@ STRATEGIC_CONTEXT: Focus on testing`;
       consoleSpy.mockRestore();
     });
 
+    it("logs console.warn and returns correct learningsStored when storeLearnings returns dedupSkipped > 0", async () => {
+      const memoryModule = await import("../src/memory.js");
+      const storeSpy = vi.spyOn(memoryModule, "storeLearnings").mockReturnValue({ count: 1, dedupSkipped: 2 });
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      const result = `ATTEMPTED: - Improvement A
+SUCCEEDED: - Improvement A
+FAILED: Nothing
+LEARNINGS: - [pattern] A learning
+STRATEGIC_CONTEXT: Focus on testing`;
+
+      const processed = processEvolutionResult(db, 1, result);
+
+      // learningsStored must reflect the count returned by storeLearnings
+      expect(processed.learningsStored).toBe(1);
+      // console.warn must fire with a message referencing "dedup skipped"
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("dedup skipped"),
+      );
+
+      storeSpy.mockRestore();
+      warnSpy.mockRestore();
+    });
+
     it("still returns correct results when storeStrategicContext throws (transaction rolled back)", async () => {
       const memoryModule = await import("../src/memory.js");
       const spy = vi.spyOn(memoryModule, "storeStrategicContext").mockImplementation(() => {
