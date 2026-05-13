@@ -231,6 +231,21 @@ describe("assess.ts main()", () => {
     errorSpy.mockRestore();
   });
 
+  it("calls db.close() even when getLatestCycleNumber throws (finally-block invariant)", async () => {
+    mockGetLatestCycleNumber.mockImplementation(() => {
+      throw new Error("DB locked");
+    });
+
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await expect(main()).resolves.toBeUndefined();
+
+    // initDb() returns the mock DB object; close() must be called regardless of the throw
+    const mockDb = mockInitDb.mock.results[0].value;
+    expect(mockDb.close).toHaveBeenCalledOnce();
+  });
+
   it("continues (non-fatal) when readFileSync throws — identity stays empty string", async () => {
     mockReadFileSync.mockImplementation(() => {
       throw new Error("IDENTITY.md not found");
