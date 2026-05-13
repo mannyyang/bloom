@@ -100,7 +100,7 @@ export function parseArgs(argv: string[]): { format: "json" | "md"; limit?: numb
   const limit = limitIdx !== -1 && argv[limitIdx + 1]
     ? parseInt(argv[limitIdx + 1], 10)
     : undefined;
-  return { format, limit: limit && !isNaN(limit) && limit > 0 ? limit : undefined };
+  return { format, limit: limit !== undefined && !isNaN(limit) && limit > 0 ? limit : undefined };
 }
 
 function main() {
