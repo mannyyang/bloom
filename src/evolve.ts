@@ -127,6 +127,12 @@ export function countImprovements(text: string): number {
 }
 
 export function buildEvolutionPrompt(assessment: string, context?: EvolutionPromptContext): string {
+  // Enforce the same character limit communicated to the assessment LLM so oversized
+  // assessments cannot silently inflate the evolution prompt.
+  const truncatedAssessment = assessment.length > ASSESSMENT_CHAR_LIMIT
+    ? assessment.slice(0, ASSESSMENT_CHAR_LIMIT)
+    : assessment;
+
   const usageSection = context?.usageContext
     ? `\n\nResource usage so far this cycle:\n${context.usageContext}\n`
     : "";
@@ -137,7 +143,7 @@ export function buildEvolutionPrompt(assessment: string, context?: EvolutionProm
 
   return `Based on this assessment, implement the improvements.
 
-${assessment}${usageSection}${outcomeSection}
+${truncatedAssessment}${usageSection}${outcomeSection}
 
 RULES:
 1. Make ONE change at a time.

@@ -191,6 +191,21 @@ describe("buildEvolutionPrompt", () => {
     expect(prompt).toContain("Resource usage so far this cycle:");
     expect(prompt).toContain("Cycle outcome metrics so far:");
   });
+
+  it("truncates assessment text that exceeds ASSESSMENT_CHAR_LIMIT", () => {
+    // An assessment longer than ASSESSMENT_CHAR_LIMIT should be silently truncated
+    // so oversized LLM output cannot inflate the evolution prompt.
+    const overflowText = "A".repeat(ASSESSMENT_CHAR_LIMIT) + "OVERFLOW_SENTINEL";
+    const prompt = buildEvolutionPrompt(overflowText);
+    expect(prompt).not.toContain("OVERFLOW_SENTINEL");
+  });
+
+  it("does not truncate assessment text at or below ASSESSMENT_CHAR_LIMIT", () => {
+    // Assessments that fit within the limit must be passed through unchanged.
+    const exactText = "B".repeat(ASSESSMENT_CHAR_LIMIT);
+    const prompt = buildEvolutionPrompt(exactText);
+    expect(prompt).toContain(exactText);
+  });
 });
 
 describe("parseEvolutionResult", () => {
