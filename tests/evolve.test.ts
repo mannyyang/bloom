@@ -221,6 +221,22 @@ describe("buildEvolutionPrompt", () => {
     const prompt = buildEvolutionPrompt(exactText);
     expect(prompt).toContain(exactText);
   });
+
+  it("truncated assessment still produces a structurally complete prompt", () => {
+    // Even when the assessment is sliced mid-content, the surrounding prompt
+    // structure must remain intact so the evolution agent receives valid rules
+    // and the required output format markers.
+    const overflowText = "C".repeat(ASSESSMENT_CHAR_LIMIT + 500);
+    const prompt = buildEvolutionPrompt(overflowText);
+    // Core rules section must always be present
+    expect(prompt).toContain("RULES:");
+    // All five required output-format markers must appear after the assessment
+    expect(prompt).toContain("ATTEMPTED:");
+    expect(prompt).toContain("SUCCEEDED:");
+    expect(prompt).toContain("FAILED:");
+    expect(prompt).toContain("LEARNINGS:");
+    expect(prompt).toContain("STRATEGIC_CONTEXT:");
+  });
 });
 
 describe("parseEvolutionResult", () => {
