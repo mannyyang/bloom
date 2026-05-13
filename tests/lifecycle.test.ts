@@ -290,6 +290,20 @@ describe("lifecycle helpers", () => {
         .mockImplementationOnce(() => { throw new Error("nothing to commit"); }); // git commit
       expect(commitRoadmap(42)).toBe(false);
     });
+
+    it("returns true when generate-pages succeeds but git add docs/index.html throws (inner catch)", () => {
+      mockedExecFileSync
+        .mockReturnValueOnce(Buffer.from(""))          // git add ROADMAP.md
+        .mockReturnValueOnce(Buffer.from(""))          // pnpm generate-pages (succeeds)
+        .mockImplementationOnce(() => { throw new Error("git add index.html failed"); }) // git add docs/index.html (non-fatal)
+        .mockReturnValue(Buffer.from(""));             // git commit
+      expect(commitRoadmap(42)).toBe(true);
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["commit", "-m", "cycle 42: update roadmap"],
+        expect.anything(),
+      );
+    });
   });
 
   describe("pushChanges", () => {
