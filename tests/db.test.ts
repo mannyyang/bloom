@@ -569,12 +569,23 @@ describe("db", () => {
       expect(fullSummary).toContain("Cycle 2");
       expect(fullSummary).toContain("Cycle 1");
 
-      // Get the length of a single cycle's section to pick a tight budget
-      const singleCycleSummary = getRecentJournalSummary(db, 1);
-      // With maxChars=1, only the first entry should appear (always allowed even if over budget)
-      expect(singleCycleSummary).toContain("Cycle 3"); // newest first
-      expect(singleCycleSummary).not.toContain("Cycle 2");
-      expect(singleCycleSummary).not.toContain("Cycle 1");
+      // With maxChars=1, all entries exceed the budget so result is empty
+      const tightSummary = getRecentJournalSummary(db, 1);
+      expect(tightSummary.length).toBeLessThanOrEqual(1);
+      expect(tightSummary).not.toContain("Cycle 2");
+      expect(tightSummary).not.toContain("Cycle 1");
+    });
+
+    it("result length never exceeds maxChars even for oversized single entry", () => {
+      // A single cycle entry that alone exceeds maxChars must not overflow.
+      // Previously, the first entry was unconditionally included regardless of size.
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertJournalEntry(db, 1, "attempted", "A".repeat(500));
+      insertJournalEntry(db, 1, "succeeded", "B".repeat(500));
+
+      const maxChars = 50;
+      const result = getRecentJournalSummary(db, maxChars);
+      expect(result.length).toBeLessThanOrEqual(maxChars);
     });
 
     it("truncates at exact boundary allowing partial cycles", () => {
@@ -623,18 +634,16 @@ describe("db", () => {
       expect(summary).not.toContain("Strategic Context");
     });
 
-    it("always includes at least one cycle even if it exceeds maxChars", () => {
+    it("skips oversized first entry and returns empty rather than overflowing maxChars", () => {
       insertCycle(db, makeOutcome({ cycleNumber: 1 }));
       insertJournalEntry(db, 1, "attempted", "A".repeat(500));
       insertJournalEntry(db, 1, "succeeded", "");
       insertJournalEntry(db, 1, "failed", "");
       insertJournalEntry(db, 1, "learnings", "");
 
-      // Even with maxChars=10, the first cycle is always included
+      // With maxChars=10, the entry exceeds the budget so the invariant is honoured
       const summary = getRecentJournalSummary(db, 10);
-      expect(summary).toContain("Cycle 1");
-      expect(summary).toContain("A".repeat(500));
-      expect(summary.length).toBeGreaterThan(10);
+      expect(summary.length).toBeLessThanOrEqual(10);
     });
 
     it("omits section headers for empty fields to save prompt tokens", () => {

@@ -755,10 +755,10 @@ export function getRecentJournalSummary(db: Database.Database, maxChars: number 
     if (entry.learnings) { parts.push(JOURNAL_LEARNINGS_HEADER, entry.learnings, ""); }
     parts.push("---", "");
     const section = parts.join("\n");
-    if (totalLen + section.length > maxChars && lines.length > 0) break;
+    if (totalLen + section.length > maxChars) break;
     lines.push(section);
     totalLen += section.length;
   }
 
-  return lines.join("\n");
+  return lines.join("\n").slice(0, maxChars);
 }
