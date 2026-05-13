@@ -222,6 +222,17 @@ describe("buildEvolutionPrompt", () => {
     expect(prompt).toContain(exactText);
   });
 
+  it("truncated assessment embeds exactly ASSESSMENT_CHAR_LIMIT characters — no more, no less", () => {
+    // Verify the slice boundary is tight: all ASSESSMENT_CHAR_LIMIT chars are kept,
+    // and the character at position ASSESSMENT_CHAR_LIMIT+1 is dropped.
+    const overflowText = "A".repeat(ASSESSMENT_CHAR_LIMIT + 1);
+    const prompt = buildEvolutionPrompt(overflowText);
+    // All first ASSESSMENT_CHAR_LIMIT characters must be present (no under-truncation)
+    expect(prompt).toContain("A".repeat(ASSESSMENT_CHAR_LIMIT));
+    // The full over-limit string must not appear (confirms the +1 char was removed)
+    expect(prompt).not.toContain(overflowText);
+  });
+
   it("truncated assessment still produces a structurally complete prompt", () => {
     // Even when the assessment is sliced mid-content, the surrounding prompt
     // structure must remain intact so the evolution agent receives valid rules
