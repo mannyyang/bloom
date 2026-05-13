@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements, ASSESSMENT_CHAR_LIMIT } from "../src/evolve.js";
+import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements, ASSESSMENT_CHAR_LIMIT, CONTEXT_JOURNAL_MAX_CHARS } from "../src/evolve.js";
 
 describe("ASSESSMENT_CHAR_LIMIT", () => {
   it("is 2000 (value-pinning)", () => {
@@ -116,6 +116,21 @@ describe("buildAssessmentPrompt", () => {
       cycleCount: 1,
     });
     expect(prompt.length).toBeLessThan(2000);
+  });
+
+  it("truncates journalSummary that exceeds CONTEXT_JOURNAL_MAX_CHARS", () => {
+    // An oversized journal summary must be silently truncated so it cannot
+    // inflate the assessment prompt beyond the documented limit.
+    const overflowSummary = "J".repeat(CONTEXT_JOURNAL_MAX_CHARS) + "OVERFLOW_SENTINEL";
+    const prompt = buildAssessmentPrompt({ journalSummary: overflowSummary, cycleCount: 1 });
+    expect(prompt).not.toContain("OVERFLOW_SENTINEL");
+  });
+
+  it("does not truncate journalSummary at or below CONTEXT_JOURNAL_MAX_CHARS", () => {
+    // Summaries that fit within the limit must be passed through unchanged.
+    const exactSummary = "K".repeat(CONTEXT_JOURNAL_MAX_CHARS);
+    const prompt = buildAssessmentPrompt({ journalSummary: exactSummary, cycleCount: 1 });
+    expect(prompt).toContain(exactSummary);
   });
 });
 
