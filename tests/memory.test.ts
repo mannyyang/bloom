@@ -48,6 +48,17 @@ describe("extractLearnings", () => {
     expect(result.learnings[1].category).toBe("domain");
   });
 
+  it("recognises explicit [domain] tag and strips it", () => {
+    // Uses the categoryMatch branch (not the untagged fallback path).
+    // "domain" is in LEARNING_CATEGORIES so category must be "domain" and the
+    // bracket tag must be stripped from cleanContent.
+    const text = "- [domain] Explicit domain insight";
+    const result = extractLearnings(text);
+    expect(result.learnings).toHaveLength(1);
+    expect(result.learnings[0].category).toBe("domain");
+    expect(result.learnings[0].content).toBe("Explicit domain insight");
+  });
+
   it("handles asterisk list items", () => {
     const text = "* [domain] Asterisk insight";
     const result = extractLearnings(text);
