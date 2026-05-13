@@ -735,5 +735,26 @@ describe("lifecycle helpers", () => {
         expect.objectContaining({ timeout: 3000 }),
       );
     });
+
+    it("pushTags uses BLOOM_GIT_PUSH_TIMEOUT_MS when set", () => {
+      process.env.BLOOM_GIT_PUSH_TIMEOUT_MS = "15000";
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+      pushTags();
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["push", "--tags"],
+        expect.objectContaining({ timeout: 15000 }),
+      );
+    });
+
+    it("verifyBuild uses BLOOM_BUILD_TIMEOUT_MS when set", () => {
+      process.env.BLOOM_BUILD_TIMEOUT_MS = "7000";
+      mockedExecSync.mockReturnValue("ok");
+      verifyBuild();
+      expect(mockedExecSync).toHaveBeenCalledWith(
+        "pnpm build && pnpm test",
+        expect.objectContaining({ timeout: 7000 }),
+      );
+    });
   });
 });
