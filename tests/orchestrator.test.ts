@@ -592,6 +592,14 @@ STRATEGIC_CONTEXT: Focus on testing`;
         "========================================"
       );
     });
+
+    it("hadError=true with failureCategory=none shows FAILED but omits Failure: line (orthogonality pin)", () => {
+      const outcome = makeOutcome({ failureCategory: "none" });
+      const summary = formatCycleSummaryWithDuration(1, outcome, true, 5000);
+      expect(summary).toContain("FAILED");
+      expect(summary).not.toContain("Failure:");
+      expect(summary.split("\n")).toHaveLength(8);
+    });
   });
 
 });
