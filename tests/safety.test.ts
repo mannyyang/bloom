@@ -1462,6 +1462,15 @@ describe("category: git-history-destruction", () => {
   it("does not flag bare git reset --hard (safe reset to staged)", () => {
     expect(isDangerousCommand("git reset --hard")).toBeNull();
   });
+
+  // Standalone block-pin for --force-if-includes (not buried in it.each above)
+  it("blocks git push --force-if-includes as standalone flag (prefix position)", () => {
+    expect(isDangerousCommand("git push --force-if-includes origin main")).toBe("git-history-destruction");
+  });
+
+  it("blocks git push --force-if-includes as standalone flag (suffix position)", () => {
+    expect(isDangerousCommand("git push origin main --force-if-includes")).toBe("git-history-destruction");
+  });
 });
 
 describe("buildProtectedFilePatterns", () => {
