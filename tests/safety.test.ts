@@ -977,6 +977,15 @@ describe("isDangerousCommand", () => {
     ["sysctl read-only query (no write flag)", "sysctl kernel.perf_event_paranoid"],
     ["screen -ls (list sessions, no detach)", "screen -ls"],
     ["tmux ls (list sessions, no new-session)", "tmux ls"],
+    // safe file-truncation: truncate as an argument/word, not as a command
+    ["grep truncate as word (not the command)", "grep truncate src/safety.ts"],
+    ["cat file named truncate.md (not the command)", "cat truncate.md"],
+    // safe file-deletion: unlink as an argument/word, not as a command
+    ["grep unlink as word (not the command)", "grep unlink safety.ts"],
+    ["echo message with unlink word", "echo 'unlink removes a file'"],
+    // safe find: no -exec, -execdir, or -delete flag → plain listing
+    ["find listing by name (no -exec)", "find . -name '*.ts'"],
+    ["find listing by type (no -exec)", "find . -type f -print"],
   ])("returns null for %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBeNull();
   });
