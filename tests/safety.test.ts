@@ -1769,7 +1769,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 152 entries (absolute count pin)", () => {
+  it("has exactly 153 entries (absolute count pin)", () => {
     expect(DANGEROUS_PATTERNS).toHaveLength(153);
   });
 
