@@ -973,6 +973,10 @@ describe("isDangerousCommand", () => {
     ["chown -R user ./dist (safe subdir)", "chown -R user ./dist"],
     ["chmod 644 file (no -R, safe)", "chmod 644 src/safety.ts"],
     ["chown user file (no -R, safe)", "chown user src/safety.ts"],
+    // safe sysctl/screen/tmux: read-only or list operations should not be blocked
+    ["sysctl read-only query (no write flag)", "sysctl kernel.perf_event_paranoid"],
+    ["screen -ls (list sessions, no detach)", "screen -ls"],
+    ["tmux ls (list sessions, no new-session)", "tmux ls"],
   ])("returns null for %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBeNull();
   });
