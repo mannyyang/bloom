@@ -321,6 +321,23 @@ describe("lifecycle helpers", () => {
       mockedExecFileSync.mockImplementation(() => { throw new Error("push rejected"); });
       expect(pushChanges()).toBe(false);
     });
+
+    it("reads BLOOM_GIT_PUSH_TIMEOUT_MS lazily at call time", () => {
+      const prev = process.env.BLOOM_GIT_PUSH_TIMEOUT_MS;
+      try {
+        process.env.BLOOM_GIT_PUSH_TIMEOUT_MS = "99999";
+        mockedExecFileSync.mockReturnValue(Buffer.from(""));
+        expect(pushChanges()).toBe(true);
+        expect(mockedExecFileSync).toHaveBeenCalledWith(
+          "git",
+          ["push", "origin", "main"],
+          expect.objectContaining({ timeout: 99999 }),
+        );
+      } finally {
+        if (prev === undefined) delete process.env.BLOOM_GIT_PUSH_TIMEOUT_MS;
+        else process.env.BLOOM_GIT_PUSH_TIMEOUT_MS = prev;
+      }
+    });
   });
 
   describe("pushTags", () => {
@@ -337,6 +354,23 @@ describe("lifecycle helpers", () => {
     it("returns false when tag push fails", () => {
       mockedExecFileSync.mockImplementation(() => { throw new Error("push rejected"); });
       expect(pushTags()).toBe(false);
+    });
+
+    it("reads BLOOM_GIT_PUSH_TIMEOUT_MS lazily at call time", () => {
+      const prev = process.env.BLOOM_GIT_PUSH_TIMEOUT_MS;
+      try {
+        process.env.BLOOM_GIT_PUSH_TIMEOUT_MS = "99999";
+        mockedExecFileSync.mockReturnValue(Buffer.from(""));
+        expect(pushTags()).toBe(true);
+        expect(mockedExecFileSync).toHaveBeenCalledWith(
+          "git",
+          ["push", "--tags"],
+          expect.objectContaining({ timeout: 99999 }),
+        );
+      } finally {
+        if (prev === undefined) delete process.env.BLOOM_GIT_PUSH_TIMEOUT_MS;
+        else process.env.BLOOM_GIT_PUSH_TIMEOUT_MS = prev;
+      }
     });
   });
 
