@@ -986,6 +986,13 @@ describe("isDangerousCommand", () => {
     // safe find: no -exec, -execdir, or -delete flag → plain listing
     ["find listing by name (no -exec)", "find . -name '*.ts'"],
     ["find listing by type (no -exec)", "find . -type f -print"],
+    // safe disk-destruction: dd writing to a regular file, not a raw device
+    ["dd copying to a regular file (not /dev/)", "dd if=/dev/zero of=test.img bs=1M count=10"],
+    // safe git-working-tree-destruction: targeted single-file restore
+    ["git checkout -- single file (targeted restore)", "git checkout -- src/index.ts"],
+    ["git restore single file (targeted restore)", "git restore src/index.ts"],
+    // safe git-internals-tampering: chmod on non-.git paths
+    ["chmod on non-.git path (not internals)", "chmod +x dist/index.js"],
   ])("returns null for %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBeNull();
   });
