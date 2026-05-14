@@ -535,6 +535,8 @@ export function buildProtectedFilePatterns(filename: string, opts?: { allowAppen
     new RegExp(`(?:^|[;&|]\\s*|\\s)ln\\s+.*${escaped}`),
     new RegExp(`git\\s+checkout\\s+.*--\\s+.*${escaped}`),
     new RegExp(`git\\s+restore\\s+.*${escaped}`),
+    // shred — securely overwrites and deletes files; bypasses all other rm/unlink guards
+    new RegExp(`\\bshred\\s+.*${escaped}`),
   ];
   return patterns;
 }

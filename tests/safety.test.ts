@@ -652,6 +652,14 @@ describe("blockDangerousCommands", () => {
     const reason = (result as { hookSpecificOutput: { permissionDecisionReason: string } }).hookSpecificOutput.permissionDecisionReason;
     expect(reason).toContain("append-only");
   });
+
+  it("denies shred targeting IDENTITY.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("shred -zuf IDENTITY.md"), "tool-1", hookOpts));
+  });
+
+  it("denies shred targeting JOURNAL.md", async () => {
+    expectDenied(await blockDangerousCommands(makeBashInput("shred -zuf JOURNAL.md"), "tool-1", hookOpts));
+  });
 });
 
 describe("isDangerousRm", () => {
@@ -1479,12 +1487,12 @@ describe("buildProtectedFilePatterns", () => {
   }
 
   describe("structural count pin", () => {
-    it("returns exactly 15 patterns (no-append mode)", () => {
-      expect(buildProtectedFilePatterns("X.md")).toHaveLength(15);
+    it("returns exactly 16 patterns (no-append mode)", () => {
+      expect(buildProtectedFilePatterns("X.md")).toHaveLength(16);
     });
 
-    it("returns exactly 15 patterns (allowAppend mode)", () => {
-      expect(buildProtectedFilePatterns("X.md", { allowAppend: true })).toHaveLength(15);
+    it("returns exactly 16 patterns (allowAppend mode)", () => {
+      expect(buildProtectedFilePatterns("X.md", { allowAppend: true })).toHaveLength(16);
     });
   });
 
@@ -1522,6 +1530,8 @@ describe("buildProtectedFilePatterns", () => {
       ["perl -pi -e", "perl -pi -e 's/a/b/' IDENTITY.md"],
       ["perl -i (standalone flag)", "perl -i -p -e 's/a/b/' IDENTITY.md"],
       ["perl -i.bak (with backup suffix)", "perl -i.bak -p -e 's/a/b/' IDENTITY.md"],
+      ["shred", "shred IDENTITY.md"],
+      ["shred -zuf (secure delete flags)", "shred -zuf IDENTITY.md"],
     ])("blocks %s", (_desc, command) => {
       expect(matchesAny(patterns, command)).toBe(true);
     });
