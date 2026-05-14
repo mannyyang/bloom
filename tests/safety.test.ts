@@ -968,6 +968,11 @@ describe("isDangerousCommand", () => {
     ["grep with cargo-install as arg", "grep 'cargo install sccache' .github/workflows/ci.yml"],
     ["echo $PYTHONPATH (safe — read, not set)", "echo $PYTHONPATH"],
     ["echo $NODE_PATH (safe — read, not set)", "echo $NODE_PATH"],
+    ["echo $LD_PRELOAD (safe — read, not set)", "echo $LD_PRELOAD"],
+    ["echo $LD_LIBRARY_PATH (safe — read, not set)", "echo $LD_LIBRARY_PATH"],
+    ["echo $RUBYLIB (safe — read, not set)", "echo $RUBYLIB"],
+    ["echo $PYTHONSTARTUP (safe — read, not set)", "echo $PYTHONSTARTUP"],
+    ["echo $PERL5LIB (safe — read, not set)", "echo $PERL5LIB"],
     // safe chmod/chown: specific subdir paths should not be blocked
     ["chmod -R 755 ./dist (safe subdir)", "chmod -R 755 ./dist"],
     ["chown -R user ./dist (safe subdir)", "chown -R user ./dist"],
