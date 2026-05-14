@@ -973,6 +973,10 @@ describe("isDangerousCommand", () => {
     ["echo $RUBYLIB (safe — read, not set)", "echo $RUBYLIB"],
     ["echo $PYTHONSTARTUP (safe — read, not set)", "echo $PYTHONSTARTUP"],
     ["echo $PERL5LIB (safe — read, not set)", "echo $PERL5LIB"],
+    // safe env-interpreter-bypass: bare env and env without inline-code flag
+    ["bare env command (no interpreter)", "env"],
+    ["env piped to grep (no inline -e/-c flag)", "env | grep PATH"],
+    ["env interpreter without inline-code flag (safe script)", "env python3 script.py"],
     // safe chmod/chown: specific subdir paths should not be blocked
     ["chmod -R 755 ./dist (safe subdir)", "chmod -R 755 ./dist"],
     ["chown -R user ./dist (safe subdir)", "chown -R user ./dist"],
