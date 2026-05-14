@@ -993,6 +993,10 @@ describe("isDangerousCommand", () => {
     ["git restore single file (targeted restore)", "git restore src/index.ts"],
     // safe git-internals-tampering: chmod on non-.git paths
     ["chmod on non-.git path (not internals)", "chmod +x dist/index.js"],
+    // safe script-interpreter-spawn: script utility with no shell argument
+    ["script logging to file (no shell arg)", "script -q session.log"],
+    ["bash invoking a script file (not the script utility)", "bash script.sh"],
+    ["node referencing a script filename", "node run-script.js"],
   ])("returns null for %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBeNull();
   });
