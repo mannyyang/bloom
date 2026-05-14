@@ -888,6 +888,9 @@ describe("isDangerousCommand", () => {
     ["pkexec (privilege-escalation)", "pkexec bash", "privilege-escalation"],
     ["strace (process-tracing)", "strace -p 1234", "process-tracing"],
     ["ltrace (process-tracing)", "ltrace -p 1234", "process-tracing"],
+    ["python3 http.server (data-exfiltration-server)", "python3 -m http.server 8080", "data-exfiltration-server"],
+    ["php -S (data-exfiltration-server)", "php -S 0.0.0.0:8080", "data-exfiltration-server"],
+    ["ruby -run httpd (data-exfiltration-server)", "ruby -run -e httpd . --port=8080", "data-exfiltration-server"],
   ])("detects %s → %s", (_desc, command, category) => {
     expect(isDangerousCommand(command)).toBe(category);
   });
