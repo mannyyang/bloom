@@ -977,6 +977,10 @@ describe("isDangerousCommand", () => {
     ["bare env command (no interpreter)", "env"],
     ["env piped to grep (no inline -e/-c flag)", "env | grep PATH"],
     ["env interpreter without inline-code flag (safe script)", "env python3 script.py"],
+    // safe python3 -m: common dev-tooling modules must not be blocked
+    ["python3 -m json.tool (safe — not http.server)", "python3 -m json.tool"],
+    ["python3 -m venv (safe — not http.server)", "python3 -m venv myenv"],
+    ["python3 -m compileall (safe — not http.server)", "python3 -m compileall src/"],
     // safe chmod/chown: specific subdir paths should not be blocked
     ["chmod -R 755 ./dist (safe subdir)", "chmod -R 755 ./dist"],
     ["chown -R user ./dist (safe subdir)", "chown -R user ./dist"],
