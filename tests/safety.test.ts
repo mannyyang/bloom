@@ -968,6 +968,11 @@ describe("isDangerousCommand", () => {
     ["grep with cargo-install as arg", "grep 'cargo install sccache' .github/workflows/ci.yml"],
     ["echo $PYTHONPATH (safe — read, not set)", "echo $PYTHONPATH"],
     ["echo $NODE_PATH (safe — read, not set)", "echo $NODE_PATH"],
+    // safe chmod/chown: specific subdir paths should not be blocked
+    ["chmod -R 755 ./dist (safe subdir)", "chmod -R 755 ./dist"],
+    ["chown -R user ./dist (safe subdir)", "chown -R user ./dist"],
+    ["chmod 644 file (no -R, safe)", "chmod 644 src/safety.ts"],
+    ["chown user file (no -R, safe)", "chown user src/safety.ts"],
   ])("returns null for %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBeNull();
   });
