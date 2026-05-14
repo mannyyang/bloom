@@ -891,6 +891,9 @@ describe("isDangerousCommand", () => {
     ["python3 http.server (data-exfiltration-server)", "python3 -m http.server 8080", "data-exfiltration-server"],
     ["php -S (data-exfiltration-server)", "php -S 0.0.0.0:8080", "data-exfiltration-server"],
     ["ruby -run httpd (data-exfiltration-server)", "ruby -run -e httpd . --port=8080", "data-exfiltration-server"],
+    ["LD_PRELOAD env-var injection", "LD_PRELOAD=/tmp/evil.so command", "env-var-injection"],
+    ["PYTHONPATH env-var injection", "PYTHONPATH=/tmp/evil python3 app.py", "env-var-injection"],
+    ["NODE_PATH env-var injection", "NODE_PATH=/tmp/evil node index.js", "env-var-injection"],
   ])("detects %s → %s", (_desc, command, category) => {
     expect(isDangerousCommand(command)).toBe(category);
   });
@@ -933,6 +936,8 @@ describe("isDangerousCommand", () => {
     ["echo describing yarn-add", "echo 'yarn add lodash'"],
     ["grep with pip-install as arg", "grep 'pip install requests' requirements.txt"],
     ["grep with cargo-install as arg", "grep 'cargo install sccache' .github/workflows/ci.yml"],
+    ["echo $PYTHONPATH (safe — read, not set)", "echo $PYTHONPATH"],
+    ["echo $NODE_PATH (safe — read, not set)", "echo $NODE_PATH"],
   ])("returns null for %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBeNull();
   });
