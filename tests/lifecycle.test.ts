@@ -757,5 +757,38 @@ describe("lifecycle helpers", () => {
         expect.objectContaining({ timeout: 7000 }),
       );
     });
+
+    it("commitRoadmap uses BLOOM_GIT_OP_TIMEOUT_MS when set", () => {
+      process.env.BLOOM_GIT_OP_TIMEOUT_MS = "9000";
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+      commitRoadmap(1);
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["add", "ROADMAP.md"],
+        expect.objectContaining({ timeout: 9000 }),
+      );
+    });
+
+    it("createSafetyTag uses BLOOM_GIT_OP_TIMEOUT_MS when set", () => {
+      process.env.BLOOM_GIT_OP_TIMEOUT_MS = "6000";
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+      createSafetyTag(1);
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["tag", "-f", "pre-evolution-cycle-1"],
+        expect.objectContaining({ timeout: 6000 }),
+      );
+    });
+
+    it("hardResetTo uses BLOOM_GIT_REVERT_TIMEOUT_MS when set", () => {
+      process.env.BLOOM_GIT_REVERT_TIMEOUT_MS = "4000";
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+      hardResetTo("pre-evolution-cycle-1");
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["reset", "--hard", "pre-evolution-cycle-1"],
+        expect.objectContaining({ timeout: 4000 }),
+      );
+    });
   });
 });
