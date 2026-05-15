@@ -2804,16 +2804,21 @@ describe("category: shell-script-execution", () => {
     ["source ./setup.sh", "source ./setup.sh"],
     ["dot-script bare", ". /tmp/evil.sh"],
     ["dot-script after semicolon", "echo hi; . /tmp/evil.sh"],
+    ["source after && chain", "build.sh && source /tmp/env.sh"],
+    ["source after pipe", "cat env | source /dev/stdin"],
+    ["dot-script after ampersand", "make && . ./inject.sh"],
   ])("blocks %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("shell-script-execution");
   });
 
-  it("does not flag a plain echo command", () => {
-    expect(isDangerousCommand("echo hello")).toBeNull();
-  });
-
-  it("does not flag git source-related output reading", () => {
-    expect(isDangerousCommand("cat ./setup.sh")).toBeNull();
+  it.each([
+    ["echo hello (no source)", "echo hello"],
+    ["cat ./setup.sh (reading, not sourcing)", "cat ./setup.sh"],
+    ["grep 'source' file.sh (argument, not command)", "grep 'source' file.sh"],
+    ["./script.sh (direct execute, not source)", "./script.sh"],
+    ["echo source message (text, not command)", "echo 'run: source ./env.sh'"],
+  ])("allows %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).not.toBe("shell-script-execution");
   });
 });
 
