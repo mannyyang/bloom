@@ -302,10 +302,14 @@ describe("blockDangerousCommands", () => {
     // Bare file-truncation — zeroes or shrinks source files without rm/xargs
     ["truncate -s 0 source file", "truncate -s 0 src/safety.ts"],
     ["truncate --size=0 source file", "truncate --size=0 src/triage.ts"],
+    // Bare file-deletion via shred — irreversibly overwrites and deletes files
+    ["shred -zuf source file", "shred -zuf src/safety.ts"],
+    ["shred with chained command", "shred src/foo.ts; echo done"],
     // xargs with file-destroying commands
     ["xargs dd (wipes matched files)", "find . -name '*.ts' | xargs dd if=/dev/zero"],
     ["xargs truncate (zeros matched files)", "find . -name '*.log' | xargs truncate -s 0"],
     ["xargs unlink (deletes matched files)", "find . -name '*.tmp' | xargs unlink"],
+    ["xargs shred (irreversibly deletes matched files)", "find . -name '*.ts' | xargs shred -zuf"],
     ["xargs mv (moves/renames matched files)", "find . -name '*.ts' | xargs mv /dev/null"],
     ["xargs cp (bulk overwrites files)", "find /tmp | xargs cp -f"],
     ["xargs cp targeting protected file", "find /tmp -name '*.md' | xargs cp IDENTITY.md"],
@@ -330,6 +334,7 @@ describe("blockDangerousCommands", () => {
     ["find -exec rm (deletes matched files)", "find . -name '*.tmp' -exec rm {} +"],
     ["find -exec chmod (changes permissions)", "find . -exec chmod 777 {} \\;"],
     ["find -execdir unlink (unlinks via execdir)", "find . -name '*.log' -execdir unlink {} \\;"],
+    ["find -exec shred (irreversibly deletes matched files)", "find . -name '*.ts' -exec shred -zuf {} \\;"],
     // install(1) — copies files with arbitrary permissions
     ["install -m 777 (world-writable)", "install -m 777 src dst"],
     ["install -m 755 to system path", "install -m 755 dist/index.js /usr/local/bin/bloom"],
@@ -512,6 +517,7 @@ describe("blockDangerousCommands", () => {
     ["sed -i on JOURNAL.md", "sed -i 's/foo/bar/' JOURNAL.md"],
     ["perl -pi -e on JOURNAL.md", "perl -pi -e 's/x/y/' JOURNAL.md"],
     ["truncate on JOURNAL.md", "truncate -s 0 JOURNAL.md"],
+    ["shred on JOURNAL.md", "shred -zuf JOURNAL.md"],
     ["tee (overwrite) to JOURNAL.md", "echo x | tee JOURNAL.md"],
     ["git checkout -- JOURNAL.md", "git checkout -- JOURNAL.md"],
     ["git restore JOURNAL.md", "git restore JOURNAL.md"],
@@ -1010,8 +1016,9 @@ describe("isDangerousCommand", () => {
     // safe file-truncation: truncate as an argument/word, not as a command
     ["grep truncate as word (not the command)", "grep truncate src/safety.ts"],
     ["cat file named truncate.md (not the command)", "cat truncate.md"],
-    // safe file-deletion: unlink as an argument/word, not as a command
+    // safe file-deletion: unlink/shred as an argument/word, not as a command
     ["grep unlink as word (not the command)", "grep unlink safety.ts"],
+    ["cat file with shred in name (not the command)", "cat shred-report.md"],
     ["echo message with unlink word", "echo 'unlink removes a file'"],
     // safe find: no -exec, -execdir, or -delete flag → plain listing
     ["find listing by name (no -exec)", "find . -name '*.ts'"],
@@ -1890,8 +1897,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 158 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(158);
+  it("has exactly 160 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(160);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2015,10 +2022,14 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "truncate -s 0 src/file.ts",
       // file-deletion (standalone unlink — appears before xargs dd in DANGEROUS_PATTERNS)
       "unlink src/file.ts",
+      // file-deletion (standalone shred — irreversibly overwrites and deletes files)
+      "shred -zuf src/file.ts",
       // xargs-command-execution (dd, truncate, unlink, mv, cp, install, sed, tee)
       "find . | xargs dd if=/dev/zero",
       "find logs | xargs truncate -s 0",
       "find . -name '*.tmp' | xargs unlink",
+      // xargs-command-execution (shred — irreversible deletion via xargs)
+      "find . -name '*.ts' | xargs shred -zuf",
       "find . -name '*.bak' | xargs mv /tmp/",
       "find . -name '*.conf' | xargs cp /etc/",
       "find dist -name '*.so' | xargs install -m 755",

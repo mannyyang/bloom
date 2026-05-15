@@ -299,6 +299,12 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Anchored to command-start boundaries (^, ;, &, |) to avoid false positives on commands
   // that merely mention "unlink" as an argument (e.g. grep unlink safety.ts, cat unlink.md).
   { pattern: /(?:^|[;&|]\s*)unlink\b/, category: "file-deletion" },
+  // Bare file-overwrite-and-delete — shred irreversibly overwrites and removes files
+  // (e.g. shred -zuf src/safety.ts) without requiring rm or xargs.  Asymmetric with truncate
+  // and unlink: both are already guarded here; shred now joins them.
+  // Anchored to command-start boundaries (^, ;, &, |) to avoid false positives on commands
+  // that merely mention "shred" as an argument (e.g. grep shred safety.ts).
+  { pattern: /(?:^|[;&|]\s*)shred\b/, category: "file-deletion" },
   // xargs with file-destroying commands — can wipe all matched files when fed paths from find.
   // Flag-aware prefix (?:-\S+(?:\s+\S+)?\s+)* allows xargs flags (e.g. -0, -I {}, -n 1) before
   // the command word but prevents false positives like `xargs grep truncate` where truncate/dd/mv
@@ -306,6 +312,7 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bxargs\s+(?:-\S+(?:\s+\S+)?\s+)*dd\b/, category: "xargs-command-execution" },
   { pattern: /\bxargs\s+(?:-\S+(?:\s+\S+)?\s+)*truncate\b/, category: "xargs-command-execution" },
   { pattern: /\bxargs\s+(?:-\S+(?:\s+\S+)?\s+)*unlink\b/, category: "xargs-command-execution" },
+  { pattern: /\bxargs\s+(?:-\S+(?:\s+\S+)?\s+)*shred\b/, category: "xargs-command-execution" },
   { pattern: /\bxargs\s+(?:-\S+(?:\s+\S+)?\s+)*mv\b/, category: "xargs-command-execution" },
   // xargs cp — can bulk-overwrite protected targets (e.g. find /tmp | xargs cp IDENTITY.md)
   { pattern: /\bxargs\s+(?:-\S+(?:\s+\S+)?\s+)*cp\b/, category: "xargs-command-execution" },
@@ -350,7 +357,7 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // sed is included because `find -exec sed -i` can bulk-modify source files in-place
   // Anchored to command-start boundaries (^, ;, &, |) — same rationale as find-exec-shell above.
   {
-    pattern: /(?:^|[;&|]\s*)\bfind\b.*-exec(?:dir)?\s+(?:rm|unlink|chmod|chown|mv|cp|dd|truncate|tee|sed|install)\b/,
+    pattern: /(?:^|[;&|]\s*)\bfind\b.*-exec(?:dir)?\s+(?:rm|unlink|shred|chmod|chown|mv|cp|dd|truncate|tee|sed|install)\b/,
     category: "find-exec-destructive",
   },
   // find -delete — built-in find action that deletes matched files/dirs without requiring -exec rm;
