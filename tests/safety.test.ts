@@ -1029,6 +1029,12 @@ describe("category: privilege-escalation", () => {
   it("does not flag su without -c flag", () => {
     expect(isDangerousCommand("su root")).toBeNull();
   });
+  it("does not flag sudoedit (word boundary excludes sudoedit from sudo pattern)", () => {
+    expect(isDangerousCommand("sudoedit /etc/sudoers.d/bloom")).toBeNull();
+  });
+  it("does not flag su --login (no -c flag)", () => {
+    expect(isDangerousCommand("su --login")).toBeNull();
+  });
 });
 
 describe("category: process-tracing", () => {
