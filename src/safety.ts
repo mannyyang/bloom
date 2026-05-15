@@ -215,7 +215,8 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /(?:^|[;&|]\s*)bunx\s/, category: "untrusted-package-execution" },
   { pattern: /(?:^|[;&|]\s*)bun\s+x\s/, category: "untrusted-package-execution" },
   // Git ref destruction — force-delete branches, delete reflog, prune objects, delete tags, delete remote refs
-  { pattern: /git\s+branch\s+(-D|--delete\s+--force)\b/, category: "git-ref-destruction" },
+  // Covers: git branch -D <ref>  AND  git branch --delete --force <ref>  (both orderings of long flags)
+  { pattern: /git\s+branch\s+(?:-D\b|(?=.*--delete\b)(?=.*--force\b))/, category: "git-ref-destruction" },
   { pattern: /git\s+push\s+(?:.*\s)?(?:-d\b|--delete\b)/, category: "git-ref-destruction" },
   // Git ref destruction — colon-prefix refspec (:<ref>) signals "delete remote ref" without --delete flag
   { pattern: /git\s+push\s+(?:.*\s)?:\S+/, category: "git-ref-destruction" },

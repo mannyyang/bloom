@@ -281,6 +281,7 @@ describe("blockDangerousCommands", () => {
     ["git push origin :v1.0.0 (colon-delete tag)", "git push origin :v1.0.0"],
     ["git branch -D main", "git branch -D main"],
     ["git branch --delete --force main", "git branch --delete --force main"],
+    ["git branch --force --delete main (flags reversed)", "git branch --force --delete main"],
     ["git reflog delete", "git reflog delete HEAD@{0}"],
     ["git reflog expire --expire=now --all", "git reflog expire --expire=now --all"],
     ["git reflog expire --expire-unreachable=now", "git reflog expire --expire-unreachable=now"],
