@@ -2460,32 +2460,31 @@ describe("category: disk-destruction", () => {
 });
 
 describe("category: git-ref-destruction", () => {
-  it("blocks git push --delete to remove a remote branch", () => {
-    expect(isDangerousCommand("git push --delete origin feature-branch")).toBe("git-ref-destruction");
+  it.each([
+    ["git push --delete origin branch", "git push --delete origin feature-branch"],
+    ["git push -d shorthand", "git push -d origin old-branch"],
+    ["git reflog delete", "git reflog delete HEAD@{0}"],
+    ["git reflog expire", "git reflog expire --expire=now --all"],
+    ["git gc --prune=now", "git gc --prune=now"],
+    ["git gc --prune=all", "git gc --prune=all"],
+    ["colon-prefix refspec", "git push origin :refs/heads/main"],
+    ["git branch -D force-delete", "git branch -D stale-feature"],
+    ["git tag -d delete tag", "git tag -d v1.0.0"],
+    ["git tag --delete", "git tag --delete v2.3.1"],
+    ["git switch -C force-create branch", "git switch -C main"],
+    ["git switch -C with target", "git switch -C feature origin/feature"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("git-ref-destruction");
   });
-  it("blocks git push -d shorthand for remote branch deletion", () => {
-    expect(isDangerousCommand("git push -d origin old-branch")).toBe("git-ref-destruction");
-  });
-  it("blocks git reflog delete", () => {
-    expect(isDangerousCommand("git reflog delete HEAD@{0}")).toBe("git-ref-destruction");
-  });
-  it("blocks git reflog expire", () => {
-    expect(isDangerousCommand("git reflog expire --expire=now --all")).toBe("git-ref-destruction");
-  });
-  it("blocks git gc --prune=now", () => {
-    expect(isDangerousCommand("git gc --prune=now")).toBe("git-ref-destruction");
-  });
-  it("blocks colon-prefix refspec (delete remote ref without --delete)", () => {
-    expect(isDangerousCommand("git push origin :refs/heads/main")).toBe("git-ref-destruction");
-  });
-  it("does not flag git push origin main — safe push without delete flags", () => {
-    expect(isDangerousCommand("git push origin main")).toBeNull();
-  });
-  it("does not flag git branch -d feature — safe lowercase delete (merged only)", () => {
-    expect(isDangerousCommand("git branch -d feature-branch")).toBeNull();
-  });
-  it("does not flag git gc without prune flags — safe garbage collection", () => {
-    expect(isDangerousCommand("git gc")).toBeNull();
+
+  it.each([
+    ["git push origin main (safe push)", "git push origin main"],
+    ["git branch -d feature (merged-only delete)", "git branch -d feature-branch"],
+    ["git gc bare (no prune flags)", "git gc"],
+    ["git tag v1.0.0 (creating a tag, not deleting)", "git tag v1.0.0"],
+    ["git switch main (no -C flag)", "git switch main"],
+  ])("allows %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).not.toBe("git-ref-destruction");
   });
 });
 
