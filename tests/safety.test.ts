@@ -1876,8 +1876,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 153 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(153);
+  it("has exactly 154 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(154);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2007,6 +2007,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "git stash drop stash@{0}",
       // file-permission-tampering
       "install -m 777 src dst",
+      "install --mode=777 src dst",
       // awk-code-execution
       "awk 'system(\"id\")'",
       "awk '{print | \"bash\"}'",
@@ -2955,12 +2956,16 @@ describe("category: file-deletion", () => {
 });
 
 describe("category: file-permission-tampering", () => {
-  it("blocks install -m 777", () => {
-    expect(isDangerousCommand("install -m 777 src dst")).toBe("file-permission-tampering");
+  it.each([
+    ["install -m 777 (short flag)", "install -m 777 src dst"],
+    ["install -Dm 755 (combined flags embed -m)", "install -Dm 755 src dst"],
+    ["install --mode=777 (long flag, long-form bypass)", "install --mode=777 src dst"],
+    ["install --mode 755 (long flag with space)", "install --mode 755 src dst"],
+    ["chained: && install -m 755 (mid-chain)", "build.sh && install -m 755 src dst"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("file-permission-tampering");
   });
-  it("blocks install -Dm 755 (combined flags embed -m)", () => {
-    expect(isDangerousCommand("install -Dm 755 src dst")).toBe("file-permission-tampering");
-  });
+
   it("allows install -D without -m flag (no permission override)", () => {
     expect(isDangerousCommand("install -D src dst")).toBeNull();
   });
