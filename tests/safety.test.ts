@@ -2759,8 +2759,16 @@ describe("category: inline-code-execution", () => {
     expect(isDangerousCommand(command)).toBe("inline-code-execution");
   });
 
-  it("does not flag plain node invocation without -e/-c flags", () => {
-    expect(isDangerousCommand("node index.js")).toBeNull();
+  it.each([
+    ["node index.js (no -e flag)", "node index.js"],
+    ["ruby -v (version, not -e)", "ruby -v"],
+    ["perl -v (version, not -e/-E)", "perl -v"],
+    ["python3 script.py (file, not -c)", "python3 script.py"],
+    ["node --version (version flag)", "node --version"],
+    ["lua script.lua (file, not -e)", "lua script.lua"],
+    ["php script.php (file, not -r)", "php script.php"],
+  ])("allows %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).not.toBe("inline-code-execution");
   });
 });
 
