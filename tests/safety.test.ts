@@ -916,6 +916,9 @@ describe("isDangerousCommand", () => {
     // env-interpreter-bypass (bash -c is shadowed by arbitrary-code-execution; use interpreters checked later)
     ["env python3 -c bypass", "env python3 -c 'import os; os.system(\"id\")'", "env-interpreter-bypass"],
     ["env perl -e bypass", "env perl -e 'system(\"id\")'", "env-interpreter-bypass"],
+    // env -S split-string bypass — hides interpreter inside a quoted string
+    ["env -S split-string bypass", "env -S 'python3 /tmp/evil.py'", "env-interpreter-bypass"],
+    ["env -S with flag before -S flag", "env -u PATH -S 'python3 /tmp/evil.py'", "env-interpreter-bypass"],
     // dangerous-recursive-chmod
     ["chmod -R on /", "chmod -R 777 /", "dangerous-recursive-chmod"],
     ["chmod -R on ~", "chmod -R 777 ~", "dangerous-recursive-chmod"],
@@ -989,6 +992,8 @@ describe("isDangerousCommand", () => {
     ["bare env command (no interpreter)", "env"],
     ["env piped to grep (no inline -e/-c flag)", "env | grep PATH"],
     ["env interpreter without inline-code flag (safe script)", "env python3 script.py"],
+    // grep for 'env -S arg' in source code is safe — env is inside a quoted grep pattern
+    ["grep for env -S string in source (not a command)", "grep 'env -S arg' src/safety.ts"],
     // safe python3 -m: common dev-tooling modules must not be blocked
     ["python3 -m json.tool (safe — not http.server)", "python3 -m json.tool"],
     ["python3 -m venv (safe — not http.server)", "python3 -m venv myenv"],
@@ -1885,8 +1890,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 157 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(157);
+  it("has exactly 158 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(158);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -1940,6 +1945,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "csh -c 'malicious'",
       // env-interpreter-bypass
       "env bash -c 'malicious'",
+      // env-interpreter-bypass (env -S split-string variant)
+      "env -S 'python3 /tmp/evil.py'",
       // inline-code-execution
       "python3 -c 'import os'",
       "node -e 'process.exit(1)'",

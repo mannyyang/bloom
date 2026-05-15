@@ -184,6 +184,15 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
     pattern: /(?:^|[;&|]\s*)env\s+(?:\S+\s+)*(?:[\w./]*\/)?(?:(?:ba|z|da|k|a)?sh|fish|t?csh|python3?|perl|ruby|node|deno|bun|lua|php)\s+(?:-c\b|-e\b|-E\b|-r\b|--eval\b)/,
     category: "env-interpreter-bypass",
   },
+  // env -S interpreter bypass — `env -S "bash -c 'cmd'"` tells env to split its next argument
+  // string into tokens at runtime, hiding the interpreter name inside a quoted string that the
+  // pattern above never sees.  -S has no legitimate use in Bloom's pipeline.
+  // Anchored to command boundaries (^, ;, &, |) to avoid false positives in grep/documentation.
+  // The (?:\S+\s+)* group allows env-var settings or other flags before -S.
+  {
+    pattern: /(?:^|[;&|]\s*)env\s+(?:\S+\s+)*-S\b/,
+    category: "env-interpreter-bypass",
+  },
   // Inline interpreter code execution — functionally equivalent to sh -c
   { pattern: /\b(?:python3?|python3\.\d+)\s+-c\b/, category: "inline-code-execution" },
   { pattern: /\bnode\s+(?:-e|--eval)\b/, category: "inline-code-execution" },
