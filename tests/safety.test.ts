@@ -2653,6 +2653,15 @@ describe("category: data-exfiltration-server", () => {
   it("allows php -v (version flag, not -S server)", () => {
     expect(isDangerousCommand("php -v")).toBeNull();
   });
+  it("allows python3 -m json.tool (not http.server)", () => {
+    expect(isDangerousCommand("python3 -m json.tool")).toBeNull();
+  });
+  it("allows python3 -m venv (not http.server)", () => {
+    expect(isDangerousCommand("python3 -m venv .venv")).toBeNull();
+  });
+  it("allows python3 -m compileall (not http.server)", () => {
+    expect(isDangerousCommand("python3 -m compileall src/")).toBeNull();
+  });
 });
 
 describe("category: reverse-shell (mkfifo)", () => {
