@@ -296,7 +296,9 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /git\s+stash\s+clear\b/, category: "git-stash-destruction" },
   { pattern: /git\s+stash\s+drop\b/, category: "git-stash-destruction" },
   // install(1) — Unix install utility copies files and sets arbitrary permissions with -m
-  { pattern: /\binstall\s+(?:.*\s)?-[a-zA-Z]*m\b/, category: "file-permission-tampering" },
+  // Anchored to command-start boundaries (^, ;, &, |) to avoid false positives when "install -m"
+  // appears as a grep/echo argument (e.g. grep 'install -m 755' Makefile or echo "install -m 755").
+  { pattern: /(?:^|[;&|]\s*)\binstall\s+(?:.*\s)?-[a-zA-Z]*m\b/, category: "file-permission-tampering" },
   // awk with system() call — executes arbitrary shell commands from within awk
   { pattern: /\bawk\b.*\bsystem\s*\(/, category: "awk-code-execution" },
   // awk piping to a shell or scripting interpreter — awk '{print | "bash"}' / awk '{print | "python3"}' etc.

@@ -2952,4 +2952,10 @@ describe("category: file-permission-tampering", () => {
   it("allows install -D without -m flag (no permission override)", () => {
     expect(isDangerousCommand("install -D src dst")).toBeNull();
   });
+  it("does not flag grep searching for install pattern (argument, not command)", () => {
+    expect(isDangerousCommand("grep 'install -D src' Makefile")).toBeNull();
+  });
+  it("does not flag echo message mentioning install (not a command invocation)", () => {
+    expect(isDangerousCommand("echo 'run: install -D src dst'")).toBeNull();
+  });
 });
