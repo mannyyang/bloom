@@ -2656,8 +2656,15 @@ describe("category: env-interpreter-bypass", () => {
     expect(isDangerousCommand("env | grep PATH")).toBeNull();
   });
 
-  it("does not flag env interpreter without inline-code flag", () => {
-    expect(isDangerousCommand("env python3 script.py")).toBeNull();
+  // Regression pins: VAR=value prefix and bare flag prefix must not be blocked
+  // when the interpreter is followed by a script file (no inline-code flag).
+  // These document that (?:\S+\s+)* correctly skips env-var assignments and flags.
+  it.each([
+    ["env VAR=value python3 script.py", "env VAR=value python3 script.py"],
+    ["env -i node server.js", "env -i node server.js"],
+    ["env PATH=/usr/bin ruby app.rb", "env PATH=/usr/bin ruby app.rb"],
+  ])("does not flag safe env invocation: %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBeNull();
   });
 });
 
