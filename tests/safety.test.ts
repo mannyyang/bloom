@@ -1050,6 +1050,12 @@ describe("category: process-tracing", () => {
   it("does not flag reading proc filesystem directly", () => {
     expect(isDangerousCommand("cat /proc/1/maps")).toBeNull();
   });
+  it("does not flag ps aux (general process listing, not tracing)", () => {
+    expect(isDangerousCommand("ps aux")).toBeNull();
+  });
+  it("does not flag lsof for file-descriptor inspection", () => {
+    expect(isDangerousCommand("lsof -p 1234")).toBeNull();
+  });
 });
 
 describe("category: kernel-module-loading", () => {
