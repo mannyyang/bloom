@@ -2190,6 +2190,43 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
   });
 });
 
+describe("category: env-var-injection", () => {
+  it.each([
+    ["LD_PRELOAD assignment", "LD_PRELOAD=/tmp/evil.so command"],
+    ["LD_LIBRARY_PATH assignment", "LD_LIBRARY_PATH=/tmp/evil_libs:$LD_LIBRARY_PATH command"],
+    ["PYTHONPATH assignment", "PYTHONPATH=/tmp/evil python3 app.py"],
+    ["NODE_PATH assignment", "NODE_PATH=/tmp/evil node index.js"],
+    ["PERL5LIB assignment", "PERL5LIB=/tmp/evil perl script.pl"],
+    ["RUBYOPT assignment", "RUBYOPT=-r/tmp/evil ruby app.rb"],
+    ["RUBYLIB assignment", "RUBYLIB=/tmp/evil ruby app.rb"],
+    ["PYTHONSTARTUP assignment", "PYTHONSTARTUP=/tmp/evil.py python3"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("env-var-injection");
+  });
+
+  it("does not flag echo $PYTHONPATH (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $PYTHONPATH")).toBeNull();
+  });
+  it("does not flag echo $NODE_PATH (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $NODE_PATH")).toBeNull();
+  });
+  it("does not flag echo $LD_PRELOAD (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $LD_PRELOAD")).toBeNull();
+  });
+  it("does not flag echo $LD_LIBRARY_PATH (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $LD_LIBRARY_PATH")).toBeNull();
+  });
+  it("does not flag echo $PERL5LIB (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $PERL5LIB")).toBeNull();
+  });
+  it("does not flag echo $RUBYLIB (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $RUBYLIB")).toBeNull();
+  });
+  it("does not flag echo $PYTHONSTARTUP (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $PYTHONSTARTUP")).toBeNull();
+  });
+});
+
 describe("escapeRegex", () => {
   it("returns plain strings unchanged", () => {
     expect(escapeRegex("hello")).toBe("hello");
