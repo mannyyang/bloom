@@ -2190,6 +2190,31 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
   });
 });
 
+describe("category: shell-script-execution", () => {
+  it.each([
+    ["source bare", "source /tmp/evil.sh"],
+    ["source with relative path", "source ./setup.sh"],
+    ["source after semicolon", "echo hi; source /tmp/payload.sh"],
+    ["source after &&", "cd /tmp && source setup.sh"],
+    ["source after ||", "test -f x || source fallback.sh"],
+    ["dot-script bare", ". /tmp/evil.sh"],
+    ["dot-script after semicolon", "echo hi; . /tmp/evil.sh"],
+    ["dot-script after &&", "cd /tmp && . setup.sh"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("shell-script-execution");
+  });
+
+  it("does not flag ./script.sh (dot-slash invocation, not dot-script)", () => {
+    expect(isDangerousCommand("./script.sh")).toBeNull();
+  });
+  it("does not flag 'source' inside a git commit message", () => {
+    expect(isDangerousCommand('git commit -m "add source files"')).toBeNull();
+  });
+  it("does not flag 'source' inside an echo string", () => {
+    expect(isDangerousCommand('echo "open source rocks"')).toBeNull();
+  });
+});
+
 describe("category: env-var-injection", () => {
   it.each([
     ["LD_PRELOAD assignment", "LD_PRELOAD=/tmp/evil.so command"],
