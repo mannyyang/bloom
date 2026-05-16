@@ -516,6 +516,16 @@ describe("blockDangerousCommands", () => {
     ["gem install <pkg>", "gem install evil-gem"],
     ["go install <pkg>", "go install github.com/evil/pkg@latest"],
     ["go get <pkg>", "go get github.com/evil/pkg"],
+    // Untrusted package installation (dnf/yum — Fedora/RHEL/CentOS/Amazon Linux)
+    ["dnf install <pkg>", "dnf install evil-pkg"],
+    ["yum install <pkg>", "yum install evil-pkg"],
+    ["dnf upgrade <pkg>", "dnf upgrade evil-pkg"],
+    ["yum update <pkg>", "yum update evil-pkg"],
+    // System package removal (dnf/yum)
+    ["dnf remove <pkg>", "dnf remove git"],
+    ["dnf erase <pkg>", "dnf erase node"],
+    ["yum remove <pkg>", "yum remove git"],
+    ["yum erase <pkg>", "yum erase node"],
     // JOURNAL.md modifications
     ["overwrite redirect to JOURNAL.md", 'echo "pwned" > JOURNAL.md'],
     ["rm JOURNAL.md", "rm JOURNAL.md"],
@@ -607,6 +617,8 @@ describe("blockDangerousCommands", () => {
     ["apt upgrade (no package)", "apt upgrade"],
     ["apt-get upgrade (no package)", "apt-get upgrade"],
     ["snap refresh (no package)", "snap refresh"],
+    ["dnf upgrade (no package)", "dnf upgrade"],
+    ["yum update (no package)", "yum update"],
     ["npm install && npm run build", "npm install && npm run build"],
     ["npm install --legacy-peer-deps", "npm install --legacy-peer-deps"],
     ["npm install --save-dev", "npm install --save-dev"],
@@ -848,6 +860,10 @@ describe("isDangerousCommand", () => {
     ["brew install <pkg> with flag", "brew install --cask evil-app", "untrusted-package-installation"],
     ["snap install <pkg>", "snap install evil-snap", "untrusted-package-installation"],
     ["snap install <pkg> with flag", "snap install --dangerous evil-snap", "untrusted-package-installation"],
+    ["dnf install <pkg>", "dnf install evil-pkg", "untrusted-package-installation"],
+    ["yum install <pkg>", "yum install evil-pkg", "untrusted-package-installation"],
+    ["dnf upgrade <pkg>", "dnf upgrade evil-pkg", "untrusted-package-installation"],
+    ["yum update <pkg>", "yum update evil-pkg", "untrusted-package-installation"],
     // system-package-removal: apt/brew/snap removal commands
     ["apt remove <pkg>", "apt remove git", "system-package-removal"],
     ["apt-get remove <pkg>", "apt-get remove git", "system-package-removal"],
@@ -858,6 +874,10 @@ describe("isDangerousCommand", () => {
     ["brew uninstall <pkg> with flag", "brew uninstall --force evil-formula", "system-package-removal"],
     ["snap remove <pkg>", "snap remove git", "system-package-removal"],
     ["snap revert <pkg>", "snap revert node", "system-package-removal"],
+    ["dnf remove <pkg>", "dnf remove git", "system-package-removal"],
+    ["dnf erase <pkg>", "dnf erase node", "system-package-removal"],
+    ["yum remove <pkg>", "yum remove git", "system-package-removal"],
+    ["yum erase <pkg>", "yum erase node", "system-package-removal"],
     // named package upgrades (equivalent to fresh remote-code install)
     ["brew upgrade <pkg>", "brew upgrade evil-formula", "untrusted-package-installation"],
     ["brew upgrade <pkg> with flag", "brew upgrade --greedy evil-formula", "untrusted-package-installation"],
@@ -1015,6 +1035,9 @@ describe("isDangerousCommand", () => {
     ["echo $RUBYLIB (safe — read, not set)", "echo $RUBYLIB"],
     ["echo $PYTHONSTARTUP (safe — read, not set)", "echo $PYTHONSTARTUP"],
     ["echo $PERL5LIB (safe — read, not set)", "echo $PERL5LIB"],
+    // safe dnf/yum: bare upgrade/update without a named package is allowed
+    ["bare dnf upgrade (no package)", "dnf upgrade"],
+    ["bare yum update (no package)", "yum update"],
     // safe env-interpreter-bypass: bare env and env without inline-code flag
     ["bare env command (no interpreter)", "env"],
     ["env piped to grep (no inline -e/-c flag)", "env | grep PATH"],
@@ -1325,8 +1348,21 @@ describe("category: untrusted-package-installation", () => {
     ["apt upgrade named package", "apt upgrade evil-pkg"],
     ["apt-get upgrade with -y flag", "apt-get upgrade -y evil-pkg"],
     ["snap refresh named package", "snap refresh evil-snap"],
+    // dnf/yum — Fedora/RHEL/CentOS/Amazon Linux
+    ["dnf install named package", "dnf install evil-pkg"],
+    ["yum install named package", "yum install evil-pkg"],
+    ["dnf upgrade named package", "dnf upgrade evil-pkg"],
+    ["yum update named package", "yum update evil-pkg"],
   ])("blocks %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("untrusted-package-installation");
+  });
+
+  it("does not flag bare dnf upgrade (system refresh, no named package)", () => {
+    expect(isDangerousCommand("dnf upgrade")).toBeNull();
+  });
+
+  it("does not flag bare yum update (system refresh, no named package)", () => {
+    expect(isDangerousCommand("yum update")).toBeNull();
   });
 
   it("does not flag bare pnpm install (lockfile sync, no named package)", () => {
@@ -1357,6 +1393,11 @@ describe("category: system-package-removal", () => {
     ["brew uninstall with --force flag", "brew uninstall --force evil-formula"],
     ["snap remove package", "snap remove git"],
     ["snap revert package", "snap revert node"],
+    // dnf/yum — Fedora/RHEL/CentOS/Amazon Linux
+    ["dnf remove package", "dnf remove git"],
+    ["dnf erase package", "dnf erase node"],
+    ["yum remove package", "yum remove git"],
+    ["yum erase package", "yum erase node"],
   ])("blocks %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("system-package-removal");
   });
