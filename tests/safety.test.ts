@@ -1291,6 +1291,9 @@ describe("category: untrusted-package-installation", () => {
     ["npm i named package (short)", "npm i evil-pkg"],
     ["yarn add package", "yarn add malicious-package"],
     ["pnpm add package", "pnpm add malicious-pkg"],
+    ["pnpm install named package", "pnpm install evil-pkg"],
+    ["pnpm i named package (short alias)", "pnpm i evil-pkg"],
+    ["pnpm install with --save-dev flag", "pnpm install --save-dev evil-pkg"],
     ["bun add package", "bun add malicious-pkg"],
     ["bun install named package", "bun install evil-pkg"],
     ["bun i named package (short)", "bun i evil-pkg"],
@@ -1324,6 +1327,10 @@ describe("category: untrusted-package-installation", () => {
     ["snap refresh named package", "snap refresh evil-snap"],
   ])("blocks %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("untrusted-package-installation");
+  });
+
+  it("does not flag bare pnpm install (lockfile sync, no named package)", () => {
+    expect(isDangerousCommand("pnpm install")).toBeNull();
   });
 
   it("does not flag bare bun install (lockfile sync, no named package)", () => {
