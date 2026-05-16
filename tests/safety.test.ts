@@ -2190,6 +2190,40 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
   });
 });
 
+describe("category: inline-code-execution", () => {
+  it.each([
+    ["python -c", "python -c 'import os; os.system(\"id\")'"],
+    ["python3 -c", "python3 -c 'import subprocess'"],
+    ["python3.11 -c", "python3.11 -c 'print(1)'"],
+    ["node -e", "node -e 'console.log(1)'"],
+    ["perl -e", "perl -e 'system(\"ls\")'"],
+    ["perl -E", "perl -E 'say 1'"],
+    ["ruby -e", "ruby -e 'exec(\"ls\")'"],
+    ["deno -e", "deno -e 'Deno.run({cmd:[\"id\"]})'"],
+    ["bun -e", 'bun -e "require(\'child_process\').execSync(\'id\')"'],
+    ["lua -e", "lua -e 'os.execute(\"id\")'"],
+    ["php -r", "php -r 'system(\"id\");'"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("inline-code-execution");
+  });
+
+  it("does not flag ruby -v (version flag, not code execution)", () => {
+    expect(isDangerousCommand("ruby -v")).toBeNull();
+  });
+  it("does not flag perl -v (version flag, not code execution)", () => {
+    expect(isDangerousCommand("perl -v")).toBeNull();
+  });
+  it("does not flag node dist/index.js (plain script invocation, not -e)", () => {
+    expect(isDangerousCommand("node dist/index.js")).toBeNull();
+  });
+  it("does not flag python script.py (plain script invocation, not -c)", () => {
+    expect(isDangerousCommand("python script.py")).toBeNull();
+  });
+  it("does not flag ruby script.rb (plain script invocation, not -e)", () => {
+    expect(isDangerousCommand("ruby script.rb")).toBeNull();
+  });
+});
+
 describe("category: shell-script-execution", () => {
   it.each([
     ["source bare", "source /tmp/evil.sh"],
