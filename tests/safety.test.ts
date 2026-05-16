@@ -1417,6 +1417,9 @@ describe("category: xargs-command-execution", () => {
     ["xargs cp", "find . -name '*.conf' | xargs cp /etc/"],
     ["xargs mv", "find . -name '*.bak' | xargs mv /tmp/"],
     ["xargs dd", "find . -name 'disk.img' | xargs dd if=/dev/zero"],
+    ["xargs truncate", "find logs | xargs truncate -s 0"],
+    ["xargs unlink", "find . -name '*.tmp' | xargs unlink"],
+    ["xargs shred", "find . -name '*.ts' | xargs shred -zuf"],
     ["xargs install", "find dist -name '*.so' | xargs install -m 755"],
     // Flag-aware prefix: common short flags before the dangerous command
     ["xargs -I {} rm (replace-str flag)", "find . | xargs -I {} rm {}"],
