@@ -69,7 +69,9 @@ export function isDangerousRm(command: string): boolean {
   const hasRootPath   = /(?:^|\s)\/(?:\s|$|\*)/.test(rest);
   const hasHomePath   = /(?:^|\s)~\/?(?:\s|$|\*)/.test(rest);
   const hasCurrentDir = /(?:^|\s)\.(?:\/\*{0,2})?(?:\s|$)/.test(rest);
-  const hasParentDir  = /(?:^|\s)\.\.(?:\/)?(?:\s|$)/.test(rest);
+  // Matches .., ../, ../* and ../** — glob variants bypass the plain ../ guard.
+  // Intentionally allows ../specific-dir (sibling directory paths stay permitted).
+  const hasParentDir  = /(?:^|\s)\.\.(?:\/\*{0,2})?(?:\s|$)/.test(rest);
   const hasDangerousPath = hasRootPath || hasHomePath || hasCurrentDir || hasParentDir;
 
   // Critical system directories — no legitimate use in Bloom's context

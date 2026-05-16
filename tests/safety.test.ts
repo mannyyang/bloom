@@ -709,6 +709,8 @@ describe("isDangerousRm", () => {
     // Parent directory — wipes the entire parent of the project tree
     ["rm -rf .. (bare double-dot)", "rm -rf .."],
     ["rm -rf ../ (double-dot-slash)", "rm -rf ../"],
+    ["rm -rf ../* (parent glob all files)", "rm -rf ../*"],
+    ["rm -rf ../** (parent recursive glob)", "rm -rf ../**"],
     // Critical system directories
     ["rm -rf /etc", "rm -rf /etc"],
     ["rm -rf /usr", "rm -rf /usr"],
