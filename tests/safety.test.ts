@@ -434,6 +434,11 @@ describe("blockDangerousCommands", () => {
     ["perl -e", 'perl -e "system(\'ls\')"'],
     ["perl -E", 'perl -E "say 1"'],
     ["ruby -e", 'ruby -e "exec(\'ls\')"'],
+    // deno -e / bun -e / lua -e / php -r — inline code execution flags matched by specific patterns
+    ["deno -e", "deno -e 'Deno.run({cmd:[\"id\"]})'"],
+    ["bun -e", 'bun -e "require(\'child_process\').execSync(\'id\')"'],
+    ["lua -e", "lua -e 'os.execute(\"id\")'"],
+    ["php -r", "php -r 'system(\"id\");'"],
     // deno eval / bun eval — caught by existing \beval\s catch-all as arbitrary-code-execution
     ["deno eval", "deno eval 'Deno.run({cmd:[\"id\"]})'"],
     ["bun eval", 'bun eval "require(\'child_process\').execSync(\'id\')"'],
