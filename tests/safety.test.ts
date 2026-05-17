@@ -1632,6 +1632,7 @@ describe("category: arbitrary-code-execution", () => {
   it.each([
     ["eval", 'eval "rm -rf /"'],
     ["eval with variable expansion", "eval $PAYLOAD"],
+    ["node --eval (eval word triggers pattern)", 'node --eval "process.exit()"'],
     ["bash -c", 'bash -c "malicious command"'],
     ["sh -c", 'sh -c "malicious command"'],
     ["/bin/sh -c", '/bin/sh -c "malicious"'],
