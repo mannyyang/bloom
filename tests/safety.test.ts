@@ -2356,6 +2356,15 @@ describe("category: env-var-injection", () => {
   it("does not flag echo $PYTHONSTARTUP (read, not assignment)", () => {
     expect(isDangerousCommand("echo $PYTHONSTARTUP")).toBeNull();
   });
+  it("does not flag echoing $RUBYOPT (read-only)", () => {
+    expect(isDangerousCommand("echo $RUBYOPT")).toBeNull();
+  });
+  it("allows plain env var assignment without dangerous loaders (NODE_ENV)", () => {
+    expect(isDangerousCommand("NODE_ENV=production pnpm build")).toBeNull();
+  });
+  it("does not flag reading LD_PRELOAD via printenv (read-only)", () => {
+    expect(isDangerousCommand("printenv LD_PRELOAD")).toBeNull();
+  });
 });
 
 describe("category: env-interpreter-bypass", () => {
@@ -2363,6 +2372,11 @@ describe("category: env-interpreter-bypass", () => {
     ["env python3 -c bypass", "env python3 -c 'import os; os.system(\"id\")'"],
     ["env -S split-string bypass", "env -S 'python3 /tmp/evil.py'"],
     ["env -S with flag before -S", "env -u PATH -S 'python3 /tmp/evil.py'"],
+    ["env node -e inline eval", "env node -e 'require(\"child_process\").exec(\"id\")'"],
+    ["env perl -e inline eval", "env perl -e 'system(\"id\")'"],
+    ["env ruby -e inline eval", "env ruby -e 'exec(\"id\")'"],
+    ["chained: ; env python3 -c", "setup.sh; env python3 -c 'payload'"],
+    ["chained: && env node -e", "echo hi && env node -e 'cmd'"],
   ])("blocks %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("env-interpreter-bypass");
   });
@@ -2375,6 +2389,16 @@ describe("category: env-interpreter-bypass", () => {
   });
   it("does not flag env | grep PATH (read-only pipe, no interpreter flag)", () => {
     expect(isDangerousCommand("env | grep PATH")).toBeNull();
+  });
+
+  // Regression pins: VAR=value prefix and bare flag prefix must not be blocked
+  // when the interpreter is followed by a script file (no inline-code flag).
+  it.each([
+    ["env VAR=value python3 script.py", "env VAR=value python3 script.py"],
+    ["env -i node server.js", "env -i node server.js"],
+    ["env PATH=/usr/bin ruby app.rb", "env PATH=/usr/bin ruby app.rb"],
+  ])("does not flag safe env invocation: %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBeNull();
   });
 });
 
@@ -2873,76 +2897,6 @@ describe("category: persistence (systemctl)", () => {
   });
 });
 
-describe("category: env-var-injection", () => {
-  it("blocks LD_PRELOAD= shared-library injection", () => {
-    expect(isDangerousCommand("LD_PRELOAD=/tmp/evil.so command")).toBe("env-var-injection");
-  });
-  it("blocks LD_LIBRARY_PATH= injection", () => {
-    expect(isDangerousCommand("LD_LIBRARY_PATH=/tmp/evil_libs:$LD_LIBRARY_PATH command")).toBe("env-var-injection");
-  });
-  it("blocks PYTHONPATH= interpreter search-path injection", () => {
-    expect(isDangerousCommand("PYTHONPATH=/tmp/evil python3 app.py")).toBe("env-var-injection");
-  });
-  it("blocks NODE_PATH= interpreter search-path injection", () => {
-    expect(isDangerousCommand("NODE_PATH=/tmp/evil node index.js")).toBe("env-var-injection");
-  });
-  it("blocks PERL5LIB= interpreter search-path injection", () => {
-    expect(isDangerousCommand("PERL5LIB=/tmp/evil perl script.pl")).toBe("env-var-injection");
-  });
-  it("blocks RUBYOPT= Ruby startup-file injection", () => {
-    expect(isDangerousCommand("RUBYOPT=-r/tmp/evil ruby app.rb")).toBe("env-var-injection");
-  });
-  it("blocks RUBYLIB= Ruby load-path injection", () => {
-    expect(isDangerousCommand("RUBYLIB=/tmp/evil ruby app.rb")).toBe("env-var-injection");
-  });
-  it("blocks PYTHONSTARTUP= Python startup-file injection", () => {
-    expect(isDangerousCommand("PYTHONSTARTUP=/tmp/evil.py python3")).toBe("env-var-injection");
-  });
-  it("does not flag echoing $RUBYOPT (read-only)", () => {
-    expect(isDangerousCommand("echo $RUBYOPT")).toBeNull();
-  });
-  it("allows plain env var assignment without LD_PRELOAD/LD_LIBRARY_PATH", () => {
-    expect(isDangerousCommand("NODE_ENV=production pnpm build")).toBeNull();
-  });
-  it("does not flag reading LD_PRELOAD (printenv)", () => {
-    expect(isDangerousCommand("printenv LD_PRELOAD")).toBeNull();
-  });
-  it("does not flag echoing $NODE_PATH (read-only)", () => {
-    expect(isDangerousCommand("echo $NODE_PATH")).toBeNull();
-  });
-});
-
-describe("category: env-interpreter-bypass", () => {
-  it.each([
-    ["env python3 -c", "env python3 -c 'import os; os.system(\"id\")'"],
-    ["env node -e", "env node -e 'require(\"child_process\").exec(\"id\")'"],
-    ["env perl -e", "env perl -e 'system(\"id\")'"],
-    ["env ruby -e", "env ruby -e 'exec(\"id\")'"],
-    ["chained: ; env python3 -c", "setup.sh; env python3 -c 'payload'"],
-    ["chained: && env node -e", "echo hi && env node -e 'cmd'"],
-  ])("blocks %s", (_desc, command) => {
-    expect(isDangerousCommand(command)).toBe("env-interpreter-bypass");
-  });
-
-  it("does not flag bare env with no interpreter", () => {
-    expect(isDangerousCommand("env")).toBeNull();
-  });
-
-  it("does not flag env used to print variables", () => {
-    expect(isDangerousCommand("env | grep PATH")).toBeNull();
-  });
-
-  // Regression pins: VAR=value prefix and bare flag prefix must not be blocked
-  // when the interpreter is followed by a script file (no inline-code flag).
-  // These document that (?:\S+\s+)* correctly skips env-var assignments and flags.
-  it.each([
-    ["env VAR=value python3 script.py", "env VAR=value python3 script.py"],
-    ["env -i node server.js", "env -i node server.js"],
-    ["env PATH=/usr/bin ruby app.rb", "env PATH=/usr/bin ruby app.rb"],
-  ])("does not flag safe env invocation: %s", (_desc, command) => {
-    expect(isDangerousCommand(command)).toBeNull();
-  });
-});
 
 describe("category: data-exfiltration-server", () => {
   it("blocks python3 -m http.server", () => {
