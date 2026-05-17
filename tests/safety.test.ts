@@ -2356,6 +2356,26 @@ describe("category: env-var-injection", () => {
   });
 });
 
+describe("category: env-interpreter-bypass", () => {
+  it.each([
+    ["env python3 -c bypass", "env python3 -c 'import os; os.system(\"id\")'"],
+    ["env -S split-string bypass", "env -S 'python3 /tmp/evil.py'"],
+    ["env -S with flag before -S", "env -u PATH -S 'python3 /tmp/evil.py'"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("env-interpreter-bypass");
+  });
+
+  it("does not flag env python3 script.py (safe script invocation, no -c)", () => {
+    expect(isDangerousCommand("env python3 script.py")).toBeNull();
+  });
+  it("does not flag bare env (list environment variables)", () => {
+    expect(isDangerousCommand("env")).toBeNull();
+  });
+  it("does not flag env | grep PATH (read-only pipe, no interpreter flag)", () => {
+    expect(isDangerousCommand("env | grep PATH")).toBeNull();
+  });
+});
+
 describe("escapeRegex", () => {
   it("returns plain strings unchanged", () => {
     expect(escapeRegex("hello")).toBe("hello");
