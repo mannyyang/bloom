@@ -955,6 +955,8 @@ describe("isDangerousCommand", () => {
     ["RUBYOPT env-var injection", "RUBYOPT=-r/tmp/evil ruby app.rb", "env-var-injection"],
     ["RUBYLIB env-var injection", "RUBYLIB=/tmp/evil ruby app.rb", "env-var-injection"],
     ["PYTHONSTARTUP env-var injection", "PYTHONSTARTUP=/tmp/evil.py python3", "env-var-injection"],
+    ["LD_LIBRARY_PATH env-var injection", "LD_LIBRARY_PATH=/tmp/evil_libs command", "env-var-injection"],
+    ["PERL5LIB env-var injection", "PERL5LIB=/tmp/evil perl script.pl", "env-var-injection"],
     // process-substitution-execution
     ["process substitution bash", "tee >(bash)", "process-substitution-execution"],
     ["process substitution sh", "cmd > >(sh -c 'id')", "process-substitution-execution"],
