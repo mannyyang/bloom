@@ -3231,6 +3231,9 @@ describe("category: file-deletion", () => {
     ["bare unlink on source file", "unlink src/safety.ts"],
     ["unlink after semicolon", "build.sh; unlink src/foo.ts"],
     ["unlink after ampersand chain", "make && unlink dist/old.js"],
+    ["bare shred on source file", "shred -zuf src/foo.ts"],
+    ["shred after semicolon", "build.sh; shred src/secret.ts"],
+    ["shred after pipe chain", "echo done | shred -u tmp/data.bin"],
   ])("blocks %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("file-deletion");
   });
@@ -3239,6 +3242,8 @@ describe("category: file-deletion", () => {
     ["grep unlink (argument, not command)", "grep unlink safety.ts"],
     ["cat file named unlink.md", "cat unlink.md"],
     ["echo message with unlink word", "echo 'unlink removes a file'"],
+    ["grep shred (argument, not command)", "grep shred safety.ts"],
+    ["echo message mentioning shred", "echo 'shred overwrites files'"],
   ])("allows %s", (_desc, command) => {
     expect(isDangerousCommand(command)).not.toBe("file-deletion");
   });
