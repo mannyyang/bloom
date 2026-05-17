@@ -521,6 +521,9 @@ describe("blockDangerousCommands", () => {
     ["yum install <pkg>", "yum install evil-pkg"],
     ["dnf upgrade <pkg>", "dnf upgrade evil-pkg"],
     ["yum update <pkg>", "yum update evil-pkg"],
+    ["dnf install <pkg> in chain", "echo setup && dnf install evil-pkg"],
+    ["; yum install <pkg> in chain", "; yum install evil-pkg"],
+    ["cd /tmp && yum update <pkg> in chain", "cd /tmp && yum update evil-pkg"],
     // System package removal (dnf/yum)
     ["dnf remove <pkg>", "dnf remove git"],
     ["dnf erase <pkg>", "dnf erase node"],
@@ -654,6 +657,9 @@ describe("blockDangerousCommands", () => {
     ["echo string describing yarn add", "echo 'yarn add lodash'"],
     ["grep with pip-install as quoted arg", "grep 'pip install requests' requirements.txt"],
     ["grep with cargo-install as quoted arg", "grep 'cargo install sccache' .github/workflows/ci.yml"],
+    // Boundary-anchor regressions for dnf/yum: tokens inside grep/echo arguments are allowed.
+    ["grep with dnf-install as quoted arg", "grep 'dnf install' Dockerfile"],
+    ["echo string describing yum install", "echo 'yum install node'"],
   ])("allows %s", async (_desc, command) => {
     expectAllowed(await blockDangerousCommands(makeBashInput(command), "tool-1", hookOpts));
   });
@@ -864,6 +870,8 @@ describe("isDangerousCommand", () => {
     ["yum install <pkg>", "yum install evil-pkg", "untrusted-package-installation"],
     ["dnf upgrade <pkg>", "dnf upgrade evil-pkg", "untrusted-package-installation"],
     ["yum update <pkg>", "yum update evil-pkg", "untrusted-package-installation"],
+    ["dnf install in chain", "echo setup && dnf install evil-pkg", "untrusted-package-installation"],
+    ["; yum install in chain", "; yum install evil-pkg", "untrusted-package-installation"],
     // system-package-removal: apt/brew/snap removal commands
     ["apt remove <pkg>", "apt remove git", "system-package-removal"],
     ["apt-get remove <pkg>", "apt-get remove git", "system-package-removal"],
@@ -1038,6 +1046,9 @@ describe("isDangerousCommand", () => {
     // safe dnf/yum: bare upgrade/update without a named package is allowed
     ["bare dnf upgrade (no package)", "dnf upgrade"],
     ["bare yum update (no package)", "yum update"],
+    // safe dnf/yum: tokens inside grep/echo string arguments must not trigger
+    ["grep dnf-install in Dockerfile (quoted arg)", "grep 'dnf install' Dockerfile"],
+    ["echo describing yum install (string, not command)", "echo 'yum install node'"],
     // safe env-interpreter-bypass: bare env and env without inline-code flag
     ["bare env command (no interpreter)", "env"],
     ["env piped to grep (no inline -e/-c flag)", "env | grep PATH"],
