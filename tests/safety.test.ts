@@ -3044,6 +3044,18 @@ describe("category: git-history-rewriting", () => {
   it("does not flag git rebase without -i or --interactive", () => {
     expect(isDangerousCommand("git rebase main")).toBeNull();
   });
+
+  it("does not flag git rebase --onto (no interactive flag)", () => {
+    expect(isDangerousCommand("git rebase --onto main feature~3")).toBeNull();
+  });
+
+  it("does not flag git commit -m message containing the word amend (not a flag)", () => {
+    expect(isDangerousCommand('git commit -m "docs: amend changelog entry"')).toBeNull();
+  });
+
+  it("does not flag git log --filter=blob:none (log filter, not history rewriting)", () => {
+    expect(isDangerousCommand("git log --filter=blob:none --all")).toBeNull();
+  });
 });
 
 describe("category: shell-script-execution", () => {
