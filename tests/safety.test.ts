@@ -3020,6 +3020,12 @@ describe("category: data-exfiltration", () => {
   it("allows plain curl GET (no data flags)", () => {
     expect(isDangerousCommand("curl https://api.example.com/status")).toBeNull();
   });
+  it("allows curl -I HEAD request (no data flags)", () => {
+    expect(isDangerousCommand("curl -I https://api.example.com/health")).toBeNull();
+  });
+  it("allows curl -O file download (output flag, not data upload)", () => {
+    expect(isDangerousCommand("curl -O https://example.com/file.tar.gz")).toBeNull();
+  });
   it("allows wget plain download (no post flags)", () => {
     expect(isDangerousCommand("wget https://example.com/file.tar.gz")).toBeNull();
   });
