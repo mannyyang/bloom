@@ -2769,7 +2769,9 @@ describe("category: git-ref-destruction", () => {
     ["git reflog expire", "git reflog expire --expire=now --all"],
     ["git gc --prune=now", "git gc --prune=now"],
     ["git gc --prune=all", "git gc --prune=all"],
-    ["colon-prefix refspec", "git push origin :refs/heads/main"],
+    ["colon-prefix refspec full path", "git push origin :refs/heads/main"],
+    ["colon-prefix bare branch name", "git push origin :main"],
+    ["colon-prefix remote tag deletion", "git push origin :v1.0.0"],
     ["git branch -D force-delete", "git branch -D stale-feature"],
     ["git tag -d delete tag", "git tag -d v1.0.0"],
     ["git tag --delete", "git tag --delete v2.3.1"],
@@ -2781,6 +2783,8 @@ describe("category: git-ref-destruction", () => {
 
   it.each([
     ["git push origin main (safe push)", "git push origin main"],
+    ["git push origin main:main (local:remote mapping, no leading colon)", "git push origin main:main"],
+    ["git push origin HEAD:refs/heads/feat (source:dest, no leading colon)", "git push origin HEAD:refs/heads/feat"],
     ["git branch -d feature (merged-only delete)", "git branch -d feature-branch"],
     ["git gc bare (no prune flags)", "git gc"],
     ["git tag v1.0.0 (creating a tag, not deleting)", "git tag v1.0.0"],
