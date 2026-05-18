@@ -198,6 +198,29 @@ describe("formatPlanningContext", () => {
     expect(result.endsWith("**Current focus**: Task")).toBe(true);
   });
 
+  it("appends … ellipsis when current focus body overflows PLANNING_BODY_PREVIEW_CHARS", () => {
+    // The ellipsis character (U+2026) must be appended when cleanBody is truncated,
+    // so the LLM knows the preview is cut and the full body contains more detail.
+    const longBody = "D".repeat(PLANNING_BODY_PREVIEW_CHARS + 1);
+    const current = makeItem({ title: "Task", body: longBody });
+    const result = formatPlanningContext([], current);
+    expect(result).toContain("D".repeat(PLANNING_BODY_PREVIEW_CHARS) + "\u2026");
+  });
+
+  it("strips [since: N] then truncates with … when clean body overflows preview limit", () => {
+    // Body has a [since: N] annotation PLUS content that exceeds PLANNING_BODY_PREVIEW_CHARS
+    // after the annotation is removed.  The clean body must be truncated and … appended.
+    const baseContent = "E".repeat(PLANNING_BODY_PREVIEW_CHARS + 10);
+    const current = makeItem({ title: "Task", body: `${baseContent}\n[since: 5]` });
+    const result = formatPlanningContext([], current);
+    // Annotation must be gone
+    expect(result).not.toContain("[since: 5]");
+    // Clean body preview must be truncated with the ellipsis
+    expect(result).toContain("E".repeat(PLANNING_BODY_PREVIEW_CHARS) + "\u2026");
+    // Must not contain the full overflowing content
+    expect(result).not.toContain("E".repeat(PLANNING_BODY_PREVIEW_CHARS + 1));
+  });
+
   it("groups items by status", () => {
     const items = [
       makeItem({ title: "Backlog A", status: "Backlog" }),
