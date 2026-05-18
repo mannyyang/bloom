@@ -1450,6 +1450,9 @@ describe("category: reverse-shell", () => {
   it("does not flag nc listener piped to tee (not a shell)", () => {
     expect(isDangerousCommand("nc -l 8080 | tee access.log")).toBeNull();
   });
+  it("does not flag socat TCP-LISTEN without EXEC: or SYSTEM: (safe relay)", () => {
+    expect(isDangerousCommand("socat TCP-LISTEN:8080,fork FILE:/dev/null")).toBeNull();
+  });
 });
 
 describe("category: xargs-command-execution", () => {
