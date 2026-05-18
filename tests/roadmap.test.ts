@@ -285,6 +285,60 @@ describe("generateRoadmapOutput", () => {
     spy.mockRestore();
   });
 
+  it("does not truncate real content that only exceeds 120 chars because of a …[truncated] storage marker", () => {
+    // The strip-then-truncate order matters: if the body is
+    //   realContent (115 chars) + " …[truncated]" (14 chars) = 129 chars
+    // stripping first reduces it to 115 chars (under the 120-char limit),
+    // so no display ellipsis should be appended.  If truncation ran first,
+    // the 129-char raw body would be sliced to 120 chars and then "…" appended
+    // even though the actual useful content comfortably fits within the limit.
+    const realContent = "r".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS - 5); // 115 chars
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Strip-before-truncate item",
+        status: "Backlog",
+        body: `${realContent} …[truncated]`,
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP);
+    const joined = output.join("\n");
+    // The real content must appear in full (it is under the 120-char limit once stripped)
+    expect(joined).toContain("r".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS - 5));
+    // The storage marker must be gone
+    expect(joined).not.toContain("…[truncated]");
+    // No display ellipsis should be appended — stripping brought the body under the limit
+    expect(joined).not.toContain("r".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS - 5) + "…");
+    spy.mockRestore();
+  });
+
+  it("still truncates when real content alone exceeds 120 chars, even if …[truncated] marker is also present", () => {
+    // A body with realContent (130 chars) + " …[truncated]": after stripping
+    // the real content is still over 120, so the display ellipsis must appear.
+    const realContent = "s".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS + 10); // 130 chars
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Over-limit after strip item",
+        status: "Backlog",
+        body: `${realContent} …[truncated]`,
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP);
+    const joined = output.join("\n");
+    // Storage marker must be gone
+    expect(joined).not.toContain("…[truncated]");
+    // Display ellipsis must appear because stripped body (130 chars) > 120 chars
+    expect(joined).toContain("s".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS) + "…");
+    // Full 130-char content must not appear
+    expect(joined).not.toContain("s".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS + 10));
+    spy.mockRestore();
+  });
+
   it("preserves parse-order for multiple items within the same status section", () => {
     // SAMPLE_ROADMAP has two Backlog items in this order:
     //   1. "Improve prompt efficiency"
