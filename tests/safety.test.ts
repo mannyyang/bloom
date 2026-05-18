@@ -1114,6 +1114,9 @@ describe("isDangerousCommand", () => {
     ["script logging to file (no shell arg)", "script -q session.log"],
     ["bash invoking a script file (not the script utility)", "bash script.sh"],
     ["node referencing a script filename", "node run-script.js"],
+    // safe file-permission-tampering: install -m as a grep argument must not fire
+    ["grep for install -m pattern as quoted arg (not the command)", "grep 'install -m' Makefile"],
+    ["echo string describing install -m usage (not the command)", "echo 'install -m 755 sets permissions'"],
   ])("returns null for %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBeNull();
   });
