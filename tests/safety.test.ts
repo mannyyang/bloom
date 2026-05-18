@@ -1117,6 +1117,10 @@ describe("isDangerousCommand", () => {
     // safe file-permission-tampering: install -m as a grep argument must not fire
     ["grep for install -m pattern as quoted arg (not the command)", "grep 'install -m' Makefile"],
     ["echo string describing install -m usage (not the command)", "echo 'install -m 755 sets permissions'"],
+    // safe shell-script-execution: source/dot-script tokens inside grep/echo arguments must not fire
+    ["grep 'source' as argument (not a command)", "grep 'source' config.sh"],
+    ["echo message mentioning source (text, not command)", "echo 'open source rocks'"],
+    ["dot-slash path is not a dot-script invocation", "./run.sh"],
   ])("returns null for %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBeNull();
   });
