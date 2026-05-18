@@ -1611,6 +1611,24 @@ describe("category: xargs-command-execution", () => {
   it("does not flag xargs -n 1 cat (safe max-args with read-only cmd)", () => {
     expect(isDangerousCommand("find . -name '*.log' | xargs -n 1 cat")).toBeNull();
   });
+
+  // Regression tests for greedy-wildcard false-positives for newer patterns (tee/cp/install/sed):
+  // these command names appearing as grep/cat arguments must NOT be blocked.
+  it("does not flag grep searching for 'tee' keyword", () => {
+    expect(isDangerousCommand("find . | xargs grep tee")).toBeNull();
+  });
+
+  it("does not flag grep searching for 'cp' keyword", () => {
+    expect(isDangerousCommand("find . | xargs grep cp")).toBeNull();
+  });
+
+  it("does not flag grep searching for 'install' keyword", () => {
+    expect(isDangerousCommand("find . | xargs grep install")).toBeNull();
+  });
+
+  it("does not flag grep searching for 'sed' keyword", () => {
+    expect(isDangerousCommand("find . | xargs grep sed")).toBeNull();
+  });
 });
 
 describe("category: remote-code-execution", () => {
