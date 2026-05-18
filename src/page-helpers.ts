@@ -100,11 +100,11 @@ export function parseRoadmapSections(content: string): RoadmapSection[] {
       continue;
     }
 
-    // - [ ] or - [x] item line
-    const itemMatch = rawLine.match(/^- \[([ x])\] (.+)$/);
+    // - [ ] or - [x] or - [X] item line (GitHub renders both lowercase and uppercase x as checked)
+    const itemMatch = rawLine.match(/^- \[([ xX])\] (.+)$/);
     if (itemMatch && currentSection) {
       flush();
-      const done = itemMatch[1] === "x";
+      const done = itemMatch[1] === "x" || itemMatch[1] === "X";
       const rest = itemMatch[2];
       const issueMatch = rest.match(/\(#(\d+)\)\s*$/);
       const issueNumber = issueMatch ? parseInt(issueMatch[1], 10) : null;

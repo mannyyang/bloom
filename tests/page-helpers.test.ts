@@ -74,6 +74,13 @@ describe("parseRoadmapSections", () => {
     expect(sections[0].items[0].done).toBe(true);
   });
 
+  it("parses an uppercase [X] checked item as done (GitHub renders both)", () => {
+    const md = `## Done\n- [X] Completed with capital X\n`;
+    const sections = parseRoadmapSections(md);
+    expect(sections[0].items[0].done).toBe(true);
+    expect(sections[0].items[0].title).toBe("Completed with capital X");
+  });
+
   it("extracts issue number from title", () => {
     const md = `## Up Next\n- [ ] Add feature (#42)\n`;
     const sections = parseRoadmapSections(md);
