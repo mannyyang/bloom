@@ -993,6 +993,29 @@ describe("isDangerousCommand", () => {
     ["disown bare", "disown", "persistence"],
     ["screen -dm detached session", "screen -dm bash evil.sh", "persistence"],
     ["tmux new-session -d detached", "tmux new-session -d -s evil", "persistence"],
+    // file-truncation — bare truncate command
+    ["truncate -s 0 (file truncation)", "truncate -s 0 src/safety.ts", "file-truncation"],
+    ["truncate --size=0 (long flag, file truncation)", "truncate --size=0 src/triage.ts", "file-truncation"],
+    // file-deletion — bare unlink and shred commands
+    ["unlink (bare file deletion)", "unlink src/foo.ts", "file-deletion"],
+    ["shred -zuf (irreversible file deletion)", "shred -zuf src/safety.ts", "file-deletion"],
+    // file-permission-tampering — install -m / --mode
+    ["install -m 777 (world-writable)", "install -m 777 src dst", "file-permission-tampering"],
+    ["install -Dm 644 (combined flags)", "install -Dm 644 bloom.service /etc/systemd/system/", "file-permission-tampering"],
+    ["install --mode=755 (long flag)", "install --mode=755 src dst", "file-permission-tampering"],
+    // persistence extras — crontab, at, batch, systemctl
+    ["crontab (persistence)", "crontab -e", "persistence"],
+    ["at schedule (persistence)", "at 18:00 ./script.sh", "persistence"],
+    ["batch schedule (persistence)", "batch", "persistence"],
+    ["systemctl enable (persistence)", "systemctl enable myservice", "persistence"],
+    ["systemctl start (persistence)", "systemctl start myservice", "persistence"],
+    ["systemctl restart (persistence)", "systemctl restart myservice", "persistence"],
+    ["systemctl daemon-reload (persistence)", "systemctl daemon-reload", "persistence"],
+    // git-working-tree-destruction extras
+    ["git switch --discard-changes", "git switch --discard-changes main", "git-working-tree-destruction"],
+    ["git worktree remove --force (working tree)", "git worktree remove --force my-worktree", "git-working-tree-destruction"],
+    ["git checkout -- . (broad discard)", "git checkout -- .", "git-working-tree-destruction"],
+    ["git restore . (broad discard)", "git restore .", "git-working-tree-destruction"],
   ])("detects %s → %s", (_desc, command, category) => {
     expect(isDangerousCommand(command)).toBe(category);
   });
