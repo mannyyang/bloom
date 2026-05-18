@@ -1319,6 +1319,9 @@ describe("category: untrusted-package-execution", () => {
   it("does not flag pnpm build (not an exec/dlx invocation)", () => {
     expect(isDangerousCommand("pnpm build && pnpm test")).toBeNull();
   });
+  it("does not flag bun x inside a quoted echo argument (not at command boundary)", () => {
+    expect(isDangerousCommand("echo 'bun x some-pkg'")).toBeNull();
+  });
 });
 
 describe("category: untrusted-package-installation", () => {
