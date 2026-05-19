@@ -380,6 +380,8 @@ describe("generateRoadmapOutput", () => {
     // No status sections should have been rendered
     expect(joined).not.toContain("BACKLOG");
     expect(joined).not.toContain("UP NEXT");
+    // The fallback message must appear so users see something useful rather than a blank roadmap
+    expect(joined).toContain("No items on the roadmap yet.");
     spy.mockRestore();
   });
 

@@ -40,10 +40,12 @@ function generateRoadmapOutput(content: string): string[] {
   lines.push("  Bloom Evolution Roadmap");
   lines.push("========================================");
 
+  let anyRendered = false;
   for (const status of STATUS_ORDER) {
     const statusItems = items.filter((i) => i.status === status);
     if (statusItems.length === 0) continue;
 
+    anyRendered = true;
     lines.push("");
     lines.push(`  ${status.toUpperCase()}`);
     lines.push("  " + "-".repeat(status.length));
@@ -72,7 +74,7 @@ function generateRoadmapOutput(content: string): string[] {
     }
   }
 
-  if (items.length === 0) {
+  if (!anyRendered) {
     lines.push("");
     lines.push("  No items on the roadmap yet.");
   }
