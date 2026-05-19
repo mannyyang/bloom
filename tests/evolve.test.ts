@@ -90,6 +90,43 @@ describe("buildAssessmentPrompt", () => {
     expect(prompt).not.toContain("Current item");
   });
 
+  it("omits track record section when cycleStatsText is empty string", () => {
+    // Empty string is falsy — the conditional must treat "" the same as absent.
+    // Guards against a regression where "" produces an empty section header.
+    const prompt = buildAssessmentPrompt({
+      journalSummary: "",
+      cycleCount: 10,
+      cycleStatsText: "",
+    });
+    expect(prompt).not.toContain("track record");
+  });
+
+  it("omits memory section when memoryContext is empty string", () => {
+    // Guards the "" (falsy) path for memoryContext — must behave like absent.
+    const prompt = buildAssessmentPrompt({
+      journalSummary: "",
+      cycleCount: 5,
+      memoryContext: "",
+    });
+    expect(prompt).not.toContain("accumulated knowledge");
+  });
+
+  it("omits planning section when planningContext is empty string", () => {
+    // Guards the "" (falsy) path for planningContext — must behave like absent.
+    // loadEvolutionContext may return "" when no planning item is active.
+    // Comparing against the absent-field output confirms "" produces no extra content.
+    const withEmpty = buildAssessmentPrompt({
+      journalSummary: "",
+      cycleCount: 5,
+      planningContext: "",
+    });
+    const withAbsent = buildAssessmentPrompt({
+      journalSummary: "",
+      cycleCount: 5,
+    });
+    expect(withEmpty).toBe(withAbsent);
+  });
+
   it("includes journal summary in prompt", () => {
     const prompt = buildAssessmentPrompt({
       journalSummary: "## Cycle 5 — 2026-03-06\nSome content here",
