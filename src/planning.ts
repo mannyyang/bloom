@@ -409,6 +409,10 @@ export function updateItemStatus(
           ? `${stripped}\n[since: ${sinceCycle}]`
           : `[since: ${sinceCycle}]`;
       }
+    } else if (status !== STATUS_IN_PROGRESS) {
+      // Strip any [since: N] annotation when leaving In Progress — it is no
+      // longer meaningful and would leave stale staleness metadata in the body.
+      item.body = item.body.replace(/\n?\[since:\s*\d+\]/g, "").trim();
     }
 
     if (item.status !== oldStatus || item.body !== oldBody) markDirty();

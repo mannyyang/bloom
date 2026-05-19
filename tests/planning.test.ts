@@ -852,6 +852,37 @@ describe("updateItemStatus", () => {
     expect(parsed[0].body).toBe("original");
     expect(parsed[0].body).not.toMatch(/\[since:/);
   });
+
+  it("strips [since: N] annotation when manually moving an In Progress item to Backlog", () => {
+    // Items moved back to Backlog/Up Next should not retain the staleness annotation —
+    // it is meaningless outside of In Progress and would appear as junk in ROADMAP.md.
+    const items = [makeItem({ id: "item-0", title: "Reverting Task", status: "In Progress", body: "some work\n[since: 5]" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    updateItemStatus(config, "item-0", "Backlog");
+
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].status).toBe("Backlog");
+    expect(parsed[0].body).toBe("some work");
+    expect(parsed[0].body).not.toMatch(/\[since:/);
+  });
+
+  it("is a no-op for annotation stripping when moving a non-In-Progress item that has no [since: N]", () => {
+    // Items without an annotation should not be modified when moved between
+    // non-In-Progress statuses — no spurious dirty writes.
+    const items = [makeItem({ id: "item-0", title: "Clean Task", status: "Up Next", body: "plain body" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    updateItemStatus(config, "item-0", "Backlog");
+
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].status).toBe("Backlog");
+    expect(parsed[0].body).toBe("plain body");
+  });
 });
 
 describe("demoteStaleInProgressItems", () => {
