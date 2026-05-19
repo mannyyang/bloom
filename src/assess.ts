@@ -25,6 +25,7 @@ import {
   ensureProject,
   getProjectItems,
   formatPlanningContext,
+  pickNextItem,
 } from "./planning.js";
 import { extractResultText, formatDurationSec } from "./usage.js";
 import { resolveModel } from "./agent-phases.js";
@@ -71,7 +72,8 @@ export async function main() {
     try {
       const projectConfig = ensureProject();
       const projectItems = getProjectItems(projectConfig);
-      planningContext = formatPlanningContext(projectItems, null);
+      const currentItem = pickNextItem(projectItems);
+      planningContext = formatPlanningContext(projectItems, currentItem);
       console.log(`[assess] Roadmap items: ${projectItems.length}`);
     } catch (err) {
       console.error(`[assess] Planning context unavailable (non-fatal): ${errorMessage(err)}`);

@@ -35,6 +35,7 @@ vi.mock("../src/planning.js", () => ({
   ensureProject: vi.fn(),
   getProjectItems: vi.fn(),
   formatPlanningContext: vi.fn(),
+  pickNextItem: vi.fn(),
   STATUS_IN_PROGRESS: "In Progress",
   STATUS_DONE: "Done",
 }));
@@ -62,7 +63,7 @@ import {
 import { extractResultText, formatDurationSec } from "../src/usage.js";
 import { buildAssessmentPrompt } from "../src/evolve.js";
 import { errorMessage } from "../src/errors.js";
-import { ensureProject, getProjectItems, formatPlanningContext } from "../src/planning.js";
+import { ensureProject, getProjectItems, formatPlanningContext, pickNextItem } from "../src/planning.js";
 import { formatMemoryForPrompt, MAX_MEMORY_CHARS } from "../src/memory.js";
 import { resolveModel } from "../src/agent-phases.js";
 import { main, ASSESS_MAX_TURNS, ASSESS_MAX_BUDGET_USD } from "../src/assess.js";
@@ -75,6 +76,7 @@ const mockBuildAssessmentPrompt = vi.mocked(buildAssessmentPrompt);
 const mockEnsureProject = vi.mocked(ensureProject);
 const mockGetProjectItems = vi.mocked(getProjectItems);
 const mockFormatPlanningContext = vi.mocked(formatPlanningContext);
+const mockPickNextItem = vi.mocked(pickNextItem);
 const mockGetLatestCycleNumber = vi.mocked(getLatestCycleNumber);
 const mockReadFileSync = vi.mocked(readFileSync);
 const mockGetRecentJournalSummary = vi.mocked(getRecentJournalSummary);
@@ -123,6 +125,7 @@ describe("assess.ts main()", () => {
     mockBuildAssessmentPrompt.mockReturnValue("mock assessment prompt");
     mockEnsureProject.mockReturnValue({ filePath: "ROADMAP.md" });
     mockGetProjectItems.mockReturnValue([]);
+    mockPickNextItem.mockReturnValue(null);
     mockFormatPlanningContext.mockReturnValue("mock planning context");
     mockQuery.mockReturnValue(mockGen([]));
     mockExtractResultText.mockReturnValue(null);
@@ -382,5 +385,27 @@ describe("assess.ts main()", () => {
     expect(options?.allowedTools).toEqual(["Read", "Glob", "Grep", "Bash"]);
     expect(options?.maxTurns).toBe(20);
     expect(options?.maxBudgetUsd).toBe(2.0);
+  });
+
+  it("passes pickNextItem(projectItems) as currentItem to formatPlanningContext", async () => {
+    // Tripwire: formatPlanningContext's second argument must be the result of
+    // pickNextItem(projectItems), not a hardcoded null. If assess.ts regresses
+    // to passing null, In-Progress items will be buried in the section list
+    // instead of being highlighted in the "Current focus" block.
+    const focusItem = {
+      id: "item-0",
+      title: "My focus item",
+      status: "In Progress" as const,
+      body: "",
+      linkedIssueNumber: null,
+      reactions: 0,
+    };
+    mockPickNextItem.mockReturnValue(focusItem);
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    expect(mockFormatPlanningContext).toHaveBeenCalledOnce();
+    expect(mockFormatPlanningContext.mock.calls[0][1]).toBe(focusItem);
   });
 });
