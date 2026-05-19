@@ -339,6 +339,50 @@ describe("generateRoadmapOutput", () => {
     spy.mockRestore();
   });
 
+  it("silently skips items with null status without throwing", () => {
+    // ProjectItem.status is typed as StatusColumn | null. Items with null status
+    // do not match any STATUS_ORDER entry and must be silently dropped from output
+    // without causing a crash or rendering a malformed section header.
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Orphan item",
+        status: null as unknown as planning.StatusColumn,
+        body: "",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP);
+    const joined = output.join("\n");
+    // Null-status item title must not appear in output (silently dropped)
+    expect(joined).not.toContain("Orphan item");
+    // Output must still be valid (no crash) — header banner is always present
+    expect(joined).toContain("Bloom Evolution Roadmap");
+    spy.mockRestore();
+  });
+
+  it("shows 'No items on the roadmap yet.' when all items have null status", () => {
+    // items.length > 0 but every item is invisible (null status) —
+    // the "No items" fallback should still show to avoid a blank roadmap display.
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Hidden item",
+        status: null as unknown as planning.StatusColumn,
+        body: "",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP);
+    const joined = output.join("\n");
+    // No status sections should have been rendered
+    expect(joined).not.toContain("BACKLOG");
+    expect(joined).not.toContain("UP NEXT");
+    spy.mockRestore();
+  });
+
   it("preserves parse-order for multiple items within the same status section", () => {
     // SAMPLE_ROADMAP has two Backlog items in this order:
     //   1. "Improve prompt efficiency"
