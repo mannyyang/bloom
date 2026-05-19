@@ -244,6 +244,23 @@ describe("buildEvolutionPrompt", () => {
     expect(prompt).toContain("Cycle outcome metrics so far:");
   });
 
+  it("omits usage section when usageContext is empty string", () => {
+    // Empty string is falsy — must behave identically to absent usageContext.
+    // Guards against a regression where "" != undefined produces an empty section header.
+    const withEmpty = buildEvolutionPrompt("assessment text", { usageContext: "" });
+    const withAbsent = buildEvolutionPrompt("assessment text");
+    expect(withEmpty).toBe(withAbsent);
+    expect(withEmpty).not.toContain("Resource usage");
+  });
+
+  it("omits outcome section when outcomeContext is empty string", () => {
+    // Mirrors the usageContext guard: "" must behave like absent outcomeContext.
+    const withEmpty = buildEvolutionPrompt("assessment text", { outcomeContext: "" });
+    const withAbsent = buildEvolutionPrompt("assessment text");
+    expect(withEmpty).toBe(withAbsent);
+    expect(withEmpty).not.toContain("Cycle outcome metrics");
+  });
+
   it("truncates assessment text that exceeds ASSESSMENT_CHAR_LIMIT", () => {
     // An assessment longer than ASSESSMENT_CHAR_LIMIT should be silently truncated
     // so oversized LLM output cannot inflate the evolution prompt.
