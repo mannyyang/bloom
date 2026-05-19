@@ -314,6 +314,24 @@ describe("formatPlanningContext", () => {
     expect(result).not.toContain("- Boundary Item 5"); // 6th item must be cut
   });
 
+  it("appends '... and N more' hint when items exceed maxItemsPerSection", () => {
+    // 7 Backlog items with a cap of 5 → 2 hidden → hint line should read "... and 2 more"
+    const items = Array.from({ length: 7 }, (_, i) =>
+      makeItem({ id: `item-${i}`, title: `Overflow Item ${i}`, status: "Backlog" }),
+    );
+    const result = formatPlanningContext(items, null, 10000, 5);
+    expect(result).toContain("- ... and 2 more");
+  });
+
+  it("does not append overflow hint when item count is exactly at maxItemsPerSection", () => {
+    // Exactly 5 items with a cap of 5 → 0 hidden → no hint should appear.
+    const items = Array.from({ length: 5 }, (_, i) =>
+      makeItem({ id: `item-${i}`, title: `Exact Item ${i}`, status: "Backlog" }),
+    );
+    const result = formatPlanningContext(items, null, 10000, 5);
+    expect(result).not.toContain("... and");
+  });
+
   it("uses truncated string as-is when no newline found (single long line)", () => {
     // A single item whose title is long enough to exceed maxChars, with no
     // embedded newline, so lastNewline is -1 — exercises the fallback branch.

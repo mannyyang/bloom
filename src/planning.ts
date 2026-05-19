@@ -559,6 +559,10 @@ export function formatPlanningContext(
         : "";
       lines.push(`- ${item.title}${issue}${reactions}`);
     }
+    const hiddenCount = statusItems.length - maxItemsPerSection;
+    if (hiddenCount > 0) {
+      lines.push(`- ... and ${hiddenCount} more`);
+    }
   }
 
   const result = lines.join("\n");
