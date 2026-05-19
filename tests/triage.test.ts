@@ -204,6 +204,19 @@ describe("parseTriageResponse", () => {
     expect(result[0].action).toBe("not_applicable");
   });
 
+  it("returns empty array for empty-body fenced input (boundary: fenceMatch[1] is empty string)", () => {
+    // When the fence body is empty, fenceMatch[1] === "" and JSON.parse("") throws,
+    // so the catch block fires and returns []. This documents the boundary where
+    // fenceMatch[1] is always a string (never undefined), not text.trim().
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const result = parseTriageResponse("```\n\n```");
+    expect(result).toEqual([]);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[triage] parseTriageResponse: failed to parse JSON"),
+    );
+    warnSpy.mockRestore();
+  });
+
   it("returns empty array for invalid JSON", () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     expect(parseTriageResponse("not json at all")).toEqual([]);
