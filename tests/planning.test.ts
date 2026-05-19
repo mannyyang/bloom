@@ -737,6 +737,15 @@ describe("detectStaleInProgressItems", () => {
     const item = makeItem({ status: "In Progress", body: `[since: ${since}]` });
     expect(detectStaleInProgressItems([item], cycleCount)).toHaveLength(0);
   });
+
+  it("treats any positive [since: N] annotation as invalid and item as always-stale when currentCycle === 0", () => {
+    // parseInProgressSinceCycle rejects N > currentCycle, so at currentCycle=0 all
+    // positive N values are rejected → since === null → item treated as always-stale.
+    // This pins the behaviour so a change to the validation logic cannot silently
+    // disable stale detection at cycle zero.
+    const item = makeItem({ status: "In Progress", body: "[since: 1]" });
+    expect(detectStaleInProgressItems([item], 0)).toHaveLength(1);
+  });
 });
 
 describe("updateItemStatus", () => {
