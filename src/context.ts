@@ -25,9 +25,11 @@ export const CONTEXT_JOURNAL_MAX_CHARS = 1200;
 
 /**
  * Maximum number of recent cycles included in the journal summary injected
- * into the assessment and evolution prompts.
+ * into the assessment and evolution prompts. Three cycles gives the LLM
+ * enough trend context to spot repeated failures without materially inflating
+ * the prompt (the 1200-char cap keeps the total addition small).
  */
-export const CONTEXT_JOURNAL_MAX_CYCLES = 2;
+export const CONTEXT_JOURNAL_MAX_CYCLES = 3;
 
 /**
  * Number of characters of a triage decision reason shown in the per-decision

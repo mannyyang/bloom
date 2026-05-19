@@ -69,8 +69,8 @@ describe("context constants", () => {
     expect(MAX_MEMORY_CHARS).toBe(1200);
   });
 
-  it("CONTEXT_JOURNAL_MAX_CYCLES is 2 (value-pinning)", () => {
-    expect(CONTEXT_JOURNAL_MAX_CYCLES).toBe(2);
+  it("CONTEXT_JOURNAL_MAX_CYCLES is 3 (value-pinning)", () => {
+    expect(CONTEXT_JOURNAL_MAX_CYCLES).toBe(3);
   });
 
   it("CONTEXT_REASON_PREVIEW_CHARS is 100 (value-pinning)", () => {
