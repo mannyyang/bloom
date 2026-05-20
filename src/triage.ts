@@ -59,6 +59,19 @@ export interface TriageResult {
 
 // --- Prompt Building ---
 
+/**
+ * Build the LLM triage prompt for a batch of untriaged community issues.
+ *
+ * Issue titles are silently truncated to {@link PROMPT_TITLE_PREVIEW_CHARS}
+ * characters and bodies to {@link PROMPT_BODY_PREVIEW_CHARS} characters so
+ * prompt size stays predictable even for very long GitHub issues.
+ *
+ * @param issues     - Untriaged community issues that need a triage decision.
+ * @param boardItems - Current roadmap items used to detect duplicates and
+ *                     assess whether an issue is already tracked as Done.
+ * @returns A prompt string instructing the LLM to respond with a JSON array
+ *          of {@link TriageDecision} objects.
+ */
 export function buildTriagePrompt(
   issues: CommunityIssue[],
   boardItems: ProjectItem[],
@@ -99,6 +112,23 @@ Respond with ONLY a JSON array of objects. No other text. Example:
 
 // --- Response Parsing ---
 
+/**
+ * Parse the LLM triage response into a validated list of {@link TriageDecision} objects.
+ *
+ * Handles the following edge cases gracefully (all return `[]` or a partial list
+ * rather than throwing):
+ * - Markdown-fenced JSON (` ```json ... ``` `) — fences are stripped before parsing.
+ * - Non-array JSON — emits a `console.warn` and returns `[]`.
+ * - Items with an unrecognised `action`, missing fields, empty reason, or a reason
+ *   exceeding {@link TRIAGE_REASON_MAX_CHARS} — dropped with a count warning.
+ * - Completely unparseable JSON — emits a `console.warn` and returns `[]`.
+ *
+ * A mismatch between the number of input issues and returned decisions is logged
+ * as a warning (possible prompt drift) but does not cause an error.
+ *
+ * @param text - Raw string returned by the LLM, possibly fenced in markdown.
+ * @returns Array of valid {@link TriageDecision} objects, possibly empty.
+ */
 export function parseTriageResponse(text: string): TriageDecision[] {
   // Extract JSON from potentially fenced markdown
   const fenceMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
