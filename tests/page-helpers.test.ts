@@ -380,6 +380,25 @@ describe("renderJournalCards", () => {
     expect(html).not.toContain("<summary");
     expect(html).toContain("journal-card-header");
   });
+
+  it("renders card with header but no field divs when all content fields are empty", () => {
+    const emptyEntry: JournalEntry = {
+      cycleNumber: 7,
+      date: "2025-03-01",
+      attempted: "",
+      succeeded: "",
+      failed: "",
+      learnings: "",
+    };
+    const html = renderJournalCards([emptyEntry]);
+    // Card wrapper and header must still appear
+    expect(html).toContain("journal-card");
+    expect(html).toContain("journal-card-header");
+    expect(html).toContain("Cycle 7");
+    // No label divs should be emitted for empty fields
+    expect(html).not.toContain("journal-field");
+    expect(html).not.toContain("journal-label");
+  });
 });
 
 describe("renderJournalSection", () => {
