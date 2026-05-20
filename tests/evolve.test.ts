@@ -587,6 +587,61 @@ Still part of attempted`;
   });
 });
 
+describe("cross-phase integration: buildAssessmentPrompt → buildEvolutionPrompt", () => {
+  it("embeds a 2000-char assessment without truncation", () => {
+    // A max-size assessment (exactly ASSESSMENT_CHAR_LIMIT chars) must survive
+    // the round-trip without any characters being dropped.
+    const fullAssessment = "A".repeat(ASSESSMENT_CHAR_LIMIT);
+    const evolutionPrompt = buildEvolutionPrompt(fullAssessment);
+    expect(evolutionPrompt).toContain("A".repeat(ASSESSMENT_CHAR_LIMIT));
+  });
+
+  it("RULES section survives the round-trip", () => {
+    // The assessment output is used verbatim as the evolution prompt preamble;
+    // the RULES section must always appear after it, intact.
+    const assessment = buildAssessmentPrompt({
+      journalSummary: "## Cycle 5",
+      cycleCount: 5,
+    });
+    const evolutionPrompt = buildEvolutionPrompt(assessment);
+    expect(evolutionPrompt).toContain("RULES:");
+    expect(evolutionPrompt).toContain("pnpm build && pnpm test");
+    expect(evolutionPrompt).toContain("NEVER modify IDENTITY.md");
+    expect(evolutionPrompt).toContain("Do NOT write to JOURNAL.md");
+  });
+
+  it("all five section markers are present after the assessment is embedded", () => {
+    // Guard the critical cross-phase contract: a full assessment output (with
+    // cycle stats and memory context) embedded into the evolution prompt must
+    // still expose all five required structured-summary markers.
+    const assessment = buildAssessmentPrompt({
+      journalSummary: "## Cycle 7\nRecent journal entry.",
+      cycleCount: 7,
+      cycleStatsText: "Total: 6 | Success: 83%",
+      memoryContext: "[process] Always run tests before committing",
+    });
+    // Simulate an LLM response that is within the char limit
+    const truncated = assessment.slice(0, ASSESSMENT_CHAR_LIMIT);
+    const evolutionPrompt = buildEvolutionPrompt(truncated);
+    expect(evolutionPrompt).toContain("ATTEMPTED:");
+    expect(evolutionPrompt).toContain("SUCCEEDED:");
+    expect(evolutionPrompt).toContain("FAILED:");
+    expect(evolutionPrompt).toContain("LEARNINGS:");
+    expect(evolutionPrompt).toContain("STRATEGIC_CONTEXT:");
+  });
+
+  it("oversized assessment is truncated but markers still present", () => {
+    // Simulates the LLM returning more than ASSESSMENT_CHAR_LIMIT chars.
+    // buildEvolutionPrompt must truncate it and still produce a valid prompt.
+    const oversized = "B".repeat(ASSESSMENT_CHAR_LIMIT + 500);
+    const evolutionPrompt = buildEvolutionPrompt(oversized);
+    expect(evolutionPrompt).not.toContain("B".repeat(ASSESSMENT_CHAR_LIMIT + 1));
+    expect(evolutionPrompt).toContain("RULES:");
+    expect(evolutionPrompt).toContain("ATTEMPTED:");
+    expect(evolutionPrompt).toContain("STRATEGIC_CONTEXT:");
+  });
+});
+
 describe("countImprovements", () => {
   it("counts bullet items starting with dash", () => {
     expect(countImprovements("- Item 1\n- Item 2\n- Item 3")).toBe(3);
