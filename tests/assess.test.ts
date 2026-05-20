@@ -387,6 +387,50 @@ describe("assess.ts main()", () => {
     expect(options?.maxBudgetUsd).toBe(2.0);
   });
 
+  it("continues (non-fatal) when getCycleStats throws — cycleStatsText stays empty", async () => {
+    mockGetCycleStats.mockImplementation(() => {
+      throw new Error("stats table missing");
+    });
+
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await expect(main()).resolves.toBeUndefined();
+
+    // Error must be surfaced via the inner try/catch, not silently swallowed
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Context loading failed (non-fatal)")
+    );
+
+    // cycleStatsText defaults to "" so buildAssessmentPrompt receives an empty string
+    const call = mockBuildAssessmentPrompt.mock.calls[0][0];
+    expect(call.cycleStatsText).toBe("");
+
+    errorSpy.mockRestore();
+  });
+
+  it("continues (non-fatal) when formatCycleStats throws — cycleStatsText stays empty", async () => {
+    mockFormatCycleStats.mockImplementation(() => {
+      throw new Error("format error");
+    });
+
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await expect(main()).resolves.toBeUndefined();
+
+    // Error must be surfaced via the inner try/catch, not silently swallowed
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Context loading failed (non-fatal)")
+    );
+
+    // cycleStatsText defaults to "" so buildAssessmentPrompt receives an empty string
+    const call = mockBuildAssessmentPrompt.mock.calls[0][0];
+    expect(call.cycleStatsText).toBe("");
+
+    errorSpy.mockRestore();
+  });
+
   it("passes pickNextItem(projectItems) as currentItem to formatPlanningContext", async () => {
     // Tripwire: formatPlanningContext's second argument must be the result of
     // pickNextItem(projectItems), not a hardcoded null. If assess.ts regresses
