@@ -95,6 +95,18 @@ export async function fetchCommunityIssues(): Promise<CommunityIssue[]> {
 /**
  * Close an issue with a comment. Generic helper used by triage and legacy resolution.
  * Best-effort — failures are swallowed to never block evolution.
+ *
+ * @param issueNumber - GitHub issue number to close.
+ * @param cycleCount  - Current evolution cycle, stored in the DB dedup record.
+ * @param comment     - Text of the closing comment posted to GitHub.
+ * @param db          - Optional SQLite database used for dedup checks.
+ * @param action      - Label written to the DB dedup record only; it does NOT
+ *                      control the GitHub state transition — the issue is always
+ *                      closed via `state: ISSUES_DEFAULT_ACTION` ("closed").
+ *                      Passing a value like "reopen" here will record "reopen"
+ *                      in the DB but still send `state: "closed"` to GitHub.
+ * @param precomputedRepo - Optional pre-resolved "owner/repo" string; detected
+ *                          from the environment when omitted.
  */
 export async function closeIssueWithComment(
   issueNumber: number,
