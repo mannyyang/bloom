@@ -148,6 +148,20 @@ export function countImprovements(text: string): number {
   return Math.max(lineCount, inlineCount);
 }
 
+/**
+ * Build the prompt sent to the evolution agent that implements improvements.
+ *
+ * @param assessment - The raw assessment text produced by the assessment phase.
+ *   Silently truncated to {@link ASSESSMENT_CHAR_LIMIT} characters so that an
+ *   oversized LLM response cannot inflate the evolution prompt beyond the limit
+ *   communicated to the assessment agent. The truncation invariant is: exactly
+ *   the first `ASSESSMENT_CHAR_LIMIT` characters are kept; no partial words are
+ *   preserved at the boundary.
+ * @param context - Optional sections injected between the assessment and the
+ *   rules block. Both `usageContext` and `outcomeContext` are omitted when
+ *   absent or empty-string so the prompt stays compact on the common path.
+ * @returns A complete evolution prompt string ready to pass to the Claude agent.
+ */
 export function buildEvolutionPrompt(assessment: string, context?: EvolutionPromptContext): string {
   // Enforce the same character limit communicated to the assessment LLM so oversized
   // assessments cannot silently inflate the evolution prompt.
