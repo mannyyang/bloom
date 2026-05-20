@@ -132,6 +132,17 @@ describe("pickNextItem", () => {
     ];
     expect(pickNextItem(items)!.id).toBe("item-2");
   });
+
+  it("breaks ties by lexicographic order for non-standard IDs — earlier string wins", () => {
+    // Both items have equal reactions and non-standard IDs (no item-N format).
+    // The fallback string comparison should deterministically pick the
+    // lexicographically smaller ID: "alpha-z" < "feature-x".
+    const items = [
+      makeItem({ id: "feature-x", status: "Backlog", reactions: 3 }),
+      makeItem({ id: "alpha-z",   status: "Backlog", reactions: 3 }),
+    ];
+    expect(pickNextItem(items)!.id).toBe("alpha-z");
+  });
 });
 
 describe("formatPlanningContext", () => {
