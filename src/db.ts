@@ -606,6 +606,10 @@ export interface Learning {
   relevance: number;
 }
 
+/**
+ * Insert a new learning entry for the given cycle.
+ * Duplicate-detection is the caller's responsibility (see storeLearnings in memory.ts).
+ */
 export function insertLearning(
   db: Database.Database,
   cycleNumber: number,
@@ -617,6 +621,11 @@ export function insertLearning(
   ).run(cycleNumber, category, content);
 }
 
+/**
+ * Retrieve the most relevant learnings, ordered by descending relevance score.
+ * When `category` is supplied, only learnings in that category are returned.
+ * Results are capped at `maxItems` (default: RELEVANT_LEARNINGS_LIMIT).
+ */
 export function getRelevantLearnings(
   db: Database.Database,
   maxItems: number = RELEVANT_LEARNINGS_LIMIT,
@@ -699,6 +708,10 @@ export function pruneLowRelevanceLearnings(
 
 // --- Strategic Context ---
 
+/**
+ * Persist the strategic context summary for a cycle.
+ * Call pruneStrategicContext after insertion to bound table growth.
+ */
 export function insertStrategicContext(
   db: Database.Database,
   cycleNumber: number,
@@ -709,6 +722,9 @@ export function insertStrategicContext(
   ).run(cycleNumber, summary);
 }
 
+/**
+ * Return the most recently stored strategic context summary, or null if none exists.
+ */
 export function getLatestStrategicContext(
   db: Database.Database,
 ): string | null {
@@ -736,6 +752,12 @@ export function pruneStrategicContext(
   `).run(keepLast);
 }
 
+/**
+ * Build a compact Markdown summary of the most recent journal cycles for
+ * injection into assessment and evolution prompts.
+ * Output is capped at `maxChars` characters and covers at most `maxCycles` cycles.
+ * Returns an empty string on DB error (non-fatal: cycle can still proceed).
+ */
 export function getRecentJournalSummary(db: Database.Database, maxChars: number = JOURNAL_SUMMARY_MAX_CHARS, maxCycles: number = JOURNAL_SUMMARY_MAX_CYCLES): string {
   let entries: JournalExportEntry[];
   try {
