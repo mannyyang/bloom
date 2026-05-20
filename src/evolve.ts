@@ -98,6 +98,21 @@ export function parseEvolutionResult(result: string): EvolutionSections {
  * Count the number of improvement items in a section text.
  * Counts lines starting with "- ", "* ", or numbered items like "1. ", "2. ", "1) ".
  * Also counts inline numbered items (e.g., "1) foo. 2) bar. 3) baz" on one line).
+ *
+ * Dispatch logic (three branches, in priority order):
+ *
+ * (a) **Empty/falsy guard** — if `text` is empty, null, or undefined, returns 0
+ *     immediately without attempting to split or scan.
+ *
+ * (b) **Multi-line branch** — when `lineCount > 0` AND the input has more than one
+ *     non-empty line, returns `lineCount` directly and ignores `inlineCount`.
+ *     This prevents prose back-references like "see item 2) above" from
+ *     inflating the total on multi-line inputs.
+ *
+ * (c) **Single-line / zero-lineCount fallback** — for single-line inputs (e.g.
+ *     "1) foo. 2) bar. 3) baz") or text where no line starts with a list marker,
+ *     returns `Math.max(lineCount, inlineCount)` so inline-only formats are still
+ *     counted correctly.
  */
 export function countImprovements(text: string): number {
   if (!text) return 0;
