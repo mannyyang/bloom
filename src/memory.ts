@@ -169,10 +169,30 @@ export const MEMORY_KEY_LEARNINGS_HEADER = "## Key Learnings\n";
 
 /**
  * Format memory (learnings + strategic context) for inclusion in the assessment prompt.
- * Budget-aware: truncates to fit within maxChars.
+ * Budget-aware: truncates content to fit within `maxChars`.
  *
- * Strategic context is always included in its entirety; the per-category budget
- * applies only to the learnings section.
+ * **Truncation strategy (in priority order):**
+ *
+ * 1. **Strategic context first** — the latest strategic context is always included
+ *    in its entirety, even if it alone exceeds `maxChars`. It is never budget-capped.
+ *
+ * 2. **Learnings by relevance** — learnings are fetched ranked by relevance
+ *    (highest first) and appended category-by-category. A category header is only
+ *    added to the output when at least one item from that category fits within the
+ *    remaining budget (dangling headers with no items are never emitted).
+ *
+ * 3. **Line-boundary truncation** — each learning item is checked individually
+ *    before appending. Truncation always stops on a clean `\n` boundary; the output
+ *    never contains a mid-line cut.
+ *
+ * 4. **Ellipsis on truncation** — when the budget is exhausted mid-list, a `…\n`
+ *    marker is appended (only if it fits within the remaining budget) so the LLM
+ *    knows the list was cut and should not assume completeness.
+ *
+ * 5. **Separator accounting** — `sections.join("\n")` inserts a `\n` separator
+ *    between the strategic context and learnings blocks; this separator is included
+ *    in every budget check so `result.length <= maxChars` is an invariant
+ *    (unless strategic context alone exceeds `maxChars` — see point 1).
  */
 export function formatMemoryForPrompt(
   db: Database.Database,
