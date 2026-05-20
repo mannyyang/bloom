@@ -585,6 +585,21 @@ Still part of attempted`;
     expect(result.attempted).toContain("NOTES: This is not a known header");
     expect(result.attempted).toContain("Still part of attempted");
   });
+
+  it("bare keyword without colon does NOT switch sections (regression: false-positive HEADER_RE)", () => {
+    // A content line like "FAILED to compile X" inside a LEARNINGS block used to
+    // incorrectly flip the active section because the old HEADER_RE made the colon
+    // optional for bare keywords.  The fix requires a colon for the bare-keyword path.
+    const input = `LEARNINGS: Key insight here
+FAILED to compile something important
+More learning content`;
+    const result = parseEvolutionResult(input);
+    // The "FAILED to compile…" line must stay in learnings, not switch to failed
+    expect(result.learnings).toContain("Key insight here");
+    expect(result.learnings).toContain("FAILED to compile something important");
+    expect(result.learnings).toContain("More learning content");
+    expect(result.failed).toBe("");
+  });
 });
 
 describe("cross-phase integration: buildAssessmentPrompt → buildEvolutionPrompt", () => {

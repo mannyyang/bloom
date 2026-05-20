@@ -67,16 +67,20 @@ export function parseEvolutionResult(result: string): EvolutionSections {
     strategic_context: "",
   };
 
-  // Single regex handles all header formats:
-  // "ATTEMPTED:", "**ATTEMPTED**:", "**ATTEMPTED:**", "## ATTEMPTED", "### ATTEMPTED", "## **ATTEMPTED**", "- ATTEMPTED:"
-  const HEADER_RE = /^(?:#{1,4}\s+|-\s+)?\*{0,2}(ATTEMPTED|SUCCEEDED|FAILED|LEARNINGS|STRATEGIC_CONTEXT)\*{0,2}:?\*{0,2}:?\s*/;
+  // Two alternatives handle all header formats and prevent false-positive section switches:
+  //   Alt 1 — prefixed/bold headers (colon optional): "## ATTEMPTED", "- ATTEMPTED:",
+  //            "**ATTEMPTED**:", "**ATTEMPTED:**", "## **ATTEMPTED**"
+  //   Alt 2 — bare keyword (colon required): "ATTEMPTED:" — without a colon, a content
+  //            line like "FAILED to compile X" inside LEARNINGS would silently hijack the
+  //            active section; requiring the colon closes that gap.
+  const HEADER_RE = /^(?:(?:#{1,4}\s+|-\s+)\*{0,2}|\*{1,2})(ATTEMPTED|SUCCEEDED|FAILED|LEARNINGS|STRATEGIC_CONTEXT)\*{0,2}:?\*{0,2}:?\s*|^(ATTEMPTED|SUCCEEDED|FAILED|LEARNINGS|STRATEGIC_CONTEXT):\s*/;
 
   let currentSection: keyof EvolutionSections | "" = "";
   for (const line of result.split("\n")) {
     const trimmed = line.trim();
     const m = HEADER_RE.exec(trimmed);
     if (m) {
-      const mapped = SECTION_MAP[m[1]];
+      const mapped = SECTION_MAP[m[1] ?? m[2]];
       if (!mapped) continue;
       currentSection = mapped;
       const rest = trimmed.slice(m[0].length);
