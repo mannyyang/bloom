@@ -705,4 +705,37 @@ describe("classifyBuildFailure", () => {
     // classifyBuildFailure must not treat it as a test_failure — pin this contract.
     expect(classifyBuildFailure("Test Files  2 failed (2)")).toBe("build_failure");
   });
+
+  it("returns test_failure when output contains both a TypeScript compiler error and vitest failure (mixed output)", () => {
+    // When a build partly runs — tsc error followed by vitest failure lines — the regex
+    // must still identify "Tests  N failed" and return test_failure, not build_failure.
+    // This pins the classification precedence: vitest failure trumps compiler error.
+    const mixedOutput =
+      "src/foo.ts(10,5): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'\n" +
+      " Test Files  1 failed (1)\n" +
+      "      Tests  3 failed (3)\n";
+    expect(classifyBuildFailure(mixedOutput)).toBe("test_failure");
+  });
+
+  it("returns build_failure when TypeScript compiler error appears with no vitest failure pattern (build-only failure)", () => {
+    // Contrasting the mixed case: when the output only has a tsc error and no "Tests N failed"
+    // line, the result must be build_failure.  Pins the absence-of-vitest branch.
+    const tsOnlyOutput =
+      "src/bar.ts(5,1): error TS2551: Property 'foo' does not exist on type 'Bar'.\n" +
+      "error TS5055: Cannot write file 'dist/bar.js'\n";
+    expect(classifyBuildFailure(tsOnlyOutput)).toBe("build_failure");
+  });
+
+  it("returns test_failure for multiline mixed output matching real pnpm output format", () => {
+    // Realistic scenario: tsc runs first (no errors), then vitest fails partway through.
+    // Pins the full multiline contract matching the real pnpm build && pnpm test pipeline.
+    const realisticMixed =
+      " ✗ tests/outcomes.test.ts (3)\n" +
+      " ✓ tests/evolve.test.ts (42)\n" +
+      "\n" +
+      " Test Files  1 failed | 1 passed (2)\n" +
+      "      Tests  490 passed | 3 failed (493)\n" +
+      "   Duration  1.23s\n";
+    expect(classifyBuildFailure(realisticMixed)).toBe("test_failure");
+  });
 });
