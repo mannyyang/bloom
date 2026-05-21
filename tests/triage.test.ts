@@ -1213,6 +1213,33 @@ describe("triageIssues with injected deps", () => {
     warnSpy.mockRestore();
   });
 
+  it("closeCandidates transaction: calls insertIssueAction for each Done board item in a multi-issue scenario", async () => {
+    // Covers the closeCandidates transaction block (triage.ts lines 221-227):
+    // when two issues are both on the board with status Done and neither has been
+    // triaged before, insertIssueAction must be called once per issue (atomically),
+    // not just once. Guard A (single-issue) already covers the single-issue case.
+    const issues = [
+      makeIssue({ number: 11, title: "Done Issue A" }),
+      makeIssue({ number: 12, title: "Done Issue B" }),
+    ];
+    const boardItems = [
+      makeBoardItem({ linkedIssueNumber: 11, status: "Done" }),
+      makeBoardItem({ id: "item-2", linkedIssueNumber: 12, status: "Done" }),
+    ];
+    const deps = makeDeps([]);
+    const mockDb = { transaction: <T>(fn: () => T) => fn } as unknown as import("better-sqlite3").Database;
+
+    mockCloseIssue.mockResolvedValue(true);
+
+    await triageIssues(issues, boardItems, 9, projectConfig, mockDb, deps);
+
+    // insertIssueAction must be called for BOTH close candidates
+    expect(mockInsertIssueAction).toHaveBeenCalledWith(mockDb, 9, 11, "triaged");
+    expect(mockInsertIssueAction).toHaveBeenCalledWith(mockDb, 9, 12, "triaged");
+    // insertIssueAction must have been called at least twice (once per candidate)
+    expect(mockInsertIssueAction.mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+
   it("calls insertIssueAction before closeIssueWithComment for alreadyOnBoard path (invocationCallOrder)", async () => {
     // Integration ordering test: the DB pre-record must happen before the API fan-out
     // so that a close failure still leaves "triaged" persisted in the DB, preventing
