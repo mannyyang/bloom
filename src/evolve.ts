@@ -175,11 +175,11 @@ export function buildEvolutionPrompt(assessment: string, context?: EvolutionProm
     : assessment;
 
   const usageSection = context?.usageContext
-    ? `\n\nResource usage so far this cycle:\n${context.usageContext}\n`
+    ? `\n\nResource usage so far this cycle:\n${context.usageContext}`
     : "";
 
   const outcomeSection = context?.outcomeContext
-    ? `\n\nCycle outcome metrics so far:\n${context.outcomeContext}\n`
+    ? `\n\nCycle outcome metrics so far:\n${context.outcomeContext}`
     : "";
 
   return `Based on this assessment, implement the improvements.
