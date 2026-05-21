@@ -229,6 +229,45 @@ describe("generateRoadmapOutput", () => {
     spy.mockRestore();
   });
 
+  it("shows '(since cycle N)' on the title line for In Progress items with a [since: N] annotation", () => {
+    // Improvement: staleness is now visible in CLI output so humans can spot stuck work
+    // without reading raw ROADMAP.md. The [since: N] annotation in body is translated
+    // to a human-readable "(since cycle N)" suffix on the item's title line.
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Stuck item",
+        status: "In Progress",
+        body: "Some description\n[since: 476]",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP);
+    const joined = output.join("\n");
+    expect(joined).toContain("Stuck item (since cycle 476)");
+    expect(joined).not.toContain("[since:");
+    spy.mockRestore();
+  });
+
+  it("does NOT show '(since cycle N)' for Backlog or Up Next items (only In Progress)", () => {
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Backlog item",
+        status: "Backlog",
+        body: "Some body\n[since: 400]",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP);
+    const joined = output.join("\n");
+    // Staleness label must not appear for non-In-Progress items
+    expect(joined).not.toContain("since cycle");
+    spy.mockRestore();
+  });
+
   it("omits body display entirely when body is only a [since: N] annotation", () => {
     // An item with no real body — only the staleness annotation — should emit no body lines.
     const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([

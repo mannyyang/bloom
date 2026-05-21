@@ -54,7 +54,18 @@ function generateRoadmapOutput(content: string): string[] {
       const issue = item.linkedIssueNumber ? ` (#${item.linkedIssueNumber})` : "";
       const reactions = item.reactions > 0 ? ` [${item.reactions} ★]` : "";
       const check = item.status === STATUS_DONE ? "✓" : "○";
-      lines.push(`  ${check} ${item.title}${issue}${reactions}`);
+
+      // Extract [since: N] staleness annotation for In Progress items and render
+      // it as "(since cycle N)" on the title line so stuck work is immediately visible.
+      let sinceLabel = "";
+      if (item.status === STATUS_IN_PROGRESS && item.body) {
+        const sinceMatch = item.body.match(/\[since:\s*(\d+)\]/);
+        if (sinceMatch) {
+          sinceLabel = ` (since cycle ${sinceMatch[1]})`;
+        }
+      }
+
+      lines.push(`  ${check} ${item.title}${issue}${reactions}${sinceLabel}`);
       if (item.body) {
         // Strip internal [since: N] staleness annotations and …[truncated] storage
         // markers before display — these are planning metadata and should not appear
