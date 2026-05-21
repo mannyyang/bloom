@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements, ASSESSMENT_CHAR_LIMIT, CONTEXT_JOURNAL_MAX_CHARS } from "../src/evolve.js";
 
 describe("ASSESSMENT_CHAR_LIMIT", () => {
@@ -285,6 +285,24 @@ describe("buildEvolutionPrompt", () => {
     expect(prompt).toContain("A".repeat(ASSESSMENT_CHAR_LIMIT));
     // The full over-limit string must not appear (confirms the +1 char was removed)
     expect(prompt).not.toContain(overflowText);
+  });
+
+  it("emits a console.warn when assessment exceeds ASSESSMENT_CHAR_LIMIT", () => {
+    // A truncation-warn must fire whenever the assessment is over-limit so CI logs
+    // surface the event — previously truncation was completely invisible.
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const overflowText = "D".repeat(ASSESSMENT_CHAR_LIMIT + 1);
+    buildEvolutionPrompt(overflowText);
+    expect(warnSpy).toHaveBeenCalledOnce();
+    expect(warnSpy.mock.calls[0][0]).toContain("truncated");
+    warnSpy.mockRestore();
+  });
+
+  it("does NOT emit a console.warn when assessment is at or below ASSESSMENT_CHAR_LIMIT", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    buildEvolutionPrompt("E".repeat(ASSESSMENT_CHAR_LIMIT));
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 
   it("truncated assessment still produces a structurally complete prompt", () => {
