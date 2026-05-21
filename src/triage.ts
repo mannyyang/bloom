@@ -300,6 +300,12 @@ export async function triageIssues(
   const decisions = parseTriageResponse(triageText);
   result.decisions = decisions;
 
+  if (decisions.length !== untriaged.length) {
+    console.warn(
+      `[triage] parseTriageResponse: got ${decisions.length} decisions for ${untriaged.length} issues (possible prompt drift)`,
+    );
+  }
+
   // Validate decisions against our actual issue set
   const untriagedNumbers = new Set(untriaged.map((i) => i.number));
 
