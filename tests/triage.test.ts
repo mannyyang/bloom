@@ -631,6 +631,33 @@ describe("triageIssues with injected deps", () => {
     warnSpy.mockRestore();
   });
 
+  it("dedup guard: processes each issue number only once when LLM returns duplicate decisions", async () => {
+    // Covers the processedIssueNumbers Set guard in triageIssues (lines 319-334 of triage.ts):
+    // if the LLM returns two decisions for issue #5, addLinkedItem and insertIssueAction
+    // must each be called exactly once — the second entry must be warned and skipped.
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const issues = [makeIssue({ number: 5, title: "Duplicate issue", body: "Some feature" })];
+    const deps = makeDeps([
+      { issueNumber: 5, action: "add_to_backlog", reason: "Good feature request" },
+      { issueNumber: 5, action: "not_applicable", reason: "Duplicate entry from LLM" },
+    ]);
+    const mockDb = {} as import("better-sqlite3").Database;
+
+    const result = await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
+
+    // addLinkedItem and insertIssueAction must each be called exactly once
+    expect(mockAddLinkedItem).toHaveBeenCalledOnce();
+    expect(mockInsertIssueAction).toHaveBeenCalledOnce();
+    // First decision wins: issue #5 is in backlog, not closed
+    expect(result.addedToBacklog).toContain(5);
+    expect(result.closed).not.toContain(5);
+    // A warning must be emitted for the duplicate
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Duplicate decision for issue #5"),
+    );
+    warnSpy.mockRestore();
+  });
+
   it("returns early with empty result when LLM call fails", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const issues = [makeIssue({ number: 1, title: "Issue" })];
