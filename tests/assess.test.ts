@@ -20,6 +20,7 @@ vi.mock("../src/db.js", () => ({
 
 vi.mock("../src/evolve.js", () => ({
   buildAssessmentPrompt: vi.fn(),
+  ASSESSMENT_CHAR_LIMIT: 2000,
 }));
 
 vi.mock("../src/errors.js", () => ({

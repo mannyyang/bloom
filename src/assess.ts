@@ -18,7 +18,7 @@ import {
   getCycleStats,
   formatCycleStats,
 } from "./db.js";
-import { buildAssessmentPrompt } from "./evolve.js";
+import { buildAssessmentPrompt, ASSESSMENT_CHAR_LIMIT } from "./evolve.js";
 import { errorMessage } from "./errors.js";
 import { formatMemoryForPrompt, MAX_MEMORY_CHARS } from "./memory.js";
 import {
@@ -116,6 +116,10 @@ export async function main() {
 
   const durationMs = Date.now() - startTime;
   console.log(`\n[assess] Completed in ${formatDurationSec(durationMs)} (${turns} turns)\n`);
+  console.log(`[assess] Assessment: ${assessment.length}/${ASSESSMENT_CHAR_LIMIT} chars`);
+  if (assessment.length > ASSESSMENT_CHAR_LIMIT) {
+    console.warn(`[assess] Assessment exceeds ${ASSESSMENT_CHAR_LIMIT} char limit — evolution prompt will be truncated`);
+  }
   console.log("========================================");
   console.log("  Assessment Result");
   console.log("========================================\n");
