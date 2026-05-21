@@ -297,9 +297,9 @@ function withRoadmapItems<T>(filePath: string, fn: (items: ProjectItem[], markDi
  * Get all items from the roadmap file.
  */
 export function getProjectItems(
-  _config: ProjectConfig,
+  config: ProjectConfig,
 ): ProjectItem[] {
-  const filePath = resolve(process.cwd(), _config.filePath);
+  const filePath = resolve(process.cwd(), config.filePath);
   return withRoadmapItems(filePath, (items) => [...items]);
 }
 
@@ -328,13 +328,13 @@ function addItemIfAbsent(
  * Add a linked GitHub issue to the roadmap.
  */
 export function addLinkedItem(
-  _config: ProjectConfig,
+  config: ProjectConfig,
   issueNumber: number,
   title: string,
   body: string,
   status: StatusColumn = STATUS_BACKLOG,
 ): string {
-  const filePath = resolve(process.cwd(), _config.filePath);
+  const filePath = resolve(process.cwd(), config.filePath);
   return withRoadmapItems(filePath, (items, markDirty) => {
     const newItem: ProjectItem = {
       id: nextItemId(items),
@@ -352,12 +352,12 @@ export function addLinkedItem(
  * Add a draft item (no linked issue) to the roadmap.
  */
 export function addDraftItem(
-  _config: ProjectConfig,
+  config: ProjectConfig,
   title: string,
   body: string,
   status: StatusColumn = STATUS_BACKLOG,
 ): string {
-  const filePath = resolve(process.cwd(), _config.filePath);
+  const filePath = resolve(process.cwd(), config.filePath);
   return withRoadmapItems(filePath, (items, markDirty) => {
     const newItem: ProjectItem = {
       id: nextItemId(items),
@@ -381,13 +381,13 @@ export function addDraftItem(
  * annotation into the body so stale detection can identify stuck items.
  */
 export function updateItemStatus(
-  _config: ProjectConfig,
+  config: ProjectConfig,
   itemId: string,
   status: StatusColumn,
   completionNote?: string,
   sinceCycle?: number,
 ): boolean {
-  const filePath = resolve(process.cwd(), _config.filePath);
+  const filePath = resolve(process.cwd(), config.filePath);
   return withRoadmapItems(filePath, (items, markDirty) => {
     const item = items.find((i) => i.id === itemId);
     if (!item) return false;
@@ -463,11 +463,11 @@ export function detectStaleInProgressItems(
  * [since: N] annotation. Returns the titles of demoted items.
  */
 export function demoteStaleInProgressItems(
-  _config: ProjectConfig,
+  config: ProjectConfig,
   currentCycle: number,
   threshold: number = STALE_IN_PROGRESS_THRESHOLD_CYCLES,
 ): string[] {
-  const filePath = resolve(process.cwd(), _config.filePath);
+  const filePath = resolve(process.cwd(), config.filePath);
   return withRoadmapItems(filePath, (items, markDirty) => {
     const stale = detectStaleInProgressItems(items, currentCycle, threshold);
     for (const item of stale) {
