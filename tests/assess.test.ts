@@ -33,6 +33,7 @@ vi.mock("../src/memory.js", () => ({
 }));
 
 vi.mock("../src/planning.js", () => ({
+  ensureProject: vi.fn(),
   readRoadmap: vi.fn(),
   parseRoadmap: vi.fn(),
   formatPlanningContext: vi.fn(),
@@ -64,7 +65,7 @@ import {
 import { extractResultText, formatDurationSec } from "../src/usage.js";
 import { buildAssessmentPrompt } from "../src/evolve.js";
 import { errorMessage } from "../src/errors.js";
-import { readRoadmap, parseRoadmap, formatPlanningContext, pickNextItem } from "../src/planning.js";
+import { ensureProject, readRoadmap, parseRoadmap, formatPlanningContext, pickNextItem } from "../src/planning.js";
 import { formatMemoryForPrompt, MAX_MEMORY_CHARS } from "../src/memory.js";
 import { resolveModel } from "../src/agent-phases.js";
 import { main, ASSESS_MAX_TURNS, ASSESS_MAX_BUDGET_USD } from "../src/assess.js";
@@ -74,6 +75,7 @@ const mockQuery = vi.mocked(query);
 const mockExtractResultText = vi.mocked(extractResultText);
 const mockFormatDurationSec = vi.mocked(formatDurationSec);
 const mockBuildAssessmentPrompt = vi.mocked(buildAssessmentPrompt);
+const mockEnsureProject = vi.mocked(ensureProject);
 const mockReadRoadmap = vi.mocked(readRoadmap);
 const mockParseRoadmap = vi.mocked(parseRoadmap);
 const mockFormatPlanningContext = vi.mocked(formatPlanningContext);
@@ -452,5 +454,16 @@ describe("assess.ts main()", () => {
 
     expect(mockFormatPlanningContext).toHaveBeenCalledOnce();
     expect(mockFormatPlanningContext.mock.calls[0][1]).toBe(focusItem);
+  });
+
+  it("never calls ensureProject — assess.ts is read-only and must not create ROADMAP.md", async () => {
+    // Permanent contract: assess.ts reads planning context via readRoadmap/parseRoadmap
+    // (the assess-only path) and must NEVER invoke ensureProject, which creates
+    // ROADMAP.md on disk. A regression here would silently corrupt the filesystem.
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    expect(mockEnsureProject).not.toHaveBeenCalled();
   });
 });
