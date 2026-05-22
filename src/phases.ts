@@ -60,9 +60,7 @@ export async function updatePlanningStatus(
       // unrelated to the linked issue.
       if (succeeded && n !== null) {
         const summary = processed.succeededSummary ?? "";
-        // The lookaround anchors ensure e.g. "123" does not match inside "4123".
-        // `mentionsIssue` is already false when summary is empty (regex returns false on ""),
-        // so a separate `!summary` guard is redundant and misleading — drop it.
+        // Lookahead/lookbehind anchors prevent partial-number matches (e.g. "4123" ≠ "123").
         const issuePattern = new RegExp(`(?<![0-9])${n}(?![0-9])`);
         const mentionsIssue = issuePattern.test(summary);
         if (!mentionsIssue) {
