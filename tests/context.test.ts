@@ -28,6 +28,8 @@ vi.mock("../src/memory.js", () => ({
 
 vi.mock("../src/planning.js", () => ({
   ensureProject: vi.fn(),
+  readRoadmap: vi.fn(),
+  parseRoadmap: vi.fn(),
   getProjectItems: vi.fn(),
   pickNextItem: vi.fn(),
   updateItemStatus: vi.fn(),
@@ -47,6 +49,8 @@ import { triageIssues } from "../src/triage.js";
 import { formatMemoryForPrompt } from "../src/memory.js";
 import {
   ensureProject,
+  readRoadmap,
+  parseRoadmap,
   getProjectItems,
   pickNextItem,
   updateItemStatus,
@@ -556,6 +560,23 @@ describe("loadEvolutionContext", () => {
     expect(pickNextItem).toHaveBeenCalledWith(
       expect.arrayContaining([expect.objectContaining({ id: "1", reactions: 7 })]),
     );
+  });
+
+  it("never calls readRoadmap or parseRoadmap — context.ts uses ensureProject+getProjectItems, not the assess.ts path", async () => {
+    // Symmetric contract with assess.test.ts: context.ts must load the roadmap via
+    // ensureProject+getProjectItems (the write-capable GitHub Projects path) and must
+    // never call readRoadmap/parseRoadmap, which are the assess.ts-only read path.
+    // A violation would mean the two modules are using each other's API surface.
+    const config = { filePath: "ROADMAP.md" };
+    vi.mocked(ensureProject).mockReturnValue(config);
+    vi.mocked(getProjectItems).mockReturnValue([]);
+    vi.mocked(pickNextItem).mockReturnValue(null);
+    vi.mocked(formatPlanningContext).mockReturnValue("");
+
+    await loadEvolutionContext(fakeDb, 1);
+
+    expect(vi.mocked(readRoadmap)).not.toHaveBeenCalled();
+    expect(vi.mocked(parseRoadmap)).not.toHaveBeenCalled();
   });
 
   it("calls demoteStaleInProgressItems with exactly (config, cycleCount) — no custom threshold", async () => {
