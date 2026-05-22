@@ -92,8 +92,13 @@ export function generateRoadmapOutput(content: string): string[] {
 }
 
 function main() {
-  // Read the roadmap file using planning module's path resolution
-  const content = readRoadmap();
+  let content: string;
+  try {
+    content = readRoadmap();
+  } catch (err) {
+    console.error(`Roadmap unavailable: ${err instanceof Error ? err.message : String(err)}`);
+    process.exit(1);
+  }
 
   const output = generateRoadmapOutput(content);
   for (const line of output) {
