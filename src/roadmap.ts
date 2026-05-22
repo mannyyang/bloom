@@ -20,9 +20,6 @@ import {
   type StatusColumn,
 } from "./planning.js";
 
-// Re-export for testability
-export { generateRoadmapOutput };
-
 export const ROADMAP_BODY_PREVIEW_MAX_CHARS = 120;
 
 const STATUS_ORDER: StatusColumn[] = [STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, STATUS_DONE];
@@ -31,7 +28,7 @@ const STATUS_ORDER: StatusColumn[] = [STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS
  * Core roadmap display logic, accepting raw markdown for testability.
  * Returns the lines that would be printed to the console.
  */
-function generateRoadmapOutput(content: string): string[] {
+export function generateRoadmapOutput(content: string): string[] {
   const items = parseRoadmap(content);
   const lines: string[] = [];
 
