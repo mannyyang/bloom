@@ -1,14 +1,14 @@
 import type Database from "better-sqlite3";
 import { insertJournalEntry } from "./db.js";
-
-/** Separator line used at the top and bottom of cycle summary blocks. */
-export const CYCLE_SUMMARY_SEPARATOR = "========================================";
-
 import { errorMessage } from "./errors.js";
 import { parseEvolutionResult, countImprovements, type EvolutionSections } from "./evolve.js";
 import { extractLearnings, storeLearnings, storeStrategicContext } from "./memory.js";
 import type { CycleOutcome } from "./outcomes.js";
 import { formatDurationSec } from "./usage.js";
+
+/** Separator line used at the top and bottom of cycle summary blocks. */
+export const CYCLE_SUMMARY_SEPARATOR = "========================================";
+
 
 /** Internal shape returned by the better-sqlite3 transaction in processEvolutionResult. */
 interface WriteResult {
