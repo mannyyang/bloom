@@ -302,7 +302,7 @@ export async function triageIssues(
 
   if (decisions.length !== untriaged.length) {
     console.warn(
-      `[triage] parseTriageResponse: got ${decisions.length} decisions for ${untriaged.length} issues (possible prompt drift)`,
+      `[triage] triageIssues: got ${decisions.length} decisions for ${untriaged.length} issues (possible prompt drift)`,
     );
   }
 
