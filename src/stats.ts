@@ -13,7 +13,10 @@ import { resolve } from "node:path";
 import type Database from "better-sqlite3";
 import { initDb, getCycleStats, formatCycleStats, getLatestCycleNumber } from "./db.js";
 import { formatMemoryForPrompt } from "./memory.js";
-import { CYCLE_SUMMARY_SEPARATOR } from "./orchestrator.js";
+
+// Matches the separator in orchestrator.ts — kept local to avoid importing the
+// heavyweight orchestrator module solely for this display constant.
+const CYCLE_SUMMARY_SEPARATOR = "========================================";
 
 /**
  * Number of characters of memory to include in the stats preview.
