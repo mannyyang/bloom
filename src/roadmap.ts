@@ -12,6 +12,7 @@ import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import {
   parseRoadmap,
+  parseInProgressSinceCycle,
   readRoadmap,
   STATUS_BACKLOG,
   STATUS_IN_PROGRESS,
@@ -56,9 +57,9 @@ export function generateRoadmapOutput(content: string): string[] {
       // it as "(since cycle N)" on the title line so stuck work is immediately visible.
       let sinceLabel = "";
       if (item.status === STATUS_IN_PROGRESS && item.body) {
-        const sinceMatch = item.body.match(/\[since:\s*(\d+)\]/);
-        if (sinceMatch) {
-          sinceLabel = ` (since cycle ${sinceMatch[1]})`;
+        const sinceCycle = parseInProgressSinceCycle(item.body);
+        if (sinceCycle !== null) {
+          sinceLabel = ` (since cycle ${sinceCycle})`;
         }
       }
 
