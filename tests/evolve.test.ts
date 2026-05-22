@@ -1,6 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements, ASSESSMENT_CHAR_LIMIT, CONTEXT_JOURNAL_MAX_CHARS } from "../src/evolve.js";
 
+describe("CONTEXT_JOURNAL_MAX_CHARS", () => {
+  it("is 1200 (value-pinning)", () => {
+    expect(CONTEXT_JOURNAL_MAX_CHARS).toBe(1200);
+  });
+});
+
 describe("ASSESSMENT_CHAR_LIMIT", () => {
   it("is 2000 (value-pinning)", () => {
     expect(ASSESSMENT_CHAR_LIMIT).toBe(2000);
