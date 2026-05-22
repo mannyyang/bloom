@@ -1,5 +1,4 @@
 import { CONTEXT_JOURNAL_MAX_CHARS } from "./context.js";
-export { CONTEXT_JOURNAL_MAX_CHARS };
 
 /** Maximum characters allowed for the assessment passed into the evolution prompt. */
 export const ASSESSMENT_CHAR_LIMIT = 2000;

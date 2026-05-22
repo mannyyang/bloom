@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements, ASSESSMENT_CHAR_LIMIT, CONTEXT_JOURNAL_MAX_CHARS } from "../src/evolve.js";
+import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements, ASSESSMENT_CHAR_LIMIT } from "../src/evolve.js";
+import { CONTEXT_JOURNAL_MAX_CHARS } from "../src/context.js";
 
 describe("CONTEXT_JOURNAL_MAX_CHARS", () => {
   it("is 1200 (value-pinning)", () => {
