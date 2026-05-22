@@ -33,8 +33,8 @@ vi.mock("../src/memory.js", () => ({
 }));
 
 vi.mock("../src/planning.js", () => ({
-  ensureProject: vi.fn(),
-  getProjectItems: vi.fn(),
+  readRoadmap: vi.fn(),
+  parseRoadmap: vi.fn(),
   formatPlanningContext: vi.fn(),
   pickNextItem: vi.fn(),
   STATUS_IN_PROGRESS: "In Progress",
@@ -64,7 +64,7 @@ import {
 import { extractResultText, formatDurationSec } from "../src/usage.js";
 import { buildAssessmentPrompt } from "../src/evolve.js";
 import { errorMessage } from "../src/errors.js";
-import { ensureProject, getProjectItems, formatPlanningContext, pickNextItem } from "../src/planning.js";
+import { readRoadmap, parseRoadmap, formatPlanningContext, pickNextItem } from "../src/planning.js";
 import { formatMemoryForPrompt, MAX_MEMORY_CHARS } from "../src/memory.js";
 import { resolveModel } from "../src/agent-phases.js";
 import { main, ASSESS_MAX_TURNS, ASSESS_MAX_BUDGET_USD } from "../src/assess.js";
@@ -74,8 +74,8 @@ const mockQuery = vi.mocked(query);
 const mockExtractResultText = vi.mocked(extractResultText);
 const mockFormatDurationSec = vi.mocked(formatDurationSec);
 const mockBuildAssessmentPrompt = vi.mocked(buildAssessmentPrompt);
-const mockEnsureProject = vi.mocked(ensureProject);
-const mockGetProjectItems = vi.mocked(getProjectItems);
+const mockReadRoadmap = vi.mocked(readRoadmap);
+const mockParseRoadmap = vi.mocked(parseRoadmap);
 const mockFormatPlanningContext = vi.mocked(formatPlanningContext);
 const mockPickNextItem = vi.mocked(pickNextItem);
 const mockGetLatestCycleNumber = vi.mocked(getLatestCycleNumber);
@@ -124,8 +124,8 @@ describe("assess.ts main()", () => {
     mockFormatCycleStats.mockReturnValue("mock stats text");
     mockFormatMemoryForPrompt.mockReturnValue("mock memory context");
     mockBuildAssessmentPrompt.mockReturnValue("mock assessment prompt");
-    mockEnsureProject.mockReturnValue({ filePath: "ROADMAP.md" });
-    mockGetProjectItems.mockReturnValue([]);
+    mockReadRoadmap.mockReturnValue("");
+    mockParseRoadmap.mockReturnValue([]);
     mockPickNextItem.mockReturnValue(null);
     mockFormatPlanningContext.mockReturnValue("mock planning context");
     mockQuery.mockReturnValue(mockGen([]));
@@ -177,7 +177,7 @@ describe("assess.ts main()", () => {
   });
 
   it("continues (non-fatal) when planning context loading throws", async () => {
-    mockEnsureProject.mockImplementation(() => {
+    mockReadRoadmap.mockImplementation(() => {
       throw new Error("ROADMAP.md not found");
     });
 

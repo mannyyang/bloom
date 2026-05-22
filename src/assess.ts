@@ -22,8 +22,8 @@ import { buildAssessmentPrompt, ASSESSMENT_CHAR_LIMIT } from "./evolve.js";
 import { errorMessage } from "./errors.js";
 import { formatMemoryForPrompt, MAX_MEMORY_CHARS } from "./memory.js";
 import {
-  ensureProject,
-  getProjectItems,
+  readRoadmap,
+  parseRoadmap,
   formatPlanningContext,
   pickNextItem,
 } from "./planning.js";
@@ -70,8 +70,8 @@ export async function main() {
 
     // Load planning context read-only — skip triage and status mutations
     try {
-      const projectConfig = ensureProject();
-      const projectItems = getProjectItems(projectConfig);
+      const roadmapContent = readRoadmap();
+      const projectItems = parseRoadmap(roadmapContent);
       const currentItem = pickNextItem(projectItems);
       planningContext = formatPlanningContext(projectItems, currentItem);
       console.log(`[assess] Roadmap items: ${projectItems.length}`);
