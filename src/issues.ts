@@ -9,6 +9,14 @@ export const ISSUES_PER_PAGE = 20;
 export const FETCH_TIMEOUT_MS = 10_000;
 export const ISSUES_DEFAULT_ACTION = "closed";
 
+/**
+ * Timeout for the syncReactionsToItems fan-out. If all per-issue API calls
+ * haven't settled within this window, the whole operation is abandoned and
+ * the original items are returned unchanged — mirroring the fetchCommunityIssues
+ * timeout guard so a slow GitHub API never blocks the evolution cycle.
+ */
+export const SYNC_REACTIONS_TIMEOUT_MS = 15_000;
+
 export interface CommunityIssue {
   number: number;
   title: string;
@@ -167,28 +175,41 @@ export async function syncReactionsToItems(items: ProjectItem[]): Promise<Projec
 
   const reactionMap = new Map<number, number>();
 
-  await Promise.allSettled(
-    linked.map(async (item) => {
-      const issueNumber = item.linkedIssueNumber!;
-      const res = await githubApiRequest("GET", `/repos/${repo}/issues/${issueNumber}`);
-      if (!res.ok) {
-        console.warn(`[issues] syncReactionsToItems: non-ok response ${res.status} for issue #${issueNumber}`);
-        return;
-      }
-      const data: unknown = await res.json();
-      if (
-        typeof data === "object" &&
-        data !== null &&
-        "reactions" in data &&
-        typeof (data as Record<string, unknown>).reactions === "object" &&
-        (data as Record<string, unknown>).reactions !== null
-      ) {
-        const reactions = (data as Record<string, unknown>).reactions as Record<string, unknown>;
-        const plusOne = typeof reactions["+1"] === "number" ? reactions["+1"] : 0;
-        reactionMap.set(issueNumber, plusOne);
-      }
-    }),
-  );
+  try {
+    await Promise.race([
+      Promise.allSettled(
+        linked.map(async (item) => {
+          const issueNumber = item.linkedIssueNumber!;
+          const res = await githubApiRequest("GET", `/repos/${repo}/issues/${issueNumber}`);
+          if (!res.ok) {
+            console.warn(`[issues] syncReactionsToItems: non-ok response ${res.status} for issue #${issueNumber}`);
+            return;
+          }
+          const data: unknown = await res.json();
+          if (
+            typeof data === "object" &&
+            data !== null &&
+            "reactions" in data &&
+            typeof (data as Record<string, unknown>).reactions === "object" &&
+            (data as Record<string, unknown>).reactions !== null
+          ) {
+            const reactions = (data as Record<string, unknown>).reactions as Record<string, unknown>;
+            const plusOne = typeof reactions["+1"] === "number" ? reactions["+1"] : 0;
+            reactionMap.set(issueNumber, plusOne);
+          }
+        }),
+      ),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error(`syncReactionsToItems timed out after ${SYNC_REACTIONS_TIMEOUT_MS}ms`)),
+          SYNC_REACTIONS_TIMEOUT_MS,
+        ),
+      ),
+    ]);
+  } catch (err) {
+    console.warn(`[issues] syncReactionsToItems: reaction sync timed out (non-fatal): ${errorMessage(err)}`);
+    return items;
+  }
 
   if (reactionMap.size === 0) return items;
 
