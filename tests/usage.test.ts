@@ -1213,12 +1213,19 @@ describe("formatUsageForJournal", () => {
         numTurns: 14,
       },
     ]);
-    const lines = formatUsageForJournal(cu).split("\n");
+    const result = formatUsageForJournal(cu);
+    const lines = result.split("\n");
     // Structural pin: header + blank + 1 phase line + Total = 4 lines
     expect(lines).toHaveLength(4);
     // Position pins: header must be at index 0, blank separator at index 1
     expect(lines[0]).toBe(RESOURCE_USAGE_HEADER);
     expect(lines[1]).toBe("");
+    // Full-output pin: catches phase-line and Total-line formatting drift
+    expect(result).toBe(
+      "### Resource Usage\n\n" +
+      "- **Assessment**: $0.3384 — 1,917 input tokens, 2,565 output tokens, 14 turns, 44.6s\n" +
+      "- **Total**: $0.3384 — 1,917 input + 2,565 output tokens"
+    );
   });
 
   it("pins exact cache values on Total line when only read tokens are non-zero", () => {
