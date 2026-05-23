@@ -906,10 +906,11 @@ describe("formatUsageForJournal", () => {
     ]);
 
     const md = formatUsageForJournal(cu);
-    expect(md).toContain("### Resource Usage");
-    expect(md).toContain("**Assessment**");
-    expect(md).toContain("$1.5000");
-    expect(md).toContain("**Total**");
+    expect(md).toBe(
+      "### Resource Usage\n\n" +
+      "- **Assessment**: $1.5000 — 5,000 input tokens, 2,000 output tokens, 8 turns, 20.0s\n" +
+      "- **Total**: $1.5000 — 5,000 input + 2,000 output tokens"
+    );
   });
 
   it("includes per-phase duration in journal format", () => {
@@ -928,7 +929,7 @@ describe("formatUsageForJournal", () => {
 
     const md = formatUsageForJournal(cu);
     const phaseLine = md.split("\n").find((l) => l.includes("**Assessment**"))!;
-    expect(phaseLine).toContain("30.0s");
+    expect(phaseLine).toBe("- **Assessment**: $1.0000 — 5,000 input tokens, 2,000 output tokens, 10 turns, 30.0s");
   });
 
   it("includes cache suffix when cache tokens are non-zero", () => {
@@ -951,9 +952,8 @@ describe("formatUsageForJournal", () => {
     expect(lines).toHaveLength(4);
     expect(lines[0]).toBe(RESOURCE_USAGE_HEADER);
     expect(lines[1]).toBe("");
-    expect(md).toContain("cache:");
-    expect(md).toContain("read");
-    expect(md).toContain("created");
+    expect(lines[2]).toBe("- **Evolution**: $2.0000 — 10,000 input tokens, 5,000 output tokens (cache: 3,000 read, 1,500 created), 15 turns, 40.0s");
+    expect(lines[3]).toBe("- **Total**: $2.0000 — 10,000 input + 5,000 output tokens (cache: 3,000 read, 1,500 created)");
   });
 
   it("includes cache suffix on the phase line itself (not only on Total)", () => {
@@ -973,9 +973,7 @@ describe("formatUsageForJournal", () => {
     const md = formatUsageForJournal(cu);
     const phaseLine = md.split("\n").find((l) => l.includes("**Evolution**"))!;
     expect(phaseLine).toBeDefined();
-    expect(phaseLine).toContain("cache:");
-    expect(phaseLine).toContain("3,000 read");
-    expect(phaseLine).toContain("1,500 created");
+    expect(phaseLine).toBe("- **Evolution**: $2.0000 — 10,000 input tokens, 5,000 output tokens (cache: 3,000 read, 1,500 created), 15 turns, 40.0s");
   });
 
   it("omits cache suffix from phase line when both cache token counts are zero", () => {
@@ -1015,9 +1013,7 @@ describe("formatUsageForJournal", () => {
     const md = formatUsageForJournal(cu);
     const phaseLine = md.split("\n").find((l) => l.includes("**Planning**"))!;
     expect(phaseLine).toBeDefined();
-    expect(phaseLine).toContain("cache:");
-    expect(phaseLine).toContain("5,000 read");
-    expect(phaseLine).toContain("0 created");
+    expect(phaseLine).toBe("- **Planning**: $0.3000 — 2,000 input tokens, 800 output tokens (cache: 5,000 read, 0 created), 5 turns, 10.0s");
   });
 
   it("includes cache suffix on phase line when only creation tokens are non-zero", () => {
@@ -1037,9 +1033,7 @@ describe("formatUsageForJournal", () => {
     const md = formatUsageForJournal(cu);
     const phaseLine = md.split("\n").find((l) => l.includes("**Evolution**"))!;
     expect(phaseLine).toBeDefined();
-    expect(phaseLine).toContain("cache:");
-    expect(phaseLine).toContain("0 read");
-    expect(phaseLine).toContain("2,500 created");
+    expect(phaseLine).toBe("- **Evolution**: $0.6000 — 3,000 input tokens, 1,200 output tokens (cache: 0 read, 2,500 created), 7 turns, 15.0s");
   });
 
   it("omits cache suffix when all cache tokens are zero", () => {
@@ -1109,7 +1103,7 @@ describe("formatUsageForJournal", () => {
     // Structural pin: header + blank + 2 phase lines + Total = 5 lines
     expect(lines).toHaveLength(5);
     // Last line must be the Total entry
-    expect(lines[lines.length - 1]).toMatch(/^- \*\*Total\*\*/);
+    expect(lines[lines.length - 1]).toBe("- **Total**: $1.5400 — 9,917 input + 6,565 output tokens");
   });
 
   it("pins full output string for two-phase no-cache case (round numbers)", () => {
@@ -1184,7 +1178,7 @@ describe("formatUsageForJournal", () => {
     expect(lines).toHaveLength(6);
     expect(lines[0]).toBe(RESOURCE_USAGE_HEADER);
     expect(lines[1]).toBe("");
-    expect(lines[lines.length - 1]).toMatch(/^- \*\*Total\*\*/);
+    expect(lines[lines.length - 1]).toBe("- **Total**: $1.1000 — 5,500 input + 2,750 output tokens");
   });
 
   it("single-phase no-cache output has exactly 4 lines with header at [0] and blank at [1]", () => {
