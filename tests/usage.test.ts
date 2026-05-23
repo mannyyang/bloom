@@ -847,6 +847,39 @@ describe("formatCycleUsage", () => {
     );
   });
 
+  it("pins full output string for two-phase with-cache case (round numbers)", () => {
+    // Closes the two-phase with-cache slot in the formatCycleUsage matrix.
+    // A single toBe catches inter-phase newline ordering, aggregate cache suffix,
+    // and the total-line separator simultaneously — things per-line checks miss.
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.2,
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheReadInputTokens: 500,
+        cacheCreationInputTokens: 200,
+        durationMs: 10000,
+        numTurns: 5,
+      },
+      {
+        phase: "Evolution",
+        totalCostUsd: 0.8,
+        inputTokens: 4000,
+        outputTokens: 2000,
+        cacheReadInputTokens: 2000,
+        cacheCreationInputTokens: 1000,
+        durationMs: 40000,
+        numTurns: 20,
+      },
+    ]);
+    expect(formatCycleUsage(cu)).toBe(
+      "[Assessment] Cost: $0.2000 | Tokens: 1,000 in / 500 out | Cache: 500 read / 200 created | Turns: 5 | Duration: 10.0s\n" +
+      "[Evolution] Cost: $0.8000 | Tokens: 4,000 in / 2,000 out | Cache: 2,000 read / 1,000 created | Turns: 20 | Duration: 40.0s\n" +
+      "[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,500 out | Cache: 2,500 read / 1,200 created"
+    );
+  });
+
   it("pins full output string for one-phase no-cache case (round numbers)", () => {
     // Closes the single-phase no-cache slot in the formatCycleUsage matrix.
     // A single toBe catches newline ordering and separator drift that per-line pins miss.
