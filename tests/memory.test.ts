@@ -333,6 +333,12 @@ describe("formatMemoryForPrompt", () => {
     expect(result).toContain("Focusing on reliability.");
   });
 
+  it("strategic-context-only path: exact full-output toBe pin", () => {
+    insertStrategicContext(db, 1, "Focusing on reliability.");
+    const result = formatMemoryForPrompt(db);
+    expect(result).toBe("## Strategic Context\nFocusing on reliability.\n");
+  });
+
   it("includes learnings grouped by category", () => {
     insertLearning(db, 1, "pattern", "Test before implementing");
     insertLearning(db, 1, "anti-pattern", "Avoid big refactors");
