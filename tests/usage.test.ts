@@ -606,9 +606,7 @@ describe("formatCycleUsage", () => {
     ]);
     const phaseLine = formatCycleUsage(cu).split("\n").find(l => l.includes("[Evolution]"))!;
     expect(phaseLine).toBeDefined();
-    expect(phaseLine).toContain("Cache:");
-    expect(phaseLine).toContain("3,000 read");
-    expect(phaseLine).toContain("1,500 created");
+    expect(phaseLine).toBe("[Evolution] Cost: $2.0000 | Tokens: 10,000 in / 5,000 out | Cache: 3,000 read / 1,500 created | Turns: 15 | Duration: 40.0s");
   });
 
   it("omits cache suffix on phase line when phase has zero cache tokens", () => {
