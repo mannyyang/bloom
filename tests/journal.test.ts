@@ -219,6 +219,28 @@ describe("formatJournalMarkdown", () => {
     expect(lines[4]).toBe("---");
   });
 
+  it("null optional fields produce identical output to empty-string fields (toBe pin)", () => {
+    // Real DB rows from exportJournalJson can have null for missing columns.
+    // pushSection uses `if (content)` which is falsy for both "" and null/undefined,
+    // so both paths must produce the same output. This pin explicitly documents
+    // and locks down the null-handling code path.
+    const entries = [
+      {
+        cycleNumber: 1,
+        date: "2026-01-01",
+        attempted: null,
+        succeeded: null,
+        failed: null,
+        learnings: null,
+        strategic_context: null,
+      },
+    ] as unknown as Parameters<typeof formatJournalMarkdown>[0];
+    const output = formatJournalMarkdown(entries);
+    expect(output).toBe(
+      "# Bloom Evolution Journal\n\n## Cycle 1 — 2026-01-01\n\n---\n",
+    );
+  });
+
   it("single 1-field entry produces exactly 9 lines (structural pin)", () => {
     // Structure: doc-header (2) + heading + blank (2)
     //   + 1 × (header + content + blank) (3) + "---" + blank (2) = 9
