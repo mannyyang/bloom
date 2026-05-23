@@ -518,9 +518,7 @@ describe("formatCycleUsage", () => {
 
     const output = formatCycleUsage(cu);
     const totalLine = output.split("\n").find(l => l.includes("[Total]"))!;
-    expect(totalLine).toContain("Cache:");
-    expect(totalLine).toContain("read");
-    expect(totalLine).toContain("created");
+    expect(totalLine).toBe("[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Cache: 1,000 read / 500 created");
   });
 
   it("omits cache suffix when all cache tokens are zero", () => {
@@ -573,9 +571,7 @@ describe("formatCycleUsage", () => {
       },
     ]);
     const totalLine = formatCycleUsage(cu).split("\n").find(l => l.includes("[Total]"))!;
-    expect(totalLine).toContain("Cache:");
-    expect(totalLine).toContain("5,000 read");
-    expect(totalLine).toContain("0 created");
+    expect(totalLine).toBe("[Total] Cost: $0.5000 | Tokens: 1,000 in / 500 out | Cache: 5,000 read / 0 created");
   });
 
   it("pins exact cache values on Total line when only creation tokens are non-zero", () => {
@@ -592,9 +588,7 @@ describe("formatCycleUsage", () => {
       },
     ]);
     const totalLine = formatCycleUsage(cu).split("\n").find(l => l.includes("[Total]"))!;
-    expect(totalLine).toContain("Cache:");
-    expect(totalLine).toContain("0 read");
-    expect(totalLine).toContain("2,500 created");
+    expect(totalLine).toBe("[Total] Cost: $1.0000 | Tokens: 3,000 in / 1,200 out | Cache: 0 read / 2,500 created");
   });
 
   it("pins exact cache values on phase line when phase has non-zero cache tokens", () => {
