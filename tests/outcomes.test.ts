@@ -276,6 +276,19 @@ describe("formatOutcomeForJournal", () => {
     });
     const result = formatOutcomeForJournal(outcome);
     expect(result).toContain("total: 495 → 510");
+    // Exact full-output pin: locks down the " — total: N → M" suffix format on the
+    // both-counts-present path. makeOutcome defaults: preflightPassed=true,
+    // durationMs=null, failureCategory="none". Matches the pin density of the
+    // no-total path above and catches any silent text drift in the total suffix.
+    expect(result).toBe(
+      "### Outcome Metrics\n" +
+      "\n" +
+      "- **Preflight**: passed\n" +
+      "- **Improvements**: 2/2 succeeded\n" +
+      "- **Build verification**: passed\n" +
+      "- **Push**: succeeded\n" +
+      "- **Tests**: 490 before, 505 after (+15) — total: 495 → 510"
+    );
   });
 
   it("omits total when test totals are null", () => {
