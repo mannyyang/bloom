@@ -4,7 +4,7 @@ import type { CommunityIssue } from "../src/issues.js";
 import { closeIssueWithComment, detectRepo, isValidRepo } from "../src/issues.js";
 import { hasIssueAction, insertIssueAction, initDb, insertCycle } from "../src/db.js";
 import { makeOutcome } from "./helpers.js";
-import { addLinkedItem } from "../src/planning.js";
+import { addLinkedItem, STATUS_DONE } from "../src/planning.js";
 import type { ProjectItem, ProjectConfig } from "../src/planning.js";
 
 vi.mock("../src/issues.js", async (importOriginal) => {
@@ -1513,6 +1513,14 @@ describe("triage constants", () => {
 
   it("TRIAGE_BOARD_STATUS_DONE is 'Done' (value-pinning)", () => {
     expect(TRIAGE_BOARD_STATUS_DONE).toBe("Done");
+  });
+
+  it("TRIAGE_BOARD_STATUS_DONE equals STATUS_DONE from planning (symmetric cross-module pin)", () => {
+    // Guards the delegation TRIAGE_BOARD_STATUS_DONE = STATUS_DONE in triage.ts:
+    // if STATUS_DONE is ever renamed in planning.ts the compile-time delegation
+    // would catch it, but this runtime pin locks the identical string value so a
+    // copy-paste divergence (e.g. both constants exist but differ) is also caught.
+    expect(TRIAGE_BOARD_STATUS_DONE).toBe(STATUS_DONE);
   });
 
   it("TRIAGE_ALREADY_ON_BOARD_COMMENT is correct message (value-pinning)", () => {
