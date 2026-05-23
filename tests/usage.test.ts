@@ -495,13 +495,11 @@ describe("formatCycleUsage", () => {
       },
     ]);
 
-    const output = formatCycleUsage(cu);
-    const lines = output.split("\n");
-    expect(lines).toHaveLength(3);
-    expect(lines[0]).toContain("[Assessment]");
-    expect(lines[1]).toContain("[Evolution]");
-    expect(lines[2]).toContain("[Total]");
-    expect(lines[2]).toContain("$4.0000");
+    expect(formatCycleUsage(cu)).toBe(
+      "[Assessment] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Turns: 8 | Duration: 20.0s\n" +
+      "[Evolution] Cost: $3.0000 | Tokens: 15,000 in / 8,000 out | Turns: 30 | Duration: 60.0s\n" +
+      "[Total] Cost: $4.0000 | Tokens: 20,000 in / 10,000 out"
+    );
   });
 
   it("includes cache suffix when cache tokens are non-zero", () => {
