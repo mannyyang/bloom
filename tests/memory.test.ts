@@ -503,6 +503,18 @@ describe("formatMemoryForPrompt", () => {
     expect(result).toContain("Key Learnings");
   });
 
+  it("both-sections path: exact full-output toBe pin (strategic + one learning)", () => {
+    // Locks down separator position, header order, and category-header format.
+    // sections.join("\\n") inserts a single "\\n" between the two sections;
+    // dropping it would cause this test to fail immediately.
+    insertStrategicContext(db, 1, "ctx");
+    insertLearning(db, 1, "pattern", "a learning");
+    const result = formatMemoryForPrompt(db);
+    expect(result).toBe(
+      "## Strategic Context\nctx\n\n## Key Learnings\n### pattern\n- a learning\n",
+    );
+  });
+
   it("always includes strategic context even when it alone exceeds maxChars", () => {
     // Strategic context is priority-0 and is never budget-capped.
     // This test documents that design decision and prevents a future
