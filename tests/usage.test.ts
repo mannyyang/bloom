@@ -1228,6 +1228,29 @@ describe("formatUsageForJournal", () => {
     );
   });
 
+  it("pins full output string for single-phase with-cache case (round numbers)", () => {
+    // Closes the single-phase with-cache slot in the formatUsageForJournal matrix.
+    // A single toBe catches phase-line cache suffix placement, Total-line cache suffix,
+    // and separator drift — consistent with the two-phase no-cache pin at line 1155.
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.5,
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheReadInputTokens: 4000,
+        cacheCreationInputTokens: 2000,
+        durationMs: 10000,
+        numTurns: 5,
+      },
+    ]);
+    expect(formatUsageForJournal(cu)).toBe(
+      "### Resource Usage\n\n" +
+      "- **Assessment**: $0.5000 — 1,000 input tokens, 500 output tokens (cache: 4,000 read, 2,000 created), 5 turns, 10.0s\n" +
+      "- **Total**: $0.5000 — 1,000 input + 500 output tokens (cache: 4,000 read, 2,000 created)"
+    );
+  });
+
   it("pins exact cache values on Total line when only read tokens are non-zero", () => {
     const cu = aggregateUsage([
       {
