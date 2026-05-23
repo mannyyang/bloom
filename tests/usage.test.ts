@@ -349,12 +349,7 @@ describe("formatPhaseUsage", () => {
     };
 
     const line = formatPhaseUsage(pu);
-    expect(line).toContain("[Assessment]");
-    expect(line).toContain("$1.2345");
-    expect(line).toContain("5,000 in");
-    expect(line).toContain("2,000 out");
-    expect(line).toContain("Turns: 10");
-    expect(line).toContain("30.0s");
+    expect(line).toBe("[Assessment] Cost: $1.2345 | Tokens: 5,000 in / 2,000 out | Cache: 500 read / 200 created | Turns: 10 | Duration: 30.0s");
   });
 
   it("returns exactly one line (never emits multi-line output)", () => {
