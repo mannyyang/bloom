@@ -339,6 +339,15 @@ describe("formatMemoryForPrompt", () => {
     expect(result).toBe("## Strategic Context\nFocusing on reliability.\n");
   });
 
+  it("learnings-only path: exact full-output toBe pin (no strategic context)", () => {
+    // Closes the learnings-only slot in the formatMemoryForPrompt matrix.
+    // No strategic context is stored — only one 'pattern' learning.
+    // Pins separator absence, header casing, and category-header format in one assertion.
+    insertLearning(db, 1, "pattern", "a learning");
+    const result = formatMemoryForPrompt(db);
+    expect(result).toBe("## Key Learnings\n### pattern\n- a learning\n");
+  });
+
   it("includes learnings grouped by category", () => {
     insertLearning(db, 1, "pattern", "Test before implementing");
     insertLearning(db, 1, "anti-pattern", "Avoid big refactors");
