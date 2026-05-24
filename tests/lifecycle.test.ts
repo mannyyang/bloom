@@ -704,6 +704,45 @@ describe("lifecycle helpers", () => {
 
       errorSpy.mockRestore();
     });
+
+    it("returns passed=true when build passes on third attempt after two failures", () => {
+      // Covers the intermediate path: attempts 1 and 2 fail, attempt 3 succeeds.
+      // Verifies that revertUncommitted is called exactly twice (once per failed attempt)
+      // and hardResetTo is never called.
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      mockedExecSync
+        .mockImplementationOnce(() => { throw new Error("attempt 1 failed"); })
+        .mockImplementationOnce(() => { throw new Error("attempt 2 failed"); })
+        .mockReturnValueOnce("Tests  530 passed\n");
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+
+      const result = runBuildVerification(42);
+      expect(result.passed).toBe(true);
+      expect(result.output).toBe("Tests  530 passed\n");
+
+      // revertUncommitted (checkout + clean) called twice — once per failed attempt
+      const checkoutCalls = mockedExecFileSync.mock.calls.filter(
+        (args) => args[0] === "git" && Array.isArray(args[1]) && (args[1] as string[])[0] === "checkout",
+      );
+      expect(checkoutCalls).toHaveLength(2);
+
+      const cleanCalls = mockedExecFileSync.mock.calls.filter(
+        (args) => args[0] === "git" && Array.isArray(args[1]) && (args[1] as string[])[0] === "clean",
+      );
+      expect(cleanCalls).toHaveLength(2);
+
+      // hardResetTo must NOT be called when a retry eventually succeeds
+      const resetCalls = mockedExecFileSync.mock.calls.filter(
+        (args) => args[0] === "git" && Array.isArray(args[1]) && (args[1] as string[])[0] === "reset",
+      );
+      expect(resetCalls).toHaveLength(0);
+
+      expect(errorSpy).toHaveBeenCalledWith("Build verification failed (attempt 1/3)");
+      expect(errorSpy).toHaveBeenCalledWith("Build verification failed (attempt 2/3)");
+      expect(errorSpy).toHaveBeenCalledTimes(2);
+
+      errorSpy.mockRestore();
+    });
   });
 
   describe("lazy timeout evaluation via process.env", () => {
