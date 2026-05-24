@@ -123,6 +123,16 @@ describe("generateStatsOutput", () => {
     expect(output[4]).toBe(CYCLE_SUMMARY_SEPARATOR);
   });
 
+  it("output[2] is exactly the title line and output[3] is the latest-cycle line", () => {
+    // Value-pin: extends the separator position-pin to the interior title and
+    // cycle lines. A refactor that inserts a blank line before the title would
+    // shift these to [3] and [4] without tripping the separator or length tests.
+    insertCycle(db, makeOutcome({ cycleNumber: 42 }));
+    const output = generateStatsOutput(db);
+    expect(output[2]).toBe("  Bloom Evolution Statistics");
+    expect(output[3]).toBe("  Latest cycle: 42");
+  });
+
   it("includes success rate in output", () => {
     insertCycle(db, makeOutcome({
       cycleNumber: 1,
