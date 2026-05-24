@@ -480,6 +480,25 @@ describe("formatOutcomeForJournal", () => {
     expect(lines[8]).toContain("**Tests**");
   });
 
+  it("failure category line precedes duration line when both are present (ordering pin)", () => {
+    // Pins the relative order of the two optional sections: failure category must
+    // always appear before duration. An accidental swap would not be caught by
+    // toContain() checks alone; index comparison catches it directly.
+    const outcome = makeOutcome({
+      failureCategory: "build_failure",
+      durationMs: 30000,
+      testCountBefore: null,
+      testCountAfter: null,
+    });
+    const result = formatOutcomeForJournal(outcome);
+    const lines = result.split("\n");
+    const failureIdx = lines.findIndex((l) => l.includes("**Failure category**"));
+    const durationIdx = lines.findIndex((l) => l.includes("**Duration**"));
+    expect(failureIdx).toBeGreaterThan(-1);
+    expect(durationIdx).toBeGreaterThan(-1);
+    expect(failureIdx).toBeLessThan(durationIdx);
+  });
+
   it("handles both test counts null", () => {
     const outcome = makeOutcome({
       preflightPassed: false,
