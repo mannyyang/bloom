@@ -607,6 +607,17 @@ describe("serializeRoadmap", () => {
     expect(result).toContain("## Done");
   });
 
+  it("emits each of the four section headers exactly once in empty roadmap", () => {
+    // Callers and external tooling may depend on a fixed four-section format.
+    // Guard that no section is emitted more than once even when all sections are empty.
+    const result = serializeRoadmap([]);
+    const count = (header: string) => result.split(header).length - 1;
+    expect(count("## Backlog")).toBe(1);
+    expect(count("## Up Next")).toBe(1);
+    expect(count("## In Progress")).toBe(1);
+    expect(count("## Done")).toBe(1);
+  });
+
   it("roundtrips through parse and serialize", () => {
     const original: ProjectItem[] = [
       makeItem({ id: "item-0", title: "Alpha", status: "Backlog", linkedIssueNumber: 1, body: "Body A" }),
