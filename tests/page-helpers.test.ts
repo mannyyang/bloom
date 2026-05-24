@@ -106,6 +106,18 @@ describe("parseRoadmapSections", () => {
     expect(sections[0].items[0].description).toBe("");
   });
 
+  it("skips [since:N] lines without space after colon (regex uses \\s*)", () => {
+    const md = `## Done\n- [x] Old task\n  [since:42]\n`;
+    const sections = parseRoadmapSections(md);
+    expect(sections[0].items[0].description).toBe("");
+  });
+
+  it("skips [since: N] annotation but accumulates following description lines", () => {
+    const md = `## Done\n- [x] Old task\n  [since: 10]\n  Actual description.\n`;
+    const sections = parseRoadmapSections(md);
+    expect(sections[0].items[0].description).toBe("Actual description.");
+  });
+
   it("parses multiple sections", () => {
     const md = `## Backlog\n- [ ] Task A\n## Done\n- [x] Task B\n`;
     const sections = parseRoadmapSections(md);
