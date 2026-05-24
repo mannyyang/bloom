@@ -55,6 +55,23 @@ describe("generateRoadmapOutput", () => {
     expect(inProgressIdx).toBeLessThan(backlogIdx);
   });
 
+  it("shows Up Next between In Progress and Backlog", () => {
+    // Ordering contract: STATUS_ORDER = [In Progress, Up Next, Backlog, Done].
+    // If Up Next and Backlog were swapped in STATUS_ORDER the existing "shows
+    // In Progress items first" test would still pass. This test pins the full
+    // three-way ordering so any reshuffle of those two statuses is caught.
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP);
+    const joined = output.join("\n");
+    const inProgressIdx = joined.indexOf("IN PROGRESS");
+    const upNextIdx = joined.indexOf("UP NEXT");
+    const backlogIdx = joined.indexOf("BACKLOG");
+    expect(inProgressIdx).toBeGreaterThanOrEqual(0);
+    expect(upNextIdx).toBeGreaterThanOrEqual(0);
+    expect(backlogIdx).toBeGreaterThanOrEqual(0);
+    expect(inProgressIdx).toBeLessThan(upNextIdx);
+    expect(upNextIdx).toBeLessThan(backlogIdx);
+  });
+
   it("shows Done items last", () => {
     const output = generateRoadmapOutput(SAMPLE_ROADMAP);
     const joined = output.join("\n");
