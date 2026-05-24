@@ -456,6 +456,44 @@ describe("assess.ts main()", () => {
     expect(mockFormatPlanningContext.mock.calls[0][1]).toBe(focusItem);
   });
 
+  it("calls console.warn when assessment exceeds ASSESSMENT_CHAR_LIMIT", async () => {
+    // Tripwire: if the over-limit warn is removed or the char-limit condition
+    // is accidentally inverted, silent truncation would occur with no signal.
+    const overLimitText = "x".repeat(2001); // exceeds mocked ASSESSMENT_CHAR_LIMIT of 2000
+    mockExtractResultText.mockReturnValue(overLimitText);
+    mockQuery.mockReturnValue(mockGen([{ type: "result", result: overLimitText }]));
+
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Assessment exceeds"),
+    );
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("char limit"),
+    );
+
+    warnSpy.mockRestore();
+  });
+
+  it("does NOT call console.warn when assessment is exactly ASSESSMENT_CHAR_LIMIT chars", async () => {
+    // Boundary check: exactly at the limit must not trigger the warning.
+    const atLimitText = "y".repeat(2000); // exactly ASSESSMENT_CHAR_LIMIT
+    mockExtractResultText.mockReturnValue(atLimitText);
+    mockQuery.mockReturnValue(mockGen([{ type: "result", result: atLimitText }]));
+
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    expect(warnSpy).not.toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+  });
+
   it("never calls ensureProject — assess.ts is read-only and must not create ROADMAP.md", async () => {
     // Permanent contract: assess.ts reads planning context via readRoadmap/parseRoadmap
     // (the assess-only path) and must NEVER invoke ensureProject, which creates
