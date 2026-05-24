@@ -1592,6 +1592,96 @@ describe("formatUsageForJournal", () => {
       "- **Total**: $1.0000 — 5,000 input + 2,500 output tokens (cache: 10,000 read, 1,500 created)"
     );
   });
+
+  it("pins full output string for three-phase no-cache case (round numbers)", () => {
+    // Closes the three-phase no-cache slot in the formatUsageForJournal matrix.
+    // Uses 0.2+0.5+0.3=1.0 (IEEE 754-safe) to avoid floating-point drift.
+    // A single toBe locks down header, blank separator, phase-line bodies, and Total.
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.2,
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 10000,
+        numTurns: 5,
+      },
+      {
+        phase: "Evolution",
+        totalCostUsd: 0.5,
+        inputTokens: 2000,
+        outputTokens: 1000,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 25000,
+        numTurns: 10,
+      },
+      {
+        phase: "Verification",
+        totalCostUsd: 0.3,
+        inputTokens: 1500,
+        outputTokens: 750,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 15000,
+        numTurns: 8,
+      },
+    ]);
+    expect(formatUsageForJournal(cu)).toBe(
+      "### Resource Usage\n\n" +
+      "- **Assessment**: $0.2000 — 1,000 input tokens, 500 output tokens, 5 turns, 10.0s\n" +
+      "- **Evolution**: $0.5000 — 2,000 input tokens, 1,000 output tokens, 10 turns, 25.0s\n" +
+      "- **Verification**: $0.3000 — 1,500 input tokens, 750 output tokens, 8 turns, 15.0s\n" +
+      "- **Total**: $1.0000 — 4,500 input + 2,250 output tokens"
+    );
+  });
+
+  it("pins full output string for three-phase with-cache case (round numbers)", () => {
+    // Closes the three-phase with-cache slot in the formatUsageForJournal matrix.
+    // Uses 0.2+0.5+0.3=1.0 (IEEE 754-safe) and exact per-phase cache values.
+    // A single toBe locks down per-phase cache suffixes, aggregate cache suffix, and line order.
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.2,
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheReadInputTokens: 500,
+        cacheCreationInputTokens: 200,
+        durationMs: 10000,
+        numTurns: 5,
+      },
+      {
+        phase: "Evolution",
+        totalCostUsd: 0.5,
+        inputTokens: 2000,
+        outputTokens: 1000,
+        cacheReadInputTokens: 1000,
+        cacheCreationInputTokens: 500,
+        durationMs: 25000,
+        numTurns: 10,
+      },
+      {
+        phase: "Verification",
+        totalCostUsd: 0.3,
+        inputTokens: 1500,
+        outputTokens: 750,
+        cacheReadInputTokens: 750,
+        cacheCreationInputTokens: 250,
+        durationMs: 15000,
+        numTurns: 8,
+      },
+    ]);
+    expect(formatUsageForJournal(cu)).toBe(
+      "### Resource Usage\n\n" +
+      "- **Assessment**: $0.2000 — 1,000 input tokens, 500 output tokens (cache: 500 read, 200 created), 5 turns, 10.0s\n" +
+      "- **Evolution**: $0.5000 — 2,000 input tokens, 1,000 output tokens (cache: 1,000 read, 500 created), 10 turns, 25.0s\n" +
+      "- **Verification**: $0.3000 — 1,500 input tokens, 750 output tokens (cache: 750 read, 250 created), 8 turns, 15.0s\n" +
+      "- **Total**: $1.0000 — 4,500 input + 2,250 output tokens (cache: 2,250 read, 950 created)"
+    );
+  });
 });
 
 describe("formatDurationSec", () => {
