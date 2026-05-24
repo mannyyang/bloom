@@ -638,6 +638,20 @@ describe("serializeRoadmap", () => {
     expect(parsed).toHaveLength(1);
     expect(parsed[0].body).toBe("Line one\nLine two");
   });
+
+  it("excludes null-status items from serialized output (serialization contract guard)", () => {
+    // null-status items cannot be produced by parseRoadmap but may be constructed
+    // directly. serializeRoadmap only iterates STATUS_COLUMNS so such items must
+    // never appear in the output — confirming they cannot corrupt ROADMAP.md via
+    // a round-trip write.
+    const items: ProjectItem[] = [
+      makeItem({ id: "valid-1", title: "Normal Item", status: "Backlog" }),
+      makeItem({ id: "null-1", title: "Null Status Item", status: null as unknown as "Backlog" }),
+    ];
+    const result = serializeRoadmap(items);
+    expect(result).toContain("Normal Item");
+    expect(result).not.toContain("Null Status Item");
+  });
 });
 
 describe("parseInProgressSinceCycle", () => {
