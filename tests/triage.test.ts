@@ -176,6 +176,15 @@ describe("buildTriagePrompt", () => {
     expect(prompt).toContain("#11");
     expect(prompt).toContain("5 reactions");
   });
+
+  it("renders board item with null status as [No Status]", () => {
+    // triage.ts uses `item.status ?? "No Status"` so a ProjectItem with status: null
+    // (e.g. from an external integration) must appear as [No Status] in the prompt
+    // rather than silently rendering as [null] or [undefined].
+    const items = [makeBoardItem({ title: "Orphaned item", status: null as unknown as "Backlog" })];
+    const prompt = buildTriagePrompt([], items);
+    expect(prompt).toContain("[No Status] Orphaned item");
+  });
 });
 
 describe("parseTriageResponse", () => {
