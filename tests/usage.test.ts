@@ -921,6 +921,94 @@ describe("formatCycleUsage", () => {
       "[Total] Cost: $2.0000 | Tokens: 10,000 in / 5,000 out | Cache: 3,000 read / 1,500 created"
     );
   });
+
+  it("pins full output string for three-phase no-cache case (round numbers)", () => {
+    // Closes the three-phase no-cache slot in the formatCycleUsage matrix.
+    // Uses 0.2+0.5+0.3=1.0 (IEEE 754-safe) to avoid floating-point drift.
+    // A single toBe simultaneously guards line ordering, separators, and aggregate totals.
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.2,
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 10000,
+        numTurns: 5,
+      },
+      {
+        phase: "Evolution",
+        totalCostUsd: 0.5,
+        inputTokens: 2000,
+        outputTokens: 1000,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 25000,
+        numTurns: 10,
+      },
+      {
+        phase: "Verification",
+        totalCostUsd: 0.3,
+        inputTokens: 1500,
+        outputTokens: 750,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 0,
+        durationMs: 15000,
+        numTurns: 8,
+      },
+    ]);
+    expect(formatCycleUsage(cu)).toBe(
+      "[Assessment] Cost: $0.2000 | Tokens: 1,000 in / 500 out | Turns: 5 | Duration: 10.0s\n" +
+      "[Evolution] Cost: $0.5000 | Tokens: 2,000 in / 1,000 out | Turns: 10 | Duration: 25.0s\n" +
+      "[Verification] Cost: $0.3000 | Tokens: 1,500 in / 750 out | Turns: 8 | Duration: 15.0s\n" +
+      "[Total] Cost: $1.0000 | Tokens: 4,500 in / 2,250 out"
+    );
+  });
+
+  it("pins full output string for three-phase with-cache case (round numbers)", () => {
+    // Closes the three-phase with-cache slot in the formatCycleUsage matrix.
+    // Uses 0.2+0.5+0.3=1.0 (IEEE 754-safe) and exact per-phase cache values.
+    // A single toBe locks down per-phase cache suffixes, aggregate cache suffix, and line order.
+    const cu = aggregateUsage([
+      {
+        phase: "Assessment",
+        totalCostUsd: 0.2,
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheReadInputTokens: 500,
+        cacheCreationInputTokens: 200,
+        durationMs: 10000,
+        numTurns: 5,
+      },
+      {
+        phase: "Evolution",
+        totalCostUsd: 0.5,
+        inputTokens: 2000,
+        outputTokens: 1000,
+        cacheReadInputTokens: 1000,
+        cacheCreationInputTokens: 500,
+        durationMs: 25000,
+        numTurns: 10,
+      },
+      {
+        phase: "Verification",
+        totalCostUsd: 0.3,
+        inputTokens: 1500,
+        outputTokens: 750,
+        cacheReadInputTokens: 750,
+        cacheCreationInputTokens: 250,
+        durationMs: 15000,
+        numTurns: 8,
+      },
+    ]);
+    expect(formatCycleUsage(cu)).toBe(
+      "[Assessment] Cost: $0.2000 | Tokens: 1,000 in / 500 out | Cache: 500 read / 200 created | Turns: 5 | Duration: 10.0s\n" +
+      "[Evolution] Cost: $0.5000 | Tokens: 2,000 in / 1,000 out | Cache: 1,000 read / 500 created | Turns: 10 | Duration: 25.0s\n" +
+      "[Verification] Cost: $0.3000 | Tokens: 1,500 in / 750 out | Cache: 750 read / 250 created | Turns: 8 | Duration: 15.0s\n" +
+      "[Total] Cost: $1.0000 | Tokens: 4,500 in / 2,250 out | Cache: 2,250 read / 950 created"
+    );
+  });
 });
 
 describe("formatUsageForJournal", () => {
