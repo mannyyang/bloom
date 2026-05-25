@@ -191,6 +191,16 @@ describe("buildEvolutionPrompt", () => {
     expect(prompt).toContain("Do NOT write to JOURNAL.md");
   });
 
+  it("enforces rule 1: agent must make only ONE change at a time", () => {
+    const prompt = buildEvolutionPrompt("assessment");
+    expect(prompt).toContain("Make ONE change at a time");
+  });
+
+  it("enforces rule 5: agent must keep changes small and incremental", () => {
+    const prompt = buildEvolutionPrompt("assessment");
+    expect(prompt).toContain("Keep changes small and incremental");
+  });
+
   it("instructs agent to provide structured summary", () => {
     const prompt = buildEvolutionPrompt("assessment");
     expect(prompt).toContain("ATTEMPTED:");
