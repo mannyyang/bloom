@@ -285,6 +285,27 @@ describe("generateRoadmapOutput", () => {
     spy.mockRestore();
   });
 
+  it("does NOT show '(since cycle N)' for In Progress items with empty body", () => {
+    // When an In Progress item has an empty body, the [since: N] guard skips
+    // parseInProgressSinceCycle entirely (item.body is falsy), so no sinceLabel
+    // is appended. This pins that branch explicitly.
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Active item",
+        status: "In Progress",
+        body: "",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP);
+    const joined = output.join("\n");
+    expect(joined).toContain("Active item");
+    expect(joined).not.toContain("since cycle");
+    spy.mockRestore();
+  });
+
   it("omits body display entirely when body is only a [since: N] annotation", () => {
     // An item with no real body — only the staleness annotation — should emit no body lines.
     const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
