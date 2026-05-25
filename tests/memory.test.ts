@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import type Database from "better-sqlite3";
 import { initDb, insertCycle, insertLearning, getRelevantLearnings, decayLearningRelevance, pruneLowRelevanceLearnings, insertStrategicContext, getLatestStrategicContext } from "../src/db.js";
-import { extractLearnings, storeLearnings, storeStrategicContext, formatMemoryForPrompt, MAX_MEMORY_CHARS, STRATEGIC_CONTEXT_RETENTION_CYCLES, MAX_RELEVANT_LEARNINGS_TO_FETCH, MEMORY_STRATEGIC_CONTEXT_HEADER, MEMORY_KEY_LEARNINGS_HEADER, type ExtractedLearnings } from "../src/memory.js";
+import { extractLearnings, storeLearnings, storeStrategicContext, formatMemoryForPrompt, MAX_MEMORY_CHARS, STRATEGIC_CONTEXT_RETENTION_CYCLES, MAX_RELEVANT_LEARNINGS_TO_FETCH, MEMORY_STRATEGIC_CONTEXT_HEADER, MEMORY_KEY_LEARNINGS_HEADER, LEARNING_CATEGORIES, type ExtractedLearnings } from "../src/memory.js";
 import { makeOutcome } from "./helpers.js";
 
 describe("extractLearnings", () => {
@@ -893,5 +893,11 @@ describe("MEMORY_STRATEGIC_CONTEXT_HEADER", () => {
 describe("MEMORY_KEY_LEARNINGS_HEADER", () => {
   it("equals '## Key Learnings\\n' (value-pinning)", () => {
     expect(MEMORY_KEY_LEARNINGS_HEADER).toBe("## Key Learnings\n");
+  });
+});
+
+describe("LEARNING_CATEGORIES", () => {
+  it("contains exactly the expected category values (value-pinning)", () => {
+    expect(LEARNING_CATEGORIES).toEqual(["pattern", "anti-pattern", "domain", "tool-usage", "process"]);
   });
 });
