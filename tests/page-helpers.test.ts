@@ -15,6 +15,8 @@ import {
   STATUS_COLOR_UP_NEXT,
   STATUS_COLOR_IN_PROGRESS,
   STATUS_COLOR_DONE,
+  PAGE_STATS_HISTORY_CYCLES,
+  PAGE_RECENT_FAILURES_WINDOW,
 } from "../src/page-helpers.js";
 import type { DbStats, JournalEntry, RoadmapSection } from "../src/page-helpers.js";
 
@@ -302,7 +304,7 @@ describe("renderStatsSection", () => {
 
   it("recent-failures row contains exact <strong>1</strong> value in <td>", () => {
     const html = renderStatsSection(baseStats);
-    const row = html.split("\n").find(l => l.includes("Recent failures (last 5 cycles)"))!;
+    const row = html.split("\n").find(l => l.includes(`Recent failures (last ${PAGE_RECENT_FAILURES_WINDOW} cycles)`))!;
     expect(row).toBeDefined();
     expect(row).toContain("<strong>1</strong>");
   });
@@ -314,17 +316,17 @@ describe("renderStatsSection", () => {
     expect(row).toContain("<strong>$3.14</strong>");
   });
 
-  it("cost row label uses exact 'Total cost (last 20 cycles)' text (label-pin)", () => {
+  it("cost row label uses PAGE_STATS_HISTORY_CYCLES in 'Total cost (last N cycles)' text (label-pin)", () => {
     // Pins the exact label so silent drift in the history-window number is caught.
-    // "20" matches CYCLE_STATS_HISTORY_LIMIT in db.ts; both must be updated together.
+    // PAGE_STATS_HISTORY_CYCLES must match CYCLE_STATS_HISTORY_LIMIT in db.ts.
     const html = renderStatsSection({ ...baseStats, totalCostUsd: 1.00 });
-    expect(html).toContain("Total cost (last 20 cycles)");
+    expect(html).toContain(`Total cost (last ${PAGE_STATS_HISTORY_CYCLES} cycles)`);
   });
 
-  it("stats-note paragraph uses exact 'last 20 evolution cycles' text (label-pin)", () => {
+  it("stats-note paragraph uses PAGE_STATS_HISTORY_CYCLES in 'last N evolution cycles' text (label-pin)", () => {
     // Pins the history-window number in the visible note so it stays consistent with db.ts.
     const html = renderStatsSection(baseStats);
-    expect(html).toContain("last 20 evolution cycles");
+    expect(html).toContain(`last ${PAGE_STATS_HISTORY_CYCLES} evolution cycles`);
   });
 
   it("duration row contains exact <strong>12 min</strong> value when provided", () => {

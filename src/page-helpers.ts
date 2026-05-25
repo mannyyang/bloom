@@ -43,6 +43,19 @@ export interface DbStats {
 // Cross-page navigation
 // ---------------------------------------------------------------------------
 
+/**
+ * Number of cycles covered by the "last N cycles" cost label in renderStatsSection.
+ * Must match CYCLE_STATS_HISTORY_LIMIT in db.ts; kept local to avoid importing the
+ * heavyweight db module from this pure-helper module.
+ */
+export const PAGE_STATS_HISTORY_CYCLES = 20;
+
+/**
+ * Number of recent cycles examined for the "Recent failures (last N cycles)" label.
+ * Must match RECENT_FAILURES_WINDOW in db.ts; kept local for the same reason.
+ */
+export const PAGE_RECENT_FAILURES_WINDOW = 5;
+
 export type NavPage = "index" | "journal" | "stats";
 
 export function renderNav(active: NavPage): string {
@@ -203,14 +216,14 @@ export function renderStatsSection(stats: DbStats): string {
     rows.push(`<tr><td>Avg cycle duration</td><td><strong>${stats.avgDurationMinutes} min</strong></td></tr>`);
   }
   if (stats.totalCostUsd > 0) {
-    rows.push(`<tr><td>Total cost (last 20 cycles)</td><td><strong>$${stats.totalCostUsd.toFixed(2)}</strong></td></tr>`);
+    rows.push(`<tr><td>Total cost (last ${PAGE_STATS_HISTORY_CYCLES} cycles)</td><td><strong>$${stats.totalCostUsd.toFixed(2)}</strong></td></tr>`);
   }
-  rows.push(`<tr><td>Recent failures (last 5 cycles)</td><td><strong>${stats.recentFailures}</strong></td></tr>`);
+  rows.push(`<tr><td>Recent failures (last ${PAGE_RECENT_FAILURES_WINDOW} cycles)</td><td><strong>${stats.recentFailures}</strong></td></tr>`);
 
   return `
   <section class="section">
     <h2><span class="badge" style="background:#7c3aed">📊 Cycle Stats</span></h2>
-    <p class="stats-note">Live metrics from the last 20 evolution cycles.</p>
+    <p class="stats-note">Live metrics from the last ${PAGE_STATS_HISTORY_CYCLES} evolution cycles.</p>
     <table class="stats-table">
       <tbody>
         ${rows.join("\n        ")}
