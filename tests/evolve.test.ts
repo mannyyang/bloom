@@ -217,6 +217,9 @@ describe("buildEvolutionPrompt", () => {
     expect(learningsIdx).toBeGreaterThan(-1);
     const afterLearnings = prompt.slice(learningsIdx);
     expect(afterLearnings).toMatch(/LEARNINGS:\s*\n-\s+/);
+    // The example lines must include the [category] placeholder so the agent
+    // knows to tag its learnings — without it memory categorisation silently degrades.
+    expect(afterLearnings).toContain("[category]");
   });
 
   it("includes usage context when provided", () => {
