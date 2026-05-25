@@ -314,6 +314,19 @@ describe("renderStatsSection", () => {
     expect(row).toContain("<strong>$3.14</strong>");
   });
 
+  it("cost row label uses exact 'Total cost (last 20 cycles)' text (label-pin)", () => {
+    // Pins the exact label so silent drift in the history-window number is caught.
+    // "20" matches CYCLE_STATS_HISTORY_LIMIT in db.ts; both must be updated together.
+    const html = renderStatsSection({ ...baseStats, totalCostUsd: 1.00 });
+    expect(html).toContain("Total cost (last 20 cycles)");
+  });
+
+  it("stats-note paragraph uses exact 'last 20 evolution cycles' text (label-pin)", () => {
+    // Pins the history-window number in the visible note so it stays consistent with db.ts.
+    const html = renderStatsSection(baseStats);
+    expect(html).toContain("last 20 evolution cycles");
+  });
+
   it("duration row contains exact <strong>12 min</strong> value when provided", () => {
     const html = renderStatsSection({ ...baseStats, avgDurationMinutes: 12 });
     const row = html.split("\n").find(l => l.includes("Avg cycle duration"))!;
