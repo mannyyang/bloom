@@ -22,6 +22,7 @@ import {
   isValidGitRef,
   createSafetyTag,
   runBuildVerification,
+  safetyTagName,
   parseTimeoutEnv,
   BUILD_TIMEOUT_MS,
   GIT_OP_TIMEOUT_MS,
@@ -482,6 +483,21 @@ describe("lifecycle helpers", () => {
       expect(createSafetyTag(NaN)).toBe(false);
       expect(createSafetyTag(Infinity)).toBe(false);
       expect(mockedExecFileSync).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("safetyTagName", () => {
+    it("produces the expected tag format string", () => {
+      expect(safetyTagName(42)).toBe("pre-evolution-cycle-42");
+    });
+
+    it("uses the cycle number as the numeric suffix", () => {
+      expect(safetyTagName(1)).toBe("pre-evolution-cycle-1");
+      expect(safetyTagName(999)).toBe("pre-evolution-cycle-999");
+    });
+
+    it("produces a ref accepted by isValidGitRef", () => {
+      expect(isValidGitRef(safetyTagName(42))).toBe(true);
     });
   });
 

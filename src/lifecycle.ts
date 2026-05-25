@@ -171,6 +171,16 @@ export function revertUncommitted(): void {
 }
 
 /**
+ * Build the git tag name used as a safety checkpoint before each evolution cycle.
+ * Centralises the tag format so changes propagate automatically to both
+ * createSafetyTag (which writes the tag) and runBuildVerification (which
+ * hard-resets to it on failure).
+ */
+export function safetyTagName(cycleCount: number): string {
+  return `pre-evolution-cycle-${cycleCount}`;
+}
+
+/**
  * Create a safety tag for the given cycle. Uses execFileSync to avoid shell
  * injection. Returns true on success, false on failure (tag creation is optional).
  * Reads BLOOM_GIT_OP_TIMEOUT_MS at call time for test flexibility.
@@ -181,7 +191,7 @@ export function createSafetyTag(cycleCount: number): boolean {
   }
   const timeout = parseTimeoutEnv(process.env.BLOOM_GIT_OP_TIMEOUT_MS, 30_000);
   try {
-    execFileSync("git", ["tag", "-f", `pre-evolution-cycle-${cycleCount}`], { stdio: "inherit", timeout });
+    execFileSync("git", ["tag", "-f", safetyTagName(cycleCount)], { stdio: "inherit", timeout });
     return true;
   } catch {
     return false;
@@ -212,7 +222,7 @@ export function runBuildVerification(
   }
 
   console.error("Build broken after all attempts. Reverting to pre-evolution state.");
-  hardResetTo(`pre-evolution-cycle-${cycleCount}`);
+  hardResetTo(safetyTagName(cycleCount));
   return lastResult;
 }
 
