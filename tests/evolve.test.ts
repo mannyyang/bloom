@@ -268,6 +268,19 @@ describe("buildEvolutionPrompt", () => {
     expect(withEmpty).not.toContain("Cycle outcome metrics");
   });
 
+  it("omits both usage and outcome sections when neither context is provided", () => {
+    // Structural pin for the combined-absent path: both optional context sections
+    // must be absent when neither usageContext nor outcomeContext is supplied.
+    // Prevents silent drift if the template introduces extra blank lines or section
+    // headers when both are omitted (complements the individual-omission tests above).
+    const promptNone = buildEvolutionPrompt("assessment text");
+    const promptBothEmpty = buildEvolutionPrompt("assessment text", { usageContext: "", outcomeContext: "" });
+    expect(promptNone).not.toContain("Resource usage");
+    expect(promptNone).not.toContain("Cycle outcome metrics");
+    // All three forms (no options, empty object, both empty strings) must be identical
+    expect(promptBothEmpty).toBe(promptNone);
+  });
+
   it("truncates assessment text that exceeds ASSESSMENT_CHAR_LIMIT", () => {
     // An assessment longer than ASSESSMENT_CHAR_LIMIT should be silently truncated
     // so oversized LLM output cannot inflate the evolution prompt.
