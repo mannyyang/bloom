@@ -173,6 +173,16 @@ describe("renderSection", () => {
     expect(html).toContain("/issues/7");
   });
 
+  it("issue link uses mannyyang/bloom repo URL (regression: was anthropics/bloom)", () => {
+    const section: RoadmapSection = {
+      heading: "Up Next",
+      items: [{ done: false, title: "My task", issueNumber: 42, description: "" }],
+    };
+    const html = renderSection(section);
+    expect(html).toContain("https://github.com/mannyyang/bloom/issues/42");
+    expect(html).not.toContain("anthropics/bloom");
+  });
+
   it("does not render issue link when issueNumber is null", () => {
     const section: RoadmapSection = {
       heading: "Backlog",
