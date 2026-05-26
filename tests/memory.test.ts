@@ -345,7 +345,7 @@ describe("formatMemoryForPrompt", () => {
     // Pins separator absence, header casing, and category-header format in one assertion.
     insertLearning(db, 1, "pattern", "a learning");
     const result = formatMemoryForPrompt(db);
-    expect(result).toBe("## Key Learnings\n### pattern\n- a learning\n");
+    expect(result).toBe("## Key Learnings\n### pattern (1)\n- a learning\n");
   });
 
   it("includes learnings grouped by category", () => {
@@ -470,9 +470,9 @@ describe("formatMemoryForPrompt", () => {
     // but NOT the long anti-pattern item
     const upToSecondHeader =
       "## Key Learnings\n".length +
-      "### pattern\n".length +
+      "### pattern (1)\n".length +
       "- Short\n".length +
-      "### anti-pattern\n".length;
+      "### anti-pattern (1)\n".length;
     // Budget allows the anti-pattern header but not its first item
     const result = formatMemoryForPrompt(db, upToSecondHeader + 2);
 
@@ -520,7 +520,7 @@ describe("formatMemoryForPrompt", () => {
     insertLearning(db, 1, "pattern", "a learning");
     const result = formatMemoryForPrompt(db);
     expect(result).toBe(
-      "## Strategic Context\nctx\n\n## Key Learnings\n### pattern\n- a learning\n",
+      "## Strategic Context\nctx\n\n## Key Learnings\n### pattern (1)\n- a learning\n",
     );
   });
 

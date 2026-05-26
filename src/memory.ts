@@ -230,7 +230,7 @@ export function formatMemoryForPrompt(
     for (const [category, items] of grouped) {
       if (budgetExhausted) break;
       if (items.length === 0) continue;
-      const header = `### ${category}\n`;
+      const header = `### ${category} (${items.length})\n`;
       const firstLine = `- ${items[0].content}\n`;
       // Require budget for both the category header AND its first item before
       // committing either to learningSection. This prevents a dangling header
