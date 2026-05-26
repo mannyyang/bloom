@@ -493,7 +493,7 @@ describe("formatCycleUsage", () => {
     expect(formatCycleUsage(cu)).toBe(
       "[Assessment] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Turns: 8 | Duration: 20.0s\n" +
       "[Evolution] Cost: $3.0000 | Tokens: 15,000 in / 8,000 out | Turns: 30 | Duration: 60.0s\n" +
-      "[Total] Cost: $4.0000 | Tokens: 20,000 in / 10,000 out"
+      "[Total] Cost: $4.0000 | Tokens: 20,000 in / 10,000 out | Turns: 38"
     );
   });
 
@@ -513,7 +513,7 @@ describe("formatCycleUsage", () => {
 
     const output = formatCycleUsage(cu);
     const totalLine = output.split("\n").find(l => l.includes("[Total]"))!;
-    expect(totalLine).toBe("[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Cache: 1,000 read / 500 created");
+    expect(totalLine).toBe("[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Cache: 1,000 read / 500 created | Turns: 8");
   });
 
   it("omits cache suffix when all cache tokens are zero", () => {
@@ -566,7 +566,7 @@ describe("formatCycleUsage", () => {
       },
     ]);
     const totalLine = formatCycleUsage(cu).split("\n").find(l => l.includes("[Total]"))!;
-    expect(totalLine).toBe("[Total] Cost: $0.5000 | Tokens: 1,000 in / 500 out | Cache: 5,000 read / 0 created");
+    expect(totalLine).toBe("[Total] Cost: $0.5000 | Tokens: 1,000 in / 500 out | Cache: 5,000 read / 0 created | Turns: 3");
   });
 
   it("pins exact cache values on Total line when only creation tokens are non-zero", () => {
@@ -583,7 +583,7 @@ describe("formatCycleUsage", () => {
       },
     ]);
     const totalLine = formatCycleUsage(cu).split("\n").find(l => l.includes("[Total]"))!;
-    expect(totalLine).toBe("[Total] Cost: $1.0000 | Tokens: 3,000 in / 1,200 out | Cache: 0 read / 2,500 created");
+    expect(totalLine).toBe("[Total] Cost: $1.0000 | Tokens: 3,000 in / 1,200 out | Cache: 0 read / 2,500 created | Turns: 7");
   });
 
   it("pins exact cache values on phase line when phase has non-zero cache tokens", () => {
@@ -646,7 +646,7 @@ describe("formatCycleUsage", () => {
       },
     ]);
     const totalLine = formatCycleUsage(cu).split("\n").find(l => l.includes("[Total]"))!;
-    expect(totalLine).toBe("[Total] Cost: $4.0000 | Tokens: 20,000 in / 10,000 out");
+    expect(totalLine).toBe("[Total] Cost: $4.0000 | Tokens: 20,000 in / 10,000 out | Turns: 38");
   });
 
   it("pins exact full Total line string for cache case", () => {
@@ -663,7 +663,7 @@ describe("formatCycleUsage", () => {
       },
     ]);
     const totalLine = formatCycleUsage(cu).split("\n").find(l => l.includes("[Total]"))!;
-    expect(totalLine).toBe("[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Cache: 1,000 read / 500 created");
+    expect(totalLine).toBe("[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Cache: 1,000 read / 500 created | Turns: 8");
   });
 
   it("pins exact cache values on phase line when only read tokens are non-zero", () => {
@@ -752,7 +752,7 @@ describe("formatCycleUsage", () => {
     expect(lines[0]).toContain("[Total]");
     expect(lines[0]).toContain("$0.0000");
     // Full-output pin: catches spacing, separator char, and cost-decimal drift
-    expect(output).toBe("[Total] Cost: $0.0000 | Tokens: 0 in / 0 out");
+    expect(output).toBe("[Total] Cost: $0.0000 | Tokens: 0 in / 0 out | Turns: 0");
   });
 
   it("produces exactly 2 lines for 1 phase (1 phase line + Total)", () => {
@@ -843,7 +843,7 @@ describe("formatCycleUsage", () => {
     expect(formatCycleUsage(cu)).toBe(
       "[Assessment] Cost: $0.2000 | Tokens: 1,000 in / 500 out | Turns: 5 | Duration: 10.0s\n" +
       "[Evolution] Cost: $0.8000 | Tokens: 4,000 in / 2,000 out | Turns: 20 | Duration: 40.0s\n" +
-      "[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,500 out"
+      "[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,500 out | Turns: 25"
     );
   });
 
@@ -876,7 +876,7 @@ describe("formatCycleUsage", () => {
     expect(formatCycleUsage(cu)).toBe(
       "[Assessment] Cost: $0.2000 | Tokens: 1,000 in / 500 out | Cache: 500 read / 200 created | Turns: 5 | Duration: 10.0s\n" +
       "[Evolution] Cost: $0.8000 | Tokens: 4,000 in / 2,000 out | Cache: 2,000 read / 1,000 created | Turns: 20 | Duration: 40.0s\n" +
-      "[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,500 out | Cache: 2,500 read / 1,200 created"
+      "[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,500 out | Cache: 2,500 read / 1,200 created | Turns: 25"
     );
   });
 
@@ -897,7 +897,7 @@ describe("formatCycleUsage", () => {
     ]);
     expect(formatCycleUsage(cu)).toBe(
       "[Assessment] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Turns: 8 | Duration: 20.0s\n" +
-      "[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out"
+      "[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Turns: 8"
     );
   });
 
@@ -918,7 +918,7 @@ describe("formatCycleUsage", () => {
     ]);
     expect(formatCycleUsage(cu)).toBe(
       "[Evolution] Cost: $2.0000 | Tokens: 10,000 in / 5,000 out | Cache: 3,000 read / 1,500 created | Turns: 15 | Duration: 40.0s\n" +
-      "[Total] Cost: $2.0000 | Tokens: 10,000 in / 5,000 out | Cache: 3,000 read / 1,500 created"
+      "[Total] Cost: $2.0000 | Tokens: 10,000 in / 5,000 out | Cache: 3,000 read / 1,500 created | Turns: 15"
     );
   });
 
@@ -962,7 +962,7 @@ describe("formatCycleUsage", () => {
       "[Assessment] Cost: $0.2000 | Tokens: 1,000 in / 500 out | Turns: 5 | Duration: 10.0s\n" +
       "[Evolution] Cost: $0.5000 | Tokens: 2,000 in / 1,000 out | Turns: 10 | Duration: 25.0s\n" +
       "[Verification] Cost: $0.3000 | Tokens: 1,500 in / 750 out | Turns: 8 | Duration: 15.0s\n" +
-      "[Total] Cost: $1.0000 | Tokens: 4,500 in / 2,250 out"
+      "[Total] Cost: $1.0000 | Tokens: 4,500 in / 2,250 out | Turns: 23"
     );
   });
 
@@ -1006,7 +1006,7 @@ describe("formatCycleUsage", () => {
       "[Assessment] Cost: $0.2000 | Tokens: 1,000 in / 500 out | Cache: 500 read / 200 created | Turns: 5 | Duration: 10.0s\n" +
       "[Evolution] Cost: $0.5000 | Tokens: 2,000 in / 1,000 out | Cache: 1,000 read / 500 created | Turns: 10 | Duration: 25.0s\n" +
       "[Verification] Cost: $0.3000 | Tokens: 1,500 in / 750 out | Cache: 750 read / 250 created | Turns: 8 | Duration: 15.0s\n" +
-      "[Total] Cost: $1.0000 | Tokens: 4,500 in / 2,250 out | Cache: 2,250 read / 950 created"
+      "[Total] Cost: $1.0000 | Tokens: 4,500 in / 2,250 out | Cache: 2,250 read / 950 created | Turns: 23"
     );
   });
 });
@@ -1030,7 +1030,7 @@ describe("formatUsageForJournal", () => {
     expect(md).toBe(
       "### Resource Usage\n\n" +
       "- **Assessment**: $1.5000 — 5,000 input tokens, 2,000 output tokens, 8 turns, 20.0s\n" +
-      "- **Total**: $1.5000 — 5,000 input + 2,000 output tokens"
+      "- **Total**: $1.5000 — 5,000 input + 2,000 output tokens, 8 turns"
     );
   });
 
@@ -1074,7 +1074,7 @@ describe("formatUsageForJournal", () => {
     expect(lines[0]).toBe(RESOURCE_USAGE_HEADER);
     expect(lines[1]).toBe("");
     expect(lines[2]).toBe("- **Evolution**: $2.0000 — 10,000 input tokens, 5,000 output tokens (cache: 3,000 read, 1,500 created), 15 turns, 40.0s");
-    expect(lines[3]).toBe("- **Total**: $2.0000 — 10,000 input + 5,000 output tokens (cache: 3,000 read, 1,500 created)");
+    expect(lines[3]).toBe("- **Total**: $2.0000 — 10,000 input + 5,000 output tokens (cache: 3,000 read, 1,500 created), 15 turns");
   });
 
   it("includes cache suffix on the phase line itself (not only on Total)", () => {
@@ -1194,7 +1194,7 @@ describe("formatUsageForJournal", () => {
     expect(lines[0]).toBe(RESOURCE_USAGE_HEADER);
     expect(lines[1]).toBe("");
     // Full-output pin: catches Total-line formatting drift (spacing, separator chars, cost decimal)
-    expect(md).toBe("### Resource Usage\n\n- **Total**: $0.0000 — 0 input + 0 output tokens");
+    expect(md).toBe("### Resource Usage\n\n- **Total**: $0.0000 — 0 input + 0 output tokens, 0 turns");
   });
 
   it("two-phase no-cache output has exactly 5 lines and Total at last position", () => {
@@ -1224,7 +1224,7 @@ describe("formatUsageForJournal", () => {
     // Structural pin: header + blank + 2 phase lines + Total = 5 lines
     expect(lines).toHaveLength(5);
     // Last line must be the Total entry
-    expect(lines[lines.length - 1]).toBe("- **Total**: $1.5400 — 9,917 input + 6,565 output tokens");
+    expect(lines[lines.length - 1]).toBe("- **Total**: $1.5400 — 9,917 input + 6,565 output tokens, 39 turns");
   });
 
   it("pins full output string for two-phase no-cache case (round numbers)", () => {
@@ -1256,7 +1256,7 @@ describe("formatUsageForJournal", () => {
       "### Resource Usage\n\n" +
       "- **Assessment**: $0.2000 — 1,000 input tokens, 500 output tokens, 5 turns, 10.0s\n" +
       "- **Evolution**: $0.8000 — 4,000 input tokens, 2,000 output tokens, 20 turns, 40.0s\n" +
-      "- **Total**: $1.0000 — 5,000 input + 2,500 output tokens"
+      "- **Total**: $1.0000 — 5,000 input + 2,500 output tokens, 25 turns"
     );
   });
 
@@ -1290,7 +1290,7 @@ describe("formatUsageForJournal", () => {
       "### Resource Usage\n\n" +
       "- **Assessment**: $0.2000 — 1,000 input tokens, 500 output tokens (cache: 500 read, 200 created), 5 turns, 10.0s\n" +
       "- **Evolution**: $0.8000 — 4,000 input tokens, 2,000 output tokens (cache: 2,000 read, 1,000 created), 20 turns, 40.0s\n" +
-      "- **Total**: $1.0000 — 5,000 input + 2,500 output tokens (cache: 2,500 read, 1,200 created)"
+      "- **Total**: $1.0000 — 5,000 input + 2,500 output tokens (cache: 2,500 read, 1,200 created), 25 turns"
     );
   });
 
@@ -1333,7 +1333,7 @@ describe("formatUsageForJournal", () => {
     expect(lines).toHaveLength(6);
     expect(lines[0]).toBe(RESOURCE_USAGE_HEADER);
     expect(lines[1]).toBe("");
-    expect(lines[lines.length - 1]).toBe("- **Total**: $1.1000 — 5,500 input + 2,750 output tokens");
+    expect(lines[lines.length - 1]).toBe("- **Total**: $1.1000 — 5,500 input + 2,750 output tokens, 28 turns");
   });
 
   it("single-phase no-cache output has exactly 4 lines with header at [0] and blank at [1]", () => {
@@ -1360,7 +1360,7 @@ describe("formatUsageForJournal", () => {
     expect(result).toBe(
       "### Resource Usage\n\n" +
       "- **Assessment**: $0.3384 — 1,917 input tokens, 2,565 output tokens, 14 turns, 44.6s\n" +
-      "- **Total**: $0.3384 — 1,917 input + 2,565 output tokens"
+      "- **Total**: $0.3384 — 1,917 input + 2,565 output tokens, 14 turns"
     );
   });
 
@@ -1383,7 +1383,7 @@ describe("formatUsageForJournal", () => {
     expect(formatUsageForJournal(cu)).toBe(
       "### Resource Usage\n\n" +
       "- **Assessment**: $0.5000 — 1,000 input tokens, 500 output tokens (cache: 4,000 read, 2,000 created), 5 turns, 10.0s\n" +
-      "- **Total**: $0.5000 — 1,000 input + 500 output tokens (cache: 4,000 read, 2,000 created)"
+      "- **Total**: $0.5000 — 1,000 input + 500 output tokens (cache: 4,000 read, 2,000 created), 5 turns"
     );
   });
 
@@ -1496,7 +1496,7 @@ describe("formatUsageForJournal", () => {
       },
     ]);
     const totalLine = formatUsageForJournal(cu).split("\n").find(l => l.includes("**Total**"))!;
-    expect(totalLine).toBe("- **Total**: $4.0000 — 20,000 input + 10,000 output tokens");
+    expect(totalLine).toBe("- **Total**: $4.0000 — 20,000 input + 10,000 output tokens, 5 turns");
   });
 
   it("pins exact Total line string for cache case", () => {
@@ -1513,7 +1513,7 @@ describe("formatUsageForJournal", () => {
       },
     ]);
     const totalLine = formatUsageForJournal(cu).split("\n").find(l => l.includes("**Total**"))!;
-    expect(totalLine).toBe("- **Total**: $1.5000 — 3,000 input + 1,500 output tokens (cache: 2,000 read, 500 created)");
+    expect(totalLine).toBe("- **Total**: $1.5000 — 3,000 input + 1,500 output tokens (cache: 2,000 read, 500 created), 3 turns");
   });
 
   it("pins full output string for single-phase no-cache case (round numbers)", () => {
@@ -1534,7 +1534,7 @@ describe("formatUsageForJournal", () => {
     expect(formatUsageForJournal(cu)).toBe(
       "### Resource Usage\n\n" +
       "- **Assessment**: $0.5000 — 1,000 input tokens, 500 output tokens, 3 turns, 5.0s\n" +
-      "- **Total**: $0.5000 — 1,000 input + 500 output tokens"
+      "- **Total**: $0.5000 — 1,000 input + 500 output tokens, 3 turns"
     );
   });
 
@@ -1556,7 +1556,7 @@ describe("formatUsageForJournal", () => {
     expect(formatUsageForJournal(cu)).toBe(
       "### Resource Usage\n\n" +
       "- **Assessment**: $1.5000 — 3,000 input tokens, 1,500 output tokens (cache: 2,000 read, 500 created), 3 turns, 1.0s\n" +
-      "- **Total**: $1.5000 — 3,000 input + 1,500 output tokens (cache: 2,000 read, 500 created)"
+      "- **Total**: $1.5000 — 3,000 input + 1,500 output tokens (cache: 2,000 read, 500 created), 3 turns"
     );
   });
 
@@ -1589,7 +1589,7 @@ describe("formatUsageForJournal", () => {
       "### Resource Usage\n\n" +
       "- **Assessment**: $0.2000 — 1,000 input tokens, 500 output tokens (cache: 2,000 read, 500 created), 5 turns, 10.0s\n" +
       "- **Evolution**: $0.8000 — 4,000 input tokens, 2,000 output tokens (cache: 8,000 read, 1,000 created), 20 turns, 40.0s\n" +
-      "- **Total**: $1.0000 — 5,000 input + 2,500 output tokens (cache: 10,000 read, 1,500 created)"
+      "- **Total**: $1.0000 — 5,000 input + 2,500 output tokens (cache: 10,000 read, 1,500 created), 25 turns"
     );
   });
 
@@ -1634,7 +1634,7 @@ describe("formatUsageForJournal", () => {
       "- **Assessment**: $0.2000 — 1,000 input tokens, 500 output tokens, 5 turns, 10.0s\n" +
       "- **Evolution**: $0.5000 — 2,000 input tokens, 1,000 output tokens, 10 turns, 25.0s\n" +
       "- **Verification**: $0.3000 — 1,500 input tokens, 750 output tokens, 8 turns, 15.0s\n" +
-      "- **Total**: $1.0000 — 4,500 input + 2,250 output tokens"
+      "- **Total**: $1.0000 — 4,500 input + 2,250 output tokens, 23 turns"
     );
   });
 
@@ -1679,7 +1679,7 @@ describe("formatUsageForJournal", () => {
       "- **Assessment**: $0.2000 — 1,000 input tokens, 500 output tokens (cache: 500 read, 200 created), 5 turns, 10.0s\n" +
       "- **Evolution**: $0.5000 — 2,000 input tokens, 1,000 output tokens (cache: 1,000 read, 500 created), 10 turns, 25.0s\n" +
       "- **Verification**: $0.3000 — 1,500 input tokens, 750 output tokens (cache: 750 read, 250 created), 8 turns, 15.0s\n" +
-      "- **Total**: $1.0000 — 4,500 input + 2,250 output tokens (cache: 2,250 read, 950 created)"
+      "- **Total**: $1.0000 — 4,500 input + 2,250 output tokens (cache: 2,250 read, 950 created), 23 turns"
     );
   });
 });

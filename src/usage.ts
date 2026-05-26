@@ -21,6 +21,7 @@ export interface CycleUsage {
   totalOutputTokens: number;
   totalCacheReadTokens: number;
   totalCacheCreationTokens: number;
+  totalTurns: number;
 }
 
 /**
@@ -100,14 +101,16 @@ export function aggregateUsage(phases: PhaseUsage[]): CycleUsage {
   let totalOutputTokens = 0;
   let totalCacheReadTokens = 0;
   let totalCacheCreationTokens = 0;
+  let totalTurns = 0;
   for (const p of phases) {
     totalCostUsd += p.totalCostUsd;
     totalInputTokens += p.inputTokens;
     totalOutputTokens += p.outputTokens;
     totalCacheReadTokens += p.cacheReadInputTokens;
     totalCacheCreationTokens += p.cacheCreationInputTokens;
+    totalTurns += p.numTurns;
   }
-  return { phases, totalCostUsd, totalInputTokens, totalOutputTokens, totalCacheReadTokens, totalCacheCreationTokens };
+  return { phases, totalCostUsd, totalInputTokens, totalOutputTokens, totalCacheReadTokens, totalCacheCreationTokens, totalTurns };
 }
 
 /**
@@ -143,7 +146,7 @@ export function formatCycleUsage(cu: CycleUsage): string {
   const totalIn = cu.totalInputTokens.toLocaleString();
   const totalOut = cu.totalOutputTokens.toLocaleString();
   const cachePart = formatCacheDisplaySuffix(cu.totalCacheReadTokens, cu.totalCacheCreationTokens);
-  lines.push(`[Total] Cost: $${totalCost} | Tokens: ${totalIn} in / ${totalOut} out${cachePart}`);
+  lines.push(`[Total] Cost: $${totalCost} | Tokens: ${totalIn} in / ${totalOut} out${cachePart} | Turns: ${cu.totalTurns}`);
   return lines.join("\n");
 }
 
@@ -187,7 +190,7 @@ export function formatUsageForJournal(cu: CycleUsage): string {
     formatJournalLine(
       "Total",
       cu.totalCostUsd,
-      `${cu.totalInputTokens.toLocaleString()} input + ${cu.totalOutputTokens.toLocaleString()} output tokens${cacheSuffix}`,
+      `${cu.totalInputTokens.toLocaleString()} input + ${cu.totalOutputTokens.toLocaleString()} output tokens${cacheSuffix}, ${cu.totalTurns} turns`,
     ),
   );
   return lines.join("\n");
