@@ -639,6 +639,11 @@ describe("generateStatsHtml", () => {
     expect(html).toContain("<!DOCTYPE html>");
     expect(html).toContain("</html>");
   });
+
+  it("does not show 'No stats available yet.' when real stats are provided", () => {
+    const html = generateStatsHtml(sampleStats, "now");
+    expect(html).not.toContain("No stats available yet.");
+  });
 });
 
 // ---------------------------------------------------------------------------
