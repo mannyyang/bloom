@@ -412,7 +412,7 @@ STRATEGIC_CONTEXT: Focus on testing`;
 
       expect(summary).toContain("Cycle 42");
       expect(summary).toContain("COMPLETE");
-      expect(summary).toContain("65.0s");
+      expect(summary).toContain("1m 5.0s");
       expect(summary).toContain("2/3");
       expect(summary).toContain("600 → 615");
       expect(summary).toContain("Build: PASSED");
@@ -503,7 +503,7 @@ STRATEGIC_CONTEXT: Focus on testing`;
       const outcome = makeOutcome();
       // 10 minutes = 600000ms
       const summary = formatCycleSummaryWithDuration(1, outcome, false, 600000);
-      expect(summary).toContain("600.0s");
+      expect(summary).toContain("10m 0.0s");
     });
 
     it("includes failure category line when failureCategory is not none", () => {

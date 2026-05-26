@@ -492,7 +492,7 @@ describe("formatCycleUsage", () => {
 
     expect(formatCycleUsage(cu)).toBe(
       "[Assessment] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Turns: 8 | Duration: 20.0s\n" +
-      "[Evolution] Cost: $3.0000 | Tokens: 15,000 in / 8,000 out | Turns: 30 | Duration: 60.0s\n" +
+      "[Evolution] Cost: $3.0000 | Tokens: 15,000 in / 8,000 out | Turns: 30 | Duration: 1m 0.0s\n" +
       "[Total] Cost: $4.0000 | Tokens: 20,000 in / 10,000 out | Turns: 38"
     );
   });
@@ -1715,8 +1715,24 @@ describe("formatDurationSec", () => {
     expect(formatDurationSec(1500)).toBe("1.5s");
   });
 
-  it("handles large values", () => {
-    expect(formatDurationSec(123456)).toBe("123.5s");
+  it("formats values just below 60s without minutes", () => {
+    expect(formatDurationSec(59999)).toBe("60.0s");
+  });
+
+  it("formats exactly 60s as minutes", () => {
+    expect(formatDurationSec(60000)).toBe("1m 0.0s");
+  });
+
+  it("formats 3m 3s (183000ms)", () => {
+    expect(formatDurationSec(183000)).toBe("3m 3.0s");
+  });
+
+  it("formats 1m 30.5s (90500ms)", () => {
+    expect(formatDurationSec(90500)).toBe("1m 30.5s");
+  });
+
+  it("formats large values (10m+)", () => {
+    expect(formatDurationSec(605000)).toBe("10m 5.0s");
   });
 });
 

@@ -367,7 +367,7 @@ describe("formatOutcomeForJournal", () => {
     const lines = result.split("\n");
     expect(lines).toHaveLength(8);
     expect(lines[0]).toBe("### Outcome Metrics");
-    expect(lines[6]).toContain("**Duration**: 60.0s");
+    expect(lines[6]).toContain("**Duration**: 1m 0.0s");
     expect(lines[7]).toContain("before (after count unavailable)");
   });
 
@@ -402,7 +402,7 @@ describe("formatOutcomeForJournal", () => {
     const lines = result.split("\n");
     expect(lines).toHaveLength(8);
     expect(lines[0]).toBe("### Outcome Metrics");
-    expect(lines[6]).toContain("**Duration**: 60.0s");
+    expect(lines[6]).toContain("**Duration**: 1m 0.0s");
     expect(lines[7]).toContain("after (before count unavailable)");
   });
 

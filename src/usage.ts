@@ -38,11 +38,19 @@ export const COST_DECIMAL_PLACES = 4;
 export const RESOURCE_USAGE_HEADER = "### Resource Usage";
 
 /**
- * Format a millisecond duration as seconds with one decimal place.
- * e.g. 1234 → "1.2s"
+ * Format a millisecond duration as a human-readable string.
+ * Durations under 60 s are shown as "1.2s"; durations of 60 s or more are
+ * shown as "3m 3.0s" so that multi-minute cycles are immediately readable.
+ * e.g. 1234 → "1.2s", 183000 → "3m 3.0s"
  */
 export function formatDurationSec(ms: number): string {
-  return `${(ms / 1000).toFixed(1)}s`;
+  const totalSec = ms / 1000;
+  if (totalSec < 60) {
+    return `${totalSec.toFixed(1)}s`;
+  }
+  const minutes = Math.floor(totalSec / 60);
+  const remainingSec = totalSec - minutes * 60;
+  return `${minutes}m ${remainingSec.toFixed(1)}s`;
 }
 
 /**
