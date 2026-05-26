@@ -51,8 +51,8 @@ describe("db constants (value-pinning)", () => {
   it("CYCLE_STATS_HISTORY_LIMIT is 20", () => {
     expect(CYCLE_STATS_HISTORY_LIMIT).toBe(20);
   });
-  it("RELEVANT_LEARNINGS_LIMIT is 20", () => {
-    expect(RELEVANT_LEARNINGS_LIMIT).toBe(20);
+  it("RELEVANT_LEARNINGS_LIMIT is 25", () => {
+    expect(RELEVANT_LEARNINGS_LIMIT).toBe(25);
   });
   it("STRATEGIC_CONTEXT_KEEP_LAST is 20", () => {
     expect(STRATEGIC_CONTEXT_KEEP_LAST).toBe(20);
