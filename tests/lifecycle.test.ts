@@ -81,6 +81,12 @@ describe("lifecycle helpers", () => {
     it("falls back to default for Infinity", () => {
       expect(parseTimeoutEnv("Infinity", 120_000)).toBe(120_000);
     });
+
+    it("accepts scientific notation string '1e5' as a valid positive finite (= 100000)", () => {
+      // Number("1e5") === 100000 — finite and positive, so it must be accepted.
+      // Pins this behaviour so a future regex-based refactor doesn't silently reject it.
+      expect(parseTimeoutEnv("1e5", 120_000)).toBe(100_000);
+    });
   });
 
   describe("timeout constants", () => {
