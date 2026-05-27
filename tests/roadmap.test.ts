@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { generateRoadmapOutput, ROADMAP_BODY_PREVIEW_MAX_CHARS } from "../src/roadmap.js";
+import { generateRoadmapOutput, generateRoadmapJson, ROADMAP_BODY_PREVIEW_MAX_CHARS } from "../src/roadmap.js";
 import * as planning from "../src/planning.js";
 import { parseRoadmap } from "../src/planning.js";
 
@@ -474,6 +474,44 @@ describe("generateRoadmapOutput", () => {
     expect(idxFirst).toBeGreaterThanOrEqual(0);
     expect(idxSecond).toBeGreaterThanOrEqual(0);
     expect(idxFirst).toBeLessThan(idxSecond);
+  });
+});
+
+describe("generateRoadmapJson", () => {
+  it("returns an object with an items array", () => {
+    const result = generateRoadmapJson(SAMPLE_ROADMAP);
+    expect(result).toHaveProperty("items");
+    expect(Array.isArray(result.items)).toBe(true);
+  });
+
+  it("items array contains parsed ProjectItem objects from the roadmap", () => {
+    const result = generateRoadmapJson(SAMPLE_ROADMAP);
+    const titles = result.items.map((i) => i.title);
+    expect(titles).toContain("Improve prompt efficiency");
+    expect(titles).toContain("Write more tests");
+    expect(titles).toContain("Track token usage");
+  });
+
+  it("returns empty items array for an empty roadmap", () => {
+    const result = generateRoadmapJson(EMPTY_ROADMAP);
+    expect(result.items).toHaveLength(0);
+  });
+
+  it("result is JSON-serialisable (no undefined or circular values)", () => {
+    const result = generateRoadmapJson(SAMPLE_ROADMAP);
+    expect(() => JSON.stringify(result)).not.toThrow();
+    const parsed = JSON.parse(JSON.stringify(result));
+    expect(Array.isArray(parsed.items)).toBe(true);
+  });
+
+  it("each item has the expected ProjectItem shape", () => {
+    const result = generateRoadmapJson(SAMPLE_ROADMAP);
+    for (const item of result.items) {
+      expect(typeof item.id).toBe("string");
+      expect(typeof item.title).toBe("string");
+      expect(typeof item.body).toBe("string");
+      expect(typeof item.reactions).toBe("number");
+    }
   });
 });
 

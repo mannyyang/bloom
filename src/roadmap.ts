@@ -19,7 +19,9 @@ import {
   STATUS_UP_NEXT,
   STATUS_DONE,
   type StatusColumn,
+  type ProjectItem,
 } from "./planning.js";
+import { parseJsonFlag } from "./stats.js";
 
 export const ROADMAP_BODY_PREVIEW_MAX_CHARS = 120;
 
@@ -92,6 +94,16 @@ export function generateRoadmapOutput(content: string): string[] {
   return lines;
 }
 
+/**
+ * Machine-readable JSON output for CI automation, dashboards, and scripting.
+ * Returns the parsed roadmap items array directly.
+ * Mirrors the generateStatsJson pattern from stats.ts.
+ */
+export function generateRoadmapJson(content: string): { items: ProjectItem[] } {
+  const items = parseRoadmap(content);
+  return { items };
+}
+
 function main() {
   let content: string;
   try {
@@ -101,9 +113,16 @@ function main() {
     process.exit(1);
   }
 
-  const output = generateRoadmapOutput(content);
-  for (const line of output) {
-    console.log(line);
+  const jsonMode = parseJsonFlag(process.argv);
+
+  if (jsonMode) {
+    const result = generateRoadmapJson(content);
+    console.log(JSON.stringify(result, null, 2));
+  } else {
+    const output = generateRoadmapOutput(content);
+    for (const line of output) {
+      console.log(line);
+    }
   }
 }
 
