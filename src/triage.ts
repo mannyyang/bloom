@@ -15,6 +15,11 @@ export const PROMPT_BODY_PREVIEW_CHARS = 200;
 // a title approaches that limit.
 export const PROMPT_TITLE_PREVIEW_CHARS = 120;
 
+// Prompt-preview cap for board item bodies. Shorter than PROMPT_BODY_PREVIEW_CHARS
+// because board items are context only (not the primary focus of triage); 80 chars
+// gives the LLM enough to de-duplicate similar issues without inflating prompt size.
+export const BOARD_BODY_PREVIEW_CHARS = 80;
+
 /** Maximum LLM turns allowed per triage call. */
 export const TRIAGE_MAX_TURNS = 3;
 
@@ -94,7 +99,16 @@ export function buildTriagePrompt(
           .map((item) => {
             const issue = item.linkedIssueNumber ? ` (#${item.linkedIssueNumber})` : "";
             const reactions = item.reactions > 0 ? ` (${item.reactions} ★)` : "";
-            return `- [${item.status ?? "No Status"}] ${item.title}${issue}${reactions}`;
+            // Strip internal storage annotations ([since: N], …[truncated]) from the
+            // body preview so the LLM sees clean content, not planning metadata.
+            const cleanBody = item.body
+              .replace(/\n?\[since:\s*\d+\]/g, "")
+              .replace(/ …\[truncated\]$/, "")
+              .trim();
+            const bodyPreview = cleanBody
+              ? `\n  ${cleanBody.slice(0, BOARD_BODY_PREVIEW_CHARS)}`
+              : "";
+            return `- [${item.status ?? "No Status"}] ${item.title}${issue}${reactions}${bodyPreview}`;
           })
           .join("\n")
       : "No items on board yet.";

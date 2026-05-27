@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach, afterAll, beforeAll, beforeEach } from "vitest";
-import { buildTriagePrompt, parseTriageResponse, triageIssues, PROMPT_BODY_PREVIEW_CHARS, PROMPT_TITLE_PREVIEW_CHARS, TRIAGE_MAX_TURNS, TRIAGE_MAX_BUDGET_USD, TRIAGE_REASON_MAX_CHARS, TRIAGE_ERROR_PREVIEW_CHARS, TRIAGE_ACTION_NAME, TRIAGE_BOARD_STATUS_DONE, TRIAGE_ALREADY_ON_BOARD_COMMENT } from "../src/triage.js";
+import { buildTriagePrompt, parseTriageResponse, triageIssues, PROMPT_BODY_PREVIEW_CHARS, PROMPT_TITLE_PREVIEW_CHARS, BOARD_BODY_PREVIEW_CHARS, TRIAGE_MAX_TURNS, TRIAGE_MAX_BUDGET_USD, TRIAGE_REASON_MAX_CHARS, TRIAGE_ERROR_PREVIEW_CHARS, TRIAGE_ACTION_NAME, TRIAGE_BOARD_STATUS_DONE, TRIAGE_ALREADY_ON_BOARD_COMMENT } from "../src/triage.js";
 import type { CommunityIssue } from "../src/issues.js";
 import { closeIssueWithComment, detectRepo, isValidRepo } from "../src/issues.js";
 import { hasIssueAction, insertIssueAction, initDb, insertCycle } from "../src/db.js";
@@ -236,6 +236,56 @@ describe("buildTriagePrompt", () => {
     const prompt = buildTriagePrompt([], items);
     expect(prompt).toContain("(#42)");
     expect(prompt).toContain("(12 ★)");
+  });
+
+  it("includes board item body preview when body is non-empty", () => {
+    const items = [makeBoardItem({ title: "Feature X", status: "Backlog", body: "This is a description of the feature." })];
+    const prompt = buildTriagePrompt([], items);
+    expect(prompt).toContain("This is a description of the feature.");
+  });
+
+  it("omits body preview for board items with empty body", () => {
+    const items = [makeBoardItem({ title: "No-body item", status: "Backlog", body: "" })];
+    const prompt = buildTriagePrompt([], items);
+    // Board item line must be present without any trailing body line
+    expect(prompt).toContain("[Backlog] No-body item");
+    // No extra indented line following the title line
+    const lines = prompt.split("\n");
+    const titleLineIdx = lines.findIndex((l) => l.includes("No-body item"));
+    expect(titleLineIdx).toBeGreaterThanOrEqual(0);
+    // The very next line (if it starts with two spaces) would be a body preview;
+    // since body is empty, the next line must NOT be an indented body preview.
+    const nextLine = lines[titleLineIdx + 1] ?? "";
+    expect(nextLine.startsWith("  ")).toBe(false);
+  });
+
+  it("truncates board item body preview to BOARD_BODY_PREVIEW_CHARS characters", () => {
+    const longBody = "b".repeat(BOARD_BODY_PREVIEW_CHARS + 20);
+    const items = [makeBoardItem({ title: "Long body item", status: "Backlog", body: longBody })];
+    const prompt = buildTriagePrompt([], items);
+    expect(prompt).toContain("b".repeat(BOARD_BODY_PREVIEW_CHARS));
+    expect(prompt).not.toContain("b".repeat(BOARD_BODY_PREVIEW_CHARS + 1));
+  });
+
+  it("BOARD_BODY_PREVIEW_CHARS is a positive integer less than PROMPT_BODY_PREVIEW_CHARS", () => {
+    // Board item preview is intentionally shorter than issue body preview.
+    expect(Number.isInteger(BOARD_BODY_PREVIEW_CHARS)).toBe(true);
+    expect(BOARD_BODY_PREVIEW_CHARS).toBeGreaterThan(0);
+    expect(BOARD_BODY_PREVIEW_CHARS).toBeLessThan(PROMPT_BODY_PREVIEW_CHARS);
+  });
+
+  it("strips [since: N] annotation from board item body preview", () => {
+    const items = [makeBoardItem({ title: "In-progress item", status: "In Progress", body: "Real work here\n[since: 330]" })];
+    const prompt = buildTriagePrompt([], items);
+    expect(prompt).toContain("Real work here");
+    expect(prompt).not.toContain("[since:");
+  });
+
+  it("strips …[truncated] marker from board item body preview", () => {
+    const items = [makeBoardItem({ title: "Long stored item", status: "Backlog", body: "Some stored description …[truncated]" })];
+    const prompt = buildTriagePrompt([], items);
+    expect(prompt).toContain("Some stored description");
+    expect(prompt).not.toContain("…[truncated]");
   });
 });
 
