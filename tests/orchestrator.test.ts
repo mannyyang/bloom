@@ -1,13 +1,35 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import type Database from "better-sqlite3";
 import { initDb, getJournalEntries } from "../src/db.js";
 import {
   processEvolutionResult,
   formatCycleSummaryWithDuration,
   CYCLE_SUMMARY_SEPARATOR,
+  isDryRun,
 } from "../src/orchestrator.js";
 import { insertCycle } from "../src/db.js";
 import { makeOutcome } from "./helpers.js";
+
+describe("isDryRun", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("returns false when BLOOM_DRY_RUN is not set", () => {
+    vi.stubEnv("BLOOM_DRY_RUN", "");
+    expect(isDryRun()).toBe(false);
+  });
+
+  it("returns true when BLOOM_DRY_RUN is set to a non-empty string", () => {
+    vi.stubEnv("BLOOM_DRY_RUN", "1");
+    expect(isDryRun()).toBe(true);
+  });
+
+  it("returns true when BLOOM_DRY_RUN is set to 'true'", () => {
+    vi.stubEnv("BLOOM_DRY_RUN", "true");
+    expect(isDryRun()).toBe(true);
+  });
+});
 
 describe("CYCLE_SUMMARY_SEPARATOR", () => {
   it("is a 40-character equals-sign line", () => {

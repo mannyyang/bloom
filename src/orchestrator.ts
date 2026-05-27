@@ -9,6 +9,15 @@ import { formatDurationSec } from "./usage.js";
 /** Separator line used at the top and bottom of cycle summary blocks. */
 export const CYCLE_SUMMARY_SEPARATOR = "========================================";
 
+/**
+ * Returns true when the BLOOM_DRY_RUN environment variable is set to a
+ * non-empty value.  Reading process.env at call-time (rather than module
+ * initialisation time) keeps the function easy to test with vi.stubEnv.
+ */
+export function isDryRun(): boolean {
+  return !!process.env.BLOOM_DRY_RUN;
+}
+
 
 /** Internal shape returned by the better-sqlite3 transaction in processEvolutionResult. */
 interface WriteResult {

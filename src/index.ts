@@ -17,7 +17,7 @@ import {
 import { runBuildVerificationPhase, updatePlanningStatus, pushChangesPhase, demoteStaleItemsPhase } from "./phases.js";
 import { type PhaseUsage, formatDurationSec } from "./usage.js";
 import { createOutcome, formatOutcomeForJournal, parseTestCount, parseTestTotal } from "./outcomes.js";
-import { formatCycleSummaryWithDuration } from "./orchestrator.js";
+import { formatCycleSummaryWithDuration, isDryRun } from "./orchestrator.js";
 import { loadEvolutionContext } from "./context.js";
 import {
   runAssessmentPhase,
@@ -76,15 +76,21 @@ async function main() {
 
     const assessment = await runAssessmentPhase(db, cycleCount, ctx, phaseUsages, deps);
 
-    const processed = await runEvolutionPhase(
-      db, cycleCount, outcome, assessment, ctx.identity, phaseUsages, deps, safetyHooks,
-    );
+    if (isDryRun()) {
+      console.log("[dryRun] BLOOM_DRY_RUN is set — skipping evolution, build verification, and push.");
+      await updatePlanningStatus(cycleCount, ctx.projectConfig, ctx.currentItem, { improvementsSucceeded: 0, improvementsAttempted: 0 }, db ?? undefined);
+      console.log("[dryRun] Assessment and planning status updated. Exiting cleanly.");
+    } else {
+      const processed = await runEvolutionPhase(
+        db, cycleCount, outcome, assessment, ctx.identity, phaseUsages, deps, safetyHooks,
+      );
 
-    runBuildVerificationPhase(cycleCount, outcome);
+      runBuildVerificationPhase(cycleCount, outcome);
 
-    await updatePlanningStatus(cycleCount, ctx.projectConfig, ctx.currentItem, processed, db ?? undefined);
+      await updatePlanningStatus(cycleCount, ctx.projectConfig, ctx.currentItem, processed, db ?? undefined);
 
-    pushChangesPhase(outcome);
+      pushChangesPhase(outcome);
+    }
   } catch (err) {
     evolutionError = err;
     console.error(`\n[error] Evolution failed: ${errorMessage(err)}`);
