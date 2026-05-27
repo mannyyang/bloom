@@ -76,7 +76,12 @@ export function buildTriagePrompt(
   issues: CommunityIssue[],
   boardItems: ProjectItem[],
 ): string {
-  const issueList = issues
+  // Sort descending by reactions so the LLM sees highest-priority issues first.
+  // fetchCommunityIssues already sorts the upstream fetch, but sorting here
+  // too is a cheap defence-in-depth that makes priority ordering robust to
+  // any caller that does not pre-sort.
+  const sortedIssues = [...issues].sort((a, b) => b.reactions - a.reactions);
+  const issueList = sortedIssues
     .map(
       (i) =>
         `- #${i.number}: "${i.title.slice(0, PROMPT_TITLE_PREVIEW_CHARS)}" (${i.reactions} reactions)\n  ${i.body.slice(0, PROMPT_BODY_PREVIEW_CHARS)}`,

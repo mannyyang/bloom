@@ -177,6 +177,36 @@ describe("buildTriagePrompt", () => {
     expect(prompt).toContain("5 reactions");
   });
 
+  it("renders issues sorted by reactions descending (highest first)", () => {
+    // Defence-in-depth: buildTriagePrompt sorts its own copy so the LLM sees
+    // highest-priority issues first even when the caller has not pre-sorted.
+    const issues = [
+      makeIssue({ number: 1, title: "Low priority", reactions: 1 }),
+      makeIssue({ number: 2, title: "High priority", reactions: 10 }),
+      makeIssue({ number: 3, title: "Medium priority", reactions: 5 }),
+    ];
+    const prompt = buildTriagePrompt(issues, []);
+    const highIdx = prompt.indexOf("#2");
+    const medIdx = prompt.indexOf("#3");
+    const lowIdx = prompt.indexOf("#1");
+    expect(highIdx).toBeGreaterThanOrEqual(0);
+    expect(medIdx).toBeGreaterThanOrEqual(0);
+    expect(lowIdx).toBeGreaterThanOrEqual(0);
+    expect(highIdx).toBeLessThan(medIdx);
+    expect(medIdx).toBeLessThan(lowIdx);
+  });
+
+  it("does not mutate the original issues array when sorting", () => {
+    const issues = [
+      makeIssue({ number: 1, reactions: 1 }),
+      makeIssue({ number: 2, reactions: 10 }),
+    ];
+    const originalOrder = issues.map((i) => i.number);
+    buildTriagePrompt(issues, []);
+    // original array must remain unchanged
+    expect(issues.map((i) => i.number)).toEqual(originalOrder);
+  });
+
   it("renders board item with null status as [No Status]", () => {
     // triage.ts uses `item.status ?? "No Status"` so a ProjectItem with status: null
     // (e.g. from an external integration) must appear as [No Status] in the prompt
