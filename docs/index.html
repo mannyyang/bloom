@@ -83,26 +83,22 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Wed, 27 May 2026 00:54:37 GMT</p>
+    <p>Last updated: Wed, 27 May 2026 05:36:33 GMT</p>
   </header>
   
-  <section class="section">
-    <h2><span class="badge" style="background:#6b7280">Backlog</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Add a `dryRun` flag to the orchestrator that runs assessment and planning but skips the evolution step, allowing cost-free cycle previews when diagnosing prompt or planning issues.</span>
-          
-        </div>
-      </li></ul>
-  </section>
 
 
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add a `dryRun` flag to the orchestrator that runs assessment and planning but skips the evolution step, allowing cost-free cycle previews when diagnosing prompt or planning issues.</span>
+          <p class="item-desc">Completed in cycle 515: 3/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -266,10 +262,10 @@
       <tbody>
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
-        <tr><td>Avg improvements / cycle</td><td><strong>1.6</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>84%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>4.5 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$32.71</strong></td></tr>
+        <tr><td>Avg improvements / cycle</td><td><strong>1.5</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>83%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>4.4 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$32.47</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -279,6 +275,25 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 515</span>
+        <span class="cycle-date">2026-05-27</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- feat: `pnpm stats --last N` CLI flag — add `parseLastNArg()` helper, `lastN?` param to `generateStatsOutput`, pass through to `getCycleStats`, wire up in `main()`; 3 new tests
+- test: `formatCycleStats` zero-cycle branch value-pin — direct call with `totalCycles: 0` asserts exact sentinel string
+- refactor: consolidate `CYCLE_SUMMARY_SEPARATOR` into `db.ts`, re-export from `orchestrator.ts`, remove local copy in `stats.ts`</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- feat: `pnpm stats --last N` CLI flag (7c8bb49) — build ✅ 2850 tests ✅
+- test: `formatCycleStats` zero-cycle branch test (a3f14b7) — build ✅ 2850 tests ✅
+- refactor: `CYCLE_SUMMARY_SEPARATOR` moved to `db.ts` (6c85e1d) — build ✅ 2850 tests ✅</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [refactoring] Re-exporting a constant from its old location (`export { X } from &quot;./new.js&quot;`) is the safest way to consolidate without breaking existing importers — zero test changes required
+- [cli] Extracting CLI arg parsing into a pure `parseLastNArg(argv: string[])` function makes it trivially testable without process mocking or subprocess spawning
+- [coverage] Short-circuit returns in formatting functions are easy to miss in integration tests; a direct unit test with a crafted input object is the right fix</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 514</span>
@@ -342,23 +357,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [anti-pattern] Hardcoded organization-specific URLs in HTML generation code can silently point to the wrong repo when a project is forked or transferred — always derive from config or test with exact URL pins
 - [process] When fixing a URL bug, immediately add a regression test that pins the correct value and explicitly rejects the old wrong value — the existing test only checked `/issues/7` (path suffix) not the full URL, which allowed the bug to persist undetected
 - [domain] The page-helpers.ts module had two separate URL occurrences that both needed fixing: the issue link generator and the FOOTER_LINK constant — always grep for all occurrences of a pattern when fixing URL bugs</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 509</span>
-        <span class="cycle-date">2026-05-26</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Check and implement TRIAGE_ERROR_PREVIEW_CHARS = 200 value-pin test in triage.test.ts
-- Check and implement CONTEXT_REASON_PREVIEW_CHARS = 100 value-pin test in context.test.ts
-- Check and implement storeLearnings within-batch dedup test in memory.test.ts</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- none (all three improvements were already implemented in the codebase from a prior run)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none (no regressions; build and tests pass clean — 2838 tests across 23 files)</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [process] When a cycle's &quot;build verification: failed / push: failed&quot; outcome metrics appear, the actual code changes may still have landed — re-running assessment + implementation can reveal all improvements already committed, avoiding duplicate work
-- [process] Checking grep output before writing new tests prevents redundant additions and wasted budget; always verify current state of test files before implementing
-- [test-coverage] All three assessed pin-test gaps (TRIAGE_ERROR_PREVIEW_CHARS, CONTEXT_REASON_PREVIEW_CHARS, storeLearnings intra-batch dedup) were closed in a prior cycle, suggesting the assessment was generated against a slightly stale snapshot</p></div>
       </div>
     </div>
   </section>

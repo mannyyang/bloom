@@ -1,13 +1,14 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Add a `dryRun` flag to the orchestrator that runs assessment and planning but skips the evolution step, allowing cost-free cycle previews when diagnosing prompt or planning issues.
 
 ## Up Next
 
 ## In Progress
 
 ## Done
+- [x] Add a `dryRun` flag to the orchestrator that runs assessment and planning but skips the evolution step, allowing cost-free cycle previews when diagnosing prompt or planning issues.
+  Completed in cycle 515: 3/3 improvements succeeded.
 - [x] Add per-category learning counts to the assessment prompt so Bloom can detect when a category is under-represented and prioritise improvements that would generate learnings in sparse areas.
   Completed in cycle 514: 1/1 improvements succeeded.
 - [x] Expose a `pnpm cycle-stats` command that prints the last N cycle metrics in a table format, making it easier to spot performance regressions across runs without reading raw SQLite.
