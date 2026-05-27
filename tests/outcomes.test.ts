@@ -110,6 +110,10 @@ describe("parseTestCount", () => {
   it("parses passed count from passed+skipped+failed output", () => {
     expect(parseTestCount("Tests  5 passed | 3 skipped | 2 failed (10)")).toBe(5);
   });
+
+  it("parses passed count from mixed pass+skip output (10 passed | 3 skipped)", () => {
+    expect(parseTestCount("Tests  10 passed | 3 skipped (13)")).toBe(10);
+  });
 });
 
 describe("parseTestTotal", () => {
