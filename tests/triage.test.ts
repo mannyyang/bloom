@@ -215,6 +215,28 @@ describe("buildTriagePrompt", () => {
     const prompt = buildTriagePrompt([], items);
     expect(prompt).toContain("[No Status] Orphaned item");
   });
+
+  it("shows (N ★) reaction count on board items with reactions > 0", () => {
+    // LLM needs community momentum signal to distinguish similar board items.
+    // Mirrors the [N ★] suffix already shown in generateRoadmapOutput.
+    const items = [makeBoardItem({ title: "Popular feature", status: "Backlog", reactions: 8 })];
+    const prompt = buildTriagePrompt([], items);
+    expect(prompt).toContain("(8 ★)");
+  });
+
+  it("omits reaction suffix on board items with reactions === 0", () => {
+    // Zero-reaction items should not clutter the prompt with a "(0 ★)" noise marker.
+    const items = [makeBoardItem({ title: "Quiet item", status: "Backlog", reactions: 0 })];
+    const prompt = buildTriagePrompt([], items);
+    expect(prompt).not.toContain("★");
+  });
+
+  it("includes both linked issue number and reaction count when both are present", () => {
+    const items = [makeBoardItem({ title: "Hot bug", status: "In Progress", linkedIssueNumber: 42, reactions: 12 })];
+    const prompt = buildTriagePrompt([], items);
+    expect(prompt).toContain("(#42)");
+    expect(prompt).toContain("(12 ★)");
+  });
 });
 
 describe("parseTriageResponse", () => {

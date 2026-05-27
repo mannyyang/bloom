@@ -91,10 +91,11 @@ export function buildTriagePrompt(
   const boardList =
     boardItems.length > 0
       ? boardItems
-          .map(
-            (item) =>
-              `- [${item.status ?? "No Status"}] ${item.title}${item.linkedIssueNumber ? ` (#${item.linkedIssueNumber})` : ""}`,
-          )
+          .map((item) => {
+            const issue = item.linkedIssueNumber ? ` (#${item.linkedIssueNumber})` : "";
+            const reactions = item.reactions > 0 ? ` (${item.reactions} ★)` : "";
+            return `- [${item.status ?? "No Status"}] ${item.title}${issue}${reactions}`;
+          })
           .join("\n")
       : "No items on board yet.";
 
