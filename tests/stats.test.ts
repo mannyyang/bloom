@@ -441,6 +441,24 @@ describe("generateStatsOutput", () => {
 });
 
 describe("formatCycleStats", () => {
+  it("returns 'No previous cycle data available.' when totalCycles is 0", () => {
+    const stats: CycleStats = {
+      totalCycles: 0,
+      successRate: 0,
+      avgImprovements: 0,
+      avgConversionRate: null,
+      testCountTrend: null,
+      recentFailures: 0,
+      avgDurationMinutes: null,
+      totalCostUsd: 0,
+      avgCostPerCycle: 0,
+      totalInputTokens: 0,
+      totalOutputTokens: 0,
+      failureCategoryBreakdown: {},
+    };
+    expect(formatCycleStats(stats)).toBe("No previous cycle data available.");
+  });
+
   it("minimal case: pins exact 4-line output when all optional fields are absent", () => {
     // No conversion rate, no test trend, no duration, zero cost/tokens, zero failures.
     // Any label rename, format change, or markdown drift will break this pin.
