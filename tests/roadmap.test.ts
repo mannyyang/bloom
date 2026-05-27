@@ -513,6 +513,113 @@ describe("generateRoadmapJson", () => {
       expect(typeof item.reactions).toBe("number");
     }
   });
+
+  it("each item has a sinceCycle field that is a number or null", () => {
+    const result = generateRoadmapJson(SAMPLE_ROADMAP);
+    for (const item of result.items) {
+      expect(item.sinceCycle === null || typeof item.sinceCycle === "number").toBe(true);
+    }
+  });
+
+  it("strips [since: N] annotation from body in JSON output", () => {
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "In-progress item",
+        status: "In Progress",
+        body: "Real description\n[since: 42]",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const result = generateRoadmapJson("");
+    expect(result.items[0].body).toBe("Real description");
+    expect(result.items[0].body).not.toContain("[since:");
+    spy.mockRestore();
+  });
+
+  it("populates sinceCycle for In Progress items with a [since: N] annotation", () => {
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Stuck item",
+        status: "In Progress",
+        body: "Some work\n[since: 330]",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const result = generateRoadmapJson("");
+    expect(result.items[0].sinceCycle).toBe(330);
+    spy.mockRestore();
+  });
+
+  it("sets sinceCycle to null for non-In-Progress items even with a [since: N] annotation", () => {
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Backlog item",
+        status: "Backlog",
+        body: "Some body\n[since: 10]",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const result = generateRoadmapJson("");
+    expect(result.items[0].sinceCycle).toBeNull();
+    spy.mockRestore();
+  });
+
+  it("sets sinceCycle to null for In Progress items with no [since: N] annotation", () => {
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Fresh item",
+        status: "In Progress",
+        body: "Just started",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const result = generateRoadmapJson("");
+    expect(result.items[0].sinceCycle).toBeNull();
+    spy.mockRestore();
+  });
+
+  it("strips …[truncated] storage marker from body in JSON output", () => {
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Long item",
+        status: "Backlog",
+        body: "Real content …[truncated]",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const result = generateRoadmapJson("");
+    expect(result.items[0].body).toBe("Real content");
+    expect(result.items[0].body).not.toContain("…[truncated]");
+    spy.mockRestore();
+  });
+
+  it("strips both [since: N] and …[truncated] markers together", () => {
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Combined item",
+        status: "In Progress",
+        body: "Some work\n[since: 400] …[truncated]",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const result = generateRoadmapJson("");
+    expect(result.items[0].body).not.toContain("[since:");
+    expect(result.items[0].body).not.toContain("[truncated]");
+    expect(result.items[0].sinceCycle).toBe(400);
+    spy.mockRestore();
+  });
 });
 
 describe("parseRoadmap", () => {

@@ -95,13 +95,37 @@ export function generateRoadmapOutput(content: string): string[] {
 }
 
 /**
+ * A cleaned-up view of a ProjectItem for machine-readable JSON output.
+ * Storage metadata ([since: N] annotations and …[truncated] markers) are
+ * stripped from body so CI dashboards see the same clean data shown in the
+ * human-readable CLI output. sinceCycle is derived from the body annotation
+ * for In Progress items and exposed as a typed field rather than an embedded string.
+ */
+export interface RoadmapJsonItem extends Omit<ProjectItem, "body"> {
+  body: string;
+  sinceCycle: number | null;
+}
+
+/**
  * Machine-readable JSON output for CI automation, dashboards, and scripting.
- * Returns the parsed roadmap items array directly.
+ * Strips internal storage markers ([since: N], …[truncated]) from item bodies
+ * and attaches sinceCycle so consumers get clean data matching the CLI display.
  * Mirrors the generateStatsJson pattern from stats.ts.
  */
-export function generateRoadmapJson(content: string): { items: ProjectItem[] } {
+export function generateRoadmapJson(content: string): { items: RoadmapJsonItem[] } {
   const items = parseRoadmap(content);
-  return { items };
+  const cleanItems: RoadmapJsonItem[] = items.map((item) => {
+    const sinceCycle =
+      item.status === STATUS_IN_PROGRESS && item.body
+        ? parseInProgressSinceCycle(item.body)
+        : null;
+    const cleanBody = item.body
+      .replace(/\n?\[since:\s*\d+\]/g, "")
+      .replace(/ …\[truncated\]$/, "")
+      .trim();
+    return { ...item, body: cleanBody, sinceCycle };
+  });
+  return { items: cleanItems };
 }
 
 function main() {
