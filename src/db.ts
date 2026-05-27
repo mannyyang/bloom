@@ -4,6 +4,9 @@ import type { PhaseUsage } from "./usage.js";
 
 export const DEFAULT_DB_PATH = "bloom.db";
 
+/** Separator line used in cycle summary blocks and the stats CLI header. */
+export const CYCLE_SUMMARY_SEPARATOR = "========================================";
+
 export const CYCLE_STATS_HISTORY_LIMIT = 20;
 export const RELEVANT_LEARNINGS_LIMIT = 25;
 export const STRATEGIC_CONTEXT_KEEP_LAST = 20;
