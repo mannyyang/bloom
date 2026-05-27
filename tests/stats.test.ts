@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseLastNArg, STATS_MEMORY_PREVIEW_CHARS } from "../src/stats.js";
+import { generateStatsOutput, parseLastNArg, parseJsonFlag, generateStatsJson, STATS_MEMORY_PREVIEW_CHARS } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { makeOutcome } from "./helpers.js";
 
@@ -437,6 +437,76 @@ describe("generateStatsOutput", () => {
       const stats = getCycleStats(db);
       expect(stats.avgConversionRate).toBe(0);
     });
+  });
+});
+
+describe("parseJsonFlag", () => {
+  it("returns false when --json is absent", () => {
+    expect(parseJsonFlag(["node", "stats.js"])).toBe(false);
+  });
+
+  it("returns true when --json is present", () => {
+    expect(parseJsonFlag(["node", "stats.js", "--json"])).toBe(true);
+  });
+
+  it("returns true when --json appears alongside other flags", () => {
+    expect(parseJsonFlag(["node", "stats.js", "--last", "5", "--json"])).toBe(true);
+  });
+
+  it("returns false for an empty argv", () => {
+    expect(parseJsonFlag([])).toBe(false);
+  });
+
+  it("returns false when only similar-but-not-equal flags are present", () => {
+    expect(parseJsonFlag(["node", "stats.js", "--json2", "--JSON"])).toBe(false);
+  });
+});
+
+describe("generateStatsJson", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("returns latestCycle=0 and zero-value stats when DB is empty", () => {
+    const result = generateStatsJson(db);
+    expect(result.latestCycle).toBe(0);
+    expect(result.stats.totalCycles).toBe(0);
+    expect(result.stats.successRate).toBe(0);
+    expect(result.stats.totalCostUsd).toBe(0);
+  });
+
+  it("returns correct latestCycle and stats shape when cycles exist", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 3, buildVerificationPassed: true, pushSucceeded: true }));
+    insertCycle(db, makeOutcome({ cycleNumber: 5, buildVerificationPassed: false, pushSucceeded: false }));
+    const result = generateStatsJson(db);
+    expect(result.latestCycle).toBe(5);
+    expect(result.stats.totalCycles).toBe(2);
+    expect(typeof result.stats.successRate).toBe("number");
+    expect(typeof result.stats.avgImprovements).toBe("number");
+    expect(typeof result.stats.failureCategoryBreakdown).toBe("object");
+  });
+
+  it("result is JSON-serialisable (no undefined or circular values)", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    const result = generateStatsJson(db);
+    expect(() => JSON.stringify(result)).not.toThrow();
+    const parsed = JSON.parse(JSON.stringify(result));
+    expect(parsed.latestCycle).toBe(1);
+    expect(parsed.stats.totalCycles).toBe(1);
+  });
+
+  it("respects optional lastN parameter", () => {
+    for (let i = 1; i <= 5; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i, buildVerificationPassed: true, pushSucceeded: true }));
+    }
+    const resultAll = generateStatsJson(db);
+    const resultLast2 = generateStatsJson(db, 2);
+    expect(resultAll.stats.totalCycles).toBe(5);
+    expect(resultLast2.stats.totalCycles).toBe(2);
+    // latestCycle is always the true latest regardless of lastN
+    expect(resultLast2.latestCycle).toBe(5);
   });
 });
 

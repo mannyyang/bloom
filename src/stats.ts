@@ -33,6 +33,28 @@ export function parseLastNArg(argv: string[]): number | undefined {
 }
 
 /**
+ * Parse `--json` from an argv array, returning true when the flag is present.
+ * Mirrors the pattern of parseLastNArg for consistency.
+ */
+export function parseJsonFlag(argv: string[]): boolean {
+  return argv.includes("--json");
+}
+
+/**
+ * Machine-readable JSON output for CI automation, dashboards, and scripting.
+ * Returns the latest cycle number alongside the raw CycleStats object.
+ * When no cycles exist, latestCycle is 0 and stats contains zero-value fields.
+ */
+export function generateStatsJson(
+  db: Database.Database,
+  lastN?: number,
+): { latestCycle: number; stats: ReturnType<typeof getCycleStats> } {
+  const latestCycle = getLatestCycleNumber(db);
+  const stats = getCycleStats(db, lastN);
+  return { latestCycle, stats };
+}
+
+/**
  * Core stats logic, accepting a db parameter for testability.
  * Returns the lines that would be printed to console.
  * @param lastN - optional override for how many recent cycles to summarise
@@ -71,12 +93,18 @@ export function generateStatsOutput(db: Database.Database, lastN?: number): stri
 
 function main() {
   const lastN = parseLastNArg(process.argv);
+  const jsonMode = parseJsonFlag(process.argv);
   const db = initDb();
 
   try {
-    const output = generateStatsOutput(db, lastN);
-    for (const line of output) {
-      console.log(line);
+    if (jsonMode) {
+      const result = generateStatsJson(db, lastN);
+      console.log(JSON.stringify(result, null, 2));
+    } else {
+      const output = generateStatsOutput(db, lastN);
+      for (const line of output) {
+        console.log(line);
+      }
     }
   } finally {
     db.close();
