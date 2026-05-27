@@ -107,12 +107,25 @@ export interface RoadmapJsonItem extends Omit<ProjectItem, "body"> {
 }
 
 /**
+ * Summary metadata included in the machine-readable JSON output.
+ * `total` is the count of all items across all statuses.
+ * `byStatus` maps each StatusColumn to the count of items in that column.
+ */
+export interface RoadmapJsonSummary {
+  total: number;
+  byStatus: Partial<Record<StatusColumn, number>>;
+}
+
+/**
  * Machine-readable JSON output for CI automation, dashboards, and scripting.
  * Strips internal storage markers ([since: N], …[truncated]) from item bodies
  * and attaches sinceCycle so consumers get clean data matching the CLI display.
- * Mirrors the generateStatsJson pattern from stats.ts.
+ * Items are sorted by STATUS_ORDER (same order as the CLI display) so output
+ * is deterministic regardless of parse order.
+ * Includes a `summary` field with total item count and per-status counts,
+ * mirroring the `latestCycle` metadata pattern from generateStatsJson.
  */
-export function generateRoadmapJson(content: string): { items: RoadmapJsonItem[] } {
+export function generateRoadmapJson(content: string): { items: RoadmapJsonItem[]; summary: RoadmapJsonSummary } {
   const items = parseRoadmap(content);
   const cleanItems: RoadmapJsonItem[] = items.map((item) => {
     const sinceCycle =
@@ -125,7 +138,26 @@ export function generateRoadmapJson(content: string): { items: RoadmapJsonItem[]
       .trim();
     return { ...item, body: cleanBody, sinceCycle };
   });
-  return { items: cleanItems };
+
+  // Sort items by STATUS_ORDER so JSON output matches CLI display order.
+  // Items with an unrecognised/null status are placed last.
+  const statusRank = new Map<string, number>(STATUS_ORDER.map((s, i) => [s, i]));
+  cleanItems.sort((a, b) => {
+    const ra = a.status !== null ? (statusRank.get(a.status) ?? STATUS_ORDER.length) : STATUS_ORDER.length;
+    const rb = b.status !== null ? (statusRank.get(b.status) ?? STATUS_ORDER.length) : STATUS_ORDER.length;
+    return ra - rb;
+  });
+
+  // Build summary: total count and per-status breakdown.
+  const byStatus: Partial<Record<StatusColumn, number>> = {};
+  for (const item of cleanItems) {
+    if (item.status !== null) {
+      byStatus[item.status] = (byStatus[item.status] ?? 0) + 1;
+    }
+  }
+  const summary: RoadmapJsonSummary = { total: cleanItems.length, byStatus };
+
+  return { items: cleanItems, summary };
 }
 
 function main() {

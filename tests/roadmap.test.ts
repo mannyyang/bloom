@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { generateRoadmapOutput, generateRoadmapJson, ROADMAP_BODY_PREVIEW_MAX_CHARS } from "../src/roadmap.js";
+import { generateRoadmapOutput, generateRoadmapJson, ROADMAP_BODY_PREVIEW_MAX_CHARS, type RoadmapJsonSummary } from "../src/roadmap.js";
 import * as planning from "../src/planning.js";
 import { parseRoadmap } from "../src/planning.js";
 
@@ -619,6 +619,54 @@ describe("generateRoadmapJson", () => {
     expect(result.items[0].body).not.toContain("[truncated]");
     expect(result.items[0].sinceCycle).toBe(400);
     spy.mockRestore();
+  });
+
+  it("includes a summary field with total and byStatus", () => {
+    const result = generateRoadmapJson(SAMPLE_ROADMAP);
+    expect(result).toHaveProperty("summary");
+    const summary = result.summary as RoadmapJsonSummary;
+    expect(typeof summary.total).toBe("number");
+    expect(typeof summary.byStatus).toBe("object");
+  });
+
+  it("summary.total equals items.length", () => {
+    const result = generateRoadmapJson(SAMPLE_ROADMAP);
+    expect(result.summary.total).toBe(result.items.length);
+  });
+
+  it("summary.total is 0 for an empty roadmap", () => {
+    const result = generateRoadmapJson(EMPTY_ROADMAP);
+    expect(result.summary.total).toBe(0);
+    expect(result.summary.byStatus).toEqual({});
+  });
+
+  it("summary.byStatus counts items per status correctly", () => {
+    // SAMPLE_ROADMAP: 2 Backlog, 1 Up Next, 1 In Progress, 1 Done
+    const result = generateRoadmapJson(SAMPLE_ROADMAP);
+    expect(result.summary.byStatus["Backlog"]).toBe(2);
+    expect(result.summary.byStatus["Up Next"]).toBe(1);
+    expect(result.summary.byStatus["In Progress"]).toBe(1);
+    expect(result.summary.byStatus["Done"]).toBe(1);
+  });
+
+  it("items are sorted by STATUS_ORDER (In Progress first, then Up Next, Backlog, Done)", () => {
+    const result = generateRoadmapJson(SAMPLE_ROADMAP);
+    const statuses = result.items.map((i) => i.status);
+    const inProgressIdx = statuses.indexOf("In Progress");
+    const upNextIdx = statuses.indexOf("Up Next");
+    const backlogIdx = statuses.indexOf("Backlog");
+    const doneIdx = statuses.indexOf("Done");
+    expect(inProgressIdx).toBeLessThan(upNextIdx);
+    expect(upNextIdx).toBeLessThan(backlogIdx);
+    expect(backlogIdx).toBeLessThan(doneIdx);
+  });
+
+  it("summary is JSON-serialisable (no undefined or circular values)", () => {
+    const result = generateRoadmapJson(SAMPLE_ROADMAP);
+    expect(() => JSON.stringify(result.summary)).not.toThrow();
+    const parsed = JSON.parse(JSON.stringify(result.summary));
+    expect(typeof parsed.total).toBe("number");
+    expect(typeof parsed.byStatus).toBe("object");
   });
 });
 
