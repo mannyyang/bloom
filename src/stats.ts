@@ -26,10 +26,22 @@ const CYCLE_SUMMARY_SEPARATOR = "========================================";
 export const STATS_MEMORY_PREVIEW_CHARS = 1000;
 
 /**
+ * Parse `--last N` from an argv array, returning N as a positive integer or
+ * undefined when the flag is absent, missing a value, or the value is invalid.
+ */
+export function parseLastNArg(argv: string[]): number | undefined {
+  const idx = argv.indexOf("--last");
+  if (idx === -1) return undefined;
+  const val = parseInt(argv[idx + 1] ?? "", 10);
+  return !isNaN(val) && val > 0 ? val : undefined;
+}
+
+/**
  * Core stats logic, accepting a db parameter for testability.
  * Returns the lines that would be printed to console.
+ * @param lastN - optional override for how many recent cycles to summarise
  */
-export function generateStatsOutput(db: Database.Database): string[] {
+export function generateStatsOutput(db: Database.Database, lastN?: number): string[] {
   const lines: string[] = [];
 
   const latestCycle = getLatestCycleNumber(db);
@@ -38,7 +50,7 @@ export function generateStatsOutput(db: Database.Database): string[] {
     return lines;
   }
 
-  const stats = getCycleStats(db);
+  const stats = getCycleStats(db, lastN);
   const formatted = formatCycleStats(stats);
 
   lines.push("");
@@ -62,10 +74,11 @@ export function generateStatsOutput(db: Database.Database): string[] {
 }
 
 function main() {
+  const lastN = parseLastNArg(process.argv);
   const db = initDb();
 
   try {
-    const output = generateStatsOutput(db);
+    const output = generateStatsOutput(db, lastN);
     for (const line of output) {
       console.log(line);
     }

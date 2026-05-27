@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, STATS_MEMORY_PREVIEW_CHARS } from "../src/stats.js";
+import { generateStatsOutput, parseLastNArg, STATS_MEMORY_PREVIEW_CHARS } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { makeOutcome } from "./helpers.js";
 
@@ -399,6 +399,29 @@ describe("generateStatsOutput", () => {
       insertCycle(db, makeOutcome({ cycleNumber: 7, buildVerificationPassed: false, pushSucceeded: false }));
       const stats = getCycleStats(db);
       expect(stats.recentFailures).toBe(3);
+    });
+  });
+
+  describe("--last N flag via generateStatsOutput and parseLastNArg", () => {
+    it("generateStatsOutput respects lastN and limits cycle window", () => {
+      // Insert 5 cycles; request only the last 2 — stats should reflect 2 cycles
+      for (let i = 1; i <= 5; i++) {
+        insertCycle(db, makeOutcome({ cycleNumber: i, buildVerificationPassed: true, pushSucceeded: true }));
+      }
+      const output = generateStatsOutput(db, 2);
+      const joined = output.join("\n");
+      // Stats are computed over 2 cycles, so "Cycles tracked": 2 should appear
+      expect(joined).toContain("Cycles tracked**: 2");
+    });
+
+    it("parseLastNArg returns undefined when only unknown flags are present", () => {
+      expect(parseLastNArg(["node", "stats.js", "--verbose"])).toBeUndefined();
+    });
+
+    it("parseLastNArg returns undefined when --last is given an invalid value", () => {
+      expect(parseLastNArg(["node", "stats.js", "--last", "notanumber"])).toBeUndefined();
+      expect(parseLastNArg(["node", "stats.js", "--last", "-5"])).toBeUndefined();
+      expect(parseLastNArg(["node", "stats.js", "--last", "0"])).toBeUndefined();
     });
   });
 
