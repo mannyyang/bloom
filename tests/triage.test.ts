@@ -288,6 +288,18 @@ describe("buildTriagePrompt", () => {
     expect(prompt).not.toContain("…[truncated]");
   });
 
+  it("strips both …[truncated] and [since: N] when both are present in order (regression guard)", () => {
+    // updateItemStatus appends [since: N] AFTER truncateItemBody appends …[truncated].
+    // buildTriagePrompt strips [since: N] first then …[truncated] — this order must work
+    // correctly for the combined case so neither annotation leaks into the prompt.
+    const body = "content …[truncated]\n[since: 5]";
+    const items = [makeBoardItem({ title: "Annotated item", status: "In Progress", body })];
+    const prompt = buildTriagePrompt([], items);
+    expect(prompt).toContain("content");
+    expect(prompt).not.toContain("…[truncated]");
+    expect(prompt).not.toContain("[since:");
+  });
+
   it("trims leading/trailing whitespace from issue body before preview truncation", () => {
     // GitHub issue bodies can have leading newlines; trim() before slice() prevents
     // the LLM seeing a blank-prefixed snippet. Mirrors the board item body path
