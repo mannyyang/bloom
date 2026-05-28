@@ -696,6 +696,48 @@ describe("generateRoadmapJson", () => {
     expect(backlogIdx).toBeLessThan(doneIdx);
   });
 
+  it("null-status items sort after all known-status items in the output array", () => {
+    // The statusRank lookup returns STATUS_ORDER.length for null-status items,
+    // which is the highest rank value — placing them at the end. A regression
+    // that changed the fallback (e.g. returning 0 or -1) would silently reorder
+    // them to the front; this test pins their position.
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Orphan item",
+        status: null as unknown as planning.StatusColumn,
+        body: "",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+      {
+        id: "item-1",
+        title: "Backlog item",
+        status: "Backlog",
+        body: "",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+      {
+        id: "item-2",
+        title: "Done item",
+        status: "Done",
+        body: "",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const result = generateRoadmapJson("");
+    const titles = result.items.map((i) => i.title);
+    const orphanIdx = titles.indexOf("Orphan item");
+    const backlogIdx = titles.indexOf("Backlog item");
+    const doneIdx = titles.indexOf("Done item");
+    // null-status item must appear after both known-status items
+    expect(orphanIdx).toBeGreaterThan(backlogIdx);
+    expect(orphanIdx).toBeGreaterThan(doneIdx);
+    spy.mockRestore();
+  });
+
   it("summary is JSON-serialisable (no undefined or circular values)", () => {
     const result = generateRoadmapJson(SAMPLE_ROADMAP);
     expect(() => JSON.stringify(result.summary)).not.toThrow();
