@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { generateRoadmapOutput, generateRoadmapJson, ROADMAP_BODY_PREVIEW_MAX_CHARS, type RoadmapJsonSummary } from "../src/roadmap.js";
 import * as planning from "../src/planning.js";
-import { parseRoadmap } from "../src/planning.js";
+import { parseRoadmap, serializeRoadmap } from "../src/planning.js";
 
 const SAMPLE_ROADMAP = `# Bloom Evolution Roadmap
 
@@ -789,5 +789,41 @@ describe("parseRoadmap", () => {
     expect(items).toHaveLength(1);
     expect(items[0].status).toBe("Backlog");
     expect(items[0].title).toBe("Accidentally-checked backlog item");
+  });
+});
+
+describe("serializeRoadmap + parseRoadmap round-trip", () => {
+  it("round-trips an item with a single-line body", () => {
+    const content = `# Bloom Evolution Roadmap\n\n## Backlog\n- [ ] My item\n  Some body text.\n`;
+    const items = parseRoadmap(content);
+    expect(items).toHaveLength(1);
+    expect(items[0].body).toBe("Some body text.");
+    const serialized = serializeRoadmap(items);
+    const reparsed = parseRoadmap(serialized);
+    expect(reparsed).toHaveLength(1);
+    expect(reparsed[0].title).toBe(items[0].title);
+    expect(reparsed[0].body).toBe(items[0].body);
+    expect(reparsed[0].status).toBe(items[0].status);
+  });
+
+  it("round-trips an item with a multi-line body (non-blank lines preserved)", () => {
+    const content = `# Bloom Evolution Roadmap\n\n## Backlog\n- [ ] Multi-line item\n  First line.\n  Second line.\n  Third line.\n`;
+    const items = parseRoadmap(content);
+    expect(items).toHaveLength(1);
+    expect(items[0].body).toBe("First line.\nSecond line.\nThird line.");
+    const serialized = serializeRoadmap(items);
+    const reparsed = parseRoadmap(serialized);
+    expect(reparsed).toHaveLength(1);
+    expect(reparsed[0].body).toBe("First line.\nSecond line.\nThird line.");
+  });
+
+  it("documents that blank embedded body lines are dropped during parse (known lossy behavior)", () => {
+    // serializeRoadmap emits blank body lines as "  " (two spaces), but parseRoadmap
+    // guards with `&& line.trim()`, so whitespace-only indented lines are silently dropped.
+    const content = `# Bloom Evolution Roadmap\n\n## Backlog\n- [ ] Item with blank body line\n  Line one.\n\n  Line two.\n`;
+    const items = parseRoadmap(content);
+    expect(items).toHaveLength(1);
+    // The blank line between "Line one." and "Line two." is dropped
+    expect(items[0].body).toBe("Line one.\nLine two.");
   });
 });
