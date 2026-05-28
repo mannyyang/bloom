@@ -200,6 +200,19 @@ describe("formatPlanningContext", () => {
     expect(result).toContain("Real content");
   });
 
+  it("trims leading whitespace left by [since: N] annotation at start of body", () => {
+    // Regression guard for the .trim() fix: annotation at the START leaves a
+    // leading "\n" in cleanBody; without .trim() the pushed preview begins with
+    // a newline, which pollutes the context string fed to the LLM.
+    const current = makeItem({ title: "Task", body: "[since: 5]\nsome text" });
+    const result = formatPlanningContext([], current);
+    expect(result).toContain("some text");
+    expect(result).not.toContain("[since: 5]");
+    // The body section must not start with a newline character
+    const bodyIdx = result.indexOf("some text");
+    expect(result[bodyIdx - 1]).not.toBe("\n\n");
+  });
+
   it("does not push blank line when body is only a [since: N] annotation", () => {
     const current = makeItem({ title: "Task", body: "[since: 337]" });
     const result = formatPlanningContext([], current);
