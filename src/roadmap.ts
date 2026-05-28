@@ -108,8 +108,11 @@ export interface RoadmapJsonItem extends Omit<ProjectItem, "body"> {
 
 /**
  * Summary metadata included in the machine-readable JSON output.
- * `total` is the count of all items across all statuses.
- * `byStatus` maps each StatusColumn to the count of items in that column.
+ * `total` is the count of ALL items, including any with a null status
+ * (items whose section heading does not map to a known StatusColumn).
+ * `byStatus` maps each known StatusColumn to its item count and only
+ * includes non-null statuses — so `total` may exceed the sum of
+ * `byStatus` values when null-status items are present.
  */
 export interface RoadmapJsonSummary {
   total: number;

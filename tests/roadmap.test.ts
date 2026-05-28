@@ -649,6 +649,41 @@ describe("generateRoadmapJson", () => {
     expect(result.summary.byStatus["Done"]).toBe(1);
   });
 
+  it("null-status items are counted in summary.total but excluded from summary.byStatus", () => {
+    // Items whose section heading does not map to a known StatusColumn get
+    // status: null from the parser. These are included in `total` (all items)
+    // but excluded from `byStatus` (per-status breakdown), so total can exceed
+    // sum(byStatus.values). This test pins that intentional divergence.
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Normal item",
+        status: "Backlog",
+        body: "",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+      {
+        id: "item-1",
+        title: "Orphan item",
+        status: null as unknown as planning.StatusColumn,
+        body: "",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const result = generateRoadmapJson("");
+    // total counts both items (including null-status)
+    expect(result.summary.total).toBe(2);
+    // byStatus only counts the known-status item
+    expect(result.summary.byStatus["Backlog"]).toBe(1);
+    // null-status item must NOT appear as a key in byStatus
+    const byStatusKeys = Object.keys(result.summary.byStatus);
+    expect(byStatusKeys).not.toContain("null");
+    expect(byStatusKeys).toHaveLength(1);
+    spy.mockRestore();
+  });
+
   it("items are sorted by STATUS_ORDER (In Progress first, then Up Next, Backlog, Done)", () => {
     const result = generateRoadmapJson(SAMPLE_ROADMAP);
     const statuses = result.items.map((i) => i.status);
