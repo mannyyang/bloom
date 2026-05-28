@@ -287,6 +287,18 @@ describe("buildTriagePrompt", () => {
     expect(prompt).toContain("Some stored description");
     expect(prompt).not.toContain("…[truncated]");
   });
+
+  it("trims leading/trailing whitespace from issue body before preview truncation", () => {
+    // GitHub issue bodies can have leading newlines; trim() before slice() prevents
+    // the LLM seeing a blank-prefixed snippet. Mirrors the board item body path
+    // which already calls .trim() before slicing.
+    const bodyWithLeadingNewlines = "\n\n\nActual content here";
+    const prompt = buildTriagePrompt([makeIssue({ body: bodyWithLeadingNewlines })], []);
+    // The prompt must show the real content without leading whitespace
+    expect(prompt).toContain("  Actual content here");
+    // Must NOT have the leading newlines before the content
+    expect(prompt).not.toMatch(/  \n\n\nActual content here/);
+  });
 });
 
 describe("parseTriageResponse", () => {
