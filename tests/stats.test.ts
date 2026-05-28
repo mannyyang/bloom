@@ -423,6 +423,11 @@ describe("generateStatsOutput", () => {
       expect(parseLastNArg(["node", "stats.js", "--last", "-5"])).toBeUndefined();
       expect(parseLastNArg(["node", "stats.js", "--last", "0"])).toBeUndefined();
     });
+
+    it("parseLastNArg returns undefined when --last is the final argv item with no following value", () => {
+      expect(parseLastNArg(["--last"])).toBeUndefined();
+      expect(parseLastNArg(["node", "stats.js", "--last"])).toBeUndefined();
+    });
   });
 
   describe("getCycleStats avgConversionRate single-attempt boundary", () => {
