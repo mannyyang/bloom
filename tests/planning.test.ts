@@ -986,6 +986,24 @@ describe("updateItemStatus", () => {
     expect(parsed[0].body).toBe("some work");
     expect(parsed[0].body).not.toMatch(/\[since:/);
   });
+
+  it("strips [since: N] annotation when moving to Done with empty-string completionNote (falsy branch)", () => {
+    // When completionNote="" the condition `status === STATUS_DONE && completionNote` is falsy,
+    // so the code falls through to the else-if that strips [since: N]. This pins that subtle
+    // branch so a future refactor can't silently leave stale staleness metadata on Done items.
+    const items = [makeItem({ id: "item-0", title: "Task", status: "In Progress", body: "progress\n[since: 7]" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    updateItemStatus(config, "item-0", "Done", "");
+
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].status).toBe("Done");
+    // body is NOT replaced (empty string is falsy), but [since:] IS stripped
+    expect(parsed[0].body).toBe("progress");
+    expect(parsed[0].body).not.toMatch(/\[since:/);
+  });
 });
 
 describe("demoteStaleInProgressItems", () => {
