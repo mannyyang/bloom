@@ -103,6 +103,13 @@ export function generateRoadmapOutput(content: string): string[] {
  */
 export interface RoadmapJsonItem extends Omit<ProjectItem, "body"> {
   body: string;
+  /**
+   * The cycle number when this item entered "In Progress" status, as recorded
+   * by the `[since: N]` annotation in the item body. Only populated for items
+   * with `status === STATUS_IN_PROGRESS` that have a valid, non-future-cycle
+   * `[since: N]` annotation in their stored body. Null for all other statuses,
+   * or when the annotation is absent, malformed, or references a future cycle.
+   */
   sinceCycle: number | null;
 }
 
