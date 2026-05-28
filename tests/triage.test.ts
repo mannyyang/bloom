@@ -299,6 +299,19 @@ describe("buildTriagePrompt", () => {
     // Must NOT have the leading newlines before the content
     expect(prompt).not.toMatch(/  \n\n\nActual content here/);
   });
+
+  it("trims leading/trailing whitespace from issue title before truncation", () => {
+    // buildTriagePrompt calls i.title.trim().slice(0, PROMPT_TITLE_PREVIEW_CHARS).
+    // This test pins that trim() is applied before slice() — a refactor swapping
+    // the order (slice then trim) would silently change behaviour when the title
+    // exceeds PROMPT_TITLE_PREVIEW_CHARS and has leading/trailing whitespace.
+    const titleWithLeadingSpaces = "   Real title here";
+    const prompt = buildTriagePrompt([makeIssue({ title: titleWithLeadingSpaces })], []);
+    // Trimmed title must appear in the prompt
+    expect(prompt).toContain('"Real title here"');
+    // The raw leading spaces must NOT appear before the title content
+    expect(prompt).not.toContain('"   Real title here"');
+  });
 });
 
 describe("parseTriageResponse", () => {
