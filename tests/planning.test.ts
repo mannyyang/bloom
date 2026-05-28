@@ -582,6 +582,29 @@ describe("parseRoadmap", () => {
       expect(item.reactions).toBe(0);
     }
   });
+
+  it("trims leading/trailing whitespace from titles (no issue number)", () => {
+    // A raw title like "  Spaces around title  " must be stored trimmed so
+    // round-trips through serialize→parse never accumulate extra spaces.
+    const content = `## Backlog
+- [ ]   Spaces around title
+`;
+    const items = parseRoadmap(content);
+    expect(items).toHaveLength(1);
+    expect(items[0].title).toBe("Spaces around title");
+  });
+
+  it("trims leading/trailing whitespace from titles with linked issue numbers", () => {
+    // The replace() that strips (#N) from the raw string does not remove spaces
+    // left adjacent to the parenthesis; .trim() on the result is required.
+    const content = `## Backlog
+- [ ]   Padded title   (#7)
+`;
+    const items = parseRoadmap(content);
+    expect(items).toHaveLength(1);
+    expect(items[0].title).toBe("Padded title");
+    expect(items[0].linkedIssueNumber).toBe(7);
+  });
 });
 
 describe("serializeRoadmap", () => {

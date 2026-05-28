@@ -169,7 +169,7 @@ export function parseRoadmap(content: string): ProjectItem[] {
       const raw = itemMatch[1];
       const issueMatch = raw.match(/\(#(\d+)\)\s*$/);
       const linkedIssueNumber = issueMatch ? parseInt(issueMatch[1], 10) : null;
-      const title = issueMatch ? raw.replace(/\s*\(#\d+\)\s*$/, "") : raw;
+      const title = issueMatch ? raw.replace(/\s*\(#\d+\)\s*$/, "").trim() : raw.trim();
 
       currentItem = {
         title,
