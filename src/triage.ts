@@ -89,7 +89,7 @@ export function buildTriagePrompt(
   const issueList = sortedIssues
     .map(
       (i) =>
-        `- #${i.number}: "${i.title.trim().slice(0, PROMPT_TITLE_PREVIEW_CHARS)}" (${i.reactions} reactions)\n  ${i.body.trim().slice(0, PROMPT_BODY_PREVIEW_CHARS)}`,
+        `- #${i.number}: "${i.title.trim().slice(0, PROMPT_TITLE_PREVIEW_CHARS)}" (${i.reactions} reactions)\n  ${i.body.trim().replace(/\s+/g, " ").slice(0, PROMPT_BODY_PREVIEW_CHARS)}`,
     )
     .join("\n");
 

@@ -324,6 +324,30 @@ describe("buildTriagePrompt", () => {
     // The raw leading spaces must NOT appear before the title content
     expect(prompt).not.toContain('"   Real title here"');
   });
+
+  it("collapses internal newlines in multi-paragraph issue bodies to single spaces", () => {
+    // Multi-paragraph GitHub issue bodies contain embedded newlines. Without
+    // whitespace normalisation the body preview in the prompt looks like:
+    //   - #1: "Title" (0 reactions)
+    //   First paragraph
+    //   Second paragraph
+    // — the un-indented subsequent lines break the per-issue indented format and
+    // can confuse the LLM about issue boundaries. After normalisation the body
+    // preview is a single flat line:
+    //   - #1: "Title" (0 reactions)
+    //     First paragraph Second paragraph
+    const multiLineBody = "First paragraph\n\nSecond paragraph\nThird paragraph";
+    const prompt = buildTriagePrompt([makeIssue({ number: 1, body: multiLineBody })], []);
+    // The body section must be a single line (no embedded newlines after the prefix)
+    const lines = prompt.split("\n");
+    const bodyLineIdx = lines.findIndex((l) => l.startsWith("  ") && l.includes("First paragraph"));
+    expect(bodyLineIdx).toBeGreaterThanOrEqual(0);
+    const bodyLine = lines[bodyLineIdx];
+    // All paragraph text must be on one line, collapsed with spaces
+    expect(bodyLine).toContain("First paragraph Second paragraph Third paragraph");
+    // Must not contain raw newlines within the body preview
+    expect(bodyLine).not.toContain("\n");
+  });
 });
 
 describe("parseTriageResponse", () => {
