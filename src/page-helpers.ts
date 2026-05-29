@@ -131,7 +131,7 @@ export function parseRoadmapSections(content: string): RoadmapSection[] {
 
     // Indented description line
     if (/^\s{2,}/.test(rawLine) && currentItem) {
-      const desc = rawLine.trim();
+      const desc = rawLine.trim().replace(/ …\[truncated\]$/, "");
       if (desc) {
         currentItem.description = currentItem.description
           ? `${currentItem.description} ${desc}`

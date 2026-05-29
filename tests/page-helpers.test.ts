@@ -142,6 +142,20 @@ describe("parseRoadmapSections", () => {
     expect(sections).toHaveLength(1);
     expect(sections[0].items).toHaveLength(0);
   });
+
+  it("strips …[truncated] storage marker from description", () => {
+    const md = `## Backlog\n- [ ] Long task\n  Some body text …[truncated]\n`;
+    const sections = parseRoadmapSections(md);
+    expect(sections[0].items[0].description).toBe("Some body text");
+    expect(sections[0].items[0].description).not.toContain("…[truncated]");
+  });
+
+  it("strips …[truncated] from description — renderSection HTML contains no marker", () => {
+    const md = `## Backlog\n- [ ] Long task\n  Some body text …[truncated]\n`;
+    const sections = parseRoadmapSections(md);
+    const html = renderSection(sections[0]);
+    expect(html).not.toContain("…[truncated]");
+  });
 });
 
 // ---------------------------------------------------------------------------
