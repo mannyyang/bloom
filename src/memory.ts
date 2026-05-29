@@ -235,7 +235,10 @@ export function formatMemoryForPrompt(
       // Require budget for both the category header AND its first item before
       // committing either to learningSection. This prevents a dangling header
       // with no items if the budget runs out immediately after the header.
-      if (totalLen + separatorLen + learningSection.length + header.length + firstLine.length > maxChars) break;
+      if (totalLen + separatorLen + learningSection.length + header.length + firstLine.length > maxChars) {
+        budgetExhausted = true;
+        break;
+      }
       learningSection += header;
       for (const item of items) {
         const line = `- ${item.content}\n`;

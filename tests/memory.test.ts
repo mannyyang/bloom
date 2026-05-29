@@ -611,6 +611,42 @@ describe("formatMemoryForPrompt", () => {
     expect(ellipsisFound).toBe(true);
   });
 
+  it("appends ellipsis when outer-loop break fires (second category header+first item exceed budget)", () => {
+    // This exercises the outer-loop truncation path: the budget fits the first
+    // category entirely but NOT the second category's header + first item combined.
+    // Before the fix, budgetExhausted remained false in this case and the ellipsis
+    // was silently omitted; the LLM could not tell the list was cut.
+    //
+    // Use decay to guarantee ordering: domain is inserted first (lower relevance
+    // after decay), pattern is inserted second (higher relevance = appears first).
+    insertLearning(db, 1, "domain", "A short domain learning"); // inserted first → lower relevance after decay
+    decayLearningRelevance(db);                                  // domain relevance drops to ~0.95
+    insertLearning(db, 1, "pattern", "A short pattern learning"); // inserted second → relevance 1.0 → appears first
+
+    // Full output: ## Key Learnings\n + ### pattern(1)\n + - A short pattern learning\n
+    //               + ### domain(1)\n + - A short domain learning\n
+    // Budget that fits pattern section but NOT domain header + first item together:
+    const patternSection =
+      MEMORY_KEY_LEARNINGS_HEADER +
+      "### pattern (1)\n" +
+      "- A short pattern learning\n";
+    const budget = patternSection.length + 5; // fits pattern but not domain header+item
+
+    const fullResult = formatMemoryForPrompt(db, 100000);
+    const result = formatMemoryForPrompt(db, budget);
+
+    // The result must be shorter than the full output (domain category omitted)
+    expect(result.length).toBeLessThan(fullResult.length);
+    // The result must contain the pattern learning (first category — fits)
+    expect(result).toContain("A short pattern learning");
+    // The result must NOT contain the domain learning (second category — cut by outer break)
+    expect(result).not.toContain("A short domain learning");
+    // The ellipsis must appear at the end to signal truncation
+    expect(result.endsWith("…\n")).toBe(true);
+    // Output must not exceed budget
+    expect(result.length).toBeLessThanOrEqual(budget);
+  });
+
   it("truncated output always ends on a clean newline boundary (no mid-line cuts)", () => {
     // Regression guard: budget-aware truncation must stop at whole-line boundaries,
     // never slicing a learning item mid-text. Each included line ends with \n,
