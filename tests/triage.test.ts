@@ -138,6 +138,19 @@ describe("buildTriagePrompt", () => {
     expect(prompt).toContain("T".repeat(PROMPT_TITLE_PREVIEW_CHARS));
   });
 
+  it("appends ellipsis to truncated issue title", () => {
+    const longTitle = "T".repeat(PROMPT_TITLE_PREVIEW_CHARS + 10);
+    const prompt = buildTriagePrompt([makeIssue({ title: longTitle })], []);
+    expect(prompt).toContain("T".repeat(PROMPT_TITLE_PREVIEW_CHARS) + "…");
+  });
+
+  it("does not append ellipsis to short issue title", () => {
+    const shortTitle = "Short";
+    const prompt = buildTriagePrompt([makeIssue({ title: shortTitle })], []);
+    expect(prompt).toContain(shortTitle + '"');
+    expect(prompt).not.toContain(shortTitle + "…");
+  });
+
   it("leaves short titles intact (no truncation under PROMPT_TITLE_PREVIEW_CHARS chars)", () => {
     const shortTitle = "Short title";
     const prompt = buildTriagePrompt([makeIssue({ title: shortTitle })], []);
@@ -151,6 +164,19 @@ describe("buildTriagePrompt", () => {
     expect(prompt).not.toContain("x".repeat(500));
     expect(prompt).toContain("x".repeat(PROMPT_BODY_PREVIEW_CHARS));
     expect(prompt).not.toContain("x".repeat(PROMPT_BODY_PREVIEW_CHARS + 1));
+  });
+
+  it("appends ellipsis to truncated issue body", () => {
+    const longBody = "x".repeat(PROMPT_BODY_PREVIEW_CHARS + 10);
+    const prompt = buildTriagePrompt([makeIssue({ body: longBody })], []);
+    expect(prompt).toContain("x".repeat(PROMPT_BODY_PREVIEW_CHARS) + "…");
+  });
+
+  it("does not append ellipsis to short issue body", () => {
+    const shortBody = "short body text";
+    const prompt = buildTriagePrompt([makeIssue({ body: shortBody })], []);
+    expect(prompt).toContain(shortBody);
+    expect(prompt).not.toContain(shortBody + "…");
   });
 
   it("leaves short bodies intact (no truncation under PROMPT_BODY_PREVIEW_CHARS chars)", () => {
@@ -265,6 +291,21 @@ describe("buildTriagePrompt", () => {
     const prompt = buildTriagePrompt([], items);
     expect(prompt).toContain("b".repeat(BOARD_BODY_PREVIEW_CHARS));
     expect(prompt).not.toContain("b".repeat(BOARD_BODY_PREVIEW_CHARS + 1));
+  });
+
+  it("appends ellipsis to truncated board item body preview", () => {
+    const longBody = "b".repeat(BOARD_BODY_PREVIEW_CHARS + 10);
+    const items = [makeBoardItem({ title: "Long body item", status: "Backlog", body: longBody })];
+    const prompt = buildTriagePrompt([], items);
+    expect(prompt).toContain("b".repeat(BOARD_BODY_PREVIEW_CHARS) + "…");
+  });
+
+  it("does not append ellipsis to short board item body", () => {
+    const shortBody = "short board body";
+    const items = [makeBoardItem({ title: "Short item", status: "Backlog", body: shortBody })];
+    const prompt = buildTriagePrompt([], items);
+    expect(prompt).toContain(shortBody);
+    expect(prompt).not.toContain(shortBody + "…");
   });
 
   it("BOARD_BODY_PREVIEW_CHARS is a positive integer less than PROMPT_BODY_PREVIEW_CHARS", () => {

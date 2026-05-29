@@ -87,10 +87,19 @@ export function buildTriagePrompt(
   // any caller that does not pre-sort.
   const sortedIssues = [...issues].sort((a, b) => b.reactions - a.reactions);
   const issueList = sortedIssues
-    .map(
-      (i) =>
-        `- #${i.number}: "${i.title.trim().slice(0, PROMPT_TITLE_PREVIEW_CHARS)}" (${i.reactions} reactions)\n  ${i.body.trim().replace(/\s+/g, " ").slice(0, PROMPT_BODY_PREVIEW_CHARS)}`,
-    )
+    .map((i) => {
+      const trimmedTitle = i.title.trim();
+      const titlePreview =
+        trimmedTitle.length > PROMPT_TITLE_PREVIEW_CHARS
+          ? trimmedTitle.slice(0, PROMPT_TITLE_PREVIEW_CHARS) + "…"
+          : trimmedTitle;
+      const normalizedBody = i.body.trim().replace(/\s+/g, " ");
+      const bodyPreview =
+        normalizedBody.length > PROMPT_BODY_PREVIEW_CHARS
+          ? normalizedBody.slice(0, PROMPT_BODY_PREVIEW_CHARS) + "…"
+          : normalizedBody;
+      return `- #${i.number}: "${titlePreview}" (${i.reactions} reactions)\n  ${bodyPreview}`;
+    })
     .join("\n");
 
   const boardList =
@@ -106,7 +115,7 @@ export function buildTriagePrompt(
               .replace(/ …\[truncated\]$/, "")
               .trim();
             const bodyPreview = cleanBody
-              ? `\n  ${cleanBody.slice(0, BOARD_BODY_PREVIEW_CHARS)}`
+              ? `\n  ${cleanBody.length > BOARD_BODY_PREVIEW_CHARS ? cleanBody.slice(0, BOARD_BODY_PREVIEW_CHARS) + "…" : cleanBody}`
               : "";
             return `- [${item.status ?? "No Status"}] ${item.title}${issue}${reactions}${bodyPreview}`;
           })
