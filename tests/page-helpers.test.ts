@@ -156,6 +156,28 @@ describe("parseRoadmapSections", () => {
     const html = renderSection(sections[0]);
     expect(html).not.toContain("…[truncated]");
   });
+
+  it("### sub-heading inside a section does not create a new section and does not appear in descriptions", () => {
+    // The heading regex is /^##\s+/ which requires exactly two '#' followed by
+    // whitespace. A '###' line has a third '#' where whitespace is expected, so
+    // it does not match and falls through. It also fails /^\s{2,}/ (no leading
+    // spaces) so it is silently dropped — correct behaviour. This test ensures
+    // a ### line in a real ROADMAP.md can never silently inflate the section
+    // count or leak raw '###' text into an item description.
+    const md = `## Backlog\n- [ ] Task A\n### Sub-heading\n- [ ] Task B\n`;
+    const sections = parseRoadmapSections(md);
+    // Must still be exactly one section (the ## Backlog one)
+    expect(sections).toHaveLength(1);
+    // The ### line must not become a new section heading
+    expect(sections[0].heading).toBe("Backlog");
+    // Items must not include the ### line text as a description
+    expect(sections[0].items[0].description).not.toContain("Sub-heading");
+    expect(sections[0].items[1]?.description ?? "").not.toContain("Sub-heading");
+    // The raw '###' string itself must not appear anywhere in item descriptions
+    for (const item of sections[0].items) {
+      expect(item.description).not.toContain("###");
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
