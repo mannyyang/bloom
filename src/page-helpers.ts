@@ -416,7 +416,7 @@ export function generateJournalHtml(
     <h1>📓 Bloom Full Journal</h1>
     <p>Last updated: ${escapeHtml(generatedAt)}</p>
   </header>`;
-  const bodyContent = `<section>
+  const bodyContent = `<section class="section">
     <p class="stats-note">All recorded evolution cycle summaries.</p>
     ${cards}
   </section>`;

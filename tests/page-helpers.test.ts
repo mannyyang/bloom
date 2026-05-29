@@ -613,6 +613,14 @@ describe("generateJournalHtml", () => {
     expect(html).toContain("<!DOCTYPE html>");
     expect(html).toContain("</html>");
   });
+
+  it("outer section has class=\"section\" for CSS margin-bottom consistency", () => {
+    // The .section rule applies margin-bottom:2rem. Without class="section" on
+    // the journal page's outer <section>, the journal body loses its bottom
+    // spacing, breaking visual parity with the index and stats pages.
+    const html = generateJournalHtml([], "now");
+    expect(html).toContain('<section class="section">');
+  });
 });
 
 // ---------------------------------------------------------------------------
