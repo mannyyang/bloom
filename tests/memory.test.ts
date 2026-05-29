@@ -647,6 +647,30 @@ describe("formatMemoryForPrompt", () => {
     expect(result.length).toBeLessThanOrEqual(budget);
   });
 
+  it("result.length <= maxChars invariant holds across a range of tight budgets (multi-category + strategic context)", () => {
+    // Parametric regression guard for the separator + multi-section budget accounting.
+    // Inserts strategic context and learnings across all five categories, then sweeps
+    // tight budgets from just above the strategic context section length up to full
+    // output length and asserts result.length <= budget at every step.
+    insertStrategicContext(db, 1, "Parametric boundary context string for invariant test.");
+    insertLearning(db, 1, "pattern",      "Pattern insight for budget test");
+    insertLearning(db, 1, "anti-pattern", "Anti-pattern insight for budget test");
+    insertLearning(db, 1, "domain",       "Domain insight for budget test");
+    insertLearning(db, 1, "tool-usage",   "Tool-usage insight for budget test");
+    insertLearning(db, 1, "process",      "Process insight for budget test");
+
+    const context = "Parametric boundary context string for invariant test.";
+    const contextSectionLen = `## Strategic Context\n${context}\n`.length;
+    const fullResult = formatMemoryForPrompt(db, 100000);
+
+    // Skip budgets below contextSectionLen: strategic context is always emitted
+    // regardless of budget, so output can legitimately exceed maxChars there.
+    for (let budget = contextSectionLen; budget <= fullResult.length + 5; budget++) {
+      const result = formatMemoryForPrompt(db, budget);
+      expect(result.length).toBeLessThanOrEqual(budget);
+    }
+  });
+
   it("truncated output always ends on a clean newline boundary (no mid-line cuts)", () => {
     // Regression guard: budget-aware truncation must stop at whole-line boundaries,
     // never slicing a learning item mid-text. Each included line ends with \n,
