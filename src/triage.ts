@@ -327,7 +327,6 @@ export async function triageIssues(
   }
 
   const decisions = parseTriageResponse(triageText);
-  result.decisions = decisions;
 
   if (decisions.length !== untriaged.length) {
     console.warn(
@@ -337,6 +336,9 @@ export async function triageIssues(
 
   // Validate decisions against our actual issue set
   const untriagedNumbers = new Set(untriaged.map((i) => i.number));
+  // Collect only decisions that pass the untriagedNumbers guard so callers
+  // never see hallucinated issue numbers in result.decisions.
+  const validatedDecisions: TriageDecision[] = [];
 
   const commentMap: Record<TriageDecision["action"], string> = {
     add_to_backlog: `Added to Bloom Evolution Roadmap backlog (cycle ${cycleCount}).`,
@@ -367,6 +369,7 @@ export async function triageIssues(
       continue;
     }
     processedIssueNumbers.add(decision.issueNumber);
+    validatedDecisions.push(decision);
     const issue = untriaged.find((i) => i.number === decision.issueNumber);
     if (!issue) continue;
 
@@ -420,6 +423,10 @@ export async function triageIssues(
       console.error(`[triage] Failed to process issue #${decision.issueNumber} (action=${decision.action}): ${errorMessage(err)}`);
     }
   }
+
+  // Assign only decisions that passed the untriagedNumbers guard so callers
+  // (e.g., context.ts) never log hallucinated issue numbers as real triage actions.
+  result.decisions = validatedDecisions;
 
   // Phase 2: fan out close API calls concurrently — same pattern as the
   // alreadyOnBoard loop above, eliminating linear latency scaling when multiple

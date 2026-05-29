@@ -844,6 +844,27 @@ describe("triageIssues with injected deps", () => {
     warnSpy.mockRestore();
   });
 
+  it("excludes hallucinated issue numbers from result.decisions", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const issues = [makeIssue({ number: 1, title: "Real issue" })];
+    const deps = makeDeps([
+      { issueNumber: 1, action: "not_applicable", reason: "Real decision" },
+      { issueNumber: 42, action: "add_to_backlog", reason: "LLM hallucinated this number" },
+    ]);
+    const mockDb = {} as import("better-sqlite3").Database;
+
+    mockCloseIssue.mockResolvedValue(true);
+
+    const result = await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
+
+    // Only the in-scope decision should appear in result.decisions
+    expect(result.decisions).toHaveLength(1);
+    expect(result.decisions[0].issueNumber).toBe(1);
+    // Hallucinated #42 must not appear
+    expect(result.decisions.every((d) => d.issueNumber !== 42)).toBe(true);
+    warnSpy.mockRestore();
+  });
+
   it("dedup guard: processes each issue number only once when LLM returns duplicate decisions", async () => {
     // Covers the processedIssueNumbers Set guard in triageIssues (lines 319-334 of triage.ts):
     // if the LLM returns two decisions for issue #5, addLinkedItem and insertIssueAction
