@@ -612,6 +612,33 @@ describe("lifecycle helpers", () => {
       expect(errorSpy).toHaveBeenCalledWith("Build broken after all attempts. Reverting to pre-evolution state.");
     });
 
+    it("logs last captured build output before hard-resetting when all attempts fail", () => {
+      // Verifies that the last build's stderr/stdout is emitted via console.error
+      // immediately before hardResetTo so engineers can diagnose CI failures.
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const buildOutput = "Tests  5 failed\nTypeError: Cannot read property 'x' of undefined";
+      const buildErr = new Error("build failed") as Error & { stdout: string };
+      buildErr.stdout = buildOutput;
+      mockedExecSync.mockImplementation((cmd: unknown) => {
+        if (String(cmd).includes("pnpm")) throw buildErr;
+        return Buffer.from("");
+      });
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+
+      runBuildVerification(42, 2);
+
+      // The captured output must be logged before the hard-reset message
+      const calls = errorSpy.mock.calls.map(c => c[0] as string);
+      const outputCallIdx = calls.indexOf(buildOutput);
+      const hardResetMsgIdx = calls.indexOf("Build broken after all attempts. Reverting to pre-evolution state.");
+
+      expect(outputCallIdx).toBeGreaterThan(-1); // output was logged
+      // Output logged AFTER the "Build broken" message and BEFORE hardResetTo runs
+      expect(outputCallIdx).toBeGreaterThan(hardResetMsgIdx);
+
+      errorSpy.mockRestore();
+    });
+
     it("throws when hard reset fails (manual intervention needed)", () => {
       mockedExecSync.mockImplementation((cmd: unknown) => {
         if (String(cmd).includes("pnpm")) throw new Error("build failed");

@@ -222,6 +222,7 @@ export function runBuildVerification(
   }
 
   console.error("Build broken after all attempts. Reverting to pre-evolution state.");
+  if (lastResult.output) console.error(lastResult.output);
   hardResetTo(safetyTagName(cycleCount));
   return lastResult;
 }
