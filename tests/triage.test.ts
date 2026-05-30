@@ -1094,6 +1094,31 @@ describe("triageIssues with injected deps", () => {
     expect(mockInsertIssueAction).toHaveBeenCalledWith(mockDb, 5, 1, "triaged");
   });
 
+  it("repo=null: result.decisions contains the add_to_backlog decision even though addLinkedItem was skipped", async () => {
+    // When detectRepo() returns null, the if(repo && isValidRepo(repo)) guard skips
+    // addLinkedItem — but insertIssueAction is still called AND the decision must
+    // appear in result.decisions so callers (e.g. context.ts) log the triage action.
+    // This covers the production path where CI runners have no repo configured.
+    mockDetectRepo.mockReturnValueOnce(null);
+    mockIsValidRepo.mockReturnValueOnce(false);
+    const issues = [makeIssue({ number: 3, title: "New feature" })];
+    const deps = makeDeps([{ issueNumber: 3, action: "add_to_backlog", reason: "Worth doing" }]);
+    const mockDb = {} as import("better-sqlite3").Database;
+
+    const result = await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
+
+    // addLinkedItem must NOT be called (no valid repo)
+    expect(mockAddLinkedItem).not.toHaveBeenCalled();
+    // The backlog list stays empty (addLinkedItem was skipped)
+    expect(result.addedToBacklog).toEqual([]);
+    // insertIssueAction must still be called to prevent infinite re-triage
+    expect(mockInsertIssueAction).toHaveBeenCalledWith(mockDb, 5, 3, "triaged");
+    // The decision must appear in result.decisions so callers can log it
+    expect(result.decisions).toHaveLength(1);
+    expect(result.decisions[0].issueNumber).toBe(3);
+    expect(result.decisions[0].action).toBe("add_to_backlog");
+  });
+
   it("calls insertIssueAction even when addLinkedItem throws (prevents infinite re-triage loop)", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     // Reset mocks fully to clear any queued mockReturnValueOnce from prior tests
