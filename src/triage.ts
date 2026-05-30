@@ -2,7 +2,7 @@ import type Database from "better-sqlite3";
 import { type CommunityIssue, closeIssueWithComment, detectRepo, isValidRepo, ISSUES_DEFAULT_ACTION } from "./issues.js";
 import { hasIssueAction, insertIssueAction } from "./db.js";
 import { errorMessage } from "./errors.js";
-import { addLinkedItem, type ProjectConfig, type ProjectItem, STATUS_DONE } from "./planning.js";
+import { addLinkedItem, cleanItemBody, type ProjectConfig, type ProjectItem, STATUS_DONE } from "./planning.js";
 import { type QueryFn, resolveModel } from "./agent-phases.js";
 import { extractResultText } from "./usage.js";
 
@@ -110,10 +110,7 @@ export function buildTriagePrompt(
             const reactions = item.reactions > 0 ? ` (${item.reactions} ★)` : "";
             // Strip internal storage annotations ([since: N], …[truncated]) from the
             // body preview so the LLM sees clean content, not planning metadata.
-            const cleanBody = item.body
-              .replace(/\n?\[since:\s*\d+\]/g, "")
-              .replace(/ …\[truncated\]$/, "")
-              .trim();
+            const cleanBody = cleanItemBody(item.body);
             const bodyPreview = cleanBody
               ? `\n  ${cleanBody.length > BOARD_BODY_PREVIEW_CHARS ? cleanBody.slice(0, BOARD_BODY_PREVIEW_CHARS) + "…" : cleanBody}`
               : "";

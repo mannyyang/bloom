@@ -13,6 +13,7 @@ import { resolve } from "node:path";
 import {
   parseRoadmap,
   parseInProgressSinceCycle,
+  cleanItemBody,
   readRoadmap,
   STATUS_BACKLOG,
   STATUS_IN_PROGRESS,
@@ -70,10 +71,7 @@ export function generateRoadmapOutput(content: string): string[] {
         // Strip internal [since: N] staleness annotations and …[truncated] storage
         // markers before display — these are planning metadata and should not appear
         // in human-readable output.
-        const displayBody = item.body
-          .replace(/\n?\[since:\s*\d+\]/g, "")
-          .replace(/ …\[truncated\]$/, "")
-          .trim();
+        const displayBody = cleanItemBody(item.body);
         if (displayBody) {
           // Indent and wrap the body description
           const preview = displayBody.length > ROADMAP_BODY_PREVIEW_MAX_CHARS ? displayBody.slice(0, ROADMAP_BODY_PREVIEW_MAX_CHARS) + "…" : displayBody;
@@ -142,10 +140,7 @@ export function generateRoadmapJson(content: string): { items: RoadmapJsonItem[]
       item.status === STATUS_IN_PROGRESS && item.body
         ? parseInProgressSinceCycle(item.body)
         : null;
-    const cleanBody = item.body
-      .replace(/\n?\[since:\s*\d+\]/g, "")
-      .replace(/ …\[truncated\]$/, "")
-      .trim();
+    const cleanBody = cleanItemBody(item.body);
     return { ...item, body: cleanBody, sinceCycle };
   });
 

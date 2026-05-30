@@ -441,6 +441,18 @@ export function parseInProgressSinceCycle(body: string, currentCycle?: number): 
 }
 
 /**
+ * Strip internal storage metadata from an item body for display purposes.
+ * Removes [since: N] staleness annotations and …[truncated] storage markers
+ * so the cleaned body is suitable for human-readable output and LLM prompts.
+ */
+export function cleanItemBody(body: string): string {
+  return body
+    .replace(/\n?\[since:\s*\d+\]/g, "")
+    .replace(/ …\[truncated\]$/, "")
+    .trim();
+}
+
+/**
  * Detect "In Progress" items that are stale — stuck without progress for
  * more than `threshold` cycles. Items without a [since: N] annotation are
  * always considered stale (they predate this feature or were orphaned by a crash).
@@ -532,7 +544,7 @@ export function formatPlanningContext(
   if (currentItem) {
     lines.push(`\n**Current focus**: ${currentItem.title}`);
     if (currentItem.body) {
-      const cleanBody = currentItem.body.replace(/\n?\[since:\s*\d+\]/g, "").trim();
+      const cleanBody = cleanItemBody(currentItem.body);
       if (cleanBody) {
         const bodyPreview = cleanBody.length > PLANNING_BODY_PREVIEW_CHARS
           ? cleanBody.slice(0, PLANNING_BODY_PREVIEW_CHARS) + "\u2026"

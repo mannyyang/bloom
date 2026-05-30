@@ -11,7 +11,7 @@ const mockReadFileSync = vi.mocked(readFileSync);
 const mockWriteFileSync = vi.mocked(writeFileSync);
 const mockExistsSync = vi.mocked(existsSync);
 
-import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, getProjectItems, PLANNING_BODY_PREVIEW_CHARS, ITEM_BODY_LIMIT, PLANNING_CONTEXT_MAX_CHARS, PLANNING_CONTEXT_MAX_ITEMS, STALE_IN_PROGRESS_THRESHOLD_CYCLES, ROADMAP_HEADER, STATUS_BACKLOG, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_DONE, type ProjectItem } from "../src/planning.js";
+import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, cleanItemBody, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, getProjectItems, PLANNING_BODY_PREVIEW_CHARS, ITEM_BODY_LIMIT, PLANNING_CONTEXT_MAX_CHARS, PLANNING_CONTEXT_MAX_ITEMS, STALE_IN_PROGRESS_THRESHOLD_CYCLES, ROADMAP_HEADER, STATUS_BACKLOG, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_DONE, type ProjectItem } from "../src/planning.js";
 
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
@@ -773,6 +773,40 @@ describe("parseInProgressSinceCycle", () => {
 
   it("returns null when N === currentCycle + 1 (one-ahead boundary is invalid)", () => {
     expect(parseInProgressSinceCycle("[since: 51]", 50)).toBeNull();
+  });
+});
+
+describe("cleanItemBody", () => {
+  it("returns empty string for empty input", () => {
+    expect(cleanItemBody("")).toBe("");
+  });
+
+  it("returns plain body unchanged", () => {
+    expect(cleanItemBody("Fix the login bug")).toBe("Fix the login bug");
+  });
+
+  it("strips [since: N] annotation", () => {
+    expect(cleanItemBody("Some work\n[since: 42]")).toBe("Some work");
+  });
+
+  it("strips [since:N] annotation without space", () => {
+    expect(cleanItemBody("Some work\n[since:5]")).toBe("Some work");
+  });
+
+  it("strips …[truncated] marker from end of body", () => {
+    expect(cleanItemBody("Long body text …[truncated]")).toBe("Long body text");
+  });
+
+  it("strips both [since: N] and …[truncated] together", () => {
+    expect(cleanItemBody("Long body text …[truncated]\n[since: 10]")).toBe("Long body text");
+  });
+
+  it("strips …[truncated] when it is the only content", () => {
+    expect(cleanItemBody(" …[truncated]")).toBe("");
+  });
+
+  it("trims surrounding whitespace", () => {
+    expect(cleanItemBody("  trimmed  ")).toBe("trimmed");
   });
 });
 
