@@ -356,6 +356,22 @@ describe("formatPlanningContext", () => {
     expect(result).not.toContain("... and");
   });
 
+  it("does not show overflow hint with exactly PLANNING_CONTEXT_MAX_ITEMS items using default parameters", () => {
+    // Pin the off-by-one invariant at the default cap: exactly 5 Backlog items
+    // with no explicit maxItemsPerSection argument → hiddenCount is 0 → no footer.
+    // This guards against a future change that accidentally uses >= instead of > 0.
+    const items = Array.from({ length: PLANNING_CONTEXT_MAX_ITEMS }, (_, i) =>
+      makeItem({ id: `item-${i}`, title: `Default Cap Item ${i}`, status: "Backlog" }),
+    );
+    const result = formatPlanningContext(items, null); // default parameters only
+    // All 5 items must appear
+    for (let i = 0; i < PLANNING_CONTEXT_MAX_ITEMS; i++) {
+      expect(result).toContain(`Default Cap Item ${i}`);
+    }
+    // No overflow hint should be present
+    expect(result).not.toContain("... and");
+  });
+
   it("uses truncated string as-is when no newline found (single long line)", () => {
     // A single item whose title is long enough to exceed maxChars, with no
     // embedded newline, so lastNewline is -1 — exercises the fallback branch.
