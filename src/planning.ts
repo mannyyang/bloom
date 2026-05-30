@@ -404,7 +404,7 @@ export function updateItemStatus(
       // (i.e., the item is freshly transitioning into In Progress).
       const existingAnnotation = item.body.match(/\[since:\s*\d+\]/);
       if (!existingAnnotation) {
-        const stripped = item.body.replace(/\n?\[since:\s*\d+\]/g, "").trim();
+        const stripped = stripSinceAnnotation(item.body).trim();
         item.body = stripped
           ? `${stripped}\n[since: ${sinceCycle}]`
           : `[since: ${sinceCycle}]`;
@@ -412,7 +412,7 @@ export function updateItemStatus(
     } else if (status !== STATUS_IN_PROGRESS) {
       // Strip any [since: N] annotation when leaving In Progress — it is no
       // longer meaningful and would leave stale staleness metadata in the body.
-      item.body = item.body.replace(/\n?\[since:\s*\d+\]/g, "").trim();
+      item.body = stripSinceAnnotation(item.body).trim();
     }
 
     if (item.status !== oldStatus || item.body !== oldBody) markDirty();
@@ -441,13 +441,21 @@ export function parseInProgressSinceCycle(body: string, currentCycle?: number): 
 }
 
 /**
+ * Remove all [since: N] staleness annotations from a body string.
+ * The preceding newline (if present) is consumed along with the annotation
+ * so callers get a clean result without a dangling blank line.
+ */
+function stripSinceAnnotation(body: string): string {
+  return body.replace(/\n?\[since:\s*\d+\]/g, "");
+}
+
+/**
  * Strip internal storage metadata from an item body for display purposes.
  * Removes [since: N] staleness annotations and …[truncated] storage markers
  * so the cleaned body is suitable for human-readable output and LLM prompts.
  */
 export function cleanItemBody(body: string): string {
-  return body
-    .replace(/\n?\[since:\s*\d+\]/g, "")
+  return stripSinceAnnotation(body)
     .replace(/ …\[truncated\]$/, "")
     .trim();
 }
@@ -484,7 +492,7 @@ export function demoteStaleInProgressItems(
     const stale = detectStaleInProgressItems(items, currentCycle, threshold);
     for (const item of stale) {
       item.status = STATUS_UP_NEXT;
-      item.body = item.body.replace(/\n?\[since:\s*\d+\]/g, "").trim();
+      item.body = stripSinceAnnotation(item.body).trim();
     }
     if (stale.length > 0) markDirty();
     return stale.map((i) => i.title);
