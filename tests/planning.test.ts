@@ -789,6 +789,11 @@ describe("cleanItemBody", () => {
     expect(cleanItemBody("Some work\n[since: 42]")).toBe("Some work");
   });
 
+  it("strips annotation-only body with no preceding newline", () => {
+    // Exercises the `\n?` optional-newline path: annotation is the entire body.
+    expect(cleanItemBody("[since: 10]")).toBe("");
+  });
+
   it("strips [since:N] annotation without space", () => {
     expect(cleanItemBody("Some work\n[since:5]")).toBe("Some work");
   });

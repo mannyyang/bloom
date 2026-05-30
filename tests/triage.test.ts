@@ -144,6 +144,22 @@ describe("buildTriagePrompt", () => {
     expect(prompt).toContain("T".repeat(PROMPT_TITLE_PREVIEW_CHARS) + "…");
   });
 
+  it("does not truncate a title of exactly PROMPT_TITLE_PREVIEW_CHARS characters", () => {
+    // The condition is strict `>`, so a 120-char title must appear verbatim with no ellipsis.
+    const exactTitle = "X".repeat(PROMPT_TITLE_PREVIEW_CHARS);
+    const prompt = buildTriagePrompt([makeIssue({ title: exactTitle })], []);
+    expect(prompt).toContain(exactTitle + '"');
+    expect(prompt).not.toContain(exactTitle + "…");
+  });
+
+  it("truncates and appends ellipsis to a title of PROMPT_TITLE_PREVIEW_CHARS + 1 characters", () => {
+    // One character over the boundary must trigger truncation and an ellipsis.
+    const overTitle = "Y".repeat(PROMPT_TITLE_PREVIEW_CHARS + 1);
+    const prompt = buildTriagePrompt([makeIssue({ title: overTitle })], []);
+    expect(prompt).toContain("Y".repeat(PROMPT_TITLE_PREVIEW_CHARS) + "…");
+    expect(prompt).not.toContain(overTitle);
+  });
+
   it("does not append ellipsis to short issue title", () => {
     const shortTitle = "Short";
     const prompt = buildTriagePrompt([makeIssue({ title: shortTitle })], []);
