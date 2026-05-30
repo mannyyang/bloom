@@ -157,6 +157,18 @@ describe("formatPlanningContext", () => {
     expect(result).toContain("**Current focus**: Fix test flakiness");
   });
 
+  it("does not emit a blank body line when currentItem has an empty body", () => {
+    // The outer `if (currentItem.body)` guard must prevent any body content
+    // from being pushed when body is "". Explicitly assert that the result ends
+    // with the title line and contains no spurious blank line or indented empty
+    // line after it — mirrors the annotation-only guard pin pattern.
+    const current = makeItem({ title: "Empty Body Task", body: "" });
+    const result = formatPlanningContext([], current);
+    expect(result).toContain("**Current focus**: Empty Body Task");
+    // Result must end exactly at the title line — no trailing newline from a blank body push
+    expect(result.endsWith("**Current focus**: Empty Body Task")).toBe(true);
+  });
+
   it("shows current focus body preview", () => {
     const current = makeItem({ title: "Task", body: "Detailed description here" });
     const result = formatPlanningContext([], current);
