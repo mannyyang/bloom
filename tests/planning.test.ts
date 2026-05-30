@@ -1033,6 +1033,23 @@ describe("updateItemStatus", () => {
     expect(parsed[0].body).toBe("progress");
     expect(parsed[0].body).not.toMatch(/\[since:/);
   });
+
+  it("strips [since: N] annotation when moving an In Progress item to Up Next", () => {
+    // The else-if branch strips [since: N] for any non-In-Progress target status.
+    // "In Progress → Up Next" is the most natural demotion path but had no dedicated
+    // test — a future refactor could accidentally limit stripping to Backlog/Done only.
+    const items = [makeItem({ id: "item-0", title: "Demoted Task", status: "In Progress", body: "some work\n[since: 12]" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    updateItemStatus(config, "item-0", "Up Next");
+
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].status).toBe("Up Next");
+    expect(parsed[0].body).toBe("some work");
+    expect(parsed[0].body).not.toMatch(/\[since:/);
+  });
 });
 
 describe("demoteStaleInProgressItems", () => {
