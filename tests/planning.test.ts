@@ -1119,6 +1119,23 @@ describe("demoteStaleInProgressItems", () => {
     expect(result).toEqual(["Old Task"]);
   });
 
+  it("preserves plain text body content when demoting an always-stale item (no annotation)", () => {
+    // An item with a plain description and no [since: N] annotation is always-stale.
+    // The body-stripping regex is a no-op on plain text, so the description must
+    // survive demotion unchanged. This pins the correctness of the replace() call
+    // for the annotation-free path.
+    const items = [makeItem({ id: "item-0", title: "Stale Desc Task", status: "In Progress", body: "plain description" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    demoteStaleInProgressItems(config, 1, 3);
+
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].status).toBe("Up Next");
+    expect(parsed[0].body).toBe("plain description");
+  });
+
   it("only demotes stale items from a mixed set", () => {
     const items = [
       makeItem({ id: "item-0", title: "Fresh Task", status: "In Progress", body: "[since: 8]" }),
