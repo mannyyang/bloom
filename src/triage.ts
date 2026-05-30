@@ -176,7 +176,8 @@ export function parseTriageResponse(text: string): TriageDecision[] {
       (item): item is TriageDecision =>
         typeof item === "object" &&
         item !== null &&
-        typeof item.issueNumber === "number" &&
+        Number.isInteger(item.issueNumber) &&
+        (item.issueNumber as number) > 0 &&
         ["add_to_backlog", "already_done", "not_applicable"].includes(
           item.action,
         ) &&

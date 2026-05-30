@@ -610,6 +610,45 @@ describe("parseTriageResponse", () => {
     expect(mixedResult[0].action).toBe("not_applicable");
   });
 
+  it("filters out entries where issueNumber is 0 (GitHub issues start at #1)", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const input = JSON.stringify([
+      { issueNumber: 0, action: "add_to_backlog", reason: "Zero is not a valid issue number" },
+      { issueNumber: 1, action: "not_applicable", reason: "Valid" },
+    ]);
+    const result = parseTriageResponse(input);
+    expect(result).toHaveLength(1);
+    expect(result[0].issueNumber).toBe(1);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("dropped 1 item(s)"));
+    warnSpy.mockRestore();
+  });
+
+  it("filters out entries where issueNumber is negative", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const input = JSON.stringify([
+      { issueNumber: -1, action: "add_to_backlog", reason: "Negative is not a valid issue number" },
+      { issueNumber: 2, action: "not_applicable", reason: "Valid" },
+    ]);
+    const result = parseTriageResponse(input);
+    expect(result).toHaveLength(1);
+    expect(result[0].issueNumber).toBe(2);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("dropped 1 item(s)"));
+    warnSpy.mockRestore();
+  });
+
+  it("filters out entries where issueNumber is a float (e.g. 1.5)", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const input = JSON.stringify([
+      { issueNumber: 1.5, action: "add_to_backlog", reason: "Float is not a valid issue number" },
+      { issueNumber: 3, action: "not_applicable", reason: "Valid" },
+    ]);
+    const result = parseTriageResponse(input);
+    expect(result).toHaveLength(1);
+    expect(result[0].issueNumber).toBe(3);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("dropped 1 item(s)"));
+    warnSpy.mockRestore();
+  });
+
   it("rejects entries with an empty-string reason", () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const input = JSON.stringify([
