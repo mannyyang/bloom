@@ -341,6 +341,31 @@ describe("buildTriagePrompt", () => {
     expect(prompt).not.toContain("[since:");
   });
 
+  it("omits body line when board item body is annotation-only ([since: N])", () => {
+    // When body = "[since: 330]" the annotation is stripped leaving cleanBody = "".
+    // The `cleanBody ?` conditional must evaluate falsy so bodyPreview = "" — no
+    // spurious "\n  " empty-indent line is appended to the board item line.
+    const items = [makeBoardItem({ title: "Annotation only", status: "In Progress", body: "[since: 330]" })];
+    const prompt = buildTriagePrompt([], items);
+    // The board line must exist but must not contain the annotation
+    expect(prompt).toContain("Annotation only");
+    expect(prompt).not.toContain("[since:");
+    // No blank indented line should follow the board item title
+    expect(prompt).not.toMatch(/Annotation only[^\n]*\n  \n/);
+  });
+
+  it("omits body line when board item body is truncation-marker-only ( …[truncated])", () => {
+    // When body = " …[truncated]" (truncation marker with no preceding content),
+    // stripping the marker leaves cleanBody = "" after trim(). bodyPreview must be ""
+    // so no empty "\n  " line is appended — mirrors the annotation-only case above.
+    const items = [makeBoardItem({ title: "Truncated only", status: "Backlog", body: " …[truncated]" })];
+    const prompt = buildTriagePrompt([], items);
+    expect(prompt).toContain("Truncated only");
+    expect(prompt).not.toContain("…[truncated]");
+    // No blank indented line should follow the board item title
+    expect(prompt).not.toMatch(/Truncated only[^\n]*\n  \n/);
+  });
+
   it("trims leading/trailing whitespace from issue body before preview truncation", () => {
     // GitHub issue bodies can have leading newlines; trim() before slice() prevents
     // the LLM seeing a blank-prefixed snippet. Mirrors the board item body path
