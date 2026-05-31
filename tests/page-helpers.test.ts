@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { CYCLE_STATS_HISTORY_LIMIT, RECENT_FAILURES_WINDOW } from "../src/db.js";
 import {
   escapeHtml,
   parseRoadmapSections,
@@ -726,5 +727,22 @@ describe("STATUS_COLOR constants", () => {
     expect(STATUS_COLORS["Up Next"]).toBe(STATUS_COLOR_UP_NEXT);
     expect(STATUS_COLORS["In Progress"]).toBe(STATUS_COLOR_IN_PROGRESS);
     expect(STATUS_COLORS["Done"]).toBe(STATUS_COLOR_DONE);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Mirror-constant sync guards
+// ---------------------------------------------------------------------------
+
+describe("PAGE_STATS_HISTORY_CYCLES / PAGE_RECENT_FAILURES_WINDOW sync guards", () => {
+  // page-helpers.ts keeps local copies of two db.ts constants to avoid
+  // importing the heavyweight db module from a pure-helper module.
+  // These tests enforce that the local copies stay in sync with db.ts.
+  it("PAGE_STATS_HISTORY_CYCLES matches CYCLE_STATS_HISTORY_LIMIT from db.ts", () => {
+    expect(PAGE_STATS_HISTORY_CYCLES).toBe(CYCLE_STATS_HISTORY_LIMIT);
+  });
+
+  it("PAGE_RECENT_FAILURES_WINDOW matches RECENT_FAILURES_WINDOW from db.ts", () => {
+    expect(PAGE_RECENT_FAILURES_WINDOW).toBe(RECENT_FAILURES_WINDOW);
   });
 });
