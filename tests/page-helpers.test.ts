@@ -609,6 +609,11 @@ describe("generateHtml", () => {
     expect(html).toContain("<!DOCTYPE html>");
     expect(html).toContain("</html>");
   });
+
+  it("footer contains the github.com/mannyyang/bloom attribution link", () => {
+    const html = generateHtml([], "now", "", "");
+    expect(html).toContain("github.com/mannyyang/bloom");
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -655,6 +660,11 @@ describe("generateJournalHtml", () => {
     // spacing, breaking visual parity with the index and stats pages.
     const html = generateJournalHtml([], "now");
     expect(html).toContain('<section class="section">');
+  });
+
+  it("footer contains the github.com/mannyyang/bloom attribution link", () => {
+    const html = generateJournalHtml([], "now");
+    expect(html).toContain("github.com/mannyyang/bloom");
   });
 });
 
@@ -710,6 +720,11 @@ describe("generateStatsHtml", () => {
   it("does not show 'No stats available yet.' when real stats are provided", () => {
     const html = generateStatsHtml(sampleStats, "now");
     expect(html).not.toContain("No stats available yet.");
+  });
+
+  it("footer contains the github.com/mannyyang/bloom attribution link", () => {
+    const html = generateStatsHtml(null, "now");
+    expect(html).toContain("github.com/mannyyang/bloom");
   });
 });
 
