@@ -1322,6 +1322,32 @@ describe("addLinkedItem", () => {
     expect(warnSpy).not.toHaveBeenCalled();
     warnSpy.mockRestore();
   });
+
+  it("does NOT truncate body of exactly ITEM_BODY_LIMIT characters (pins <= operator)", () => {
+    // The condition is `body.length <= ITEM_BODY_LIMIT`, so a body of exactly
+    // ITEM_BODY_LIMIT chars must be stored verbatim with no truncation indicator.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap([]) as any);
+    const exactBody = "x".repeat(ITEM_BODY_LIMIT);
+    addLinkedItem(config, 14, "Exact Limit Title", exactBody);
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].body).toBe(exactBody);
+    expect(parsed[0].body).not.toContain("truncated");
+  });
+
+  it("truncates body of ITEM_BODY_LIMIT + 1 characters (one over the boundary)", () => {
+    // A body one character over the limit MUST be truncated and have the
+    // truncation indicator appended — confirming the <= boundary is correct.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap([]) as any);
+    const overBody = "x".repeat(ITEM_BODY_LIMIT + 1);
+    addLinkedItem(config, 15, "Over Limit Title", overBody);
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].body.startsWith("x".repeat(ITEM_BODY_LIMIT))).toBe(true);
+    expect(parsed[0].body.endsWith(" \u2026[truncated]")).toBe(true);
+  });
 });
 
 describe("addDraftItem", () => {
