@@ -618,6 +618,16 @@ describe("parseTriageResponse", () => {
     warnSpy.mockRestore();
   });
 
+  it("warn message includes 'string' when non-array JSON is a string", () => {
+    // typeof "ok" === "string" — the diagnostic string must name the actual type
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    parseTriageResponse('"ok"');
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("expected JSON array but got string"),
+    );
+    warnSpy.mockRestore();
+  });
+
   it("filters out entries with invalid action values", () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const input = `[
