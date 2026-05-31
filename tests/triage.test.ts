@@ -87,6 +87,32 @@ describe("triage.ts constants", () => {
   it("PROMPT_BODY_PREVIEW_CHARS is pinned to 200", () => {
     expect(PROMPT_BODY_PREVIEW_CHARS).toBe(200);
   });
+
+  it("PROMPT_TITLE_PREVIEW_CHARS is pinned to 120", () => {
+    expect(PROMPT_TITLE_PREVIEW_CHARS).toBe(120);
+  });
+
+  it("BOARD_BODY_PREVIEW_CHARS is pinned to 80", () => {
+    expect(BOARD_BODY_PREVIEW_CHARS).toBe(80);
+  });
+
+  it("TRIAGE_REASON_MAX_CHARS is pinned to 2000", () => {
+    expect(TRIAGE_REASON_MAX_CHARS).toBe(2000);
+  });
+
+  it("TRIAGE_ERROR_PREVIEW_CHARS is pinned to 200", () => {
+    expect(TRIAGE_ERROR_PREVIEW_CHARS).toBe(200);
+  });
+
+  it("TRIAGE_ACTION_NAME is pinned to 'triaged'", () => {
+    expect(TRIAGE_ACTION_NAME).toBe("triaged");
+  });
+
+  it("TRIAGE_ALREADY_ON_BOARD_COMMENT is pinned to its exact string", () => {
+    expect(TRIAGE_ALREADY_ON_BOARD_COMMENT).toBe(
+      "This issue is already tracked on the Bloom Evolution Roadmap.",
+    );
+  });
 });
 
 describe("buildTriagePrompt", () => {
