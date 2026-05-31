@@ -764,6 +764,31 @@ describe("parseTriageResponse", () => {
     expect(result).toHaveLength(1);
     expect(result[0].reason).toHaveLength(2000);
   });
+
+  it("warn preview includes full string when invalid JSON is exactly TRIAGE_ERROR_PREVIEW_CHARS chars", () => {
+    // slice(0, 200) on a 200-char string returns the whole string — no truncation
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const exactInput = "x".repeat(TRIAGE_ERROR_PREVIEW_CHARS);
+    parseTriageResponse(exactInput);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining(exactInput));
+    warnSpy.mockRestore();
+  });
+
+  it("warn preview is truncated to TRIAGE_ERROR_PREVIEW_CHARS chars when invalid JSON is one char longer", () => {
+    // slice(0, 200) on a 201-char string drops the last char — truncation fires
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const overInput = "x".repeat(TRIAGE_ERROR_PREVIEW_CHARS) + "z";
+    parseTriageResponse(overInput);
+    // The sliced preview (200 x's) appears in the message …
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("x".repeat(TRIAGE_ERROR_PREVIEW_CHARS)),
+    );
+    // … but the trailing "z" (char 201) does not
+    expect(warnSpy).not.toHaveBeenCalledWith(
+      expect.stringContaining(overInput),
+    );
+    warnSpy.mockRestore();
+  });
 });
 
 describe("triageIssues error resilience", () => {
