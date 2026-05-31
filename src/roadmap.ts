@@ -23,6 +23,7 @@ import {
   type ProjectItem,
 } from "./planning.js";
 import { parseJsonFlag } from "./stats.js";
+import { CYCLE_SUMMARY_SEPARATOR } from "./db.js";
 
 export const ROADMAP_BODY_PREVIEW_MAX_CHARS = 120;
 
@@ -37,9 +38,9 @@ export function generateRoadmapOutput(content: string): string[] {
   const lines: string[] = [];
 
   lines.push("");
-  lines.push("========================================");
+  lines.push(CYCLE_SUMMARY_SEPARATOR);
   lines.push("  Bloom Evolution Roadmap");
-  lines.push("========================================");
+  lines.push(CYCLE_SUMMARY_SEPARATOR);
 
   let anyRendered = false;
   for (const status of STATUS_ORDER) {
