@@ -201,6 +201,24 @@ describe("buildTriagePrompt", () => {
     expect(prompt).toContain("x".repeat(100));
   });
 
+  it("does NOT truncate body of exactly PROMPT_BODY_PREVIEW_CHARS characters (pins > operator)", () => {
+    // The condition is strict `>`, so a body of exactly PROMPT_BODY_PREVIEW_CHARS
+    // chars must appear verbatim with no ellipsis appended.
+    const exactBody = "p".repeat(PROMPT_BODY_PREVIEW_CHARS);
+    const prompt = buildTriagePrompt([makeIssue({ body: exactBody })], []);
+    expect(prompt).toContain(exactBody);
+    expect(prompt).not.toContain(exactBody + "…");
+  });
+
+  it("truncates and appends ellipsis to body of PROMPT_BODY_PREVIEW_CHARS + 1 characters", () => {
+    // One character over the boundary must trigger truncation and an ellipsis,
+    // confirming the strict > operator is correct.
+    const overBody = "p".repeat(PROMPT_BODY_PREVIEW_CHARS + 1);
+    const prompt = buildTriagePrompt([makeIssue({ body: overBody })], []);
+    expect(prompt).toContain("p".repeat(PROMPT_BODY_PREVIEW_CHARS) + "…");
+    expect(prompt).not.toContain(overBody);
+  });
+
   it("handles issues with empty bodies", () => {
     const prompt = buildTriagePrompt([makeIssue({ number: 7, title: "No body", body: "" })], []);
     expect(prompt).toContain("#7");
