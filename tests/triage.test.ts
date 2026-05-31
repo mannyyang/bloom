@@ -539,6 +539,26 @@ describe("parseTriageResponse", () => {
     warnSpy.mockRestore();
   });
 
+  it("warn message includes 'object' when non-array JSON is an object", () => {
+    // typeof {} === "object" — the diagnostic string must name the actual type
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    parseTriageResponse("{}");
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("expected JSON array but got object"),
+    );
+    warnSpy.mockRestore();
+  });
+
+  it("warn message includes 'number' when non-array JSON is a number", () => {
+    // typeof 42 === "number" — the diagnostic string must name the actual type
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    parseTriageResponse("42");
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("expected JSON array but got number"),
+    );
+    warnSpy.mockRestore();
+  });
+
   it("returns empty decisions without throwing when LLM returns JSON null", () => {
     // JSON.parse("null") === null — not an array; must warn and return []
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
