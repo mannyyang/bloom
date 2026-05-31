@@ -334,6 +334,26 @@ describe("buildTriagePrompt", () => {
     expect(prompt).toContain("b".repeat(BOARD_BODY_PREVIEW_CHARS) + "…");
   });
 
+  it("does NOT truncate board item body of exactly BOARD_BODY_PREVIEW_CHARS characters (pins > operator)", () => {
+    // The condition is strict `>`, so a body of exactly BOARD_BODY_PREVIEW_CHARS
+    // chars must appear verbatim with no ellipsis appended.
+    const exactBody = "b".repeat(BOARD_BODY_PREVIEW_CHARS);
+    const items = [makeBoardItem({ title: "Exact board body", status: "Backlog", body: exactBody })];
+    const prompt = buildTriagePrompt([], items);
+    expect(prompt).toContain(exactBody);
+    expect(prompt).not.toContain(exactBody + "…");
+  });
+
+  it("truncates and appends ellipsis to board item body of BOARD_BODY_PREVIEW_CHARS + 1 characters", () => {
+    // One character over the boundary must trigger truncation and an ellipsis,
+    // confirming the strict > operator is correct.
+    const overBody = "b".repeat(BOARD_BODY_PREVIEW_CHARS + 1);
+    const items = [makeBoardItem({ title: "Over board body", status: "Backlog", body: overBody })];
+    const prompt = buildTriagePrompt([], items);
+    expect(prompt).toContain("b".repeat(BOARD_BODY_PREVIEW_CHARS) + "…");
+    expect(prompt).not.toContain(overBody);
+  });
+
   it("does not append ellipsis to short board item body", () => {
     const shortBody = "short board body";
     const items = [makeBoardItem({ title: "Short item", status: "Backlog", body: shortBody })];
