@@ -257,6 +257,18 @@ describe("renderSection", () => {
     expect(html).toContain("A detailed note.");
     expect(html).toContain("item-desc");
   });
+
+  it("uses fallback color #374151 for unknown section heading not in STATUS_COLORS", () => {
+    // Pins the ?? "#374151" fallback in renderSection so silent color drift for
+    // future headings (e.g. "Archived", "Blocked") is caught immediately.
+    const section: RoadmapSection = {
+      heading: "Archived",
+      items: [{ done: false, title: "Old feature", issueNumber: null, description: "" }],
+    };
+    const html = renderSection(section);
+    expect(html).toContain("background:#374151");
+    expect(html).toContain("Archived");
+  });
 });
 
 // ---------------------------------------------------------------------------
