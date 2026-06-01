@@ -11,7 +11,7 @@
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import type Database from "better-sqlite3";
-import { initDb, getCycleStats, formatCycleStats, getLatestCycleNumber, CYCLE_SUMMARY_SEPARATOR } from "./db.js";
+import { initDb, getCycleStats, formatCycleStats, getLatestCycleNumber, CYCLE_SUMMARY_SEPARATOR, type CycleStats } from "./db.js";
 import { formatMemoryForPrompt } from "./memory.js";
 
 /**
@@ -48,7 +48,7 @@ export function parseJsonFlag(argv: string[]): boolean {
 export function generateStatsJson(
   db: Database.Database,
   lastN?: number,
-): { latestCycle: number; stats: ReturnType<typeof getCycleStats> } {
+): { latestCycle: number; stats: CycleStats } {
   const latestCycle = getLatestCycleNumber(db);
   const stats = getCycleStats(db, lastN);
   return { latestCycle, stats };
