@@ -494,6 +494,19 @@ describe("buildTriagePrompt", () => {
     // Must not contain raw newlines within the body preview
     expect(bodyLine).not.toContain("\n");
   });
+
+  it("returns a non-empty string when both issues and board items are empty", () => {
+    // buildTriagePrompt([], []) is callable even though triageIssues guards
+    // against it. The result must still be a non-empty prompt string (it
+    // contains the system instructions and action list even with no issues or
+    // board items). A blank issues section is acceptable; what matters is that
+    // the function does not throw and returns meaningful scaffold text.
+    const prompt = buildTriagePrompt([], []);
+    expect(typeof prompt).toBe("string");
+    expect(prompt.length).toBeGreaterThan(0);
+    expect(prompt).toContain("No items on board yet");
+    expect(prompt).toContain("add_to_backlog");
+  });
 });
 
 describe("parseTriageResponse", () => {
