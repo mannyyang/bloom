@@ -114,6 +114,13 @@ describe("parseTestCount", () => {
   it("parses passed count from mixed pass+skip output (10 passed | 3 skipped)", () => {
     expect(parseTestCount("Tests  10 passed | 3 skipped (13)")).toBe(10);
   });
+
+  it("returns 0 for mixed failed+skipped output with no passed token", () => {
+    // "Tests  2 failed | 3 skipped (5)" has no "passed" token.
+    // The broader /Tests\s+.*\bfailed\b/ guard must catch this and return 0,
+    // not null (which would propagate silently into journal entries as "unavailable").
+    expect(parseTestCount("Tests  2 failed | 3 skipped (5)")).toBe(0);
+  });
 });
 
 describe("parseTestTotal", () => {

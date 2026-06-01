@@ -41,12 +41,14 @@ export function parseTestCount(output: string): number | null {
   if (passedMatch) {
     return parseInt(passedMatch[1], 10);
   }
-  // All tests failed: "Tests  5 failed (5)" with no "passed" token
-  if (/Tests\s+\d+\s+failed\s+\(\d+\)/.test(output)) {
+  // No "passed" token — check for failed or skipped tokens to return 0.
+  // Use broad patterns so mixed formats like "Tests  2 failed | 3 skipped (5)"
+  // are caught even when additional segments appear between the token and the total.
+  if (/Tests\s+.*\bfailed\b/.test(output)) {
     return 0;
   }
   // All tests skipped: "Tests  3 skipped (3)" with no "passed" or "failed" token
-  if (/Tests\s+\d+\s+skipped\s+\(\d+\)/.test(output)) {
+  if (/Tests\s+.*\bskipped\b/.test(output)) {
     return 0;
   }
   return null;
