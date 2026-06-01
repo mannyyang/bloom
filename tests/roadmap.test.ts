@@ -586,6 +586,25 @@ describe("generateRoadmapJson", () => {
     spy.mockRestore();
   });
 
+  it("propagates large future-cycle [since: N] annotations as-is (no currentCycle filtering)", () => {
+    // generateRoadmapJson calls parseInProgressSinceCycle without a currentCycle
+    // argument, so future-cycle values like 99999 are NOT filtered — they pass
+    // through as the raw number, not null. This test documents that contract.
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Future-annotated item",
+        status: "In Progress",
+        body: "Work in progress\n[since: 99999]",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const result = generateRoadmapJson("");
+    expect(result.items[0].sinceCycle).toBe(99999);
+    spy.mockRestore();
+  });
+
   it("strips …[truncated] storage marker from body in JSON output", () => {
     const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
       {
