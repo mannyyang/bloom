@@ -535,6 +535,30 @@ describe("parseTriageResponse", () => {
     warnSpy.mockRestore();
   });
 
+  it("returns empty array and warns for bare empty string (LLM empty-response scenario)", () => {
+    // JSON.parse("") throws SyntaxError → catch block returns [] and warns.
+    // This is a realistic LLM failure mode: the model returns an empty response.
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const result = parseTriageResponse("");
+    expect(result).toEqual([]);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[triage] parseTriageResponse: failed to parse JSON"),
+    );
+    warnSpy.mockRestore();
+  });
+
+  it("returns empty array and warns for whitespace-only string (LLM blank-response scenario)", () => {
+    // JSON.parse("   ".trim()) === JSON.parse("") throws → same warn + [] path.
+    // Whitespace-only LLM output should never silently produce decisions.
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const result = parseTriageResponse("   ");
+    expect(result).toEqual([]);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[triage] parseTriageResponse: failed to parse JSON"),
+    );
+    warnSpy.mockRestore();
+  });
+
   it("returns empty array for invalid JSON", () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     expect(parseTriageResponse("not json at all")).toEqual([]);
