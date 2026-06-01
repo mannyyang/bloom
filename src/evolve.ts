@@ -54,6 +54,32 @@ const SECTION_MAP: Record<string, keyof EvolutionSections> = {
 };
 
 /**
+ * Matches structured summary section headers in evolution results.
+ * Two alternatives handle all header formats and prevent false-positive section switches:
+ *   Alt 1 — prefixed/bold headers (colon optional): "## ATTEMPTED", "- ATTEMPTED:",
+ *            "**ATTEMPTED**:", "**ATTEMPTED:**", "## **ATTEMPTED**"
+ *   Alt 2 — bare keyword (colon required): "ATTEMPTED:" — without a colon, a content
+ *            line like "FAILED to compile X" inside LEARNINGS would silently hijack the
+ *            active section; requiring the colon closes that gap.
+ * Defined at module level to compile once rather than on each parseEvolutionResult call.
+ */
+const HEADER_RE = /^(?:(?:#{1,4}\s+|-\s+)\*{0,2}|\*{1,2})(ATTEMPTED|SUCCEEDED|FAILED|LEARNINGS|STRATEGIC_CONTEXT)\*{0,2}:?\*{0,2}:?\s*|^(ATTEMPTED|SUCCEEDED|FAILED|LEARNINGS|STRATEGIC_CONTEXT):\s*/;
+
+/**
+ * Matches list-item lines: "- item", "* item", "1. item", "1) item".
+ * Compiled at module level so it is not recreated on every line of every countImprovements call.
+ */
+const LINE_LIST_RE = /^(?:[-*]\s|\d+[.)]\s)/;
+
+/**
+ * Matches inline numbered items like "1) foo" or "2. bar" anywhere in text.
+ * The `g` and `m` flags return all occurrences when used with String.match().
+ * Compiled at module level to avoid per-call regex construction; safe with match()
+ * because match() always resets lastIndex before iterating a global regex.
+ */
+const INLINE_NUMBERED_RE = /(?:^|[\s,;(])\d+[.)]\s/gm;
+
+/**
  * Parse the structured summary from an evolution result.
  * Extracts ATTEMPTED, SUCCEEDED, FAILED, LEARNINGS, and STRATEGIC_CONTEXT sections.
  */
@@ -65,14 +91,6 @@ export function parseEvolutionResult(result: string): EvolutionSections {
     learnings: "",
     strategic_context: "",
   };
-
-  // Two alternatives handle all header formats and prevent false-positive section switches:
-  //   Alt 1 — prefixed/bold headers (colon optional): "## ATTEMPTED", "- ATTEMPTED:",
-  //            "**ATTEMPTED**:", "**ATTEMPTED:**", "## **ATTEMPTED**"
-  //   Alt 2 — bare keyword (colon required): "ATTEMPTED:" — without a colon, a content
-  //            line like "FAILED to compile X" inside LEARNINGS would silently hijack the
-  //            active section; requiring the colon closes that gap.
-  const HEADER_RE = /^(?:(?:#{1,4}\s+|-\s+)\*{0,2}|\*{1,2})(ATTEMPTED|SUCCEEDED|FAILED|LEARNINGS|STRATEGIC_CONTEXT)\*{0,2}:?\*{0,2}:?\s*|^(ATTEMPTED|SUCCEEDED|FAILED|LEARNINGS|STRATEGIC_CONTEXT):\s*/;
 
   let currentSection: keyof EvolutionSections | "" = "";
   for (const line of result.split("\n")) {
@@ -127,13 +145,13 @@ export function countImprovements(text: string): number {
   let lineCount = 0;
   for (const line of lines) {
     const trimmed = line.trim();
-    if (/^(?:[-*]\s|\d+[.)]\s)/.test(trimmed)) {
+    if (LINE_LIST_RE.test(trimmed)) {
       lineCount++;
     }
   }
 
   // Also count all numbered items throughout text (catches inline "1) foo. 2) bar")
-  const inlineMatches = text.match(/(?:^|[\s,;(])\d+[.)]\s/gm);
+  const inlineMatches = text.match(INLINE_NUMBERED_RE);
   const inlineCount = inlineMatches ? inlineMatches.length : 0;
 
   // On multi-line input where the line-based scan found items, prefer lineCount.
