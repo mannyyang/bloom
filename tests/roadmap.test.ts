@@ -914,6 +914,13 @@ describe("parseRoadmapFilterFlag", () => {
   it("returns 'Up Next' for --filter 'up next'", () => {
     expect(parseRoadmapFilterFlag(["--filter", "up next"])).toBe("Up Next");
   });
+
+  it("returns undefined when the token after --filter is itself a flag (e.g. --json)", () => {
+    // "--json" does not match any known status, so the flag value is treated as
+    // an unrecognised status and the function correctly returns undefined rather
+    // than consuming the adjacent flag as a filter value.
+    expect(parseRoadmapFilterFlag(["--filter", "--json"])).toBeUndefined();
+  });
 });
 
 describe("generateRoadmapOutput --filter", () => {
