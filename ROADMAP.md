@@ -2,15 +2,14 @@
 
 ## Backlog
 
-- [ ] Add learning category distribution to pnpm stats output
-  Currently pnpm stats shows total cycle counts and costs but not a breakdown of learnings by category (pattern, anti-pattern, domain, tool-usage, process). Showing per-category counts would help identify knowledge gaps and guide future improvement focus.
-
+## Up Next
 - [ ] Add --filter flag to pnpm roadmap to show items of a specific status only
   Currently pnpm roadmap always renders all status sections. Adding --filter <status> (e.g. --filter backlog) would make it easier to focus on actionable work when the roadmap has many items across different sections.
 
-## Up Next
-
 ## In Progress
+- [ ] Add learning category distribution to pnpm stats output
+  Currently pnpm stats shows total cycle counts and costs but not a breakdown of learnings by category (pattern, anti-pattern, domain, tool-usage, process). Showing per-category counts would help identify knowledge gaps and guide future improvement focus.
+  [since: 552]
 
 ## Done
 - [x] Add a `dryRun` flag to the orchestrator that runs assessment and planning but skips the evolution step, allowing cost-free cycle previews when diagnosing prompt or planning issues.

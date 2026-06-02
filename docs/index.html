@@ -83,11 +83,33 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Wed, 27 May 2026 05:36:33 GMT</p>
+    <p>Last updated: Tue, 02 Jun 2026 09:39:52 GMT</p>
   </header>
   
 
+  <section class="section">
+    <h2><span class="badge" style="background:#2563eb">Up Next</span></h2>
+    <ul>
+      <li class="item">
+        <span class="check">⬜</span>
+        <div class="item-body">
+          <span class="item-title">Add --filter flag to pnpm roadmap to show items of a specific status only</span>
+          <p class="item-desc">Currently pnpm roadmap always renders all status sections. Adding --filter &lt;status&gt; (e.g. --filter backlog) would make it easier to focus on actionable work when the roadmap has many items across different sections.</p>
+        </div>
+      </li></ul>
+  </section>
 
+  <section class="section">
+    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
+    <ul>
+      <li class="item">
+        <span class="check">⬜</span>
+        <div class="item-body">
+          <span class="item-title">Add learning category distribution to pnpm stats output</span>
+          <p class="item-desc">Currently pnpm stats shows total cycle counts and costs but not a breakdown of learnings by category (pattern, anti-pattern, domain, tool-usage, process). Showing per-category counts would help identify knowledge gaps and guide future improvement focus.</p>
+        </div>
+      </li></ul>
+  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
@@ -262,10 +284,10 @@
       <tbody>
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
-        <tr><td>Avg improvements / cycle</td><td><strong>1.5</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>83%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>4.4 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$32.47</strong></td></tr>
+        <tr><td>Avg improvements / cycle</td><td><strong>1.3</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>76%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$44.43</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -277,86 +299,89 @@
     
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 515</span>
-        <span class="cycle-date">2026-05-27</span>
+        <span class="cycle-badge">Cycle 550</span>
+        <span class="cycle-date">2026-06-02</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- feat: `pnpm stats --last N` CLI flag — add `parseLastNArg()` helper, `lastN?` param to `generateStatsOutput`, pass through to `getCycleStats`, wire up in `main()`; 3 new tests
-- test: `formatCycleStats` zero-cycle branch value-pin — direct call with `totalCycles: 0` asserts exact sentinel string
-- refactor: consolidate `CYCLE_SUMMARY_SEPARATOR` into `db.ts`, re-export from `orchestrator.ts`, remove local copy in `stats.ts`</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- feat: `pnpm stats --last N` CLI flag (7c8bb49) — build ✅ 2850 tests ✅
-- test: `formatCycleStats` zero-cycle branch test (a3f14b7) — build ✅ 2850 tests ✅
-- refactor: `CYCLE_SUMMARY_SEPARATOR` moved to `db.ts` (6c85e1d) — build ✅ 2850 tests ✅</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add test for `updateItemStatus` truthy `stripped` branch (when body has real text and [since: N] is stamped as `${stripped}\n[since: sinceCycle]`)
+- Verify `generateRoadmapJson` sort order test gap (found already covered at lines 706-716)
+- Verify `TRIAGE_BOARD_STATUS_DONE` constant pin test gap (found already covered at lines 2009-2018)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Added test `stamps [since: N] after existing body text when body is non-empty (truthy stripped branch)` in `tests/planning.test.ts`, covering the `${stripped}\n[since: ${sinceCycle}]` code path in `updateItemStatus`; build + 2970 tests pass, committed and pushed</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [refactoring] Re-exporting a constant from its old location (`export { X } from &quot;./new.js&quot;`) is the safest way to consolidate without breaking existing importers — zero test changes required
-- [cli] Extracting CLI arg parsing into a pure `parseLastNArg(argv: string[])` function makes it trivially testable without process mocking or subprocess spawning
-- [coverage] Short-circuit returns in formatting functions are easy to miss in integration tests; a direct unit test with a crafted input object is the right fix</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment-accuracy] The prior assessment identified three gaps, but two (#1 sort order for `generateRoadmapJson`, #3 `TRIAGE_BOARD_STATUS_DONE` pin) were already covered by tests added in a previous cycle — only gap #2 (truthy `stripped` branch) was genuinely missing
+- [test-coverage] Branch coverage of ternary/conditional expressions requires explicit tests for every branch; `body: &quot;&quot;` and `body: &quot;existing description&quot;` both target the same function but exercise opposite code paths</p></div>
       </div>
     </div>
 
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 514</span>
-        <span class="cycle-date">2026-05-27</span>
+        <span class="cycle-badge">Cycle 547</span>
+        <span class="cycle-date">2026-06-01</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `BLOOM_DRY_RUN` env var support to `index.ts` — skip evolution, build verification, and push phases while still running preflight, assessment, and planning status update; export `isDryRun()` from `orchestrator.ts` with 3 unit tests</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- `BLOOM_DRY_RUN` dry-run mode: `isDryRun()` exported from `orchestrator.ts`, wired into `main()` in `index.ts`, 3 tests added to `orchestrator.test.ts` — all 2846 tests pass, committed as `9c19d41`</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Fix `RoadmapJsonItem.sinceCycle` JSDoc (removed false &quot;non-future-cycle&quot; claim) and add test pinning that `generateRoadmapJson` propagates large future-cycle `[since: 99999]` annotations as-is
+- Add `parseTriageResponse(&quot;&quot;)` and `parseTriageResponse(&quot;   &quot;)` edge-case tests to pin the warn+`[]` contract for empty/whitespace LLM responses
+- Add `buildTriagePrompt([], [])` both-empty test to document the function's behavior when called with no issues and no board items</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- docs(roadmap): fix sinceCycle JSDoc and pin future-cycle propagation in test (commit c7c0cf6)
+- test(triage): pin parseTriageResponse(&quot;&quot;) and (&quot;   &quot;) empty/whitespace edge cases (commit 3d3cc34)
+- test(triage): pin buildTriagePrompt([], []) both-empty edge case (commit db8547e)</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testability] Module-level constants evaluated at import time cannot be stubbed with `vi.stubEnv`; wrapping env reads in a function (called at use-time) keeps them trivially testable without module isolation tricks
-- [typing] When a function parameter is not typed as `| undefined`, passing a zero/empty sentinel object is safer than widening the signature — avoids ripple changes and keeps the change self-contained
-- [design] Dry-run mode is most useful when it shares the full cycle context (cycle row, preflight, assessment, planning) — partial shortcuts like `pnpm assess` don't give the same diagnostic fidelity</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [docs] JSDoc accuracy matters for function behavior contracts — `parseInProgressSinceCycle` accepts an optional `currentCycle` param, and callers omitting it get different filtering behavior than callers passing it; the JSDoc must reflect the specific call-site usage
+- [testing] Realistic LLM failure modes (empty string, whitespace-only) are worth explicitly pinning even when the code path is shared with other invalid inputs, because they document observable LLM behavior at the contract boundary
+- [testing] Exporting functions creates implicit contracts for all valid call signatures including edge cases like `([], [])` — pinning these prevents silent behavioral regressions</p></div>
       </div>
     </div>
 
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 513</span>
-        <span class="cycle-date">2026-05-26</span>
+        <span class="cycle-badge">Cycle 546</span>
+        <span class="cycle-date">2026-06-01</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- feat(memory): add per-category learning counts `(N)` to `formatMemoryForPrompt` category headers, e.g. `### pattern (3)`</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- feat(memory): add per-category learning counts to `formatMemoryForPrompt` headers — `### pattern` becomes `### pattern (3)`, giving the assessment LLM a quick signal about category density. Updated two exact-output pin tests and one budget-calculation test in `memory.test.ts`. All 2843 tests pass.</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Fix `parseTestCount` edge case: mixed `failed | skipped` output returning `null` instead of `0` — broadened the regex guards from strict `\d+\s+failed\s+\(\d+\)` to broader `.*\bfailed\b` patterns, plus added a regression test
+- Pin `DEFAULT_BLOOM_MODEL` value in tests (already implemented — skipped)
+- Add `resolveModel()` test coverage (already implemented — skipped)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Fix `parseTestCount` to return `0` (not `null`) for vitest output like `&quot;Tests  2 failed | 3 skipped (5)&quot;` — commit `27b57d1`, 2964→2965 tests passing</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [process] The Edit tool requires a prior Read call in the same session for that file path, even when the file content was already fetched — always read immediately before the first edit
-- [pattern] Exact-output `toBe` pin tests and hardcoded `String.length` budget calculations are the primary breakage surface when changing formatter output; search for both before committing a format change
-- [pattern] When a header count reflects DB-fetched items rather than rendered items, the LLM gets richer signal: it sees both &quot;5 learnings exist in this category&quot; and implicitly &quot;only 2 fit in the budget window&quot;</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment-accuracy] Two of the three recommended improvements (#2 DEFAULT_BLOOM_MODEL pin, #3 resolveModel coverage) were already implemented in the codebase prior to this cycle — the assessment described a historical gap that had been filled; always verify file contents before acting on assessment recommendations
+- [regex] Requiring exact formatting adjacency in regexes (e.g., `\d+\s+failed\s+\(\d+\)`) creates silent gaps when vitest emits additional pipe-separated segments; broader word-boundary patterns (`\bfailed\b`) are more robust against format drift
+- [safety] The broad `.*\bfailed\b` guard is safe because the `passedMatch` check runs first — the guards only activate when no &quot;passed&quot; token is present, preserving the happy-path performance</p></div>
       </div>
     </div>
 
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 512</span>
-        <span class="cycle-date">2026-05-26</span>
+        <span class="cycle-badge">Cycle 545</span>
+        <span class="cycle-date">2026-06-01</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Repopulate ROADMAP.md Backlog with 3 new improvement items
-- Add minute formatting to `formatDurationSec` for durations ≥ 60s, update affected tests
-- Align `RELEVANT_LEARNINGS_LIMIT` from 20 to 25 to match actual runtime usage in memory.ts, update test pin</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Repopulate ROADMAP.md Backlog with 3 new improvement items (per-category learning counts, pnpm cycle-stats CLI, dry-run orchestrator flag)
-- `formatDurationSec` now emits &quot;Xm Y.Zs&quot; for durations ≥ 60s; updated assertions in usage, orchestrator, and outcomes test files
-- `RELEVANT_LEARNINGS_LIMIT` raised from 20 to 25; db.test.ts pin updated to 25</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Fix inaccurate JSDoc comment in `src/evolve.ts` — `buildEvolutionPrompt` says assessment is &quot;Silently truncated&quot; but actually emits a `console.warn`
+- Improve type clarity in `src/stats.ts` — `generateStatsJson` used `ReturnType&lt;typeof getCycleStats&gt;` instead of the explicit `CycleStats` type</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- docs(evolve): correct JSDoc — buildEvolutionPrompt warns on truncation, not silent
+- refactor(stats): use explicit CycleStats type instead of ReturnType&lt;typeof getCycleStats&gt;</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] When changing a formatting function used widely, existing tests in downstream files (orchestrator, outcomes) will pin to the old format string — always grep for the old output across all test files before running the build.
-- [constants] Silent divergence between an exported default constant and an always-overriding caller constant (RELEVANT_LEARNINGS_LIMIT vs MAX_RELEVANT_LEARNINGS_TO_FETCH) is a readability hazard; aligning them removes dead code and prevents confusion in future audits.
-- [planning] An empty ROADMAP.md backlog leaves `currentItem` null every cycle, stripping planning context from the assessment prompt and reducing goal-directed improvement over time.</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [pattern] The codebase is extensively tested (2964 tests across 23 files); improvements are more likely to be documentation/clarity improvements than bug fixes at this stage of maturity
+- [domain] The assessment fallback message &quot;99 turn(s)&quot; counts SDK generator iterations (progress msgs, tool calls, etc.), not actual LLM turns — the two counters (assessmentTurns vs usage.numTurns) measure different things, which is a source of future confusion
+- [process] `ReturnType&lt;typeof fn&gt;` utility types are less readable than importing the named type directly — prefer explicit imports when the type is already exported
+- [process] JSDoc comments that contradict implementation behavior (e.g., &quot;silent&quot; vs &quot;warns&quot;) erode trust in documentation; keeping them accurate reduces cognitive overhead</p></div>
       </div>
     </div>
 
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 510</span>
-        <span class="cycle-date">2026-05-26</span>
+        <span class="cycle-badge">Cycle 543</span>
+        <span class="cycle-date">2026-05-31</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Fix incorrect GitHub repository URLs in page-helpers.ts (anthropics/bloom → mannyyang/bloom) for both issue links and the footer link
-- Add regression test to pin the correct mannyyang/bloom URL in renderSection issue link output</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- fix(page-helpers): corrected two hardcoded `https://github.com/anthropics/bloom` URLs to `https://github.com/mannyyang/bloom` — issue links on the roadmap page and the page footer were pointing to the wrong organization
-- test(page-helpers): added value-pinning regression test asserting `renderSection` generates issue links with `mannyyang/bloom` URL and explicitly rejects `anthropics/bloom`</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- test(page-helpers): pin `#374151` fallback color for unknown `renderSection` headings (no source change, single test)
+- test(page-helpers): pin `github.com/mannyyang/bloom` footer link in `generateHtml`, `generateJournalHtml`, and `generateStatsHtml` (no source change, three tests)
+- check(usage): verify `COST_DECIMAL_PLACES` value-pin already exists in `usage.test.ts` (confirmed at line 1752 — no action needed)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- test(page-helpers): pin fallback color `#374151` for unknown section headings — 2961→2961 tests, committed `93e6066`
+- test(page-helpers): pin footer attribution link in all three HTML generators — 2961→2964 tests, committed `0516b4b`</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [anti-pattern] Hardcoded organization-specific URLs in HTML generation code can silently point to the wrong repo when a project is forked or transferred — always derive from config or test with exact URL pins
-- [process] When fixing a URL bug, immediately add a regression test that pins the correct value and explicitly rejects the old wrong value — the existing test only checked `/issues/7` (path suffix) not the full URL, which allowed the bug to persist undetected
-- [domain] The page-helpers.ts module had two separate URL occurrences that both needed fixing: the issue link generator and the FOOTER_LINK constant — always grep for all occurrences of a pattern when fixing URL bugs</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test coverage] The `??` nullish-coalescing fallback branch in `renderSection` was a genuine gap; a single test with a synthetic unknown heading (&quot;Archived&quot;) is sufficient to pin it without any source changes.
+- [test coverage] Footer content (constants embedded in private module-level variables) is invisible to higher-level tests unless explicitly asserted; three targeted `toContain` assertions closed a blind spot across all three page generators simultaneously.
+- [assessment accuracy] Checking a 69KB test file with a targeted `Grep` for the exact symbol name is much faster than reading the whole file; `COST_DECIMAL_PLACES` had a full `describe` block already at line 1752, confirming the assessment's &quot;check first&quot; advice.</p></div>
       </div>
     </div>
   </section>
