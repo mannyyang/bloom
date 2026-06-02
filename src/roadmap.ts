@@ -30,10 +30,30 @@ export const ROADMAP_BODY_PREVIEW_MAX_CHARS = 120;
 const STATUS_ORDER: StatusColumn[] = [STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, STATUS_DONE];
 
 /**
+ * Parse `--filter <status>` from an argv array, returning the matched StatusColumn
+ * or undefined when the flag is absent, missing a value, or the value does not
+ * match a known status (case-insensitive).
+ *
+ * Examples:
+ *   --filter backlog   → "Backlog"
+ *   --filter "in progress" → "In Progress"
+ *   --filter done      → "Done"
+ */
+export function parseRoadmapFilterFlag(argv: string[]): StatusColumn | undefined {
+  const idx = argv.indexOf("--filter");
+  if (idx === -1) return undefined;
+  const raw = argv[idx + 1];
+  if (!raw) return undefined;
+  const lower = raw.toLowerCase();
+  return STATUS_ORDER.find(s => s.toLowerCase() === lower);
+}
+
+/**
  * Core roadmap display logic, accepting raw markdown for testability.
  * Returns the lines that would be printed to the console.
+ * When `filterStatus` is provided, only items with that status are shown.
  */
-export function generateRoadmapOutput(content: string): string[] {
+export function generateRoadmapOutput(content: string, filterStatus?: StatusColumn): string[] {
   const items = parseRoadmap(content);
   const lines: string[] = [];
 
@@ -42,8 +62,9 @@ export function generateRoadmapOutput(content: string): string[] {
   lines.push("  Bloom Evolution Roadmap");
   lines.push(CYCLE_SUMMARY_SEPARATOR);
 
+  const statusesToRender = filterStatus ? [filterStatus] : STATUS_ORDER;
   let anyRendered = false;
-  for (const status of STATUS_ORDER) {
+  for (const status of statusesToRender) {
     const statusItems = items.filter((i) => i.status === status);
     if (statusItems.length === 0) continue;
 
@@ -178,12 +199,13 @@ function main() {
   }
 
   const jsonMode = parseJsonFlag(process.argv);
+  const filterStatus = parseRoadmapFilterFlag(process.argv);
 
   if (jsonMode) {
     const result = generateRoadmapJson(content);
     console.log(JSON.stringify(result, null, 2));
   } else {
-    const output = generateRoadmapOutput(content);
+    const output = generateRoadmapOutput(content, filterStatus);
     for (const line of output) {
       console.log(line);
     }

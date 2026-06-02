@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { generateRoadmapOutput, generateRoadmapJson, ROADMAP_BODY_PREVIEW_MAX_CHARS, type RoadmapJsonSummary } from "../src/roadmap.js";
+import { generateRoadmapOutput, generateRoadmapJson, parseRoadmapFilterFlag, ROADMAP_BODY_PREVIEW_MAX_CHARS, type RoadmapJsonSummary } from "../src/roadmap.js";
 import * as planning from "../src/planning.js";
 import { parseRoadmap, serializeRoadmap } from "../src/planning.js";
 
@@ -844,5 +844,80 @@ describe("serializeRoadmap + parseRoadmap round-trip", () => {
     expect(items).toHaveLength(1);
     // The blank line between "Line one." and "Line two." is dropped
     expect(items[0].body).toBe("Line one.\nLine two.");
+  });
+});
+
+describe("parseRoadmapFilterFlag", () => {
+  it("returns undefined when --filter is absent", () => {
+    expect(parseRoadmapFilterFlag(["node", "roadmap.js"])).toBeUndefined();
+  });
+
+  it("returns undefined when --filter is present but has no value", () => {
+    expect(parseRoadmapFilterFlag(["node", "roadmap.js", "--filter"])).toBeUndefined();
+  });
+
+  it("returns undefined when the value does not match a known status", () => {
+    expect(parseRoadmapFilterFlag(["node", "roadmap.js", "--filter", "unknown"])).toBeUndefined();
+  });
+
+  it("returns 'Backlog' for --filter backlog (case-insensitive)", () => {
+    expect(parseRoadmapFilterFlag(["--filter", "backlog"])).toBe("Backlog");
+    expect(parseRoadmapFilterFlag(["--filter", "BACKLOG"])).toBe("Backlog");
+    expect(parseRoadmapFilterFlag(["--filter", "Backlog"])).toBe("Backlog");
+  });
+
+  it("returns 'In Progress' for --filter 'in progress'", () => {
+    expect(parseRoadmapFilterFlag(["--filter", "in progress"])).toBe("In Progress");
+  });
+
+  it("returns 'Done' for --filter done", () => {
+    expect(parseRoadmapFilterFlag(["--filter", "done"])).toBe("Done");
+  });
+
+  it("returns 'Up Next' for --filter 'up next'", () => {
+    expect(parseRoadmapFilterFlag(["--filter", "up next"])).toBe("Up Next");
+  });
+});
+
+describe("generateRoadmapOutput --filter", () => {
+  it("shows only backlog items when filterStatus is 'Backlog'", () => {
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP, "Backlog");
+    const joined = output.join("\n");
+    expect(joined).toContain("Improve prompt efficiency");
+    expect(joined).not.toContain("Write more tests");  // In Progress
+    expect(joined).not.toContain("Track token usage");  // Done
+    expect(joined).not.toContain("Add error classification"); // Up Next
+  });
+
+  it("shows only In Progress items when filterStatus is 'In Progress'", () => {
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP, "In Progress");
+    const joined = output.join("\n");
+    expect(joined).toContain("Write more tests");
+    expect(joined).not.toContain("Improve prompt efficiency");
+    expect(joined).not.toContain("Track token usage");
+  });
+
+  it("shows only Done items when filterStatus is 'Done'", () => {
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP, "Done");
+    const joined = output.join("\n");
+    expect(joined).toContain("Track token usage");
+    expect(joined).not.toContain("Write more tests");
+    expect(joined).not.toContain("Improve prompt efficiency");
+  });
+
+  it("shows 'No items on the roadmap yet.' when filterStatus matches no items", () => {
+    // SAMPLE_ROADMAP has no Up Next items that... wait, it does have one
+    // Use EMPTY_ROADMAP which has no items in any category
+    const output = generateRoadmapOutput(EMPTY_ROADMAP, "Backlog");
+    const joined = output.join("\n");
+    expect(joined).toContain("No items on the roadmap yet.");
+  });
+
+  it("shows all items when filterStatus is undefined", () => {
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP);
+    const joined = output.join("\n");
+    expect(joined).toContain("Improve prompt efficiency");
+    expect(joined).toContain("Write more tests");
+    expect(joined).toContain("Track token usage");
   });
 });
