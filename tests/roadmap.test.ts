@@ -949,6 +949,15 @@ describe("generateRoadmapOutput --filter", () => {
     expect(joined).not.toContain("Improve prompt efficiency");
   });
 
+  it("shows only Up Next items when filterStatus is 'Up Next'", () => {
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP, "Up Next");
+    const joined = output.join("\n");
+    expect(joined).toContain("Add error classification");
+    expect(joined).not.toContain("Write more tests");       // In Progress
+    expect(joined).not.toContain("Improve prompt efficiency"); // Backlog
+    expect(joined).not.toContain("Track token usage");      // Done
+  });
+
   it("shows 'No items on the roadmap yet.' when filterStatus matches no items", () => {
     // SAMPLE_ROADMAP has no Up Next items that... wait, it does have one
     // Use EMPTY_ROADMAP which has no items in any category
