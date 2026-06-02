@@ -979,6 +979,21 @@ describe("updateItemStatus", () => {
     expect(parsed[0].body).toContain("[since: 42]");
   });
 
+  it("stamps [since: N] after existing body text when body is non-empty (truthy stripped branch)", () => {
+    // The falsy branch (body: "") is tested above; this test covers the truthy branch
+    // where stripped = stripSinceAnnotation(item.body).trim() is non-empty, so the
+    // body becomes `${stripped}\n[since: ${sinceCycle}]` instead of `[since: ${sinceCycle}]`.
+    const items = [makeItem({ id: "item-0", title: "Task", status: "Up Next", body: "existing description" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    updateItemStatus(config, "item-0", "In Progress", undefined, 42);
+
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].body).toBe("existing description\n[since: 42]");
+  });
+
   it("does not overwrite existing [since: N] annotation when already present", () => {
     // Start in Backlog with a pre-existing annotation so status change triggers a write
     const items = [makeItem({ id: "item-0", title: "Task", status: "Backlog", body: "[since: 10]" })];
