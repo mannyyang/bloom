@@ -423,6 +423,24 @@ export interface CycleStats {
   totalInputTokens: number;
   totalOutputTokens: number;
   failureCategoryBreakdown: Record<string, number>;
+  learningCategoryDistribution: Record<string, number>;
+}
+
+/**
+ * Return a count of learnings per category across all currently stored learnings.
+ * Useful for identifying over- or under-represented learning types in the DB.
+ */
+export function getLearningCategoryDistribution(db: Database.Database): Record<string, number> {
+  const rows = validateRows<{ category: string; cnt: number }>(
+    db.prepare("SELECT category, COUNT(*) as cnt FROM learnings GROUP BY category").all(),
+    { category: "string", cnt: "number" },
+    "getLearningCategoryDistribution",
+  );
+  const distribution: Record<string, number> = {};
+  for (const row of rows) {
+    distribution[row.category] = row.cnt;
+  }
+  return distribution;
 }
 
 /**
@@ -464,7 +482,7 @@ export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS
   const rows = validateRows<CycleRow>(rawRows, cycleRowSchema, "getCycleStats");
 
   if (rows.length === 0) {
-    return { totalCycles: 0, successRate: 0, avgImprovements: 0, avgConversionRate: null, testCountTrend: null, recentFailures: 0, avgDurationMinutes: null, totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0, failureCategoryBreakdown: {} };
+    return { totalCycles: 0, successRate: 0, avgImprovements: 0, avgConversionRate: null, testCountTrend: null, recentFailures: 0, avgDurationMinutes: null, totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0, failureCategoryBreakdown: {}, learningCategoryDistribution: {} };
   }
 
   const totalCycles = rows.length;
@@ -555,7 +573,9 @@ export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS
     failureCategoryBreakdown[row.failure_category] = row.cnt;
   }
 
-  return { totalCycles, successRate, avgImprovements, avgConversionRate, testCountTrend, recentFailures, avgDurationMinutes, totalCostUsd, avgCostPerCycle, totalInputTokens, totalOutputTokens, failureCategoryBreakdown };
+  const learningCategoryDistribution = getLearningCategoryDistribution(db);
+
+  return { totalCycles, successRate, avgImprovements, avgConversionRate, testCountTrend, recentFailures, avgDurationMinutes, totalCostUsd, avgCostPerCycle, totalInputTokens, totalOutputTokens, failureCategoryBreakdown, learningCategoryDistribution };
 }
 
 /**
@@ -595,6 +615,12 @@ export function formatCycleStats(stats: CycleStats): string {
       .map(([cat, count]) => `${count} ${cat}`)
       .join(", ");
     lines.push(`- **Failure breakdown** (across all ${stats.totalCycles} tracked cycles): ${breakdown}`);
+  }
+  if (Object.keys(stats.learningCategoryDistribution).length > 0) {
+    const dist = Object.entries(stats.learningCategoryDistribution)
+      .map(([cat, count]) => `${count} ${cat}`)
+      .join(", ");
+    lines.push(`- **Learnings by category**: ${dist}`);
   }
   return lines.join("\n");
 }

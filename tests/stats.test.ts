@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
-import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats } from "../src/db.js";
+import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
 import { generateStatsOutput, parseLastNArg, parseJsonFlag, generateStatsJson, STATS_MEMORY_PREVIEW_CHARS } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
@@ -530,6 +530,7 @@ describe("formatCycleStats", () => {
       totalInputTokens: 0,
       totalOutputTokens: 0,
       failureCategoryBreakdown: {},
+      learningCategoryDistribution: {},
     };
     expect(formatCycleStats(stats)).toBe("No previous cycle data available.");
   });
@@ -550,6 +551,7 @@ describe("formatCycleStats", () => {
       totalInputTokens: 0,
       totalOutputTokens: 0,
       failureCategoryBreakdown: {},
+      learningCategoryDistribution: {},
     };
     expect(formatCycleStats(stats)).toBe(
       "- **Cycles tracked**: 1\n" +
@@ -559,7 +561,7 @@ describe("formatCycleStats", () => {
     );
   });
 
-  it("all-fields case: pins exact 9-line output covering every optional branch", () => {
+  it("all-fields case: pins exact 9-line output covering every optional branch (no learnings distribution)", () => {
     // Covers: conversionRate, testCountTrend (positive), avgDurationMinutes,
     // Cost line with · separator and abbreviated token counts, recentFailures > 0,
     // and failure breakdown. Validates branch ordering and separator character.
@@ -576,6 +578,7 @@ describe("formatCycleStats", () => {
       totalInputTokens: 150000,
       totalOutputTokens: 80000,
       failureCategoryBreakdown: { build_failure: 1 },
+      learningCategoryDistribution: {},
     };
     expect(formatCycleStats(stats)).toBe(
       "- **Cycles tracked**: 2\n" +
@@ -588,5 +591,88 @@ describe("formatCycleStats", () => {
       "- **Recent failures** (last 5): 1\n" +
       "- **Failure breakdown** (across all 2 tracked cycles): 1 build_failure",
     );
+  });
+
+  it("learnings distribution appears when learningCategoryDistribution is non-empty", () => {
+    const stats: CycleStats = {
+      totalCycles: 1,
+      successRate: 100,
+      avgImprovements: 1,
+      avgConversionRate: null,
+      testCountTrend: null,
+      recentFailures: 0,
+      avgDurationMinutes: null,
+      totalCostUsd: 0,
+      avgCostPerCycle: 0,
+      totalInputTokens: 0,
+      totalOutputTokens: 0,
+      failureCategoryBreakdown: {},
+      learningCategoryDistribution: { domain: 12, pattern: 5, "anti-pattern": 3 },
+    };
+    const result = formatCycleStats(stats);
+    expect(result).toContain("Learnings by category");
+    expect(result).toContain("12 domain");
+    expect(result).toContain("5 pattern");
+    expect(result).toContain("3 anti-pattern");
+  });
+
+  it("learnings distribution absent when learningCategoryDistribution is empty", () => {
+    const stats: CycleStats = {
+      totalCycles: 1,
+      successRate: 0,
+      avgImprovements: 0,
+      avgConversionRate: null,
+      testCountTrend: null,
+      recentFailures: 0,
+      avgDurationMinutes: null,
+      totalCostUsd: 0,
+      avgCostPerCycle: 0,
+      totalInputTokens: 0,
+      totalOutputTokens: 0,
+      failureCategoryBreakdown: {},
+      learningCategoryDistribution: {},
+    };
+    expect(formatCycleStats(stats)).not.toContain("Learnings by category");
+  });
+});
+
+describe("getLearningCategoryDistribution", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("returns empty object when no learnings exist", () => {
+    expect(getLearningCategoryDistribution(db)).toEqual({});
+  });
+
+  it("returns correct counts per category", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertLearning(db, 1, "domain", "SQLite is fast");
+    insertLearning(db, 1, "domain", "Use WAL mode");
+    insertLearning(db, 1, "pattern", "Always test first");
+    const dist = getLearningCategoryDistribution(db);
+    expect(dist["domain"]).toBe(2);
+    expect(dist["pattern"]).toBe(1);
+    expect(dist["anti-pattern"]).toBeUndefined();
+  });
+
+  it("getCycleStats includes learningCategoryDistribution reflecting current learnings table", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertLearning(db, 1, "process", "Always run pnpm build first");
+    const stats = getCycleStats(db);
+    expect(stats.learningCategoryDistribution["process"]).toBe(1);
+  });
+
+  it("generateStatsOutput includes Learnings by category when learnings exist", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertLearning(db, 1, "domain", "SQLite is fast");
+    insertLearning(db, 1, "pattern", "Always test first");
+    const output = generateStatsOutput(db);
+    const joined = output.join("\n");
+    expect(joined).toContain("Learnings by category");
+    expect(joined).toContain("1 domain");
+    expect(joined).toContain("1 pattern");
   });
 });

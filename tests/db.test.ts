@@ -1207,6 +1207,7 @@ describe("db", () => {
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
         failureCategoryBreakdown: {},
+        learningCategoryDistribution: {},
       });
       expect(result).toBe("No previous cycle data available.");
     });
@@ -1218,6 +1219,7 @@ describe("db", () => {
         totalCostUsd: 15.50, avgCostPerCycle: 1.55,
         totalInputTokens: 50000, totalOutputTokens: 25000,
         failureCategoryBreakdown: {},
+        learningCategoryDistribution: {},
       });
       expect(result).toContain("10");
       expect(result).toContain("80%");
@@ -1236,6 +1238,7 @@ describe("db", () => {
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
         failureCategoryBreakdown: {},
+        learningCategoryDistribution: {},
       });
       expect(result).not.toContain("Conversion rate");
     });
@@ -1246,6 +1249,7 @@ describe("db", () => {
         testCountTrend: -7, recentFailures: 2, avgDurationMinutes: null,
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
         failureCategoryBreakdown: {},
+        learningCategoryDistribution: {},
       });
       expect(result).toContain("-7");
       expect(result).not.toContain("+-7");
@@ -1257,6 +1261,7 @@ describe("db", () => {
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
         failureCategoryBreakdown: {},
+        learningCategoryDistribution: {},
       });
       expect(result).not.toContain("duration");
       expect(result).not.toContain("cost");
@@ -1268,6 +1273,7 @@ describe("db", () => {
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
         failureCategoryBreakdown: {},
+        learningCategoryDistribution: {},
       });
       expect(result).not.toContain("tokens");
       expect(result).not.toContain("Cost");
@@ -1280,6 +1286,7 @@ describe("db", () => {
         totalCostUsd: 0.10, avgCostPerCycle: 0.10,
         totalInputTokens: 500, totalOutputTokens: 200,
         failureCategoryBreakdown: {},
+        learningCategoryDistribution: {},
       });
       expect(result).toContain("500 in / 200 out tokens");
     });
@@ -1290,6 +1297,7 @@ describe("db", () => {
         testCountTrend: null, recentFailures: 2, avgDurationMinutes: null,
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
         failureCategoryBreakdown: { test_failure: 3, build_failure: 1 },
+        learningCategoryDistribution: {},
       });
       expect(result).toContain("Failure breakdown");
       expect(result).toContain("3 test_failure");
@@ -1302,6 +1310,7 @@ describe("db", () => {
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
         failureCategoryBreakdown: { test_failure: 1 },
+        learningCategoryDistribution: {},
       });
       expect(result).not.toContain("Failure breakdown");
     });
@@ -1312,6 +1321,7 @@ describe("db", () => {
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
         totalCostUsd: 2.50, avgCostPerCycle: 0.83, totalInputTokens: 0, totalOutputTokens: 0,
         failureCategoryBreakdown: {},
+        learningCategoryDistribution: {},
       });
       expect(result).toContain("$2.50 total / $0.83 avg");
       expect(result).not.toContain("tokens");
@@ -1323,6 +1333,7 @@ describe("db", () => {
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 500, totalOutputTokens: 200,
         failureCategoryBreakdown: {},
+        learningCategoryDistribution: {},
       });
       expect(result).toContain("500 in / 200 out tokens");
       expect(result).not.toContain("$");
@@ -1334,6 +1345,7 @@ describe("db", () => {
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 400, totalOutputTokens: 0,
         failureCategoryBreakdown: {},
+        learningCategoryDistribution: {},
       });
       expect(result).toContain("400 in / 0 out tokens");
       expect(result).not.toContain("$");
@@ -1345,6 +1357,7 @@ describe("db", () => {
         testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 300,
         failureCategoryBreakdown: {},
+        learningCategoryDistribution: {},
       });
       expect(result).toContain("0 in / 300 out tokens");
       expect(result).not.toContain("$");
@@ -1356,6 +1369,7 @@ describe("db", () => {
         testCountTrend: null, recentFailures: 1, avgDurationMinutes: null,
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
         failureCategoryBreakdown: {},
+        learningCategoryDistribution: {},
       });
       expect(result).not.toContain("Failure breakdown");
     });
