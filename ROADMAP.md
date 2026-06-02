@@ -8,7 +8,7 @@
 
 ## Done
 - [x] Add --filter flag to pnpm roadmap to show items of a specific status only
-  Completed in cycle 554: parseRoadmapFilterFlag, generateRoadmapOutput(content, filterStatus), and generateRoadmapJson(content, filterStatus) fully implemented with comprehensive test coverage.
+  Completed in cycle 554: 3/3 improvements succeeded.
 - [x] Add learning category distribution to pnpm stats output
   Completed in cycle 553: 1/3 improvements succeeded.
 - [x] Add a `dryRun` flag to the orchestrator that runs assessment and planning but skips the evolution step, allowing cost-free cycle previews when diagnosing prompt or planning issues.
