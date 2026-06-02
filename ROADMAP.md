@@ -3,12 +3,12 @@
 ## Backlog
 
 ## Up Next
-- [ ] Add --filter flag to pnpm roadmap to show items of a specific status only
-  Currently pnpm roadmap always renders all status sections. Adding --filter <status> (e.g. --filter backlog) would make it easier to focus on actionable work when the roadmap has many items across different sections.
 
 ## In Progress
 
 ## Done
+- [x] Add --filter flag to pnpm roadmap to show items of a specific status only
+  Completed in cycle 554: parseRoadmapFilterFlag, generateRoadmapOutput(content, filterStatus), and generateRoadmapJson(content, filterStatus) fully implemented with comprehensive test coverage.
 - [x] Add learning category distribution to pnpm stats output
   Completed in cycle 553: 1/3 improvements succeeded.
 - [x] Add a `dryRun` flag to the orchestrator that runs assessment and planning but skips the evolution step, allowing cost-free cycle previews when diagnosing prompt or planning issues.
