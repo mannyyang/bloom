@@ -156,10 +156,13 @@ export interface RoadmapJsonSummary {
  * is deterministic regardless of parse order.
  * Includes a `summary` field with total item count and per-status counts,
  * mirroring the `latestCycle` metadata pattern from generateStatsJson.
+ * When `filterStatus` is provided, only items with that status are included in
+ * the output and the summary reflects the filtered subset — matching the
+ * behaviour of `generateRoadmapOutput` with a filterStatus argument.
  */
-export function generateRoadmapJson(content: string): { items: RoadmapJsonItem[]; summary: RoadmapJsonSummary } {
+export function generateRoadmapJson(content: string, filterStatus?: StatusColumn): { items: RoadmapJsonItem[]; summary: RoadmapJsonSummary } {
   const items = parseRoadmap(content);
-  const cleanItems: RoadmapJsonItem[] = items.map((item) => {
+  let cleanItems: RoadmapJsonItem[] = items.map((item) => {
     const sinceCycle =
       item.status === STATUS_IN_PROGRESS && item.body
         ? parseInProgressSinceCycle(item.body)
@@ -167,6 +170,11 @@ export function generateRoadmapJson(content: string): { items: RoadmapJsonItem[]
     const cleanBody = cleanItemBody(item.body);
     return { ...item, body: cleanBody, sinceCycle };
   });
+
+  // Apply status filter before sorting/summary, mirroring generateRoadmapOutput.
+  if (filterStatus !== undefined) {
+    cleanItems = cleanItems.filter((item) => item.status === filterStatus);
+  }
 
   // Sort items by STATUS_ORDER so JSON output matches CLI display order.
   // Items with an unrecognised/null status are placed last.
@@ -177,7 +185,7 @@ export function generateRoadmapJson(content: string): { items: RoadmapJsonItem[]
     return ra - rb;
   });
 
-  // Build summary: total count and per-status breakdown.
+  // Build summary: total count and per-status breakdown (reflects filtered subset).
   const byStatus: Partial<Record<StatusColumn, number>> = {};
   for (const item of cleanItems) {
     if (item.status !== null) {
@@ -202,7 +210,7 @@ function main() {
   const filterStatus = parseRoadmapFilterFlag(process.argv);
 
   if (jsonMode) {
-    const result = generateRoadmapJson(content);
+    const result = generateRoadmapJson(content, filterStatus);
     console.log(JSON.stringify(result, null, 2));
   } else {
     const output = generateRoadmapOutput(content, filterStatus);

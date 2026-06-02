@@ -764,6 +764,43 @@ describe("generateRoadmapJson", () => {
     expect(typeof parsed.total).toBe("number");
     expect(typeof parsed.byStatus).toBe("object");
   });
+
+  it("filterStatus=undefined returns all items (existing behaviour unchanged)", () => {
+    const result = generateRoadmapJson(SAMPLE_ROADMAP, undefined);
+    // SAMPLE_ROADMAP has 5 items: 2 Backlog, 1 Up Next, 1 In Progress, 1 Done
+    expect(result.items).toHaveLength(5);
+    expect(result.summary.total).toBe(5);
+  });
+
+  it("filterStatus='Backlog' returns only Backlog items", () => {
+    const result = generateRoadmapJson(SAMPLE_ROADMAP, "Backlog");
+    expect(result.items.every((i) => i.status === "Backlog")).toBe(true);
+    expect(result.items).toHaveLength(2);
+  });
+
+  it("filterStatus='Backlog' summary reflects only the filtered subset", () => {
+    const result = generateRoadmapJson(SAMPLE_ROADMAP, "Backlog");
+    expect(result.summary.total).toBe(2);
+    expect(result.summary.byStatus["Backlog"]).toBe(2);
+    expect(result.summary.byStatus["In Progress"]).toBeUndefined();
+    expect(result.summary.byStatus["Done"]).toBeUndefined();
+  });
+
+  it("filterStatus='In Progress' returns only In Progress items", () => {
+    const result = generateRoadmapJson(SAMPLE_ROADMAP, "In Progress");
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].title).toBe("Write more tests");
+    expect(result.summary.total).toBe(1);
+    expect(result.summary.byStatus["In Progress"]).toBe(1);
+  });
+
+  it("filterStatus that matches no items returns empty items array and zero total", () => {
+    // EMPTY_ROADMAP has no items at all — filter result must be empty
+    const result = generateRoadmapJson(EMPTY_ROADMAP, "Backlog");
+    expect(result.items).toHaveLength(0);
+    expect(result.summary.total).toBe(0);
+    expect(result.summary.byStatus).toEqual({});
+  });
 });
 
 describe("parseRoadmap", () => {
