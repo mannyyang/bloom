@@ -10,7 +10,7 @@ import {
 import { parseTestCount, parseTestTotal, classifyBuildFailure } from "./outcomes.js";
 import { errorMessage } from "./errors.js";
 import { formatDurationSec } from "./usage.js";
-import { updateItemStatus, demoteStaleInProgressItems, STALE_IN_PROGRESS_THRESHOLD_CYCLES, STATUS_UP_NEXT, STATUS_DONE, type ProjectConfig, type ProjectItem } from "./planning.js";
+import { updateItemStatus, STATUS_UP_NEXT, STATUS_DONE, type ProjectConfig, type ProjectItem } from "./planning.js";
 import type { CycleOutcome } from "./outcomes.js";
 import { closeIssueWithComment } from "./issues.js";
 import type Database from "better-sqlite3";
@@ -96,30 +96,6 @@ export async function updatePlanningStatus(
     }
   } catch (err) {
     console.error(`[planning] Failed to update roadmap status (non-fatal): ${errorMessage(err)}`);
-  }
-}
-
-/**
- * Re-export under the phases-facing alias so callers don't need to import
- * directly from planning.ts, and there is only one source of truth for the value.
- */
-export const DEMOTE_STALE_THRESHOLD = STALE_IN_PROGRESS_THRESHOLD_CYCLES;
-
-/**
- * Demote any In Progress items stuck beyond the staleness threshold back to Up Next.
- * Should be called before assessment so item selection reflects the corrected state.
- */
-export function demoteStaleItemsPhase(
-  projectConfig: ProjectConfig | null,
-  cycleCount: number,
-  threshold: number = DEMOTE_STALE_THRESHOLD,
-): void {
-  if (!projectConfig) return;
-  const demoted = demoteStaleInProgressItems(projectConfig, cycleCount, threshold);
-  if (demoted.length > 0) {
-    console.log(
-      `[planning] Demoted ${demoted.length} stale In Progress item(s) back to Up Next: ${demoted.join(", ")}`,
-    );
   }
 }
 

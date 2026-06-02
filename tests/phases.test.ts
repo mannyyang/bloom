@@ -12,8 +12,6 @@ vi.mock("../src/lifecycle.js", () => ({
 // Mock planning module
 vi.mock("../src/planning.js", () => ({
   updateItemStatus: vi.fn(),
-  demoteStaleInProgressItems: vi.fn().mockReturnValue([]),
-  STALE_IN_PROGRESS_THRESHOLD_CYCLES: 3,
   STATUS_UP_NEXT: "Up Next",
   STATUS_DONE: "Done",
 }));
@@ -25,9 +23,9 @@ vi.mock("../src/issues.js", () => ({
   isValidRepo: vi.fn().mockReturnValue(true),
 }));
 
-import { runBuildVerificationPhase, updatePlanningStatus, pushChangesPhase, demoteStaleItemsPhase, DEMOTE_STALE_THRESHOLD } from "../src/phases.js";
+import { runBuildVerificationPhase, updatePlanningStatus, pushChangesPhase } from "../src/phases.js";
 import { runBuildVerification, pushChanges, commitRoadmap } from "../src/lifecycle.js";
-import { updateItemStatus, demoteStaleInProgressItems, STALE_IN_PROGRESS_THRESHOLD_CYCLES } from "../src/planning.js";
+import { updateItemStatus } from "../src/planning.js";
 import { closeIssueWithComment } from "../src/issues.js";
 
 function createOutcome(overrides: Partial<CycleOutcome> = {}): CycleOutcome {
@@ -397,69 +395,6 @@ describe("updatePlanningStatus", () => {
     await expect(
       updatePlanningStatus(10, projectConfig, currentItem, processed),
     ).resolves.not.toThrow();
-  });
-});
-
-describe("demoteStaleItemsPhase", () => {
-  beforeEach(() => {
-    vi.resetAllMocks();
-  });
-
-  const projectConfig: ProjectConfig = { filePath: "ROADMAP.md" };
-
-  it("does nothing when projectConfig is null", () => {
-    demoteStaleItemsPhase(null, 10);
-    expect(demoteStaleInProgressItems).not.toHaveBeenCalled();
-  });
-
-  it("calls demoteStaleInProgressItems with projectConfig and cycleCount", () => {
-    vi.mocked(demoteStaleInProgressItems).mockReturnValue([]);
-    demoteStaleItemsPhase(projectConfig, 10);
-    expect(demoteStaleInProgressItems).toHaveBeenCalledWith(projectConfig, 10, DEMOTE_STALE_THRESHOLD);
-  });
-
-  it("logs demoted item titles when stale items exist", () => {
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    vi.mocked(demoteStaleInProgressItems).mockReturnValue(["Stuck feature", "Old task"]);
-    demoteStaleItemsPhase(projectConfig, 20);
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Stuck feature"),
-    );
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringContaining("2 stale In Progress item(s)"),
-    );
-    logSpy.mockRestore();
-  });
-
-  it("does not log when no stale items exist", () => {
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    vi.mocked(demoteStaleInProgressItems).mockReturnValue([]);
-    demoteStaleItemsPhase(projectConfig, 20);
-    expect(logSpy).not.toHaveBeenCalledWith(
-      expect.stringContaining("stale"),
-    );
-    logSpy.mockRestore();
-  });
-
-  it("forwards custom threshold to demoteStaleInProgressItems", () => {
-    vi.mocked(demoteStaleInProgressItems).mockReturnValue([]);
-    demoteStaleItemsPhase(projectConfig, 15, 5);
-    expect(demoteStaleInProgressItems).toHaveBeenCalledWith(projectConfig, 15, 5);
-  });
-
-  it("uses default threshold of 3 when no threshold argument is provided", () => {
-    vi.mocked(demoteStaleInProgressItems).mockReturnValue([]);
-    demoteStaleItemsPhase(projectConfig, 10);
-    expect(demoteStaleInProgressItems).toHaveBeenCalledWith(projectConfig, 10, DEMOTE_STALE_THRESHOLD);
-    expect(DEMOTE_STALE_THRESHOLD).toBe(3);
-  });
-
-  it("DEMOTE_STALE_THRESHOLD matches STALE_IN_PROGRESS_THRESHOLD_CYCLES to prevent drift", () => {
-    // Both constants govern "how many cycles before an In Progress item is demoted".
-    // context.ts calls demoteStaleInProgressItems() with the planning.ts default;
-    // phases.ts calls it with DEMOTE_STALE_THRESHOLD. They must always be equal or
-    // the two call sites will silently use different thresholds.
-    expect(DEMOTE_STALE_THRESHOLD).toBe(STALE_IN_PROGRESS_THRESHOLD_CYCLES);
   });
 });
 
