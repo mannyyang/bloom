@@ -83,7 +83,7 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Tue, 02 Jun 2026 09:39:52 GMT</p>
+    <p>Last updated: Tue, 02 Jun 2026 13:25:09 GMT</p>
   </header>
   
 
@@ -99,21 +99,17 @@
       </li></ul>
   </section>
 
-  <section class="section">
-    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Add learning category distribution to pnpm stats output</span>
-          <p class="item-desc">Currently pnpm stats shows total cycle counts and costs but not a breakdown of learnings by category (pattern, anti-pattern, domain, tool-usage, process). Showing per-category counts would help identify knowledge gaps and guide future improvement focus.</p>
-        </div>
-      </li></ul>
-  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add learning category distribution to pnpm stats output</span>
+          <p class="item-desc">Completed in cycle 553: 1/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -284,10 +280,10 @@
       <tbody>
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
-        <tr><td>Avg improvements / cycle</td><td><strong>1.3</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>76%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>6 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$44.43</strong></td></tr>
+        <tr><td>Avg improvements / cycle</td><td><strong>1.2</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>77%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.2 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$44.25</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -297,6 +293,24 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 553</span>
+        <span class="cycle-date">2026-06-02</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `filterStatus` parameter to `generateRoadmapJson` so `--json --filter &lt;status&gt;` returns only matching items with accurate summary counts
+- Test gap: `storeLearnings` `dedupSkipped` error path (assessed as untested)
+- Test gap: `formatMemoryForPrompt` when strategic context alone exceeds `maxChars` (assessed as untested)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `filterStatus` parameter to `generateRoadmapJson` — closes CLI/JSON inconsistency where `--filter` was silently ignored in JSON mode; added 5 tests, all passing; committed and pushed</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- `storeLearnings` dedupSkipped test — skipped; test already existed at line 284 of memory.test.ts (covers DB IO error, count===1, dedupSkipped===1, and console.warn assertions)
+- `formatMemoryForPrompt` strategic-context-exceeds-maxChars test — skipped; test already existed at line 527 of memory.test.ts (plus a second variant at line 538 covering learnings suppression)</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [process] Assessment descriptions of &quot;untested&quot; branches should be verified by reading the actual test file before implementation — both memory.test.ts gaps were already covered, saving ~20 lines of redundant test code
+- [pattern] Small, targeted fixes to CLI/API consistency (like propagating an existing flag to a new code path) are the safest and highest-value improvements: minimal code change, clear observable behavior fix, straightforward tests
+- [tool-usage] Reading cached large file output via offset/limit pagination avoids re-reading the entire file when searching for specific sections</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 550</span>
@@ -364,24 +378,6 @@
 - [domain] The assessment fallback message &quot;99 turn(s)&quot; counts SDK generator iterations (progress msgs, tool calls, etc.), not actual LLM turns — the two counters (assessmentTurns vs usage.numTurns) measure different things, which is a source of future confusion
 - [process] `ReturnType&lt;typeof fn&gt;` utility types are less readable than importing the named type directly — prefer explicit imports when the type is already exported
 - [process] JSDoc comments that contradict implementation behavior (e.g., &quot;silent&quot; vs &quot;warns&quot;) erode trust in documentation; keeping them accurate reduces cognitive overhead</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 543</span>
-        <span class="cycle-date">2026-05-31</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- test(page-helpers): pin `#374151` fallback color for unknown `renderSection` headings (no source change, single test)
-- test(page-helpers): pin `github.com/mannyyang/bloom` footer link in `generateHtml`, `generateJournalHtml`, and `generateStatsHtml` (no source change, three tests)
-- check(usage): verify `COST_DECIMAL_PLACES` value-pin already exists in `usage.test.ts` (confirmed at line 1752 — no action needed)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- test(page-helpers): pin fallback color `#374151` for unknown section headings — 2961→2961 tests, committed `93e6066`
-- test(page-helpers): pin footer attribution link in all three HTML generators — 2961→2964 tests, committed `0516b4b`</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test coverage] The `??` nullish-coalescing fallback branch in `renderSection` was a genuine gap; a single test with a synthetic unknown heading (&quot;Archived&quot;) is sufficient to pin it without any source changes.
-- [test coverage] Footer content (constants embedded in private module-level variables) is invisible to higher-level tests unless explicitly asserted; three targeted `toContain` assertions closed a blind spot across all three page generators simultaneously.
-- [assessment accuracy] Checking a 69KB test file with a targeted `Grep` for the exact symbol name is much faster than reading the whole file; `COST_DECIMAL_PLACES` had a full `describe` block already at line 1752, confirming the assessment's &quot;check first&quot; advice.</p></div>
       </div>
     </div>
   </section>
