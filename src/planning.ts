@@ -231,7 +231,13 @@ export function serializeRoadmap(items: ProjectItem[]): string {
       lines.push(`- [${check}] ${item.title}${issueRef}`);
       if (item.body) {
         for (const bodyLine of item.body.split("\n")) {
-          lines.push(`  ${bodyLine}`);
+          // Skip blank/whitespace-only lines to match parseRoadmap's behaviour:
+          // parseRoadmap drops lines where `line.trim()` is empty, so emitting
+          // "  " (two spaces) for a blank body line creates a parse→serialize
+          // round-trip inconsistency where the blank line silently disappears.
+          if (bodyLine.trim()) {
+            lines.push(`  ${bodyLine}`);
+          }
         }
       }
     }

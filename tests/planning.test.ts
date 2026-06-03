@@ -714,6 +714,25 @@ describe("serializeRoadmap", () => {
     expect(parsed[0].body).toBe("Line one\nLine two");
   });
 
+  it("skips blank body lines during serialization to match parseRoadmap's behaviour (round-trip consistency)", () => {
+    // parseRoadmap drops whitespace-only body lines (requires `line.trim()` to be truthy).
+    // Without this guard, serializeRoadmap would emit "  " (two spaces) for a blank body
+    // line, which parseRoadmap would then silently drop — creating an inconsistent round-trip
+    // where body content changes on every serialize→parse cycle.
+    const original: ProjectItem[] = [
+      makeItem({ id: "item-0", title: "Para", status: "Backlog", body: "First para\n\nSecond para" }),
+    ];
+    const serialized = serializeRoadmap(original);
+    const parsed = parseRoadmap(serialized);
+
+    expect(parsed).toHaveLength(1);
+    // The blank separator line is dropped (consistent with parseRoadmap) — body is stable.
+    expect(parsed[0].body).toBe("First para\nSecond para");
+    // Serialized output must not contain a line that is only whitespace between body lines
+    const bodyLines = serialized.split("\n").filter((l) => l.startsWith("  "));
+    expect(bodyLines.every((l) => l.trim().length > 0)).toBe(true);
+  });
+
   it("excludes null-status items from serialized output (serialization contract guard)", () => {
     // null-status items cannot be produced by parseRoadmap but may be constructed
     // directly. serializeRoadmap only iterates STATUS_COLUMNS so such items must
