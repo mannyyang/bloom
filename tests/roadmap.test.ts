@@ -958,12 +958,13 @@ describe("generateRoadmapOutput --filter", () => {
     expect(joined).not.toContain("Track token usage");      // Done
   });
 
-  it("shows 'No items on the roadmap yet.' when filterStatus matches no items", () => {
-    // SAMPLE_ROADMAP has no Up Next items that... wait, it does have one
-    // Use EMPTY_ROADMAP which has no items in any category
+  it("shows status-specific message when filterStatus matches no items", () => {
+    // EMPTY_ROADMAP has no items in any category — the filter-specific fallback
+    // should name the requested status rather than the generic "yet." message.
     const output = generateRoadmapOutput(EMPTY_ROADMAP, "Backlog");
     const joined = output.join("\n");
-    expect(joined).toContain("No items on the roadmap yet.");
+    expect(joined).toContain("No Backlog items on the roadmap.");
+    expect(joined).not.toContain("No items on the roadmap yet.");
   });
 
   it("shows all items when filterStatus is undefined", () => {

@@ -107,7 +107,11 @@ export function generateRoadmapOutput(content: string, filterStatus?: StatusColu
 
   if (!anyRendered) {
     lines.push("");
-    lines.push("  No items on the roadmap yet.");
+    lines.push(
+      filterStatus
+        ? `  No ${filterStatus} items on the roadmap.`
+        : "  No items on the roadmap yet.",
+    );
   }
 
   lines.push("");
