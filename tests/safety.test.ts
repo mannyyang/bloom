@@ -68,6 +68,16 @@ describe("protectIdentity", () => {
     const result = await protectIdentity(makeInput("Write", "src/evolve.ts"), "tool-1", hookOpts);
     expectAllowed(result);
   });
+
+  it("denies Write to ../IDENTITY.md (path traversal)", async () => {
+    const result = await protectIdentity(makeInput("Write", "../IDENTITY.md"), "tool-1", hookOpts);
+    expectDenied(result);
+  });
+
+  it("denies Edit to ../../repo/IDENTITY.md (deep path traversal)", async () => {
+    const result = await protectIdentity(makeInput("Edit", "../../repo/IDENTITY.md"), "tool-1", hookOpts);
+    expectDenied(result);
+  });
 });
 
 describe("parseHookInput edge cases (malformed inputs)", () => {
@@ -1931,6 +1941,24 @@ describe("buildProtectedFilePatterns", () => {
       ["unlink with path prefix", "unlink /repo/IDENTITY.md"],
     ])("blocks %s", (_desc, command) => {
       expect(matchesAny(patterns, command)).toBe(true);
+    });
+
+    describe("path traversal (../) variants", () => {
+      it.each([
+        ["> redirect with ../", "echo x > ../IDENTITY.md"],
+        [">> redirect with ../", "echo x >> ../IDENTITY.md"],
+        ["cp with ../", "cp other.md ../IDENTITY.md"],
+        ["mv with ../", "mv other.md ../IDENTITY.md"],
+        ["rm with ../", "rm ../IDENTITY.md"],
+        ["dd with ../", "dd if=/dev/null of=../IDENTITY.md"],
+        ["sed -i with ../", "sed -i 's/a/b/' ../IDENTITY.md"],
+        ["chmod with ../", "chmod 000 ../IDENTITY.md"],
+        ["unlink with ../", "unlink ../IDENTITY.md"],
+        ["git restore with ../", "git restore ../IDENTITY.md"],
+        ["tee with ../", "echo x | tee ../IDENTITY.md"],
+      ])("blocks %s", (_desc, command) => {
+        expect(matchesAny(patterns, command)).toBe(true);
+      });
     });
   });
 
