@@ -187,6 +187,12 @@ Exports journal entries to stdout. The JSON format is designed for use by the [G
 
 ```bash
 pnpm roadmap
+pnpm roadmap --filter "in progress"   # show only In Progress items
+pnpm roadmap --filter backlog          # show only Backlog items
+pnpm roadmap --json                    # machine-readable JSON output
+pnpm roadmap --json --filter done      # JSON output filtered to Done items
 ```
 
 Prints the current ROADMAP.md as a formatted summary, grouped by status (In Progress → Up Next → Backlog → Done) with visual markers, linked issue numbers, and body previews. Useful for checking Bloom's current focus without reading raw Markdown.
+
+The `--filter <status>` flag restricts output to a single status column (case-insensitive). Valid values: `backlog`, `up next`, `in progress`, `done`. The `--json` flag emits machine-readable JSON including a `summary` with total and per-status item counts.
