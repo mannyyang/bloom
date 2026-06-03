@@ -137,6 +137,16 @@ describe("protectJournal", () => {
     const reason = (result as { hookSpecificOutput: { permissionDecisionReason: string } }).hookSpecificOutput.permissionDecisionReason;
     expect(reason).toContain("append-only");
   });
+
+  it("denies Write to ../JOURNAL.md (path traversal)", async () => {
+    const result = await protectJournal(makeInput("Write", "../JOURNAL.md"), "tool-1", hookOpts);
+    expectDenied(result);
+  });
+
+  it("denies Edit to ../../repo/JOURNAL.md (deep path traversal)", async () => {
+    const result = await protectJournal(makeInput("Edit", "../../repo/JOURNAL.md"), "tool-1", hookOpts);
+    expectDenied(result);
+  });
 });
 
 describe("blockDangerousCommands", () => {
