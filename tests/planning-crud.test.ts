@@ -3,7 +3,7 @@
  * Verifies that writeRoadmap is NOT called when the roadmap items are unchanged
  * (e.g., no-op operations like updating a non-existent ID or adding a duplicate).
  */
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdtempSync, writeFileSync, readFileSync, statSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
@@ -151,6 +151,46 @@ describe("body truncation at 500 chars", () => {
     const items = parseRoadmap(written);
     expect(items[0].body).toBe(exactBody);
     expect(items[0].body).not.toContain(TRUNCATION_SUFFIX);
+  });
+
+  it("emits console.warn with tag and char counts when addLinkedItem truncates body", () => {
+    writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([]), "utf-8");
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    addLinkedItem(config, 99, "Warn test", longBody);
+
+    expect(warnSpy).toHaveBeenCalledOnce();
+    const warnArg: string = warnSpy.mock.calls[0][0];
+    expect(warnArg).toContain("addLinkedItem #99");
+    expect(warnArg).toContain("600");
+    expect(warnArg).toContain("500");
+
+    warnSpy.mockRestore();
+  });
+
+  it("emits console.warn with tag and char counts when addDraftItem truncates body", () => {
+    writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([]), "utf-8");
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    addDraftItem(config, "Warn draft", longBody);
+
+    expect(warnSpy).toHaveBeenCalledOnce();
+    const warnArg: string = warnSpy.mock.calls[0][0];
+    expect(warnArg).toContain('addDraftItem "Warn draft"');
+    expect(warnArg).toContain("600");
+    expect(warnArg).toContain("500");
+
+    warnSpy.mockRestore();
+  });
+
+  it("does NOT emit console.warn when body is within the limit", () => {
+    writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([]), "utf-8");
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    addLinkedItem(config, 200, "No warn test", "Short body");
+
+    expect(warnSpy).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 });
 
