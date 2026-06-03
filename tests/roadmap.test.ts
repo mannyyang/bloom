@@ -974,4 +974,37 @@ describe("generateRoadmapOutput --filter", () => {
     expect(joined).toContain("Write more tests");
     expect(joined).toContain("Track token usage");
   });
+
+  it("renders body of a filtered Backlog item that has a non-empty body", () => {
+    // Combinatorial gap: filtering + body rendering together. Ensures a future
+    // refactor that clears item.body before the render loop does not silently
+    // drop body content when filterStatus is active.
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Backlog item with body",
+        status: "Backlog",
+        body: "This is a meaningful description",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+      {
+        id: "item-1",
+        title: "In Progress item",
+        status: "In Progress",
+        body: "",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP, "Backlog");
+    const joined = output.join("\n");
+    // The Backlog item title must appear
+    expect(joined).toContain("Backlog item with body");
+    // The body of the Backlog item must appear indented
+    expect(joined).toContain("This is a meaningful description");
+    // The In Progress item must be excluded by the filter
+    expect(joined).not.toContain("In Progress item");
+    spy.mockRestore();
+  });
 });
