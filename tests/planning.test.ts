@@ -1053,6 +1053,37 @@ describe("updateItemStatus", () => {
     expect(parsed[0].body).not.toMatch(/\[since:/);
   });
 
+  it("does not stamp [since: 0] annotation when sinceCycle is 0 (guards write-side validation)", () => {
+    // sinceCycle=0 is invalid: parseInProgressSinceCycle rejects n<=0, so writing
+    // [since: 0] would make the item always-stale. The guard `sinceCycle > 0` must
+    // prevent the annotation from being written at all.
+    const items = [makeItem({ id: "item-0", title: "Task", status: "Up Next", body: "" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    updateItemStatus(config, "item-0", "In Progress", undefined, 0);
+
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].status).toBe("In Progress");
+    expect(parsed[0].body).not.toMatch(/\[since:/);
+  });
+
+  it("does not stamp [since: N] annotation when sinceCycle is 0 even with existing body text", () => {
+    // Same guard applies when the item has a non-empty body — the stripped body
+    // should be preserved but no [since: 0] annotation appended.
+    const items = [makeItem({ id: "item-0", title: "Task", status: "Up Next", body: "description" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    updateItemStatus(config, "item-0", "In Progress", undefined, 0);
+
+    const written = mockWriteFileSync.mock.calls[0][1] as string;
+    const parsed = parseRoadmap(written);
+    expect(parsed[0].body).toBe("description");
+    expect(parsed[0].body).not.toMatch(/\[since:/);
+  });
+
   it("strips [since: N] annotation when manually moving an In Progress item to Backlog", () => {
     // Items moved back to Backlog/Up Next should not retain the staleness annotation —
     // it is meaningless outside of In Progress and would appear as junk in ROADMAP.md.

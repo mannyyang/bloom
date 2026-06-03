@@ -398,10 +398,13 @@ export function updateItemStatus(
     item.status = status;
     if (status === STATUS_DONE && completionNote) {
       item.body = completionNote;
-    } else if (status === STATUS_IN_PROGRESS && sinceCycle !== undefined) {
+    } else if (status === STATUS_IN_PROGRESS && sinceCycle !== undefined && sinceCycle > 0) {
       // Preserve an existing [since: N] annotation so the staleness clock isn't
       // reset every cycle. Only stamp a new annotation when none is present yet
       // (i.e., the item is freshly transitioning into In Progress).
+      // Guard sinceCycle > 0 to mirror parseInProgressSinceCycle's validation:
+      // a zero or negative cycle number would produce a [since: 0] annotation
+      // that stale detection treats as always-stale immediately.
       const existingAnnotation = item.body.match(/\[since:\s*\d+\]/);
       if (!existingAnnotation) {
         const stripped = stripSinceAnnotation(item.body).trim();
