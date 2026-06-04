@@ -1007,4 +1007,32 @@ describe("generateRoadmapOutput --filter", () => {
     expect(joined).not.toContain("In Progress item");
     spy.mockRestore();
   });
+
+  it("truncates body longer than ROADMAP_BODY_PREVIEW_MAX_CHARS when filterStatus is active", () => {
+    // Combinatorial pin: filterStatus + truncation must both fire together.
+    // A refactor that clears body or skips truncation only when a filter is
+    // active would pass the non-filter truncation tests but fail here.
+    const longBody = "a".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS + 20);
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Filtered item with long body",
+        status: "Backlog",
+        body: longBody,
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP, "Backlog");
+    const joined = output.join("\n");
+    spy.mockRestore();
+    // Title must appear
+    expect(joined).toContain("Filtered item with long body");
+    // Output must include first ROADMAP_BODY_PREVIEW_MAX_CHARS chars
+    expect(joined).toContain("a".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS));
+    // Output must NOT include more than ROADMAP_BODY_PREVIEW_MAX_CHARS chars of body
+    expect(joined).not.toContain("a".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS + 1));
+    // Ellipsis must be appended
+    expect(joined).toContain("a".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS) + "…");
+  });
 });
