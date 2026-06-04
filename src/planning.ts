@@ -573,9 +573,7 @@ export function formatPlanningContext(
     if (currentItem.body) {
       const cleanBody = cleanItemBody(currentItem.body);
       if (cleanBody) {
-        const bodyPreview = cleanBody.length > PLANNING_BODY_PREVIEW_CHARS
-          ? cleanBody.slice(0, PLANNING_BODY_PREVIEW_CHARS) + "\u2026"
-          : cleanBody;
+        const bodyPreview = truncateWithEllipsis(cleanBody, PLANNING_BODY_PREVIEW_CHARS);
         lines.push(bodyPreview);
       }
     }
