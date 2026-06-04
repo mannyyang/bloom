@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import type Database from "better-sqlite3";
 import { getRecentJournalSummary, getCycleStats, formatCycleStats } from "./db.js";
 import { fetchCommunityIssues, syncReactionsToItems, type CommunityIssue } from "./issues.js";
-import { triageIssues } from "./triage.js";
+import { triageIssues, PROMPT_TITLE_PREVIEW_CHARS } from "./triage.js";
 import { errorMessage } from "./errors.js";
 import { formatMemoryForPrompt, MAX_MEMORY_CHARS } from "./memory.js";
 import {
@@ -12,6 +12,7 @@ import {
   updateItemStatus,
   demoteStaleInProgressItems,
   formatPlanningContext,
+  truncateWithEllipsis,
   STATUS_IN_PROGRESS,
   type ProjectConfig,
   type ProjectItem,
@@ -90,7 +91,7 @@ export async function loadEvolutionContext(
   }
   console.log(`[context] Community issues: ${issues.length} open`);
   for (const issue of issues) {
-    console.log(`  - #${issue.number}: ${issue.title} (${issue.reactions} reactions)`);
+    console.log(`  - #${issue.number}: ${truncateWithEllipsis(issue.title, PROMPT_TITLE_PREVIEW_CHARS)} (${issue.reactions} reactions)`);
   }
 
   // Planning context (best-effort, uses ROADMAP.md)

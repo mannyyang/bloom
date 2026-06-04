@@ -19,6 +19,7 @@ vi.mock("../src/issues.js", () => ({
 
 vi.mock("../src/triage.js", () => ({
   triageIssues: vi.fn(),
+  PROMPT_TITLE_PREVIEW_CHARS: 120,
 }));
 
 vi.mock("../src/memory.js", () => ({
@@ -35,6 +36,7 @@ vi.mock("../src/planning.js", () => ({
   updateItemStatus: vi.fn(),
   demoteStaleInProgressItems: vi.fn().mockReturnValue([]),
   formatPlanningContext: vi.fn(),
+  truncateWithEllipsis: (s: string, max: number) => s.length > max ? s.slice(0, max) + "…" : s,
   STATUS_IN_PROGRESS: "In Progress",
 }));
 
