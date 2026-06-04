@@ -397,9 +397,9 @@ describe("loadEvolutionContext", () => {
     expect(ctx.planningContext).toBe("");
   });
 
-  it("logs per-decision format and truncates reason to CONTEXT_REASON_PREVIEW_CHARS", async () => {
-    // Pins the `  - #N: action — reason.slice(0, CONTEXT_REASON_PREVIEW_CHARS)` log format
-    // and verifies that CONTEXT_REASON_PREVIEW_CHARS (100) is the actual truncation limit.
+  it("logs per-decision format and truncates reason to CONTEXT_REASON_PREVIEW_CHARS with ellipsis", async () => {
+    // Pins the `  - #N: action — truncateWithEllipsis(reason, CONTEXT_REASON_PREVIEW_CHARS)` log format
+    // and verifies that CONTEXT_REASON_PREVIEW_CHARS (100) is the actual truncation limit with a trailing "…".
     const config = { filePath: "ROADMAP.md" };
     const issues = [{ number: 3, title: "Long reason issue", body: "", reactions: 0, labels: [] }];
     const longReason = "A".repeat(150); // exceeds CONTEXT_REASON_PREVIEW_CHARS (100)
@@ -417,8 +417,8 @@ describe("loadEvolutionContext", () => {
     const consoleSpy = vi.spyOn(console, "log");
     await loadEvolutionContext(fakeDb, 1);
 
-    // Expected: "  - #3: not_applicable — " + first 100 chars of longReason
-    const expectedLog = `  - #3: not_applicable — ${"A".repeat(CONTEXT_REASON_PREVIEW_CHARS)}`;
+    // Expected: "  - #3: not_applicable — " + first 100 chars of longReason + "…" ellipsis
+    const expectedLog = `  - #3: not_applicable — ${"A".repeat(CONTEXT_REASON_PREVIEW_CHARS)}…`;
     expect(consoleSpy).toHaveBeenCalledWith(expectedLog);
     // Full reason (150 chars) must NOT appear in any log line — only the truncated preview
     const allLogs = consoleSpy.mock.calls.map((c) => c.join(" "));
