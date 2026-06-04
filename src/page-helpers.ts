@@ -56,6 +56,12 @@ export const PAGE_STATS_HISTORY_CYCLES = 20;
  */
 export const PAGE_RECENT_FAILURES_WINDOW = 5;
 
+/**
+ * Canonical GitHub repository URL used in issue links and the page footer.
+ * Exported so tests can pin its value and it can be updated in one place.
+ */
+export const GITHUB_REPO_URL = "https://github.com/mannyyang/bloom";
+
 export type NavPage = "index" | "journal" | "stats";
 
 export function renderNav(active: NavPage): string {
@@ -176,7 +182,7 @@ export function renderSection(section: RoadmapSection): string {
       const doneClass = item.done ? " done" : "";
       const check = item.done ? "✅" : "⬜";
       const issueLink = item.issueNumber
-        ? ` <a class="issue-link" href="https://github.com/mannyyang/bloom/issues/${item.issueNumber}" target="_blank" rel="noopener">#${item.issueNumber}</a>`
+        ? ` <a class="issue-link" href="${GITHUB_REPO_URL}/issues/${item.issueNumber}" target="_blank" rel="noopener">#${item.issueNumber}</a>`
         : "";
       const desc = item.description
         ? `<p class="item-desc">${escapeHtml(item.description)}</p>`
@@ -357,7 +363,7 @@ const CSS_BASE = `
     .failed-label { color: #dc2626; }
     footer { color: #9ca3af; font-size: 0.8rem; text-align: center; margin-top: 3rem; }`;
 
-const FOOTER_LINK = `Generated from <code>ROADMAP.md</code> + <code>bloom.db</code> · <a href="https://github.com/mannyyang/bloom" style="color:#9ca3af">github.com/mannyyang/bloom</a>`;
+const FOOTER_LINK = `Generated from <code>ROADMAP.md</code> + <code>bloom.db</code> · <a href="${GITHUB_REPO_URL}" style="color:#9ca3af">github.com/mannyyang/bloom</a>`;
 
 /**
  * Build the shared HTML page shell used by all three page generators.

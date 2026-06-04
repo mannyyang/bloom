@@ -18,8 +18,28 @@ import {
   STATUS_COLOR_DONE,
   PAGE_STATS_HISTORY_CYCLES,
   PAGE_RECENT_FAILURES_WINDOW,
+  GITHUB_REPO_URL,
 } from "../src/page-helpers.js";
 import type { DbStats, JournalEntry, RoadmapSection } from "../src/page-helpers.js";
+
+// ---------------------------------------------------------------------------
+// GITHUB_REPO_URL
+// ---------------------------------------------------------------------------
+
+describe("GITHUB_REPO_URL", () => {
+  it("has the expected value (value-pin)", () => {
+    expect(GITHUB_REPO_URL).toBe("https://github.com/mannyyang/bloom");
+  });
+
+  it("is used in renderSection issue links", () => {
+    const section = {
+      heading: "Backlog",
+      items: [{ done: false, title: "Test", issueNumber: 42, description: "" }],
+    };
+    const html = renderSection(section);
+    expect(html).toContain(`${GITHUB_REPO_URL}/issues/42`);
+  });
+});
 
 // ---------------------------------------------------------------------------
 // escapeHtml
