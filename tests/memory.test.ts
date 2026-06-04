@@ -72,12 +72,17 @@ describe("extractLearnings", () => {
     expect(result.learnings).toHaveLength(1);
   });
 
-  it("ignores unknown category prefixes", () => {
+  it("ignores unknown category prefixes and emits a console.warn", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const text = "- [unknown] Some insight";
     const result = extractLearnings(text);
     expect(result.learnings).toHaveLength(1);
     expect(result.learnings[0].category).toBe("domain");
     expect(result.learnings[0].content).toBe("Some insight");
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[memory] extractLearnings: unrecognized category "[unknown]"'),
+    );
+    warnSpy.mockRestore();
   });
 
   it("recognises [process] as a valid category without falling back to domain", () => {

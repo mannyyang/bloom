@@ -56,6 +56,8 @@ export function extractLearnings(learningsText: string): ExtractedLearnings {
       cleanContent = categoryMatch[2];
       if (candidate && (LEARNING_CATEGORIES as readonly string[]).includes(candidate)) {
         category = candidate as LearningCategory;
+      } else if (candidate) {
+        console.warn(`[memory] extractLearnings: unrecognized category "[${candidate}]", falling back to "domain"`);
       }
     }
 
