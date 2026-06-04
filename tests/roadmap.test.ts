@@ -801,6 +801,41 @@ describe("generateRoadmapJson", () => {
     expect(result.summary.total).toBe(0);
     expect(result.summary.byStatus).toEqual({});
   });
+
+  it("strips [since: N] annotation from body when filterStatus is active", () => {
+    // Combinatorial pin: filterStatus + body-stripping must both fire together.
+    // generateRoadmapJson calls cleanItemBody on every item; this test pins that
+    // the cleaning still occurs when a filterStatus is supplied, preventing a
+    // refactor from skipping cleanItemBody in the filtered path.
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "In Progress item",
+        status: "In Progress",
+        body: "Real description [since: 42]",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+      {
+        id: "item-1",
+        title: "Backlog item",
+        status: "Backlog",
+        body: "Backlog body",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const result = generateRoadmapJson(SAMPLE_ROADMAP, "In Progress");
+    spy.mockRestore();
+    // Only the In Progress item should be returned
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].title).toBe("In Progress item");
+    // The [since: N] annotation must be stripped from the body
+    expect(result.items[0].body).toBe("Real description");
+    expect(result.items[0].body).not.toContain("[since: 42]");
+    // sinceCycle must be correctly extracted from the annotation
+    expect(result.items[0].sinceCycle).toBe(42);
+  });
 });
 
 describe("parseRoadmap", () => {
