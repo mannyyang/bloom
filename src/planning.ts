@@ -93,6 +93,16 @@ export const STALE_IN_PROGRESS_THRESHOLD_CYCLES = 3;
 export type StatusColumn = (typeof STATUS_COLUMNS)[number];
 
 /**
+ * Truncate a string to `max` characters for display, appending a `…` ellipsis
+ * when truncation occurs. The condition is strictly `> max`, so strings of
+ * exactly `max` characters are returned verbatim with no ellipsis.
+ * Used for display-only previews in CLI output and LLM prompts.
+ */
+export function truncateWithEllipsis(s: string, max: number): string {
+  return s.length > max ? s.slice(0, max) + "…" : s;
+}
+
+/**
  * Truncate a body string to ITEM_BODY_LIMIT characters, emitting a warning
  * when truncation occurs. The `tag` label is included in the warning message
  * for easy identification (e.g. "addLinkedItem #42" or "addDraftItem \"Title\"").

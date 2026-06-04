@@ -15,6 +15,7 @@ import {
   parseInProgressSinceCycle,
   cleanItemBody,
   readRoadmap,
+  truncateWithEllipsis,
   STATUS_BACKLOG,
   STATUS_IN_PROGRESS,
   STATUS_UP_NEXT,
@@ -96,7 +97,7 @@ export function generateRoadmapOutput(content: string, filterStatus?: StatusColu
         const displayBody = cleanItemBody(item.body);
         if (displayBody) {
           // Indent and wrap the body description
-          const preview = displayBody.length > ROADMAP_BODY_PREVIEW_MAX_CHARS ? displayBody.slice(0, ROADMAP_BODY_PREVIEW_MAX_CHARS) + "…" : displayBody;
+          const preview = truncateWithEllipsis(displayBody, ROADMAP_BODY_PREVIEW_MAX_CHARS);
           for (const bodyLine of preview.split("\n")) {
             lines.push(`      ${bodyLine}`);
           }

@@ -11,7 +11,7 @@ const mockReadFileSync = vi.mocked(readFileSync);
 const mockWriteFileSync = vi.mocked(writeFileSync);
 const mockExistsSync = vi.mocked(existsSync);
 
-import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, cleanItemBody, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, getProjectItems, PLANNING_BODY_PREVIEW_CHARS, ITEM_BODY_LIMIT, PLANNING_CONTEXT_MAX_CHARS, PLANNING_CONTEXT_MAX_ITEMS, STALE_IN_PROGRESS_THRESHOLD_CYCLES, ROADMAP_HEADER, STATUS_BACKLOG, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_DONE, type ProjectItem } from "../src/planning.js";
+import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, cleanItemBody, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, getProjectItems, truncateWithEllipsis, PLANNING_BODY_PREVIEW_CHARS, ITEM_BODY_LIMIT, PLANNING_CONTEXT_MAX_CHARS, PLANNING_CONTEXT_MAX_ITEMS, STALE_IN_PROGRESS_THRESHOLD_CYCLES, ROADMAP_HEADER, STATUS_BACKLOG, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_DONE, type ProjectItem } from "../src/planning.js";
 
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
@@ -1642,5 +1642,38 @@ describe("nextItemId", () => {
       makeItem({ id: "item-5" }),
     ];
     expect(nextItemId(items)).toBe("item-6");
+  });
+});
+
+describe("truncateWithEllipsis", () => {
+  it("returns string unchanged when length is below max", () => {
+    expect(truncateWithEllipsis("hello", 10)).toBe("hello");
+  });
+
+  it("returns string unchanged when length equals max (strict > boundary)", () => {
+    expect(truncateWithEllipsis("hello", 5)).toBe("hello");
+  });
+
+  it("truncates and appends ellipsis when length exceeds max", () => {
+    expect(truncateWithEllipsis("hello world", 5)).toBe("hello…");
+  });
+
+  it("appends the Unicode ellipsis character (U+2026), not three dots", () => {
+    const result = truncateWithEllipsis("abcde", 3);
+    expect(result).toBe("abc…");
+    expect(result.endsWith("…")).toBe(true);
+    expect(result).not.toContain("...");
+  });
+
+  it("truncates at exactly max+1 characters (one over boundary)", () => {
+    expect(truncateWithEllipsis("abcdef", 5)).toBe("abcde…");
+  });
+
+  it("returns empty string unchanged", () => {
+    expect(truncateWithEllipsis("", 10)).toBe("");
+  });
+
+  it("handles max=0: any non-empty string is truncated to empty + ellipsis", () => {
+    expect(truncateWithEllipsis("x", 0)).toBe("…");
   });
 });

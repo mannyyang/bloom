@@ -2,7 +2,7 @@ import type Database from "better-sqlite3";
 import { type CommunityIssue, closeIssueWithComment, detectRepo, isValidRepo, ISSUES_DEFAULT_ACTION } from "./issues.js";
 import { hasIssueAction, insertIssueAction } from "./db.js";
 import { errorMessage } from "./errors.js";
-import { addLinkedItem, cleanItemBody, type ProjectConfig, type ProjectItem, STATUS_DONE } from "./planning.js";
+import { addLinkedItem, cleanItemBody, truncateWithEllipsis, type ProjectConfig, type ProjectItem, STATUS_DONE } from "./planning.js";
 import { type QueryFn, resolveModel } from "./agent-phases.js";
 import { extractResultText } from "./usage.js";
 
@@ -89,15 +89,9 @@ export function buildTriagePrompt(
   const issueList = sortedIssues
     .map((i) => {
       const trimmedTitle = i.title.trim();
-      const titlePreview =
-        trimmedTitle.length > PROMPT_TITLE_PREVIEW_CHARS
-          ? trimmedTitle.slice(0, PROMPT_TITLE_PREVIEW_CHARS) + "…"
-          : trimmedTitle;
+      const titlePreview = truncateWithEllipsis(trimmedTitle, PROMPT_TITLE_PREVIEW_CHARS);
       const normalizedBody = i.body.trim().replace(/\s+/g, " ");
-      const bodyPreview =
-        normalizedBody.length > PROMPT_BODY_PREVIEW_CHARS
-          ? normalizedBody.slice(0, PROMPT_BODY_PREVIEW_CHARS) + "…"
-          : normalizedBody;
+      const bodyPreview = truncateWithEllipsis(normalizedBody, PROMPT_BODY_PREVIEW_CHARS);
       return `- #${i.number}: "${titlePreview}" (${i.reactions} reactions)\n  ${bodyPreview}`;
     })
     .join("\n");
@@ -112,7 +106,7 @@ export function buildTriagePrompt(
             // body preview so the LLM sees clean content, not planning metadata.
             const cleanBody = cleanItemBody(item.body);
             const bodyPreview = cleanBody
-              ? `\n  ${cleanBody.length > BOARD_BODY_PREVIEW_CHARS ? cleanBody.slice(0, BOARD_BODY_PREVIEW_CHARS) + "…" : cleanBody}`
+              ? `\n  ${truncateWithEllipsis(cleanBody, BOARD_BODY_PREVIEW_CHARS)}`
               : "";
             return `- [${item.status ?? "No Status"}] ${item.title}${issue}${reactions}${bodyPreview}`;
           })
