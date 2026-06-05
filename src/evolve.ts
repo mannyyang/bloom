@@ -1,4 +1,5 @@
 import { CONTEXT_JOURNAL_MAX_CHARS } from "./context.js";
+import { truncateWithEllipsis } from "./planning.js";
 
 /** Maximum characters allowed for the assessment passed into the evolution prompt. */
 export const ASSESSMENT_CHAR_LIMIT = 2000;
@@ -23,7 +24,7 @@ export function buildAssessmentPrompt(ctx: AssessmentContext): string {
 Read src/ and tests/, then list top 1-3 improvements (bugs, roadmap items, test gaps, clarity, new capabilities) — for each: what/why/difficulty. Keep your assessment under ${ASSESSMENT_CHAR_LIMIT} characters — it is passed directly into the implementation prompt.
 
 Recent journal entries:
-${ctx.journalSummary.slice(0, CONTEXT_JOURNAL_MAX_CHARS)}
+${truncateWithEllipsis(ctx.journalSummary, CONTEXT_JOURNAL_MAX_CHARS)}
 ${ctx.cycleStatsText ? `\nYour track record:\n${ctx.cycleStatsText}\n` : ""}${ctx.memoryContext ? `\nYour accumulated knowledge:\n${ctx.memoryContext}\n` : ""}${ctx.planningContext ? `\n${ctx.planningContext}\n` : ""}`;
 }
 
