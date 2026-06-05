@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import type { CycleOutcome } from "./outcomes.js";
 import type { PhaseUsage } from "./usage.js";
+import { errorMessage } from "./errors.js";
 
 export const DEFAULT_DB_PATH = "bloom.db";
 
@@ -792,7 +793,7 @@ export function getRecentJournalSummary(db: Database.Database, maxChars: number 
   try {
     entries = exportJournalJson(db, maxCycles);
   } catch (err) {
-    console.warn("[db] getRecentJournalSummary: failed to export journal entries:", err);
+    console.warn(`[db] getRecentJournalSummary: failed to export journal entries: ${errorMessage(err)}`);
     return "";
   }
   const lines: string[] = [];
