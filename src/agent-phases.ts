@@ -18,6 +18,7 @@ import {
 import { formatOutcomeForJournal } from "./outcomes.js";
 import { errorMessage } from "./errors.js";
 import { processEvolutionResult, type ProcessedEvolution } from "./orchestrator.js";
+import { truncateWithEllipsis } from "./planning.js";
 import { insertPhaseUsage } from "./db.js";
 import type { EvolutionContext } from "./context.js";
 import type { CycleOutcome } from "./outcomes.js";
@@ -142,7 +143,7 @@ export async function runAssessmentPhase(
   }
 
   console.log(`\n[assessment] Completed in ${formatDurationSec(assessmentMs)} (${assessmentTurns} turns, ${assessment.length} chars)`);
-  console.log(`[assessment] Output preview:\n${assessment.slice(0, ASSESSMENT_PREVIEW_CHARS)}${assessment.length > ASSESSMENT_PREVIEW_CHARS ? "\n  ..." : ""}`);
+  console.log(`[assessment] Output preview:\n${truncateWithEllipsis(assessment, ASSESSMENT_PREVIEW_CHARS)}`);
 
   return assessment;
 }
