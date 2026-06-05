@@ -701,6 +701,24 @@ describe("parseTriageResponse", () => {
     expect(result).toHaveLength(1);
   });
 
+  it("emits dropped-count warning when items with missing required fields are filtered out", () => {
+    // Pins the droppedCount > 0 warn path for the missing-fields case (no issueNumber / no action).
+    // The existing "warns when invalid items are dropped" test pins the unrecognised-action path;
+    // this test pins the symmetric missing-fields path through the same warn branch.
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const input = `[
+      {"issueNumber": 1, "action": "add_to_backlog", "reason": "Valid"},
+      {"action": "already_done", "reason": "Missing issueNumber"},
+      {"issueNumber": 3, "reason": "Missing action"}
+    ]`;
+    const result = parseTriageResponse(input);
+    expect(result).toHaveLength(1);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[triage] parseTriageResponse: dropped 2 item(s)"),
+    );
+    warnSpy.mockRestore();
+  });
+
   it("handles multiple valid decisions", () => {
     const input = `[
       {"issueNumber": 1, "action": "add_to_backlog", "reason": "Feature request"},
