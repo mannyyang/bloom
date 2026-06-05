@@ -626,6 +626,32 @@ describe("formatMemoryForPrompt", () => {
     expect(ellipsisFound).toBe(true);
   });
 
+  it("does not append ellipsis when remaining budget has 0–1 chars headroom after truncation", () => {
+    // Pins the guard at memory.ts lines 266-268: the ellipsis ("…\n", 2 chars) is
+    // only appended when totalLen + separatorLen + learningSection.length + 2 <= maxChars.
+    // When fewer than 2 chars remain after the last fitted learning item, the ellipsis
+    // is silently skipped — this path is distinct from the tested "ellipsis fits" path.
+    // A sweep over tight budgets finds at least one budget value where truncation
+    // occurs but the ellipsis is absent (headroom 0 or 1), exercising the silent branch.
+    for (let i = 0; i < 5; i++) {
+      insertLearning(db, 1, "pattern", `Item ${i} with some padding text`);
+    }
+    const fullResult = formatMemoryForPrompt(db, 100000);
+    let foundSkippedEllipsis = false;
+    for (let budget = 30; budget < fullResult.length; budget++) {
+      const result = formatMemoryForPrompt(db, budget);
+      // Only inspect budgets that produce a non-empty truncated output
+      if (result.length === 0 || result.length === fullResult.length) continue;
+      if (!result.includes("…")) {
+        foundSkippedEllipsis = true;
+        // Budget invariant must still hold even when ellipsis is skipped
+        expect(result.length).toBeLessThanOrEqual(budget);
+      }
+    }
+    // The ellipsis-skipped branch must be reachable for some budget value
+    expect(foundSkippedEllipsis).toBe(true);
+  });
+
   it("appends ellipsis when outer-loop break fires (second category header+first item exceed budget)", () => {
     // This exercises the outer-loop truncation path: the budget fits the first
     // category entirely but NOT the second category's header + first item combined.
