@@ -378,7 +378,7 @@ describe("formatMemoryForPrompt", () => {
       insertLearning(db, 1, "domain", `Learning number ${i} with some extra text to make it long`);
     }
     const result = formatMemoryForPrompt(db, 300);
-    expect(result.length).toBeLessThanOrEqual(400); // some tolerance for the last item
+    expect(result.length).toBeLessThanOrEqual(300); // invariant: result.length <= maxChars
   });
 
   it("truncates mid-category when budget exhausted between items", () => {
