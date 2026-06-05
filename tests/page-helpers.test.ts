@@ -746,6 +746,17 @@ describe("generateStatsHtml", () => {
     const html = generateStatsHtml(null, "now");
     expect(html).toContain("github.com/mannyyang/bloom");
   });
+
+  it("null stats branch wraps fallback text in <section class=\"section\"> container", () => {
+    // Pins that the no-stats fallback is wrapped in the same section skeleton
+    // used by the positive path, so the page layout never collapses when stats
+    // are absent (e.g. on the first evolution cycle before any DB rows exist).
+    const html = generateStatsHtml(null, "now");
+    expect(html).toContain('<section class="section">');
+    expect(html).toContain('<p class="stats-note">No stats available yet.</p>');
+    // The section must be properly closed
+    expect(html).toContain("</section>");
+  });
 });
 
 // ---------------------------------------------------------------------------
