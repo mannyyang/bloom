@@ -868,6 +868,28 @@ describe("parseRoadmap", () => {
     expect(items[0].body).toBe("indented detail");
   });
 
+  it("items under an unrecognised ## heading are silently dropped (not assigned null status)", () => {
+    // parseRoadmap sets currentStatus = null for unknown headings and then
+    // guards `if (itemMatch && currentStatus)` — a falsy null currentStatus
+    // means those items are never pushed to the result array.
+    // This pins the documented "silently dropped" behaviour so a future
+    // refactor that accidentally includes them (changing byStatus or total
+    // counts) is caught immediately.
+    const content = `# Bloom Evolution Roadmap
+
+## Backlog
+- [ ] Known item
+
+## Custom Section
+- [ ] Should be silently dropped
+`;
+    const items = parseRoadmap(content);
+    // Only the item under a recognised ## heading should be returned
+    expect(items).toHaveLength(1);
+    expect(items[0].title).toBe("Known item");
+    expect(items[0].status).toBe("Backlog");
+  });
+
   it("assigns section status (not 'Done') to a [x] checkbox item under a non-Done heading", () => {
     // Status comes from the ## heading, not the [ ]/[x] checkbox state.
     // A checked item under ## Backlog must parse as status "Backlog", not "Done".
