@@ -25,6 +25,7 @@ import {
 } from "./planning.js";
 import { parseJsonFlag } from "./stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "./db.js";
+import { errorMessage } from "./errors.js";
 
 export const ROADMAP_BODY_PREVIEW_MAX_CHARS = 120;
 
@@ -207,7 +208,7 @@ function main() {
   try {
     content = readRoadmap();
   } catch (err) {
-    console.error(`Roadmap unavailable: ${err instanceof Error ? err.message : String(err)}`);
+    console.error(`Roadmap unavailable: ${errorMessage(err)}`);
     process.exit(1);
   }
 
