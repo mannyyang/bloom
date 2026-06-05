@@ -182,7 +182,7 @@ export function parseTriageResponse(text: string): TriageDecision[] {
     }
     return validDecisions;
   } catch {
-    console.warn(`[triage] parseTriageResponse: failed to parse JSON, returning empty decisions. Input (first ${TRIAGE_ERROR_PREVIEW_CHARS} chars): ${jsonStr.slice(0, TRIAGE_ERROR_PREVIEW_CHARS)}`);
+    console.warn(`[triage] parseTriageResponse: failed to parse JSON, returning empty decisions. Input (first ${TRIAGE_ERROR_PREVIEW_CHARS} chars): ${truncateWithEllipsis(jsonStr, TRIAGE_ERROR_PREVIEW_CHARS)}`);
     return [];
   }
 }
