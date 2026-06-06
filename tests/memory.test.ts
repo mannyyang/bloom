@@ -652,6 +652,40 @@ describe("formatMemoryForPrompt", () => {
     expect(foundSkippedEllipsis).toBe(true);
   });
 
+  it("deterministic: ellipsis silently skipped when exactly 1 char of headroom remains after truncation", () => {
+    // Insert "B" first (lower relevance after decay), then insert "A" (highest relevance).
+    // getRelevantLearnings returns by relevance DESC → "A" is items[0], "B" is items[1].
+    insertLearning(db, 1, "pattern", "B");
+    decayLearningRelevance(db);           // "B" relevance drops to ~0.95
+    insertLearning(db, 1, "pattern", "A"); // "A" relevance = 1.0 → appears first
+
+    // Budget arithmetic (no strategic context → separatorLen=0, totalLen=0):
+    //   MEMORY_KEY_LEARNINGS_HEADER = "## Key Learnings\n"       (17 chars)
+    //   category header "### pattern (2)\n"                       (16 chars)
+    //   first item line "- A\n"                                   ( 4 chars)
+    //   → learningSection after fitting "A" = 37 chars
+    //
+    //   maxChars = 38  →  1 char of headroom after the last fitted item
+    //
+    //   check "B": 0+0+37+4 = 41 > 38  → budgetExhausted=true
+    //   ellipsis:  0+0+37+2 = 39 > 38  → ellipsis NOT appended (silently skipped)
+    //   result = "## Key Learnings\n### pattern (2)\n- A\n"  (37 chars, no "…")
+    const maxChars =
+      MEMORY_KEY_LEARNINGS_HEADER.length  // 17
+      + "### pattern (2)\n".length        // 16
+      + "- A\n".length                   //  4
+      + 1;                               // → 38
+
+    const fullResult = formatMemoryForPrompt(db, 100000);
+    const result = formatMemoryForPrompt(db, maxChars);
+
+    expect(result.length).toBeLessThan(fullResult.length); // truncation occurred
+    expect(result).not.toContain("…");                     // ellipsis was silently skipped
+    expect(result.length).toBeLessThanOrEqual(maxChars);   // budget invariant holds
+    expect(result).toContain("- A");                       // highest-relevance item included
+    expect(result).not.toContain("- B");                   // lower-relevance item was cut
+  });
+
   it("appends ellipsis when outer-loop break fires (second category header+first item exceed budget)", () => {
     // This exercises the outer-loop truncation path: the budget fits the first
     // category entirely but NOT the second category's header + first item combined.
