@@ -519,6 +519,20 @@ describe("generateStatsJson", () => {
     // latestCycle is always the true latest regardless of lastN
     expect(resultLast2.latestCycle).toBe(5);
   });
+
+  it("lastN=0 returns latestCycle from DB but zero-value stats (LIMIT 0 matches no rows)", () => {
+    // parseLastNArg guards against 0 at the CLI level, but generateStatsJson is a public
+    // function callable directly. Pinning this behavior prevents a silent regression where
+    // lastN=0 might be treated as "all cycles" instead of "zero cycles".
+    insertCycle(db, makeOutcome({ cycleNumber: 3, buildVerificationPassed: true, pushSucceeded: true }));
+    const result = generateStatsJson(db, 0);
+    // latestCycle is fetched independently via getLatestCycleNumber, so it reflects reality
+    expect(result.latestCycle).toBe(3);
+    // getCycleStats with LIMIT 0 returns zero rows → zero-value stats
+    expect(result.stats.totalCycles).toBe(0);
+    expect(result.stats.successRate).toBe(0);
+    expect(result.stats.totalCostUsd).toBe(0);
+  });
 });
 
 describe("formatCycleStats", () => {
