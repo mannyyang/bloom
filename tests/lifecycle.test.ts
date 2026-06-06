@@ -78,6 +78,12 @@ describe("lifecycle helpers", () => {
       expect(parseTimeoutEnv("-1000", 120_000)).toBe(120_000);
     });
 
+    it("falls back to default for a sub-millisecond value that rounds to zero (e.g., 0.4)", () => {
+      // parsed = 0.4 > 0 passes the old guard, but Math.round(0.4) = 0 is invalid.
+      // The fix checks rounded > 0 after rounding, so 0.4 must fall back.
+      expect(parseTimeoutEnv("0.4", 120_000)).toBe(120_000);
+    });
+
     it("falls back to default for Infinity", () => {
       expect(parseTimeoutEnv("Infinity", 120_000)).toBe(120_000);
     });

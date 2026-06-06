@@ -10,7 +10,8 @@ import { execSyncOutput } from "./errors.js";
 export function parseTimeoutEnv(envValue: string | undefined, defaultMs: number): number {
   if (envValue === undefined) return defaultMs;
   const parsed = Number(envValue);
-  return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : defaultMs;
+  const rounded = Math.round(parsed);
+  return Number.isFinite(parsed) && rounded > 0 ? rounded : defaultMs;
 }
 
 /** Timeout for `pnpm build && pnpm test` (2 minutes). Override with BLOOM_BUILD_TIMEOUT_MS. */
