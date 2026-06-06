@@ -251,6 +251,16 @@ describe("buildTriagePrompt", () => {
     expect(prompt).toContain("No body");
   });
 
+  it("pins exact rendered line format for an issue with empty body (trailing newline+spaces)", () => {
+    // When body is "", normalizedBody and bodyPreview are both "".
+    // The template `- #${i.number}: "${titlePreview}" (${i.reactions} reactions)\n  ${bodyPreview}`
+    // produces a line ending with "\n  " (newline + two spaces of indentation + empty preview).
+    // This pins the exact whitespace so a refactor that strips trailing spaces or
+    // omits the indent for the empty-body case is caught immediately.
+    const prompt = buildTriagePrompt([makeIssue({ number: 7, title: "No body", body: "" })], []);
+    expect(prompt).toContain('- #7: "No body" (0 reactions)\n  ');
+  });
+
   it("includes zero-reaction issues", () => {
     const prompt = buildTriagePrompt([makeIssue({ number: 10, reactions: 0 })], []);
     expect(prompt).toContain("#10");
