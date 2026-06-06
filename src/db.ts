@@ -483,7 +483,21 @@ export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS
   const rows = validateRows<CycleRow>(rawRows, cycleRowSchema, "getCycleStats");
 
   if (rows.length === 0) {
-    return { totalCycles: 0, successRate: 0, avgImprovements: 0, avgConversionRate: null, testCountTrend: null, recentFailures: 0, avgDurationMinutes: null, totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0, failureCategoryBreakdown: {}, learningCategoryDistribution: {} };
+    return {
+      totalCycles: 0,
+      successRate: 0,
+      avgImprovements: 0,
+      avgConversionRate: null,
+      testCountTrend: null,
+      recentFailures: 0,
+      avgDurationMinutes: null,
+      totalCostUsd: 0,
+      avgCostPerCycle: 0,
+      totalInputTokens: 0,
+      totalOutputTokens: 0,
+      failureCategoryBreakdown: {},
+      learningCategoryDistribution: {},
+    };
   }
 
   const totalCycles = rows.length;
