@@ -414,6 +414,12 @@ describe("generateStatsOutput", () => {
       expect(joined).toContain("Cycles tracked**: 2");
     });
 
+    it("parseLastNArg returns the parsed integer for a valid --last N argument", () => {
+      expect(parseLastNArg(["node", "stats.js", "--last", "10"])).toBe(10);
+      expect(parseLastNArg(["node", "stats.js", "--last", "1"])).toBe(1);
+      expect(parseLastNArg(["--last", "50"])).toBe(50);
+    });
+
     it("parseLastNArg returns undefined when only unknown flags are present", () => {
       expect(parseLastNArg(["node", "stats.js", "--verbose"])).toBeUndefined();
     });
