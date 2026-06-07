@@ -710,6 +710,29 @@ describe("db", () => {
       db.exec("DROP TABLE journal_entries");
       expect(getRecentJournalSummary(db)).toBe("");
     });
+
+    it("output never exceeds maxChars even when join separators exceed accumulation budget", () => {
+      // The accumulation loop tracks totalLen as the sum of individual section.length
+      // values, but lines.join("\n") inserts one extra "\n" between each pair of sections.
+      // For two sections each of length L, the joined string is 2*L+1 chars, which can
+      // exceed a maxChars of exactly 2*L. The safety-net .slice(0, maxChars) must fire.
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+      insertJournalEntry(db, 1, "attempted", "Alpha work");
+      insertJournalEntry(db, 2, "attempted", "Beta work");
+
+      // Measure one section's rendered length using a single-cycle call.
+      const oneSectionSummary = getRecentJournalSummary(db, 100000, 1);
+      const sectionLen = oneSectionSummary.length;
+      expect(sectionLen).toBeGreaterThan(0);
+
+      // Budget = exactly 2 sections without any separator — both sections
+      // individually fit the accumulation check, but lines.join("\n") produces
+      // sectionLen*2 + 1 chars. The .slice(0, maxChars) must trim the extra byte.
+      const maxChars = sectionLen * 2;
+      const result = getRecentJournalSummary(db, maxChars, 2);
+      expect(result.length).toBeLessThanOrEqual(maxChars);
+    });
   });
 
   describe("insertPhaseUsage", () => {
