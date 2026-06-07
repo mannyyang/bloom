@@ -43,15 +43,17 @@ export function parseJsonFlag(argv: string[]): boolean {
 /**
  * Machine-readable JSON output for CI automation, dashboards, and scripting.
  * Returns the latest cycle number alongside the raw CycleStats object.
+ * The `window` field records the lastN argument used to compute stats (null
+ * means all-time), making the output self-describing for dashboard consumers.
  * When no cycles exist, latestCycle is 0 and stats contains zero-value fields.
  */
 export function generateStatsJson(
   db: Database.Database,
   lastN?: number,
-): { latestCycle: number; stats: CycleStats } {
+): { latestCycle: number; window: number | null; stats: CycleStats } {
   const latestCycle = getLatestCycleNumber(db);
   const stats = getCycleStats(db, lastN);
-  return { latestCycle, stats };
+  return { latestCycle, window: lastN ?? null, stats };
 }
 
 /**

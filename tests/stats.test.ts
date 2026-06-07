@@ -533,6 +533,38 @@ describe("generateStatsJson", () => {
     expect(result.stats.successRate).toBe(0);
     expect(result.stats.totalCostUsd).toBe(0);
   });
+
+  it("window is null when lastN is not provided (all-time stats)", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    const result = generateStatsJson(db);
+    expect(result.window).toBeNull();
+  });
+
+  it("window equals lastN when a positive integer is provided", () => {
+    for (let i = 1; i <= 5; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    const result = generateStatsJson(db, 3);
+    expect(result.window).toBe(3);
+  });
+
+  it("window is present and null in JSON serialisation when lastN is absent", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    const result = generateStatsJson(db);
+    const parsed = JSON.parse(JSON.stringify(result));
+    // null serialises to JSON null, not undefined (which would be dropped)
+    expect(Object.prototype.hasOwnProperty.call(parsed, "window")).toBe(true);
+    expect(parsed.window).toBeNull();
+  });
+
+  it("window is present and equals lastN in JSON serialisation when lastN is provided", () => {
+    for (let i = 1; i <= 4; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    const result = generateStatsJson(db, 2);
+    const parsed = JSON.parse(JSON.stringify(result));
+    expect(parsed.window).toBe(2);
+  });
 });
 
 describe("formatCycleStats", () => {
