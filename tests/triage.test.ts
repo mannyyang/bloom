@@ -1970,6 +1970,33 @@ describe("triageIssues with injected deps", () => {
 
     warnSpy.mockRestore();
   });
+
+  it("duplicate decision: insertIssueAction called exactly once despite two LLM decisions for same issue", async () => {
+    // The processedIssueNumbers guard (triage.ts lines 357–362) drops the second
+    // decision for the same issue. This test verifies the downstream effect:
+    // insertIssueAction must be called exactly once — not twice — so no duplicate
+    // issue_actions rows are created when the LLM hallucinates a repeated decision.
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const issues = [makeIssue({ number: 5, title: "Dedup insert test" })];
+    // LLM returns two decisions for the same issue: only the first must be persisted
+    const deps = makeDeps([
+      { issueNumber: 5, action: "add_to_backlog", reason: "Good feature request" },
+      { issueNumber: 5, action: "not_applicable", reason: "Duplicate — should be dropped" },
+    ]);
+    const mockDb = {} as import("better-sqlite3").Database;
+
+    const result = await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
+
+    // Guard: only one decision in result, only one insertIssueAction call
+    expect(result.decisions).toHaveLength(1);
+    expect(mockInsertIssueAction).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Duplicate decision"),
+    );
+
+    warnSpy.mockRestore();
+  });
 });
 
 describe("triageIssues real DB integration", () => {
