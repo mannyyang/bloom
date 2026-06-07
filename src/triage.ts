@@ -361,7 +361,6 @@ export async function triageIssues(
       continue;
     }
     processedIssueNumbers.add(decision.issueNumber);
-    validatedDecisions.push(decision);
     const issue = untriaged.find((i) => i.number === decision.issueNumber);
     if (!issue) continue;
 
@@ -377,6 +376,11 @@ export async function triageIssues(
         )
           ? "add_to_backlog"
           : decision.action;
+
+      // Push the decision with its effective action (may differ from the raw LLM
+      // action when the done-gate downgrades already_done → add_to_backlog).
+      // Placed here so result.decisions always reflects what actually happened.
+      validatedDecisions.push({ ...decision, action: effectiveAction });
 
       if (effectiveAction === "add_to_backlog") {
         if (repo && isValidRepo(repo)) {

@@ -1047,6 +1047,10 @@ describe("triageIssues with injected deps", () => {
     expect(result.addedToBacklog).toContain(8);
     expect(result.closed).not.toContain(8);
     expect(mockAddLinkedItem).toHaveBeenCalled();
+    // result.decisions must reflect the effective action, not the stale LLM action
+    expect(result.decisions).toHaveLength(1);
+    expect(result.decisions[0].action).toBe("add_to_backlog");
+    expect(result.decisions[0].issueNumber).toBe(8);
   });
 
   it("skips LLM triage for issues already on the board by linkedIssueNumber", async () => {
