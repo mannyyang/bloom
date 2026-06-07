@@ -593,6 +593,41 @@ describe("syncReactionsToItems", () => {
     expect(result[1].reactions).toBe(10);
     expect(mockGithubApiRequest).toHaveBeenCalledTimes(2);
   });
+
+  it("returns original items unchanged when all API calls hang and timeout fires", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    // Never-resolving promise simulates a hung GitHub API
+    mockGithubApiRequest.mockReturnValueOnce(new Promise(() => {}));
+
+    const items = [makeItem({ linkedIssueNumber: 42, reactions: 5 })];
+
+    vi.useFakeTimers();
+    const resultPromise = syncReactionsToItems(items);
+    await vi.advanceTimersByTimeAsync(SYNC_REACTIONS_TIMEOUT_MS + 1);
+    vi.useRealTimers();
+
+    const result = await resultPromise;
+    expect(result).toEqual(items);
+  });
+
+  it("logs a warning when syncReactionsToItems timeout fires", async () => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest.mockReturnValueOnce(new Promise(() => {}));
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const items = [makeItem({ linkedIssueNumber: 42, reactions: 0 })];
+
+    vi.useFakeTimers();
+    const resultPromise = syncReactionsToItems(items);
+    await vi.advanceTimersByTimeAsync(SYNC_REACTIONS_TIMEOUT_MS + 1);
+    vi.useRealTimers();
+
+    await resultPromise;
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[issues] syncReactionsToItems: reaction sync timed out"),
+    );
+    warnSpy.mockRestore();
+  });
 });
 
 describe("closeIssueWithComment", () => {
