@@ -646,6 +646,32 @@ describe("parseRoadmap", () => {
     expect(items[0].title).toBe("Padded title");
     expect(items[0].linkedIssueNumber).toBe(7);
   });
+
+  it("silently drops item lines that appear before the first ## heading and logs a warning", () => {
+    // Items before any ## section heading have no valid status and must be ignored.
+    // A console.warn surfaces the data loss so malformed ROADMAP.md files are diagnosable.
+    const content = `# Bloom Evolution Roadmap
+- [ ] Preamble item that should be ignored
+
+## Backlog
+- [ ] Valid backlog item
+`;
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const items = parseRoadmap(content);
+
+    // Only the valid item under ## Backlog is returned
+    expect(items).toHaveLength(1);
+    expect(items[0].title).toBe("Valid backlog item");
+
+    // A warning should have been emitted for the preamble item
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[planning] parseRoadmap: item line found before any ## heading"),
+    );
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Preamble item that should be ignored"),
+    );
+    warnSpy.mockRestore();
+  });
 });
 
 describe("serializeRoadmap", () => {

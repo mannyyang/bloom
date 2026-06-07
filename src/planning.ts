@@ -171,6 +171,9 @@ export function parseRoadmap(content: string): ProjectItem[] {
     const itemMatch = line.match(
       /^-\s+\[[ xX]\]\s+(.+)$/,
     );
+    if (itemMatch && !currentStatus) {
+      console.warn(`[planning] parseRoadmap: item line found before any ## heading — ignoring: "${line.trim()}"`);
+    }
     if (itemMatch && currentStatus) {
       // Flush previous item
       if (currentItem?.title) {
