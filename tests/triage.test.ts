@@ -1900,6 +1900,26 @@ describe("triageIssues with injected deps", () => {
     warnSpy.mockRestore();
   });
 
+  it("no-db with new issues: SDK query function is never invoked (LLM path fully skipped)", async () => {
+    // When db is undefined, the function must return early BEFORE reaching the LLM
+    // query call. This test verifies the early-return branch by asserting that the
+    // globally-mocked SDK query is never invoked — not just that results are empty.
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    // Deliberately omit deps so the code would fall through to the real SDK mock
+    // if the early-return guard were absent or incorrectly placed.
+    const issue = makeIssue({ number: 99, title: "Brand new issue" });
+
+    await triageIssues([issue], [], 5, projectConfig, undefined);
+
+    // Guard: warn fires, LLM never reached
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[triage] No database available"),
+    );
+    expect(mockQuery).not.toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+  });
+
   it("emits count-mismatch warning when decision count differs from untriaged issue count (possible prompt drift)", async () => {
     // Covers the JSDoc promise in triageIssues: a mismatch between the number of
     // input issues and returned decisions is logged as a warning (possible prompt drift)
