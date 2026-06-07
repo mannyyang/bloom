@@ -276,6 +276,22 @@ describe("fetchCommunityIssues", () => {
     expect(result).toEqual([{ number: 5, title: "Minimal", body: "", reactions: 0 }]);
   });
 
+  it.each([
+    ["reactions is null",                  { number: 1, title: "T", reactions: null }],
+    ["reactions is a bare number",          { number: 2, title: "T", reactions: 42 }],
+    ["reactions.total_count is a string",   { number: 3, title: "T", reactions: { total_count: "lots" } }],
+    ["reactions.total_count is undefined",  { number: 4, title: "T", reactions: {} }],
+  ])("defaults reactions to 0 when %s", async (_label, item) => {
+    process.env.GITHUB_REPOSITORY = "owner/repo";
+    mockGithubApiRequest.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [item],
+    } as unknown as Response);
+    const result = await fetchCommunityIssues();
+    expect(result).toHaveLength(1);
+    expect(result[0].reactions).toBe(0);
+  });
+
   it("resolves to [] when GitHub API does not respond within 10 s timeout", async () => {
     process.env.GITHUB_REPOSITORY = "owner/repo";
     // A promise that never resolves — simulates a hung GitHub API
