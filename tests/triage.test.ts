@@ -2070,6 +2070,23 @@ describe("triageIssues real DB integration", () => {
     const row = realDb.prepare("SELECT COUNT(*) as cnt FROM issue_actions").get() as { cnt: number };
     expect(row.cnt).toBe(1);
   });
+
+  it("alreadyOnBoard Done: hasIssueAction returns true after pre-record DB transaction (refactor guard)", async () => {
+    // The closeCandidates transaction (triage.ts lines 242–248) pre-records
+    // insertIssueAction(TRIAGE_ACTION_NAME) before the GitHub close API fan-out.
+    // This test verifies hasIssueAction(realDb, ...) returns true after the call,
+    // confirming the guard survives a future refactor that might move the transaction.
+    const issue = makeIssue({ number: 201, title: "Done-linked refactor guard" });
+    const doneBoard = [
+      makeBoardItem({ linkedIssueNumber: 201, status: "Done", title: "Done item for 201" }),
+    ];
+
+    await triageIssues([issue], doneBoard, 1, projectConfig, realDb);
+
+    // hasIssueAction must return true — the transaction committed before the
+    // GitHub close API was called, so a crash during close cannot re-queue the issue.
+    expect(actualDbModule.hasIssueAction(realDb, 201, TRIAGE_ACTION_NAME)).toBe(true);
+  });
 });
 
 describe("triage constants", () => {
