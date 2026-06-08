@@ -565,6 +565,25 @@ describe("generateStatsJson", () => {
     const parsed = JSON.parse(JSON.stringify(result));
     expect(parsed.window).toBe(2);
   });
+
+  it("generatedAt is a valid ISO 8601 timestamp string", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    const result = generateStatsJson(db);
+    expect(typeof result.generatedAt).toBe("string");
+    // ISO 8601 format: YYYY-MM-DDTHH:mm:ss.sssZ
+    expect(result.generatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+    // Must be parseable as a real date
+    expect(new Date(result.generatedAt).toString()).not.toBe("Invalid Date");
+  });
+
+  it("generatedAt is present and a valid ISO string in JSON serialisation", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    const result = generateStatsJson(db);
+    const parsed = JSON.parse(JSON.stringify(result));
+    expect(Object.prototype.hasOwnProperty.call(parsed, "generatedAt")).toBe(true);
+    expect(typeof parsed.generatedAt).toBe("string");
+    expect(new Date(parsed.generatedAt).toString()).not.toBe("Invalid Date");
+  });
 });
 
 describe("formatCycleStats", () => {

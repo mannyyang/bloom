@@ -50,10 +50,10 @@ export function parseJsonFlag(argv: string[]): boolean {
 export function generateStatsJson(
   db: Database.Database,
   lastN?: number,
-): { latestCycle: number; window: number | null; stats: CycleStats } {
+): { latestCycle: number; window: number | null; generatedAt: string; stats: CycleStats } {
   const latestCycle = getLatestCycleNumber(db);
   const stats = getCycleStats(db, lastN);
-  return { latestCycle, window: lastN ?? null, stats };
+  return { latestCycle, window: lastN ?? null, generatedAt: new Date().toISOString(), stats };
 }
 
 /**
