@@ -261,6 +261,18 @@ describe("buildTriagePrompt", () => {
     expect(prompt).toContain('- #7: "No body" (0 reactions)\n  ');
   });
 
+  it("pins exact rendered line format for an issue with non-empty body", () => {
+    // Tripwire for the full issue-entry format: `- #N: "title" (R reactions)\n  body`.
+    // The empty-body case is already pinned above; this pins the non-empty case so
+    // changes like dropping quote-delimited titles, swapping (N reactions) to
+    // [N reactions], or removing the body indent are caught immediately.
+    const prompt = buildTriagePrompt(
+      [makeIssue({ number: 5, title: "Add logging", body: "Short body", reactions: 3 })],
+      [],
+    );
+    expect(prompt).toContain('- #5: "Add logging" (3 reactions)\n  Short body');
+  });
+
   it("includes zero-reaction issues", () => {
     const prompt = buildTriagePrompt([makeIssue({ number: 10, reactions: 0 })], []);
     expect(prompt).toContain("#10");
