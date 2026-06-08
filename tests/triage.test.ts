@@ -1405,6 +1405,49 @@ describe("triageIssues with injected deps", () => {
     );
   });
 
+  it("pins exact comment string for not_applicable action including cycleCount interpolation", async () => {
+    // Tripwire: a silent rename of the commentMap wording would go undetected by
+    // the looser stringContaining assertion in the adjacent test. This pins the
+    // full string including cycle number so any wording change breaks explicitly.
+    const issues = [makeIssue({ number: 5, title: "Off-topic request" })];
+    const deps = makeDeps([{ issueNumber: 5, action: "not_applicable", reason: "Not relevant to Bloom." }]);
+    const mockDb = {} as import("better-sqlite3").Database;
+    mockCloseIssue.mockResolvedValue(true);
+
+    await triageIssues(issues, [], 12, projectConfig, mockDb, deps);
+
+    expect(mockCloseIssue).toHaveBeenCalledWith(
+      5,
+      12,
+      "Closing — not applicable or out of scope (cycle 12).\n\nNot relevant to Bloom.",
+      mockDb,
+      "closed",
+      "test-owner/test-repo",
+    );
+  });
+
+  it("pins exact comment string for not_applicable including reason text and newline separator", async () => {
+    // Tripwire: verifies that the comment passed to closeIssueWithComment is
+    // `commentMap[action]\n\nreason` — i.e. two newlines separate the header from
+    // the reason. A refactor changing to one newline or a space would go undetected
+    // by the adjacent stringContaining test above.
+    const issues = [makeIssue({ number: 9, title: "Unrelated request" })];
+    const deps = makeDeps([{ issueNumber: 9, action: "not_applicable", reason: "Not related to Bloom's purpose." }]);
+    const mockDb = {} as import("better-sqlite3").Database;
+    mockCloseIssue.mockResolvedValue(true);
+
+    await triageIssues(issues, [], 3, projectConfig, mockDb, deps);
+
+    expect(mockCloseIssue).toHaveBeenCalledWith(
+      9,
+      3,
+      "Closing — not applicable or out of scope (cycle 3).\n\nNot related to Bloom's purpose.",
+      mockDb,
+      "closed",
+      "test-owner/test-repo",
+    );
+  });
+
   it("records insertIssueAction('triaged') before close for not_applicable (prevents re-triage on close failure)", async () => {
     // Regression guard: if the GitHub close API fails in phase 2, the issue must
     // still be marked "triaged" in the DB so it is not re-sent to the LLM next cycle.
