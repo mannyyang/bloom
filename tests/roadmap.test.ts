@@ -964,6 +964,18 @@ describe("parseRoadmapFilterFlag", () => {
     expect(parseRoadmapFilterFlag(["--filter", "in progress"])).toBe("In Progress");
   });
 
+  it("returns undefined for --filter 'in' (partial match of 'In Progress' is not accepted)", () => {
+    // CLI tokenisation splits on spaces, so "in progress" arrives as a single
+    // argv slot only when the caller quotes it.  "in" alone does not match any
+    // status and must return undefined rather than silently matching nothing.
+    expect(parseRoadmapFilterFlag(["--filter", "in"])).toBeUndefined();
+  });
+
+  it("returns undefined for --filter 'progress' (second word of 'In Progress' alone)", () => {
+    // Symmetric guard: the second word of a multi-word status must also not match.
+    expect(parseRoadmapFilterFlag(["--filter", "progress"])).toBeUndefined();
+  });
+
   it("returns 'Done' for --filter done", () => {
     expect(parseRoadmapFilterFlag(["--filter", "done"])).toBe("Done");
   });
