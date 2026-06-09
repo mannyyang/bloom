@@ -550,6 +550,29 @@ describe("formatMemoryForPrompt", () => {
     expect(result).toContain(longContext);
   });
 
+  it("always includes strategic context when maxChars=0 (extreme boundary)", () => {
+    // maxChars=0 is the most extreme budget; the invariant that strategic context
+    // is never budget-capped must hold even here.  A refactor that naively guards
+    // on `totalLen + section.length > maxChars` before emitting strategic context
+    // would silently break this invariant.
+    const ctx = "Zero-budget context.";
+    insertStrategicContext(db, 1, ctx);
+    const result = formatMemoryForPrompt(db, 0);
+    expect(result).toContain("Strategic Context");
+    expect(result).toContain(ctx);
+  });
+
+  it("suppresses learnings entirely when maxChars=0 with strategic context present", () => {
+    // With maxChars=0 the full budget is consumed by strategic context alone;
+    // no learnings header or items should be emitted.
+    const ctx = "Zero-budget context string.";
+    insertStrategicContext(db, 1, ctx);
+    insertLearning(db, 1, "pattern", "Should not appear with zero budget");
+    const result = formatMemoryForPrompt(db, 0);
+    expect(result).not.toContain("## Key Learnings");
+    expect(result).not.toContain("Should not appear with zero budget");
+  });
+
   it("suppresses Key Learnings entirely when strategic context alone exceeds maxChars", () => {
     // When the strategic context section is already over budget the learnings loop
     // must not execute at all — no "## Key Learnings" header and no learning items
