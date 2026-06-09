@@ -4,6 +4,7 @@ import { initDb, getJournalEntries } from "../src/db.js";
 import {
   processEvolutionResult,
   formatCycleSummaryWithDuration,
+  formatTestCount,
   CYCLE_SUMMARY_SEPARATOR,
   isDryRun,
 } from "../src/orchestrator.js";
@@ -418,6 +419,23 @@ STRATEGIC_CONTEXT: Focus on testing`;
     });
   });
 
+  describe("formatTestCount", () => {
+    it("returns '?' when count is null", () => {
+      expect(formatTestCount(null, null)).toBe("?");
+      expect(formatTestCount(null, 100)).toBe("?");
+    });
+
+    it("returns 'count/total' when both are provided", () => {
+      expect(formatTestCount(490, 490)).toBe("490/490");
+      expect(formatTestCount(488, 490)).toBe("488/490");
+    });
+
+    it("returns just 'count' when total is null", () => {
+      expect(formatTestCount(490, null)).toBe("490");
+      expect(formatTestCount(0, null)).toBe("0");
+    });
+  });
+
   describe("formatCycleSummaryWithDuration", () => {
     it("formats a successful cycle", () => {
       const outcome = makeOutcome({
@@ -570,6 +588,26 @@ STRATEGIC_CONTEXT: Focus on testing`;
       expect(summary).toContain("Tests:");
       expect(summary).toContain("Build:");
       expect(summary).toContain("Push:");
+    });
+
+    it("shows passed/total ratios when test totals are available", () => {
+      const outcome = makeOutcome({
+        testCountBefore: 490,
+        testTotalBefore: 490,
+        testCountAfter: 495,
+        testTotalAfter: 495,
+      });
+      const summary = formatCycleSummaryWithDuration(1, outcome, false, 5000);
+      expect(summary).toContain("Tests: 490/490 → 495/495");
+    });
+
+    it("shows plain counts when test totals are absent", () => {
+      const outcome = makeOutcome({
+        testCountBefore: 490,
+        testCountAfter: 495,
+      });
+      const summary = formatCycleSummaryWithDuration(1, outcome, false, 5000);
+      expect(summary).toContain("Tests: 490 → 495");
     });
 
     it("produces exactly 8 lines when failureCategory is none", () => {
