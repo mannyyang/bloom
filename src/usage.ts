@@ -206,7 +206,7 @@ export function formatUsageForJournal(cu: CycleUsage): string {
     formatJournalLine(
       "Total",
       cu.totalCostUsd,
-      `${cu.totalInputTokens.toLocaleString()} input + ${cu.totalOutputTokens.toLocaleString()} output tokens${cacheSuffix}, ${cu.totalTurns} turns`,
+      `${cu.totalInputTokens.toLocaleString()} input + ${cu.totalOutputTokens.toLocaleString()} output tokens${cacheSuffix}, ${cu.totalTurns} turns, ${formatDurationSec(cu.totalDurationMs)}`,
     ),
   );
   return lines.join("\n");
