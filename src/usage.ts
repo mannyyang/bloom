@@ -44,6 +44,7 @@ export const RESOURCE_USAGE_HEADER = "### Resource Usage";
  * e.g. 1234 → "1.2s", 183000 → "3m 3.0s"
  */
 export function formatDurationSec(ms: number): string {
+  if (ms <= 0) return "0.0s";
   const totalSec = ms / 1000;
   // Use the rounded display value for the branch condition so that values whose
   // toFixed(1) output would be "60.0" are routed to the minute branch instead of

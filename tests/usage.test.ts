@@ -1747,6 +1747,12 @@ describe("formatDurationSec", () => {
   it("formats large values (10m+)", () => {
     expect(formatDurationSec(605000)).toBe("10m 5.0s");
   });
+
+  it("returns '0.0s' for negative inputs (clock skew / subtraction error guard)", () => {
+    expect(formatDurationSec(-1)).toBe("0.0s");
+    expect(formatDurationSec(-1000)).toBe("0.0s");
+    expect(formatDurationSec(-60000)).toBe("0.0s");
+  });
 });
 
 describe("COST_DECIMAL_PLACES", () => {
