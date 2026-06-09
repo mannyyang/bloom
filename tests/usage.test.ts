@@ -296,6 +296,17 @@ describe("aggregateUsage", () => {
     expect(result.totalCacheCreationTokens).toBe(0);
   });
 
+  it("aggregates totalDurationMs by summing durationMs across phases", () => {
+    const result = aggregateUsage([phase1, phase2]);
+    // phase1.durationMs=20000 + phase2.durationMs=60000 = 80000
+    expect(result.totalDurationMs).toBe(80000);
+  });
+
+  it("totalDurationMs is zero when phases array is empty", () => {
+    const result = aggregateUsage([]);
+    expect(result.totalDurationMs).toBe(0);
+  });
+
   it("aggregates an all-zero phase without producing NaN", () => {
     const zeroCost: PhaseUsage = {
       phase: "ZeroPhase",
@@ -493,7 +504,7 @@ describe("formatCycleUsage", () => {
     expect(formatCycleUsage(cu)).toBe(
       "[Assessment] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Turns: 8 | Duration: 20.0s\n" +
       "[Evolution] Cost: $3.0000 | Tokens: 15,000 in / 8,000 out | Turns: 30 | Duration: 1m 0.0s\n" +
-      "[Total] Cost: $4.0000 | Tokens: 20,000 in / 10,000 out | Turns: 38"
+      "[Total] Cost: $4.0000 | Tokens: 20,000 in / 10,000 out | Turns: 38 | Duration: 1m 20.0s"
     );
   });
 
@@ -513,7 +524,7 @@ describe("formatCycleUsage", () => {
 
     const output = formatCycleUsage(cu);
     const totalLine = output.split("\n").find(l => l.includes("[Total]"))!;
-    expect(totalLine).toBe("[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Cache: 1,000 read / 500 created | Turns: 8");
+    expect(totalLine).toBe("[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Cache: 1,000 read / 500 created | Turns: 8 | Duration: 20.0s");
   });
 
   it("omits cache suffix when all cache tokens are zero", () => {
@@ -566,7 +577,7 @@ describe("formatCycleUsage", () => {
       },
     ]);
     const totalLine = formatCycleUsage(cu).split("\n").find(l => l.includes("[Total]"))!;
-    expect(totalLine).toBe("[Total] Cost: $0.5000 | Tokens: 1,000 in / 500 out | Cache: 5,000 read / 0 created | Turns: 3");
+    expect(totalLine).toBe("[Total] Cost: $0.5000 | Tokens: 1,000 in / 500 out | Cache: 5,000 read / 0 created | Turns: 3 | Duration: 5.0s");
   });
 
   it("pins exact cache values on Total line when only creation tokens are non-zero", () => {
@@ -583,7 +594,7 @@ describe("formatCycleUsage", () => {
       },
     ]);
     const totalLine = formatCycleUsage(cu).split("\n").find(l => l.includes("[Total]"))!;
-    expect(totalLine).toBe("[Total] Cost: $1.0000 | Tokens: 3,000 in / 1,200 out | Cache: 0 read / 2,500 created | Turns: 7");
+    expect(totalLine).toBe("[Total] Cost: $1.0000 | Tokens: 3,000 in / 1,200 out | Cache: 0 read / 2,500 created | Turns: 7 | Duration: 15.0s");
   });
 
   it("pins exact cache values on phase line when phase has non-zero cache tokens", () => {
@@ -646,7 +657,7 @@ describe("formatCycleUsage", () => {
       },
     ]);
     const totalLine = formatCycleUsage(cu).split("\n").find(l => l.includes("[Total]"))!;
-    expect(totalLine).toBe("[Total] Cost: $4.0000 | Tokens: 20,000 in / 10,000 out | Turns: 38");
+    expect(totalLine).toBe("[Total] Cost: $4.0000 | Tokens: 20,000 in / 10,000 out | Turns: 38 | Duration: 1m 20.0s");
   });
 
   it("pins exact full Total line string for cache case", () => {
@@ -663,7 +674,7 @@ describe("formatCycleUsage", () => {
       },
     ]);
     const totalLine = formatCycleUsage(cu).split("\n").find(l => l.includes("[Total]"))!;
-    expect(totalLine).toBe("[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Cache: 1,000 read / 500 created | Turns: 8");
+    expect(totalLine).toBe("[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Cache: 1,000 read / 500 created | Turns: 8 | Duration: 20.0s");
   });
 
   it("pins exact cache values on phase line when only read tokens are non-zero", () => {
@@ -752,7 +763,7 @@ describe("formatCycleUsage", () => {
     expect(lines[0]).toContain("[Total]");
     expect(lines[0]).toContain("$0.0000");
     // Full-output pin: catches spacing, separator char, and cost-decimal drift
-    expect(output).toBe("[Total] Cost: $0.0000 | Tokens: 0 in / 0 out | Turns: 0");
+    expect(output).toBe("[Total] Cost: $0.0000 | Tokens: 0 in / 0 out | Turns: 0 | Duration: 0.0s");
   });
 
   it("produces exactly 2 lines for 1 phase (1 phase line + Total)", () => {
@@ -843,7 +854,7 @@ describe("formatCycleUsage", () => {
     expect(formatCycleUsage(cu)).toBe(
       "[Assessment] Cost: $0.2000 | Tokens: 1,000 in / 500 out | Turns: 5 | Duration: 10.0s\n" +
       "[Evolution] Cost: $0.8000 | Tokens: 4,000 in / 2,000 out | Turns: 20 | Duration: 40.0s\n" +
-      "[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,500 out | Turns: 25"
+      "[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,500 out | Turns: 25 | Duration: 50.0s"
     );
   });
 
@@ -876,7 +887,7 @@ describe("formatCycleUsage", () => {
     expect(formatCycleUsage(cu)).toBe(
       "[Assessment] Cost: $0.2000 | Tokens: 1,000 in / 500 out | Cache: 500 read / 200 created | Turns: 5 | Duration: 10.0s\n" +
       "[Evolution] Cost: $0.8000 | Tokens: 4,000 in / 2,000 out | Cache: 2,000 read / 1,000 created | Turns: 20 | Duration: 40.0s\n" +
-      "[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,500 out | Cache: 2,500 read / 1,200 created | Turns: 25"
+      "[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,500 out | Cache: 2,500 read / 1,200 created | Turns: 25 | Duration: 50.0s"
     );
   });
 
@@ -897,7 +908,7 @@ describe("formatCycleUsage", () => {
     ]);
     expect(formatCycleUsage(cu)).toBe(
       "[Assessment] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Turns: 8 | Duration: 20.0s\n" +
-      "[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Turns: 8"
+      "[Total] Cost: $1.0000 | Tokens: 5,000 in / 2,000 out | Turns: 8 | Duration: 20.0s"
     );
   });
 
@@ -918,7 +929,7 @@ describe("formatCycleUsage", () => {
     ]);
     expect(formatCycleUsage(cu)).toBe(
       "[Evolution] Cost: $2.0000 | Tokens: 10,000 in / 5,000 out | Cache: 3,000 read / 1,500 created | Turns: 15 | Duration: 40.0s\n" +
-      "[Total] Cost: $2.0000 | Tokens: 10,000 in / 5,000 out | Cache: 3,000 read / 1,500 created | Turns: 15"
+      "[Total] Cost: $2.0000 | Tokens: 10,000 in / 5,000 out | Cache: 3,000 read / 1,500 created | Turns: 15 | Duration: 40.0s"
     );
   });
 
@@ -962,7 +973,7 @@ describe("formatCycleUsage", () => {
       "[Assessment] Cost: $0.2000 | Tokens: 1,000 in / 500 out | Turns: 5 | Duration: 10.0s\n" +
       "[Evolution] Cost: $0.5000 | Tokens: 2,000 in / 1,000 out | Turns: 10 | Duration: 25.0s\n" +
       "[Verification] Cost: $0.3000 | Tokens: 1,500 in / 750 out | Turns: 8 | Duration: 15.0s\n" +
-      "[Total] Cost: $1.0000 | Tokens: 4,500 in / 2,250 out | Turns: 23"
+      "[Total] Cost: $1.0000 | Tokens: 4,500 in / 2,250 out | Turns: 23 | Duration: 50.0s"
     );
   });
 
@@ -1006,7 +1017,7 @@ describe("formatCycleUsage", () => {
       "[Assessment] Cost: $0.2000 | Tokens: 1,000 in / 500 out | Cache: 500 read / 200 created | Turns: 5 | Duration: 10.0s\n" +
       "[Evolution] Cost: $0.5000 | Tokens: 2,000 in / 1,000 out | Cache: 1,000 read / 500 created | Turns: 10 | Duration: 25.0s\n" +
       "[Verification] Cost: $0.3000 | Tokens: 1,500 in / 750 out | Cache: 750 read / 250 created | Turns: 8 | Duration: 15.0s\n" +
-      "[Total] Cost: $1.0000 | Tokens: 4,500 in / 2,250 out | Cache: 2,250 read / 950 created | Turns: 23"
+      "[Total] Cost: $1.0000 | Tokens: 4,500 in / 2,250 out | Cache: 2,250 read / 950 created | Turns: 23 | Duration: 50.0s"
     );
   });
 });
