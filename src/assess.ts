@@ -28,13 +28,16 @@ import {
   pickNextItem,
 } from "./planning.js";
 import { extractResultText, formatDurationSec } from "./usage.js";
-import { resolveModel } from "./agent-phases.js";
+import { resolveModel, AGENT_ASSESSMENT_MAX_TURNS, AGENT_ASSESSMENT_MAX_BUDGET_USD } from "./agent-phases.js";
 import { CONTEXT_JOURNAL_MAX_CHARS, CONTEXT_JOURNAL_MAX_CYCLES } from "./context.js";
 
-/** Maximum number of turns the assessment agent may take. */
-export const ASSESS_MAX_TURNS = 20;
-/** Maximum USD budget for a single assessment run. */
-export const ASSESS_MAX_BUDGET_USD = 2.0;
+/**
+ * Re-export the canonical assessment limits so callers that import from
+ * this module keep working without change. The single source of truth is
+ * agent-phases.ts; using an alias here prevents silent drift.
+ */
+export const ASSESS_MAX_TURNS = AGENT_ASSESSMENT_MAX_TURNS;
+export const ASSESS_MAX_BUDGET_USD = AGENT_ASSESSMENT_MAX_BUDGET_USD;
 
 export async function main() {
   const startTime = Date.now();

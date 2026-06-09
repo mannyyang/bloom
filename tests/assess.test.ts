@@ -49,6 +49,8 @@ vi.mock("../src/usage.js", () => ({
 
 vi.mock("../src/agent-phases.js", () => ({
   resolveModel: vi.fn(),
+  AGENT_ASSESSMENT_MAX_TURNS: 20,
+  AGENT_ASSESSMENT_MAX_BUDGET_USD: 2.0,
 }));
 
 // --- Import after mocks are set up ---
