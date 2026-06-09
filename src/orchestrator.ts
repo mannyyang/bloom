@@ -124,6 +124,17 @@ export function processEvolutionResult(
 }
 
 /**
+ * Format a single test count for the cycle summary line.
+ * Returns "passed/total" when both values are available (e.g. "490/490"),
+ * just "passed" when the total is absent, or "?" when the count is null.
+ * Exported for unit testing.
+ */
+export function formatTestCount(count: number | null, total: number | null): string {
+  if (count === null) return "?";
+  return total !== null ? `${count}/${total}` : `${count}`;
+}
+
+/**
  * Format the final cycle summary with actual duration.
  * Pure function — no side effects.
  */
@@ -138,7 +149,7 @@ export function formatCycleSummaryWithDuration(
     `  Cycle ${cycleCount} — ${hadError ? "FAILED" : "COMPLETE"}`,
     `  Duration: ${formatDurationSec(totalMs)}`,
     `  Improvements: ${outcome.improvementsSucceeded}/${outcome.improvementsAttempted}`,
-    `  Tests: ${outcome.testCountBefore ?? "?"} → ${outcome.testCountAfter ?? "?"}`,
+    `  Tests: ${formatTestCount(outcome.testCountBefore, outcome.testTotalBefore)} → ${formatTestCount(outcome.testCountAfter, outcome.testTotalAfter)}`,
     `  Build: ${outcome.buildVerificationPassed ? "PASSED" : "FAILED"}`,
     ...(outcome.failureCategory !== "none" ? [`  Failure: ${outcome.failureCategory}`] : []),
     `  Push: ${outcome.pushSucceeded ? "OK" : "FAILED"}`,
