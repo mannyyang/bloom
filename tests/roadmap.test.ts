@@ -462,6 +462,40 @@ describe("generateRoadmapOutput", () => {
     spy.mockRestore();
   });
 
+  it("shows an 'Items:' summary line when the roadmap has items", () => {
+    // SAMPLE_ROADMAP: 1 in progress, 1 up next, 2 backlog, 1 done
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP);
+    const joined = output.join("\n");
+    expect(joined).toContain("Items:");
+  });
+
+  it("summary line lists counts for each status present (case-lower, dot-separated)", () => {
+    // SAMPLE_ROADMAP: 2 Backlog, 1 Up Next, 1 In Progress, 1 Done
+    // STATUS_ORDER renders In Progress first, so the expected order is:
+    //   1 in progress · 1 up next · 2 backlog · 1 done
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP);
+    const joined = output.join("\n");
+    expect(joined).toContain("1 in progress · 1 up next · 2 backlog · 1 done");
+  });
+
+  it("summary line is omitted for an empty roadmap (zero items)", () => {
+    const output = generateRoadmapOutput(EMPTY_ROADMAP);
+    const joined = output.join("\n");
+    // No summary line should appear — the "No items" fallback covers the empty case
+    expect(joined).not.toContain("Items:");
+  });
+
+  it("summary line only lists statuses that have at least one item", () => {
+    // A roadmap with only Backlog items must not show 'in progress', 'up next', or 'done'
+    const backlogOnly = `# Bloom Evolution Roadmap\n\n## Backlog\n- [ ] Item A\n- [ ] Item B\n\n## Up Next\n\n## In Progress\n\n## Done\n`;
+    const output = generateRoadmapOutput(backlogOnly);
+    const joined = output.join("\n");
+    expect(joined).toContain("Items: 2 backlog");
+    expect(joined).not.toContain("in progress");
+    expect(joined).not.toContain("up next");
+    expect(joined).not.toContain("done");
+  });
+
   it("preserves parse-order for multiple items within the same status section", () => {
     // SAMPLE_ROADMAP has two Backlog items in this order:
     //   1. "Improve prompt efficiency"

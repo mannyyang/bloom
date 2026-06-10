@@ -74,6 +74,19 @@ export function generateRoadmapOutput(content: string, filterStatus?: StatusColu
   lines.push("  Bloom Evolution Roadmap");
   lines.push(CYCLE_SUMMARY_SEPARATOR);
 
+  // Build a compact at-a-glance summary of item counts per status.
+  // Only statuses that have at least one item are included so the summary
+  // line never lists zeros.  When no items exist the summary is omitted
+  // (the "No items on the roadmap yet." fallback covers that case).
+  const summaryParts: string[] = [];
+  for (const status of STATUS_ORDER) {
+    const count = items.filter(i => i.status === status).length;
+    if (count > 0) summaryParts.push(`${count} ${status.toLowerCase()}`);
+  }
+  if (summaryParts.length > 0) {
+    lines.push(`  Items: ${summaryParts.join(" · ")}`);
+  }
+
   const statusesToRender = filterStatus ? [filterStatus] : STATUS_ORDER;
   let anyRendered = false;
   for (const status of statusesToRender) {
