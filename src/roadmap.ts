@@ -47,7 +47,17 @@ export function parseRoadmapFilterFlag(argv: string[]): StatusColumn | undefined
   const raw = argv[idx + 1];
   if (!raw) return undefined;
   const lower = raw.toLowerCase();
-  return STATUS_ORDER.find(s => s.toLowerCase() === lower);
+  const single = STATUS_ORDER.find(s => s.toLowerCase() === lower);
+  if (single !== undefined) return single;
+  // Fallback: try joining the next two tokens for multi-word statuses like
+  // "Up Next" or "In Progress" that the shell may have split into two argv slots
+  // (e.g. pnpm roadmap --filter up next without quoting).
+  const next = argv[idx + 2];
+  if (next) {
+    const combined = (raw + " " + next).toLowerCase();
+    return STATUS_ORDER.find(s => s.toLowerCase() === combined);
+  }
+  return undefined;
 }
 
 /**

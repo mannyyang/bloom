@@ -990,6 +990,26 @@ describe("parseRoadmapFilterFlag", () => {
     // than consuming the adjacent flag as a filter value.
     expect(parseRoadmapFilterFlag(["--filter", "--json"])).toBeUndefined();
   });
+
+  it("returns 'Up Next' when shell splits 'up next' into two argv tokens", () => {
+    // When a user runs: pnpm roadmap --filter up next (without quotes), the shell
+    // passes ["--filter", "up", "next"]. The fallback join handles this case.
+    expect(parseRoadmapFilterFlag(["--filter", "up", "next"])).toBe("Up Next");
+  });
+
+  it("returns 'In Progress' when shell splits 'in progress' into two argv tokens", () => {
+    expect(parseRoadmapFilterFlag(["--filter", "in", "progress"])).toBe("In Progress");
+  });
+
+  it("split-token match is case-insensitive ('UP', 'NEXT' → 'Up Next')", () => {
+    expect(parseRoadmapFilterFlag(["--filter", "UP", "NEXT"])).toBe("Up Next");
+  });
+
+  it("split-token fallback does not consume the next token when single token already matches", () => {
+    // When argv[idx+1] already matches (e.g. "backlog"), argv[idx+2] must be
+    // ignored — the fallback join must never run for unambiguous single-word statuses.
+    expect(parseRoadmapFilterFlag(["--filter", "backlog", "extra"])).toBe("Backlog");
+  });
 });
 
 describe("generateRoadmapOutput --filter", () => {
