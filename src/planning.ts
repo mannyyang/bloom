@@ -280,6 +280,13 @@ export function ensureProject(): ProjectConfig {
  * Uses max(numeric suffix) + 1 instead of items.length to avoid
  * ID collisions if items are ever removed or reordered.
  */
+/**
+ * Generate the next unique item ID by finding the highest existing `item-N`
+ * index across all items and returning `item-(N+1)`.
+ *
+ * Items whose IDs do not match the canonical `item-N` format are ignored.
+ * When `items` is empty or contains no standard-format IDs, returns `item-0`.
+ */
 export function nextItemId(items: ProjectItem[]): string {
   let maxIndex = -1;
   for (const item of items) {
