@@ -125,7 +125,16 @@ export function aggregateUsage(phases: PhaseUsage[]): CycleUsage {
     totalTurns += p.numTurns;
     totalDurationMs += p.durationMs;
   }
-  return { phases, totalCostUsd, totalInputTokens, totalOutputTokens, totalCacheReadTokens, totalCacheCreationTokens, totalTurns, totalDurationMs };
+  return {
+    phases,
+    totalCostUsd,
+    totalInputTokens,
+    totalOutputTokens,
+    totalCacheReadTokens,
+    totalCacheCreationTokens,
+    totalTurns,
+    totalDurationMs,
+  };
 }
 
 /**
