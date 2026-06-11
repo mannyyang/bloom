@@ -1315,6 +1315,20 @@ describe("triageIssues with injected deps", () => {
     warnSpy.mockRestore();
   });
 
+  it("does not call insertIssueAction when db is undefined and board item is Done", async () => {
+    // When db is absent the closeCandidates transaction is skipped (triage.ts:
+    // `if (db && closeCandidates.length > 0)`). This test guards the guard: a
+    // refactor that moves insertIssueAction outside the db-check would be caught.
+    const issue = makeIssue({ number: 41, title: "Done on board, no db" });
+    const boardItems = [makeBoardItem({ linkedIssueNumber: 41, status: "Done" })];
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await triageIssues([issue], boardItems, 5, projectConfig, undefined);
+
+    expect(mockInsertIssueAction).not.toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
   it("does not add to backlog when repo is invalid", async () => {
     mockIsValidRepo.mockReturnValueOnce(false);
     mockDetectRepo.mockReturnValueOnce(null);
