@@ -108,8 +108,8 @@ export function commitRoadmap(cycleCount: number): boolean {
     // Regenerate the GitHub Pages viewer so it stays in sync; non-fatal if unavailable.
     try {
       execFileSync("pnpm", ["generate-pages"], { stdio: "inherit", timeout });
-      execFileSync("git", ["add", "docs/index.html"], { stdio: "ignore", timeout });
-    } catch { /* non-fatal: script may not exist or docs/index.html may be unchanged */ }
+      execFileSync("git", ["add", "docs/"], { stdio: "ignore", timeout });
+    } catch { /* non-fatal: script may not exist or docs/ may be unchanged */ }
     execFileSync("git", ["commit", "-m", `cycle ${cycleCount}: update roadmap`], { stdio: "inherit", timeout });
     return true;
   } catch {

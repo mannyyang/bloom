@@ -262,7 +262,7 @@ describe("lifecycle helpers", () => {
       );
     });
 
-    it("invokes pnpm generate-pages and stages docs/index.html on success", () => {
+    it("invokes pnpm generate-pages and stages docs/ on success", () => {
       mockedExecFileSync.mockReturnValue(Buffer.from(""));
       commitRoadmap(42);
       expect(mockedExecFileSync).toHaveBeenCalledWith(
@@ -272,7 +272,7 @@ describe("lifecycle helpers", () => {
       );
       expect(mockedExecFileSync).toHaveBeenCalledWith(
         "git",
-        ["add", "docs/index.html"],
+        ["add", "docs/"],
         expect.objectContaining({ timeout: GIT_OP_TIMEOUT_MS }),
       );
     });
@@ -299,16 +299,16 @@ describe("lifecycle helpers", () => {
       mockedExecFileSync
         .mockReturnValueOnce(Buffer.from(""))  // git add ROADMAP.md
         .mockReturnValueOnce(Buffer.from(""))  // pnpm generate-pages
-        .mockReturnValueOnce(Buffer.from(""))  // git add docs/index.html
+        .mockReturnValueOnce(Buffer.from(""))  // git add docs/
         .mockImplementationOnce(() => { throw new Error("nothing to commit"); }); // git commit
       expect(commitRoadmap(42)).toBe(false);
     });
 
-    it("returns true when generate-pages succeeds but git add docs/index.html throws (inner catch)", () => {
+    it("returns true when generate-pages succeeds but git add docs/ throws (inner catch)", () => {
       mockedExecFileSync
         .mockReturnValueOnce(Buffer.from(""))          // git add ROADMAP.md
         .mockReturnValueOnce(Buffer.from(""))          // pnpm generate-pages (succeeds)
-        .mockImplementationOnce(() => { throw new Error("git add index.html failed"); }) // git add docs/index.html (non-fatal)
+        .mockImplementationOnce(() => { throw new Error("git add docs/ failed"); }) // git add docs/ (non-fatal)
         .mockReturnValue(Buffer.from(""));             // git commit
       expect(commitRoadmap(42)).toBe(true);
       expect(mockedExecFileSync).toHaveBeenCalledWith(
