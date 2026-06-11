@@ -1989,6 +1989,30 @@ describe("triageIssues with injected deps", () => {
     warnSpy.mockRestore();
   });
 
+  it("skips LLM call and returns empty result when all new issues are already triaged in db", async () => {
+    // When hasIssueAction returns true for every new issue, untriaged.length === 0
+    // and the early return at that guard fires — the queryFn must never be invoked.
+    // This prevents unnecessary LLM spend on issues already processed in a prior cycle.
+    const queryFn = vi.fn();
+    const deps = { queryFn };
+    const mockDb = {} as import("better-sqlite3").Database;
+    const issues = [
+      makeIssue({ number: 1, title: "Already triaged A" }),
+      makeIssue({ number: 2, title: "Already triaged B" }),
+    ];
+
+    // Simulate all issues having been triaged previously
+    mockHasIssueAction.mockReturnValue(true);
+
+    const result = await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
+
+    expect(result.decisions).toEqual([]);
+    expect(result.addedToBacklog).toEqual([]);
+    expect(result.closed).toEqual([]);
+    // LLM must not be called — no prompt budget spent on already-processed issues
+    expect(queryFn).not.toHaveBeenCalled();
+  });
+
   it("emits count-mismatch warning when decision count differs from untriaged issue count (possible prompt drift)", async () => {
     // Covers the JSDoc promise in triageIssues: a mismatch between the number of
     // input issues and returned decisions is logged as a warning (possible prompt drift)
