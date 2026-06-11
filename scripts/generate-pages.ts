@@ -1,7 +1,7 @@
 /**
  * generate-pages.ts
- * Reads ROADMAP.md and bloom.db, then writes docs/index.html and
- * docs/journal.html for GitHub Pages.
+ * Reads ROADMAP.md and bloom.db, then writes docs/index.html,
+ * docs/journal.html, and docs/stats.html for GitHub Pages.
  *
  * Usage:  tsx scripts/generate-pages.ts
  */
