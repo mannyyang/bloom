@@ -304,6 +304,22 @@ describe("buildTriagePrompt", () => {
     expect(medIdx).toBeLessThan(lowIdx);
   });
 
+  it("breaks reaction ties by issue number ascending (lower/older issue first)", () => {
+    // When two issues share the same reaction count, the sort must be deterministic.
+    // Lower issue numbers (older issues) appear before higher ones so the order
+    // is stable across runs and independent of insertion order.
+    const issues = [
+      makeIssue({ number: 7, title: "Newer same-reactions", reactions: 5 }),
+      makeIssue({ number: 3, title: "Older same-reactions", reactions: 5 }),
+    ];
+    const prompt = buildTriagePrompt(issues, []);
+    const olderIdx = prompt.indexOf("#3");
+    const newerIdx = prompt.indexOf("#7");
+    expect(olderIdx).toBeGreaterThanOrEqual(0);
+    expect(newerIdx).toBeGreaterThanOrEqual(0);
+    expect(olderIdx).toBeLessThan(newerIdx);
+  });
+
   it("does not mutate the original issues array when sorting", () => {
     const issues = [
       makeIssue({ number: 1, reactions: 1 }),

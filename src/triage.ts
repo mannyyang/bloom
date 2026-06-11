@@ -85,7 +85,7 @@ export function buildTriagePrompt(
   // fetchCommunityIssues already sorts the upstream fetch, but sorting here
   // too is a cheap defence-in-depth that makes priority ordering robust to
   // any caller that does not pre-sort.
-  const sortedIssues = [...issues].sort((a, b) => b.reactions - a.reactions);
+  const sortedIssues = [...issues].sort((a, b) => b.reactions - a.reactions || a.number - b.number);
   const issueList = sortedIssues
     .map((i) => {
       const trimmedTitle = i.title.trim();
