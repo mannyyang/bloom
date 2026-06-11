@@ -96,7 +96,7 @@ export function commitDb(cycleCount: number, label?: string): boolean {
 }
 
 /**
- * Stage and commit the ROADMAP.md file (and regenerate docs/index.html if
+ * Stage and commit the ROADMAP.md file (and regenerate docs/ if
  * the generate-pages script is available). Returns true on success, false if
  * the commit fails (e.g. nothing to commit).
  * Reads BLOOM_GIT_OP_TIMEOUT_MS at call time for test flexibility.
