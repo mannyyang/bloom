@@ -2014,6 +2014,28 @@ describe("triageIssues with injected deps", () => {
     warnSpy.mockRestore();
   });
 
+  it("emits count-mismatch warning when LLM returns MORE decisions than untriaged issues", async () => {
+    // The reverse direction of the fewer-decisions test: LLM hallucinates extra decisions
+    // beyond the untriaged set. decisions.length > untriaged.length must fire the
+    // "possible prompt drift" warning — guarding against silent log-format drift.
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const issues = [makeIssue({ number: 1, title: "One untriaged issue" })];
+    // LLM returns two decisions for one untriaged issue → decisions.length (2) > untriaged.length (1)
+    const deps = makeDeps([
+      { issueNumber: 1, action: "not_applicable", reason: "Out of scope" },
+      { issueNumber: 99, action: "add_to_backlog", reason: "Hallucinated extra issue" },
+    ]);
+    const mockDb = {} as import("better-sqlite3").Database;
+
+    await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("possible prompt drift"),
+    );
+    warnSpy.mockRestore();
+  });
+
   it("warns and skips duplicate LLM decision, keeping first occurrence", async () => {
     // When the LLM returns two decisions for the same issue number, the second must
     // be dropped with a console.warn and only the first decision processed.
