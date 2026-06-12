@@ -276,11 +276,6 @@ export function ensureProject(): ProjectConfig {
 // --- ID Generation ---
 
 /**
- * Compute the next unique item ID by scanning all existing IDs.
- * Uses max(numeric suffix) + 1 instead of items.length to avoid
- * ID collisions if items are ever removed or reordered.
- */
-/**
  * Generate the next unique item ID by finding the highest existing `item-N`
  * index across all items and returning `item-(N+1)`.
  *
