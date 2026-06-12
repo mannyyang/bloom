@@ -207,11 +207,13 @@ export function generateRoadmapJson(content: string, filterStatus?: StatusColumn
 
   // Sort items by STATUS_ORDER so JSON output matches CLI display order.
   // Items with an unrecognised/null status are placed last.
+  // Secondary sort by title (localeCompare) breaks ties within the same status,
+  // making JSON output fully deterministic regardless of parse order.
   const statusRank = new Map<string, number>(STATUS_ORDER.map((s, i) => [s, i]));
   cleanItems.sort((a, b) => {
     const ra = a.status !== null ? (statusRank.get(a.status) ?? STATUS_ORDER.length) : STATUS_ORDER.length;
     const rb = b.status !== null ? (statusRank.get(b.status) ?? STATUS_ORDER.length) : STATUS_ORDER.length;
-    return ra - rb;
+    return ra - rb || a.title.localeCompare(b.title);
   });
 
   // Build summary: total count and per-status breakdown (reflects filtered subset).

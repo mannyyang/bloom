@@ -749,6 +749,21 @@ describe("generateRoadmapJson", () => {
     expect(backlogIdx).toBeLessThan(doneIdx);
   });
 
+  it("same-status items are sorted alphabetically by title as a stable tiebreaker", () => {
+    // When two items share the same status their relative order must be
+    // determined by title (localeCompare), not by parse order.  A regression
+    // that removed the tiebreaker would make CI diffs non-deterministic.
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      { id: "b", title: "Zebra task", status: "Backlog", body: "", linkedIssueNumber: null, reactions: 0 },
+      { id: "a", title: "Alpha task", status: "Backlog", body: "", linkedIssueNumber: null, reactions: 0 },
+      { id: "c", title: "Middle task", status: "Backlog", body: "", linkedIssueNumber: null, reactions: 0 },
+    ]);
+    const result = generateRoadmapJson("");
+    spy.mockRestore();
+    const titles = result.items.map((i) => i.title);
+    expect(titles).toEqual(["Alpha task", "Middle task", "Zebra task"]);
+  });
+
   it("null-status items sort after all known-status items in the output array", () => {
     // The statusRank lookup returns STATUS_ORDER.length for null-status items,
     // which is the highest rank value — placing them at the end. A regression
