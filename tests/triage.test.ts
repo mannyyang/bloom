@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach, afterAll, beforeAll, beforeEach } from "vitest";
-import { buildTriagePrompt, parseTriageResponse, triageIssues, PROMPT_BODY_PREVIEW_CHARS, PROMPT_TITLE_PREVIEW_CHARS, BOARD_BODY_PREVIEW_CHARS, TRIAGE_MAX_TURNS, TRIAGE_MAX_BUDGET_USD, TRIAGE_REASON_MAX_CHARS, TRIAGE_ERROR_PREVIEW_CHARS, TRIAGE_ACTION_NAME, TRIAGE_BOARD_STATUS_DONE, TRIAGE_ALREADY_ON_BOARD_COMMENT } from "../src/triage.js";
+import { buildTriagePrompt, parseTriageResponse, triageIssues, PROMPT_BODY_PREVIEW_CHARS, PROMPT_TITLE_PREVIEW_CHARS, BOARD_BODY_PREVIEW_CHARS, TRIAGE_MAX_TURNS, TRIAGE_MAX_BUDGET_USD, TRIAGE_REASON_MAX_CHARS, TRIAGE_ERROR_PREVIEW_CHARS, TRIAGE_ACTION_NAME, TRIAGE_BOARD_STATUS_DONE, TRIAGE_ALREADY_ON_BOARD_COMMENT, TRIAGE_MAX_ISSUE_NUMBER } from "../src/triage.js";
 import type { CommunityIssue } from "../src/issues.js";
 import { closeIssueWithComment, detectRepo, isValidRepo } from "../src/issues.js";
 import { hasIssueAction, insertIssueAction, initDb, insertCycle } from "../src/db.js";
@@ -936,6 +936,41 @@ describe("parseTriageResponse", () => {
     expect(warnSpy).not.toHaveBeenCalledWith(
       expect.stringContaining(overInput),
     );
+    warnSpy.mockRestore();
+  });
+
+  it("filters out entries where issueNumber exceeds TRIAGE_MAX_ISSUE_NUMBER (1e20 hallucination guard)", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    // Number.isInteger(1e20) === true in JS — without an upper-bound guard this passes
+    const oversizedNumber = 1e20;
+    const input = JSON.stringify([
+      { issueNumber: oversizedNumber, action: "add_to_backlog", reason: "Hallucinated large number" },
+      { issueNumber: 42, action: "not_applicable", reason: "Valid" },
+    ]);
+    const result = parseTriageResponse(input);
+    expect(result).toHaveLength(1);
+    expect(result[0].issueNumber).toBe(42);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("dropped 1 item(s)"));
+    warnSpy.mockRestore();
+  });
+
+  it("accepts entries where issueNumber equals TRIAGE_MAX_ISSUE_NUMBER (boundary inclusive)", () => {
+    const input = JSON.stringify([
+      { issueNumber: TRIAGE_MAX_ISSUE_NUMBER, action: "add_to_backlog", reason: "At boundary" },
+    ]);
+    const result = parseTriageResponse(input);
+    expect(result).toHaveLength(1);
+    expect(result[0].issueNumber).toBe(TRIAGE_MAX_ISSUE_NUMBER);
+  });
+
+  it("rejects entries where issueNumber is TRIAGE_MAX_ISSUE_NUMBER + 1 (boundary exclusive)", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const input = JSON.stringify([
+      { issueNumber: TRIAGE_MAX_ISSUE_NUMBER + 1, action: "add_to_backlog", reason: "One over boundary" },
+    ]);
+    const result = parseTriageResponse(input);
+    expect(result).toHaveLength(0);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("dropped 1 item(s)"));
     warnSpy.mockRestore();
   });
 });

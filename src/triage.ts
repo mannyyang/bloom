@@ -32,6 +32,13 @@ export const TRIAGE_REASON_MAX_CHARS = 2000;
 /** Number of chars of a failed-parse JSON string shown in the warning log. */
 export const TRIAGE_ERROR_PREVIEW_CHARS = 200;
 
+/**
+ * Maximum accepted value for `issueNumber` in a triage decision.
+ * Guards against LLM hallucination: `Number.isInteger(1e20)` is `true` in JS,
+ * so an explicit upper bound is required to keep validated decisions trustworthy.
+ */
+export const TRIAGE_MAX_ISSUE_NUMBER = 1_000_000;
+
 /** Action name recorded in issue_actions to mark an issue as triaged.
  *  Used for deduplication — every path that processes an issue must write
  *  exactly this string so hasIssueAction guards fire correctly. */
@@ -184,6 +191,7 @@ export function parseTriageResponse(text: string): TriageDecision[] {
         item !== null &&
         Number.isInteger(item.issueNumber) &&
         (item.issueNumber as number) > 0 &&
+        (item.issueNumber as number) <= TRIAGE_MAX_ISSUE_NUMBER &&
         ["add_to_backlog", "already_done", "not_applicable"].includes(
           item.action,
         ) &&
