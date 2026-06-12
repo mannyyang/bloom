@@ -229,9 +229,10 @@ export function formatMemoryForPrompt(
     const learningSectionHeader = MEMORY_KEY_LEARNINGS_HEADER;
     let learningSection = learningSectionHeader;
     let budgetExhausted = false;
-    for (const [category, items] of grouped) {
+    for (const category of LEARNING_CATEGORIES) {
       if (budgetExhausted) break;
-      if (items.length === 0) continue;
+      const items = grouped.get(category);
+      if (!items || items.length === 0) continue;
       const header = `### ${category} (${items.length})\n`;
       const firstLine = `- ${items[0].content}\n`;
       // Require budget for both the category header AND its first item before
