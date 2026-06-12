@@ -183,14 +183,13 @@ export function countImprovements(text: string): number {
 export function buildEvolutionPrompt(assessment: string, context?: EvolutionPromptContext): string {
   // Enforce the same character limit communicated to the assessment LLM so oversized
   // assessments cannot silently inflate the evolution prompt.
+  let truncatedAssessment = assessment;
   if (assessment.length > ASSESSMENT_CHAR_LIMIT) {
     console.warn(
       `[evolve] Assessment truncated from ${assessment.length} to ${ASSESSMENT_CHAR_LIMIT} chars — some improvement items may have been dropped.`
     );
+    truncatedAssessment = assessment.slice(0, ASSESSMENT_CHAR_LIMIT);
   }
-  const truncatedAssessment = assessment.length > ASSESSMENT_CHAR_LIMIT
-    ? assessment.slice(0, ASSESSMENT_CHAR_LIMIT)
-    : assessment;
 
   const usageSection = context?.usageContext
     ? `\n\nResource usage so far this cycle:\n${context.usageContext}`
