@@ -709,6 +709,41 @@ describe("formatMemoryForPrompt", () => {
     expect(result).not.toContain("- B");                   // lower-relevance item was cut
   });
 
+  it("outputs categories in LEARNING_CATEGORIES declaration order regardless of Map insertion order", () => {
+    // formatMemoryForPrompt groups learnings into a Map keyed by category,
+    // then iterates LEARNING_CATEGORIES (not the Map) to build output.
+    // This test inserts learnings in reverse-category order to verify that
+    // the output order always matches LEARNING_CATEGORIES, not insertion order.
+    // A regression that switched to iterating the Map would non-deterministically
+    // reorder output in environments where Map preserves insertion order (V8).
+    insertLearning(db, 1, "process", "A process learning");
+    insertLearning(db, 1, "tool-usage", "A tool-usage learning");
+    insertLearning(db, 1, "domain", "A domain learning");
+    insertLearning(db, 1, "anti-pattern", "An anti-pattern learning");
+    insertLearning(db, 1, "pattern", "A pattern learning");
+
+    const result = formatMemoryForPrompt(db, 100000);
+
+    // Verify all five categories appear
+    expect(result).toContain("### pattern");
+    expect(result).toContain("### anti-pattern");
+    expect(result).toContain("### domain");
+    expect(result).toContain("### tool-usage");
+    expect(result).toContain("### process");
+
+    // Verify order matches LEARNING_CATEGORIES: pattern < anti-pattern < domain < tool-usage < process
+    const patternIdx = result.indexOf("### pattern");
+    const antiPatternIdx = result.indexOf("### anti-pattern");
+    const domainIdx = result.indexOf("### domain");
+    const toolUsageIdx = result.indexOf("### tool-usage");
+    const processIdx = result.indexOf("### process");
+
+    expect(patternIdx).toBeLessThan(antiPatternIdx);
+    expect(antiPatternIdx).toBeLessThan(domainIdx);
+    expect(domainIdx).toBeLessThan(toolUsageIdx);
+    expect(toolUsageIdx).toBeLessThan(processIdx);
+  });
+
   it("appends ellipsis when outer-loop break fires (second category header+first item exceed budget)", () => {
     // This exercises the outer-loop truncation path: the budget fits the first
     // category entirely but NOT the second category's header + first item combined.
