@@ -594,7 +594,8 @@ export function formatPlanningContext(
     // Filter out currentItem from the In Progress section — it's already rendered above
     const statusItems = items
       .filter((i) => i.status === status)
-      .filter((i) => i !== currentItem);
+      .filter((i) => i !== currentItem)
+      .sort((a, b) => b.reactions - a.reactions || a.id.localeCompare(b.id));
     if (statusItems.length === 0) continue;
 
     lines.push(`\n### ${status}`);

@@ -488,6 +488,26 @@ describe("formatPlanningContext", () => {
     expect(result).toContain("- Alpha Item");
     expect(result).not.toContain("- Beta Item");
   });
+
+  it("renders items within a section sorted by reactions desc, id asc", () => {
+    const items: ProjectItem[] = [
+      makeItem({ id: "item-10", title: "Low reactions", status: "Backlog", reactions: 1 }),
+      makeItem({ id: "item-2", title: "High reactions", status: "Backlog", reactions: 10 }),
+      makeItem({ id: "item-5", title: "Mid reactions", status: "Backlog", reactions: 5 }),
+      makeItem({ id: "item-3", title: "Tied with item-5", status: "Backlog", reactions: 5 }),
+    ];
+    const result = formatPlanningContext(items, null, 10000);
+    const highIdx = result.indexOf("High reactions");
+    const midIdx = result.indexOf("Mid reactions");
+    const tiedIdx = result.indexOf("Tied with item-5");
+    const lowIdx = result.indexOf("Low reactions");
+    // High reactions first
+    expect(highIdx).toBeLessThan(midIdx);
+    // Tied items: item-3 (id "item-3") before item-5 (id "item-5") by id asc
+    expect(tiedIdx).toBeLessThan(midIdx);
+    // Low reactions last
+    expect(lowIdx).toBeGreaterThan(midIdx);
+  });
 });
 
 describe("parseRoadmap", () => {
