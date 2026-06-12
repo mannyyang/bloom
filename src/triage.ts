@@ -2,7 +2,7 @@ import type Database from "better-sqlite3";
 import { type CommunityIssue, closeIssueWithComment, detectRepo, isValidRepo, ISSUES_DEFAULT_ACTION } from "./issues.js";
 import { hasIssueAction, insertIssueAction } from "./db.js";
 import { errorMessage } from "./errors.js";
-import { addLinkedItem, cleanItemBody, truncateWithEllipsis, type ProjectConfig, type ProjectItem, STATUS_DONE } from "./planning.js";
+import { addLinkedItem, cleanItemBody, truncateWithEllipsis, type ProjectConfig, type ProjectItem, STATUS_DONE, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG } from "./planning.js";
 import { type QueryFn, resolveModel } from "./agent-phases.js";
 import { extractResultText } from "./usage.js";
 
@@ -62,6 +62,11 @@ export interface TriageResult {
   closed: number[];
 }
 
+// Canonical board-item display order — mirrors STATUS_ORDER in roadmap.ts.
+// Defined here so buildTriagePrompt can defensively sort boardItems into a
+// consistent order regardless of the order the caller provides them.
+const TRIAGE_STATUS_ORDER = [STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, STATUS_DONE];
+
 // --- Prompt Building ---
 
 /**
@@ -96,9 +101,19 @@ export function buildTriagePrompt(
     })
     .join("\n");
 
+  // Defensively sort boardItems by status rank then title so the board section
+  // is stable across calls regardless of the order the caller provides items.
+  // Mirrors the generateRoadmapJson sort pattern in roadmap.ts.
+  const statusRank = new Map<string, number>(TRIAGE_STATUS_ORDER.map((s, i) => [s, i]));
+  const sortedBoardItems = [...boardItems].sort((a, b) => {
+    const ra = a.status !== null ? (statusRank.get(a.status) ?? TRIAGE_STATUS_ORDER.length) : TRIAGE_STATUS_ORDER.length;
+    const rb = b.status !== null ? (statusRank.get(b.status) ?? TRIAGE_STATUS_ORDER.length) : TRIAGE_STATUS_ORDER.length;
+    return ra !== rb ? ra - rb : a.title.localeCompare(b.title);
+  });
+
   const boardList =
-    boardItems.length > 0
-      ? boardItems
+    sortedBoardItems.length > 0
+      ? sortedBoardItems
           .map((item) => {
             const issue = item.linkedIssueNumber ? ` (#${item.linkedIssueNumber})` : "";
             const reactions = item.reactions > 0 ? ` (${item.reactions} ★)` : "";

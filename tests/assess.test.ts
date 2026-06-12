@@ -39,6 +39,8 @@ vi.mock("../src/planning.js", () => ({
   formatPlanningContext: vi.fn(),
   pickNextItem: vi.fn(),
   STATUS_IN_PROGRESS: "In Progress",
+  STATUS_UP_NEXT: "Up Next",
+  STATUS_BACKLOG: "Backlog",
   STATUS_DONE: "Done",
 }));
 
