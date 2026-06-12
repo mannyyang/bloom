@@ -78,9 +78,12 @@ export function generateRoadmapOutput(content: string, filterStatus?: StatusColu
   // Only statuses that have at least one item are included so the summary
   // line never lists zeros.  When no items exist the summary is omitted
   // (the "No items on the roadmap yet." fallback covers that case).
+  // When filterStatus is active, the summary reflects only the filtered
+  // subset — consistent with generateRoadmapJson which does the same.
+  const summaryItems = filterStatus ? items.filter(i => i.status === filterStatus) : items;
   const summaryParts: string[] = [];
   for (const status of STATUS_ORDER) {
-    const count = items.filter(i => i.status === status).length;
+    const count = summaryItems.filter(i => i.status === status).length;
     if (count > 0) summaryParts.push(`${count} ${status.toLowerCase()}`);
   }
   if (summaryParts.length > 0) {

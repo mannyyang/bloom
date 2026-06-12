@@ -1162,6 +1162,21 @@ describe("generateRoadmapOutput --filter", () => {
     spy.mockRestore();
   });
 
+  it("summary line reflects only the filtered subset when filterStatus is active", () => {
+    // Bug regression: previously the summary was built from all items even when
+    // filterStatus was set, so --filter backlog printed a summary showing all
+    // statuses while only rendering backlog items — inconsistent with JSON output.
+    // After the fix the summary must scope to the filtered items.
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP, "Backlog");
+    const joined = output.join("\n");
+    // Summary should show only backlog counts (SAMPLE_ROADMAP has 2 Backlog items)
+    expect(joined).toContain("Items: 2 backlog");
+    // Other statuses must NOT appear in the summary
+    expect(joined).not.toContain("in progress");
+    expect(joined).not.toContain("up next");
+    expect(joined).not.toContain("done");
+  });
+
   it("truncates body longer than ROADMAP_BODY_PREVIEW_MAX_CHARS when filterStatus is active", () => {
     // Combinatorial pin: filterStatus + truncation must both fire together.
     // A refactor that clears body or skips truncation only when a filter is
