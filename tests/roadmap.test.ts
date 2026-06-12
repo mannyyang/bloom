@@ -1059,6 +1059,22 @@ describe("parseRoadmapFilterFlag", () => {
     // ignored — the fallback join must never run for unambiguous single-word statuses.
     expect(parseRoadmapFilterFlag(["--filter", "backlog", "extra"])).toBe("Backlog");
   });
+
+  it("two-token fallback still returns correct status when --json follows the two tokens", () => {
+    // pnpm roadmap --filter up next --json: the shell produces
+    // ["--filter", "up", "next", "--json"].  argv[idx+2] is "next" (not "--json"),
+    // so the combined "up next" → "Up Next" is returned and --json is not consumed.
+    expect(parseRoadmapFilterFlag(["--filter", "up", "next", "--json"])).toBe("Up Next");
+    expect(parseRoadmapFilterFlag(["--filter", "in", "progress", "--json"])).toBe("In Progress");
+  });
+
+  it("two-token fallback returns undefined when --json occupies argv[idx+2] (no valid status)", () => {
+    // pnpm roadmap --filter up --json: argv[idx+2] is "--json", so the combined
+    // "up --json" does not match any known status.  The function must return undefined
+    // rather than misidentifying --json as the second word of a multi-word status.
+    expect(parseRoadmapFilterFlag(["--filter", "up", "--json"])).toBeUndefined();
+    expect(parseRoadmapFilterFlag(["--filter", "in", "--json"])).toBeUndefined();
+  });
 });
 
 describe("generateRoadmapOutput --filter", () => {
