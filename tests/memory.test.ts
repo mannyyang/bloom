@@ -786,6 +786,24 @@ describe("formatMemoryForPrompt", () => {
       }
     }
   });
+
+  it("category sections appear in LEARNING_CATEGORIES order regardless of DB insertion order", () => {
+    // Insert one learning per category in REVERSED LEARNING_CATEGORIES order so
+    // higher DB ids (and thus higher relevance-tiebreaker ranks) belong to
+    // categories that should appear LAST. Without the LEARNING_CATEGORIES-order
+    // fix, Map insertion order would produce the reversed sequence.
+    const reversed = [...LEARNING_CATEGORIES].reverse();
+    for (const cat of reversed) {
+      insertLearning(db, 1, cat, `A ${cat} insight`);
+    }
+    const result = formatMemoryForPrompt(db, 100000);
+    // Collect the category names from "### <name> (N)" headers in output order.
+    const headerMatches = [...result.matchAll(/^### ([\w-]+) \(\d+\)/gm)];
+    const outputCategories = headerMatches.map((m) => m[1]);
+    // Filter LEARNING_CATEGORIES to those that appear in the output (all should).
+    const expectedOrder = LEARNING_CATEGORIES.filter((c) => outputCategories.includes(c));
+    expect(outputCategories).toEqual(expectedOrder);
+  });
 });
 
 describe("storeStrategicContext", () => {
