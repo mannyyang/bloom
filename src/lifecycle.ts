@@ -216,10 +216,15 @@ export function runBuildVerification(
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     lastResult = verifyBuild();
     if (lastResult.passed) {
+      if (attempt > 1) {
+        console.log(`[build] Verification passed on attempt ${attempt}/${maxAttempts}`);
+      }
       return lastResult;
     }
     console.error(`Build verification failed (attempt ${attempt}/${maxAttempts})`);
-    revertUncommitted();
+    if (attempt < maxAttempts) {
+      revertUncommitted();
+    }
   }
 
   console.error("Build broken after all attempts. Reverting to pre-evolution state.");
