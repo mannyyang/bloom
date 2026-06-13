@@ -852,4 +852,20 @@ describe("generateStatsTable", () => {
     // header + separator + 3 data rows = 5 lines
     expect(lines.length).toBe(5);
   });
+
+  it("rows are ordered newest-first (highest cycle number at top)", () => {
+    // JSDoc documents "ordered newest-first" — this pin ensures a refactor
+    // that changes the ORDER BY direction is caught immediately.
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 3 }));
+    const lines = generateStatsTable(db).split("\n");
+    // data rows start at index 2 (after header and separator)
+    const dataLines = lines.slice(2);
+    // Each data line is padded: cycle number appears right-aligned in the first column.
+    // Cycle 3 (newest) must appear before cycle 1 (oldest).
+    const firstDataCycle = parseInt(dataLines[0].trim().split(/\s+/)[0]);
+    const lastDataCycle = parseInt(dataLines[dataLines.length - 1].trim().split(/\s+/)[0]);
+    expect(firstDataCycle).toBeGreaterThan(lastDataCycle);
+  });
 });
