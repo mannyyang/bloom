@@ -11,7 +11,7 @@
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import type Database from "better-sqlite3";
-import { initDb, getCycleStats, formatCycleStats, getLatestCycleNumber, CYCLE_SUMMARY_SEPARATOR, type CycleStats } from "./db.js";
+import { initDb, getCycleStats, formatCycleStats, getLatestCycleNumber, getCycleRows, CYCLE_SUMMARY_SEPARATOR, type CycleStats, type CycleRow } from "./db.js";
 import { formatMemoryForPrompt } from "./memory.js";
 
 /**
@@ -38,6 +38,70 @@ export function parseLastNArg(argv: string[]): number | undefined {
  */
 export function parseJsonFlag(argv: string[]): boolean {
   return argv.includes("--json");
+}
+
+/**
+ * Parse `--table` from an argv array, returning true when the flag is present.
+ * Mirrors the pattern of parseJsonFlag for consistency.
+ */
+export function parseTableFlag(argv: string[]): boolean {
+  return argv.includes("--table");
+}
+
+/** Column widths for the ASCII stats table. */
+const COL_CYCLE = 6;
+const COL_ATTEMPTED = 9;
+const COL_SUCCEEDED = 9;
+const COL_BUILD = 6;
+const COL_PUSH = 5;
+const COL_DURATION = 10;
+
+function pad(s: string, width: number, right = false): string {
+  return right ? s.padStart(width) : s.padEnd(width);
+}
+
+/**
+ * Render per-cycle data as a fixed-width ASCII table.
+ * Rows are ordered newest-first (highest cycle number at top).
+ * Returns an empty string when no cycles exist.
+ */
+export function generateStatsTable(db: Database.Database, lastN?: number): string {
+  const rows = getCycleRows(db, lastN);
+  if (rows.length === 0) return "";
+
+  const header = [
+    pad("Cycle", COL_CYCLE, true),
+    pad("Attempt", COL_ATTEMPTED, true),
+    pad("Succeed", COL_SUCCEEDED, true),
+    pad("Build", COL_BUILD),
+    pad("Push", COL_PUSH),
+    pad("Duration", COL_DURATION, true),
+  ].join("  ");
+
+  const separator = [
+    "-".repeat(COL_CYCLE),
+    "-".repeat(COL_ATTEMPTED),
+    "-".repeat(COL_SUCCEEDED),
+    "-".repeat(COL_BUILD),
+    "-".repeat(COL_PUSH),
+    "-".repeat(COL_DURATION),
+  ].join("  ");
+
+  const dataRows = rows.map((r: CycleRow) => {
+    const durationStr = r.durationMs !== null
+      ? `${(r.durationMs / 60_000).toFixed(1)} min`
+      : "—";
+    return [
+      pad(String(r.cycleNumber), COL_CYCLE, true),
+      pad(String(r.attempted), COL_ATTEMPTED, true),
+      pad(String(r.succeeded), COL_SUCCEEDED, true),
+      pad(r.buildPassed ? "✓" : "✗", COL_BUILD),
+      pad(r.pushed ? "✓" : "✗", COL_PUSH),
+      pad(durationStr, COL_DURATION, true),
+    ].join("  ");
+  });
+
+  return [header, separator, ...dataRows].join("\n");
 }
 
 /**
@@ -96,12 +160,16 @@ export function generateStatsOutput(db: Database.Database, lastN?: number): stri
 function main() {
   const lastN = parseLastNArg(process.argv);
   const jsonMode = parseJsonFlag(process.argv);
+  const tableMode = parseTableFlag(process.argv);
   const db = initDb();
 
   try {
     if (jsonMode) {
       const result = generateStatsJson(db, lastN);
       console.log(JSON.stringify(result, null, 2));
+    } else if (tableMode) {
+      const table = generateStatsTable(db, lastN);
+      console.log(table || "No evolution cycles recorded yet.");
     } else {
       const output = generateStatsOutput(db, lastN);
       for (const line of output) {

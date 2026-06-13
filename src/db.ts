@@ -227,6 +227,59 @@ export function getLatestCycleNumber(db: Database.Database): number {
   return row?.max_cycle ?? 0;
 }
 
+/**
+ * A lightweight per-cycle summary row used for tabular output.
+ */
+export interface CycleRow {
+  cycleNumber: number;
+  attempted: number;
+  succeeded: number;
+  buildPassed: boolean;
+  pushed: boolean;
+  durationMs: number | null;
+}
+
+/**
+ * Fetch the most recent `limit` cycles ordered newest-first.
+ * Returns a lightweight row per cycle suitable for tabular display.
+ */
+export function getCycleRows(db: Database.Database, limit: number = CYCLE_STATS_HISTORY_LIMIT): CycleRow[] {
+  type RawRow = {
+    cycle_number: number;
+    improvements_attempted: number;
+    improvements_succeeded: number;
+    build_verification_passed: number;
+    push_succeeded: number;
+    duration_ms: number | null;
+  };
+  const rows = validateRows<RawRow>(
+    db.prepare(`
+      SELECT cycle_number, improvements_attempted, improvements_succeeded,
+             build_verification_passed, push_succeeded, duration_ms
+      FROM cycles
+      ORDER BY cycle_number DESC
+      LIMIT ?
+    `).all(limit),
+    {
+      cycle_number: "number",
+      improvements_attempted: "number",
+      improvements_succeeded: "number",
+      build_verification_passed: "number",
+      push_succeeded: "number",
+      duration_ms: "number?",
+    },
+    "getCycleRows",
+  );
+  return rows.map(r => ({
+    cycleNumber: r.cycle_number,
+    attempted: r.improvements_attempted,
+    succeeded: r.improvements_succeeded,
+    buildPassed: r.build_verification_passed === 1,
+    pushed: r.push_succeeded === 1,
+    durationMs: r.duration_ms,
+  }));
+}
+
 export function insertCycle(db: Database.Database, outcome: CycleOutcome): void {
   db.prepare(`
     INSERT OR REPLACE INTO cycles (

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseLastNArg, parseJsonFlag, generateStatsJson, STATS_MEMORY_PREVIEW_CHARS } from "../src/stats.js";
+import { generateStatsOutput, parseLastNArg, parseJsonFlag, parseTableFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { makeOutcome } from "./helpers.js";
 
@@ -745,5 +745,111 @@ describe("getLearningCategoryDistribution", () => {
     expect(joined).toContain("Learnings by category");
     expect(joined).toContain("1 domain");
     expect(joined).toContain("1 pattern");
+  });
+});
+
+describe("parseTableFlag", () => {
+  it("returns false when --table is absent", () => {
+    expect(parseTableFlag(["node", "stats.js"])).toBe(false);
+  });
+
+  it("returns true when --table is present", () => {
+    expect(parseTableFlag(["node", "stats.js", "--table"])).toBe(true);
+  });
+
+  it("returns true when --table appears alongside other flags", () => {
+    expect(parseTableFlag(["node", "stats.js", "--last", "5", "--table"])).toBe(true);
+  });
+
+  it("returns false for an empty argv", () => {
+    expect(parseTableFlag([])).toBe(false);
+  });
+
+  it("returns false for similar-but-not-equal flags", () => {
+    expect(parseTableFlag(["--table2", "--TABLE", "--tables"])).toBe(false);
+  });
+});
+
+describe("generateStatsTable", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("returns empty string when no cycles exist", () => {
+    expect(generateStatsTable(db)).toBe("");
+  });
+
+  it("includes a header row with column names", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    const table = generateStatsTable(db);
+    expect(table).toContain("Cycle");
+    expect(table).toContain("Attempt");
+    expect(table).toContain("Succeed");
+    expect(table).toContain("Build");
+    expect(table).toContain("Push");
+    expect(table).toContain("Duration");
+  });
+
+  it("includes a separator row of dashes", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    const table = generateStatsTable(db);
+    const lines = table.split("\n");
+    // Line 1 (index 1) should be the separator
+    expect(lines[1]).toMatch(/^[-\s]+$/);
+  });
+
+  it("includes cycle number in data rows", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 42 }));
+    const table = generateStatsTable(db);
+    expect(table).toContain("42");
+  });
+
+  it("shows ✓ for build passed and ✗ for build failed", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2, buildVerificationPassed: false }));
+    const table = generateStatsTable(db);
+    expect(table).toContain("✓");
+    expect(table).toContain("✗");
+  });
+
+  it("shows duration in minutes when durationMs is set", () => {
+    // 90000 ms = 1.5 min
+    insertCycle(db, makeOutcome({ cycleNumber: 1, durationMs: 90000 }));
+    const table = generateStatsTable(db);
+    expect(table).toContain("1.5 min");
+  });
+
+  it("shows — for duration when durationMs is null", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1, durationMs: null }));
+    const table = generateStatsTable(db);
+    expect(table).toContain("—");
+  });
+
+  it("shows attempted and succeeded counts", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1, improvementsAttempted: 3, improvementsSucceeded: 2 }));
+    const table = generateStatsTable(db);
+    expect(table).toContain("3");
+    expect(table).toContain("2");
+  });
+
+  it("respects lastN parameter and limits rows shown", () => {
+    for (let i = 1; i <= 5; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    const table2 = generateStatsTable(db, 2);
+    const lines = table2.split("\n").filter(l => l.trim());
+    // header + separator + 2 data rows = 4 non-empty lines
+    expect(lines.length).toBe(4);
+  });
+
+  it("returns multiple rows for multiple cycles", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 3 }));
+    const lines = generateStatsTable(db).split("\n");
+    // header + separator + 3 data rows = 5 lines
+    expect(lines.length).toBe(5);
   });
 });
