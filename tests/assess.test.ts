@@ -20,6 +20,7 @@ vi.mock("../src/db.js", () => ({
 
 vi.mock("../src/evolve.js", () => ({
   buildAssessmentPrompt: vi.fn(),
+  buildFileManifest: vi.fn().mockReturnValue("src/evolve.ts\ntests/evolve.test.ts"),
   ASSESSMENT_CHAR_LIMIT: 2000,
 }));
 
@@ -67,7 +68,7 @@ import {
   formatCycleStats,
 } from "../src/db.js";
 import { extractResultText, formatDurationSec } from "../src/usage.js";
-import { buildAssessmentPrompt } from "../src/evolve.js";
+import { buildAssessmentPrompt, buildFileManifest } from "../src/evolve.js";
 import { errorMessage } from "../src/errors.js";
 import { ensureProject, readRoadmap, parseRoadmap, formatPlanningContext, pickNextItem } from "../src/planning.js";
 import { formatMemoryForPrompt, MAX_MEMORY_CHARS } from "../src/memory.js";
@@ -79,6 +80,7 @@ const mockQuery = vi.mocked(query);
 const mockExtractResultText = vi.mocked(extractResultText);
 const mockFormatDurationSec = vi.mocked(formatDurationSec);
 const mockBuildAssessmentPrompt = vi.mocked(buildAssessmentPrompt);
+const mockBuildFileManifest = vi.mocked(buildFileManifest);
 const mockEnsureProject = vi.mocked(ensureProject);
 const mockReadRoadmap = vi.mocked(readRoadmap);
 const mockParseRoadmap = vi.mocked(parseRoadmap);
@@ -130,6 +132,7 @@ describe("assess.ts main()", () => {
     mockFormatCycleStats.mockReturnValue("mock stats text");
     mockFormatMemoryForPrompt.mockReturnValue("mock memory context");
     mockBuildAssessmentPrompt.mockReturnValue("mock assessment prompt");
+    mockBuildFileManifest.mockReturnValue("src/evolve.ts\ntests/evolve.test.ts");
     mockReadRoadmap.mockReturnValue("");
     mockParseRoadmap.mockReturnValue([]);
     mockPickNextItem.mockReturnValue(null);

@@ -4,7 +4,7 @@
  * can be unit tested with mock async generators.
  */
 import type Database from "better-sqlite3";
-import { buildAssessmentPrompt, buildEvolutionPrompt } from "./evolve.js";
+import { buildAssessmentPrompt, buildEvolutionPrompt, buildFileManifest } from "./evolve.js";
 import {
   extractUsage,
   extractResultText,
@@ -96,6 +96,7 @@ export async function runAssessmentPhase(
   console.log("  Phase 1: Assessment (read-only)");
   console.log("========================================");
   const assessmentStart = Date.now();
+  const fileManifest = buildFileManifest();
   let assessment = "";
   let assessmentTurns = 0;
   for await (const msg of deps.queryFn({
@@ -105,6 +106,7 @@ export async function runAssessmentPhase(
       cycleStatsText: ctx.cycleStatsText,
       memoryContext: ctx.memoryContext,
       planningContext: ctx.planningContext,
+      fileManifest,
     }),
     options: {
       cwd: process.cwd(),

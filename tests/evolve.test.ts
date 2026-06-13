@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements, ASSESSMENT_CHAR_LIMIT } from "../src/evolve.js";
+import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements, buildFileManifest, ASSESSMENT_CHAR_LIMIT } from "../src/evolve.js";
 import { CONTEXT_JOURNAL_MAX_CHARS } from "../src/context.js";
 
 describe("CONTEXT_JOURNAL_MAX_CHARS", () => {
@@ -175,6 +175,73 @@ describe("buildAssessmentPrompt", () => {
     const exactSummary = "K".repeat(CONTEXT_JOURNAL_MAX_CHARS);
     const prompt = buildAssessmentPrompt({ journalSummary: exactSummary, cycleCount: 1 });
     expect(prompt).toContain(exactSummary);
+  });
+
+  it("includes fileManifest section when fileManifest is provided", () => {
+    const manifest = "src/evolve.ts\nsrc/assess.ts\ntests/evolve.test.ts";
+    const prompt = buildAssessmentPrompt({
+      journalSummary: "",
+      cycleCount: 1,
+      fileManifest: manifest,
+    });
+    expect(prompt).toContain("File index");
+    expect(prompt).toContain("src/evolve.ts");
+    expect(prompt).toContain("tests/evolve.test.ts");
+  });
+
+  it("includes no-Glob hint in fileManifest section", () => {
+    const prompt = buildAssessmentPrompt({
+      journalSummary: "",
+      cycleCount: 1,
+      fileManifest: "src/evolve.ts",
+    });
+    expect(prompt).toContain("no need to Glob");
+  });
+
+  it("omits fileManifest section when fileManifest is absent", () => {
+    const prompt = buildAssessmentPrompt({ journalSummary: "", cycleCount: 1 });
+    expect(prompt).not.toContain("File index");
+  });
+
+  it("omits fileManifest section when fileManifest is empty string", () => {
+    // Empty string is falsy — must behave the same as absent.
+    const prompt = buildAssessmentPrompt({
+      journalSummary: "",
+      cycleCount: 1,
+      fileManifest: "",
+    });
+    expect(prompt).not.toContain("File index");
+  });
+});
+
+describe("buildFileManifest", () => {
+  it("returns a string", () => {
+    // Basic smoke test: the function must not throw and must return a string
+    const result = buildFileManifest();
+    expect(typeof result).toBe("string");
+  });
+
+  it("includes src/ and tests/ .ts files when run from the project root", () => {
+    const result = buildFileManifest();
+    // The project has evolve.ts in src/ and evolve.test.ts in tests/ —
+    // these sentinel files must always appear in the manifest.
+    expect(result).toContain("src/evolve.ts");
+    expect(result).toContain("tests/evolve.test.ts");
+  });
+
+  it("only contains .ts files (no .js, .json, or other extensions)", () => {
+    const result = buildFileManifest();
+    if (result.length === 0) return; // empty is acceptable (e.g., missing dirs)
+    for (const line of result.split("\n")) {
+      expect(line).toMatch(/\.ts$/);
+    }
+  });
+
+  it("returns empty string when cwd has no src/ or tests/ directories", async () => {
+    // Use os.tmpdir() which has no src/ or tests/ subdirectories
+    const { tmpdir } = await import("node:os");
+    const result = buildFileManifest(tmpdir());
+    expect(result).toBe("");
   });
 });
 

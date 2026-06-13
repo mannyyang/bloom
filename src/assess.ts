@@ -18,7 +18,7 @@ import {
   getCycleStats,
   formatCycleStats,
 } from "./db.js";
-import { buildAssessmentPrompt, ASSESSMENT_CHAR_LIMIT } from "./evolve.js";
+import { buildAssessmentPrompt, buildFileManifest, ASSESSMENT_CHAR_LIMIT } from "./evolve.js";
 import { errorMessage } from "./errors.js";
 import { formatMemoryForPrompt, MAX_MEMORY_CHARS } from "./memory.js";
 import {
@@ -85,12 +85,14 @@ export async function main() {
     db.close();
   }
 
+  const fileManifest = buildFileManifest();
   const prompt = buildAssessmentPrompt({
     journalSummary,
     cycleCount,
     cycleStatsText,
     memoryContext,
     planningContext,
+    fileManifest,
   });
 
   console.log("\n[assess] Querying LLM...\n");

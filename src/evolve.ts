@@ -1,3 +1,5 @@
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
 import { CONTEXT_JOURNAL_MAX_CHARS } from "./context.js";
 import { truncateWithEllipsis } from "./planning.js";
 
@@ -10,6 +12,37 @@ export interface AssessmentContext {
   cycleStatsText?: string;
   memoryContext?: string;
   planningContext?: string;
+  /** Pre-built newline-joined list of src/**\/*.ts and tests/**\/*.ts paths.
+   * When present, the LLM skips its own Glob calls to discover files,
+   * saving assessment turns. */
+  fileManifest?: string;
+}
+
+/**
+ * Build a newline-joined list of *.ts files under src/ and tests/.
+ * Returns an empty string if neither directory can be read.
+ * Paths are relative to cwd (e.g. "src/evolve.ts", "tests/evolve.test.ts").
+ */
+export function buildFileManifest(cwd: string = process.cwd()): string {
+  const dirs = ["src", "tests"];
+  const files: string[] = [];
+
+  for (const dir of dirs) {
+    try {
+      // Node 18.17+ supports { recursive: true } in readdirSync
+      const entries = readdirSync(join(cwd, dir), { recursive: true, encoding: "utf-8" }) as string[];
+      for (const entry of entries) {
+        if (entry.endsWith(".ts")) {
+          // Normalise Windows separators to forward slashes for consistency
+          files.push(`${dir}/${entry.replace(/\\/g, "/")}`);
+        }
+      }
+    } catch {
+      // Directory missing or unreadable — skip silently
+    }
+  }
+
+  return files.sort().join("\n");
 }
 
 /**
@@ -19,13 +52,17 @@ export interface AssessmentContext {
  * to be embedded in the user-facing prompt text.
  */
 export function buildAssessmentPrompt(ctx: AssessmentContext): string {
+  const manifestSection = ctx.fileManifest
+    ? `\nFile index (pre-built — no need to Glob src/ or tests/):\n${ctx.fileManifest}\n`
+    : "";
+
   return `This is evolution cycle ${ctx.cycleCount}.
 
 Read src/ and tests/, then list top 1-3 improvements (bugs, roadmap items, test gaps, clarity, new capabilities) — for each: what/why/difficulty. Keep your assessment under ${ASSESSMENT_CHAR_LIMIT} characters — it is passed directly into the implementation prompt.
 
 Recent journal entries:
 ${truncateWithEllipsis(ctx.journalSummary, CONTEXT_JOURNAL_MAX_CHARS)}
-${ctx.cycleStatsText ? `\nYour track record:\n${ctx.cycleStatsText}\n` : ""}${ctx.memoryContext ? `\nYour accumulated knowledge:\n${ctx.memoryContext}\n` : ""}${ctx.planningContext ? `\n${ctx.planningContext}\n` : ""}`;
+${ctx.cycleStatsText ? `\nYour track record:\n${ctx.cycleStatsText}\n` : ""}${ctx.memoryContext ? `\nYour accumulated knowledge:\n${ctx.memoryContext}\n` : ""}${ctx.planningContext ? `\n${ctx.planningContext}\n` : ""}${manifestSection}`;
 }
 
 /** Options passed to buildEvolutionPrompt for injecting resource-usage and outcome sections. */
