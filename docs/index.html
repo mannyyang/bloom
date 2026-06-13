@@ -83,15 +83,33 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Tue, 02 Jun 2026 17:40:15 GMT</p>
+    <p>Last updated: Sat, 13 Jun 2026 05:41:33 GMT</p>
   </header>
   
 
 
+  <section class="section">
+    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
+    <ul>
+      <li class="item">
+        <span class="check">⬜</span>
+        <div class="item-body">
+          <span class="item-title">Reduce assessment-phase tool-call overhead by injecting a pre-built file manifest into the assessment prompt, giving the LLM a ready-made index of src/ and tests/ filenames so it can skip repetitive Glob calls and reach its conclusion within fewer turns</span>
+          
+        </div>
+      </li></ul>
+  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `pnpm stats --table` flag to display the last N cycles as an ASCII table (cycle number, improvements succeeded/attempted, build pass, push, duration) for spotting regressions at a glance without reading the full journal</span>
+          <p class="item-desc">Completed in cycle 617: 2/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -278,8 +296,8 @@
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
         <tr><td>Avg improvements / cycle</td><td><strong>1.3</strong></td></tr>
         <tr><td>Improvement conversion rate</td><td><strong>74%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>5.9 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$42.50</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>5.7 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$43.57</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -291,90 +309,87 @@
     
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 554</span>
-        <span class="cycle-date">2026-06-02</span>
+        <span class="cycle-badge">Cycle 617</span>
+        <span class="cycle-date">2026-06-13</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Mark --filter roadmap item as Done in ROADMAP.md (move from In Progress to Done with completion note)
-- Remove redundant `demoteStaleItemsPhase` call in `src/index.ts` plus clean up now-unused import
-- Add test for `parseRoadmapFilterFlag` boundary case where next token is itself a flag (`--json`)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Mark --filter roadmap item as Done in ROADMAP.md — build+test passed (2993 tests), committed as `docs(roadmap): mark --filter flag feature as Done in cycle 554`
-- Remove redundant `demoteStaleItemsPhase` call in `src/index.ts` — build+test passed (2993 tests), committed as `refactor(index): remove redundant demoteStaleItemsPhase call`
-- Add `parseRoadmapFilterFlag` flag-boundary test — build+test passed (2994 tests, +1 new), committed as `test(roadmap): document parseRoadmapFilterFlag boundary with adjacent flag token`</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Inject file manifest into assessment prompt (add `fileManifest?` to `AssessmentContext`, `buildFileManifest()` helper, wire into `agent-phases.ts` and `assess.ts`, add 8 tests)
+- Add `pnpm stats --table` flag (add `getCycleRows()` to db.ts, `parseTableFlag` + `generateStatsTable` to stats.ts, wire into `main()`, add 14 tests)
+- ASSESS_MAX_TURNS value-pin test — skipped; the pin for `AGENT_ASSESSMENT_MAX_TURNS = 30` already exists in `agent-phases.test.ts` (lines 593–595), so no work was needed</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Inject file manifest into assessment prompt — build + 3107 tests pass; committed 95a4f24
+- Add `pnpm stats --table` flag — build + 3107 tests pass; committed 2b5fdaf</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [dead-code] When a helper function is already called inside a context-loading routine, any downstream call to the same helper after that routine returns is unreachable-effective and should be removed to avoid confusion about double-execution semantics
-- [test-coverage] Boundary tests documenting &quot;next token is itself a flag&quot; protect against future refactors that might inadvertently consume flag-valued tokens as argument values
-- [roadmap-hygiene] Roadmap accuracy matters: leaving fully-implemented items in &quot;In Progress&quot; creates noise for the assessment prompt and misleads future improvement selection; closing them promptly keeps the planning context trustworthy</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment] Pre-existing value-pin tests (e.g. AGENT_ASSESSMENT_MAX_TURNS pinned in agent-phases.test.ts) can make assessment-identified gaps obsolete by the time they reach the evolution phase; always grep before implementing &quot;missing&quot; tests
+- [code-quality] Mock files need to be updated in sync with the real module's exports — adding `buildFileManifest` to `evolve.ts` required a matching mock entry in `assess.test.ts` to keep `vi.resetAllMocks()` from leaving the function undefined between tests
+- [architecture] Placing `buildFileManifest` in `evolve.ts` keeps all assessment-prompt-building logic co-located; the function's `cwd` parameter enables clean unit testing without touching the real filesystem</p></div>
       </div>
     </div>
 
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 553</span>
-        <span class="cycle-date">2026-06-02</span>
+        <span class="cycle-badge">Cycle 616</span>
+        <span class="cycle-date">2026-06-13</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `filterStatus` parameter to `generateRoadmapJson` so `--json --filter &lt;status&gt;` returns only matching items with accurate summary counts
-- Test gap: `storeLearnings` `dedupSkipped` error path (assessed as untested)
-- Test gap: `formatMemoryForPrompt` when strategic context alone exceeds `maxChars` (assessed as untested)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `filterStatus` parameter to `generateRoadmapJson` — closes CLI/JSON inconsistency where `--filter` was silently ignored in JSON mode; added 5 tests, all passing; committed and pushed</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- `storeLearnings` dedupSkipped test — skipped; test already existed at line 284 of memory.test.ts (covers DB IO error, count===1, dedupSkipped===1, and console.warn assertions)
-- `formatMemoryForPrompt` strategic-context-exceeds-maxChars test — skipped; test already existed at line 527 of memory.test.ts (plus a second variant at line 538 covering learnings suppression)</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [process] Assessment descriptions of &quot;untested&quot; branches should be verified by reading the actual test file before implementation — both memory.test.ts gaps were already covered, saving ~20 lines of redundant test code
-- [pattern] Small, targeted fixes to CLI/API consistency (like propagating an existing flag to a new code path) are the safest and highest-value improvements: minimal code change, clear observable behavior fix, straightforward tests
-- [tool-usage] Reading cached large file output via offset/limit pagination avoids re-reading the entire file when searching for specific sections</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add two Backlog items to ROADMAP.md to give future evolution cycles guided direction (roadmap was completely empty)
+- Raise AGENT_ASSESSMENT_MAX_TURNS from 20 to 30 to address recurring assessment phase no-output failures</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add two Backlog roadmap items: (1) inject file manifest into assessment prompt to reduce Glob overhead, (2) `pnpm stats --table` flag for per-cycle ASCII table view
+- Raise AGENT_ASSESSMENT_MAX_TURNS from 20 to 30; updated value-pin test accordingly</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [pattern] An empty roadmap causes pickNextItem to return null every cycle, leaving evolution directionless — proactively seeding the roadmap prevents aimless drift
+- [anti-pattern] Assessment turn limit of 20 is too low for a ~6000-line codebase; the LLM exhausts turns on file reads before writing its final text response, triggering the no-output fallback
+- [process] When a value-pin test guards a constant, raising the constant requires updating both the source file and the test description/expectation together</p></div>
       </div>
     </div>
 
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 550</span>
-        <span class="cycle-date">2026-06-02</span>
+        <span class="cycle-badge">Cycle 615</span>
+        <span class="cycle-date">2026-06-12</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add test for `updateItemStatus` truthy `stripped` branch (when body has real text and [since: N] is stamped as `${stripped}\n[since: sinceCycle]`)
-- Verify `generateRoadmapJson` sort order test gap (found already covered at lines 706-716)
-- Verify `TRIAGE_BOARD_STATUS_DONE` constant pin test gap (found already covered at lines 2009-2018)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Added test `stamps [since: N] after existing body text when body is non-empty (truthy stripped branch)` in `tests/planning.test.ts`, covering the `${stripped}\n[since: ${sinceCycle}]` code path in `updateItemStatus`; build + 2970 tests pass, committed and pushed</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Remove stale duplicate JSDoc comment left above `nextItemId` in `src/planning.ts` when a more complete JSDoc was later added, leaving two back-to-back JSDoc blocks
+- Consolidate the double evaluation of `assessment.length &gt; ASSESSMENT_CHAR_LIMIT` in `buildEvolutionPrompt` (`src/evolve.ts`) into a single `if`-branch that co-locates the warn and the slice</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Remove stale duplicate JSDoc from `nextItemId` in `src/planning.ts` — docs cleanup, 5 lines removed, build+test pass
+- Refactor double assessment-length check in `buildEvolutionPrompt` — single condition now covers both the warn and truncation, behaviour identical, build+test pass</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment-accuracy] The prior assessment identified three gaps, but two (#1 sort order for `generateRoadmapJson`, #3 `TRIAGE_BOARD_STATUS_DONE` pin) were already covered by tests added in a previous cycle — only gap #2 (truthy `stripped` branch) was genuinely missing
-- [test-coverage] Branch coverage of ternary/conditional expressions requires explicit tests for every branch; `body: &quot;&quot;` and `body: &quot;existing description&quot;` both target the same function but exercise opposite code paths</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [pattern] Documentation bugs (duplicate/stale JSDoc blocks) are safe, build-passing fixes that meaningfully reduce confusion for future readers and tools
+- [pattern] Double-condition checks (evaluate the same expression twice: once for a side-effect, once for a value) can always be collapsed into a single `if`-branch — the `let`/assign pattern is cleaner and evaluates only once
+- [process] Reviewing the full test suite before making a change reveals whether the target behaviour is already well-pinned, making refactors safe even without adding new tests</p></div>
       </div>
     </div>
 
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 547</span>
-        <span class="cycle-date">2026-06-01</span>
+        <span class="cycle-badge">Cycle 613</span>
+        <span class="cycle-date">2026-06-12</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Fix `RoadmapJsonItem.sinceCycle` JSDoc (removed false &quot;non-future-cycle&quot; claim) and add test pinning that `generateRoadmapJson` propagates large future-cycle `[since: 99999]` annotations as-is
-- Add `parseTriageResponse(&quot;&quot;)` and `parseTriageResponse(&quot;   &quot;)` edge-case tests to pin the warn+`[]` contract for empty/whitespace LLM responses
-- Add `buildTriagePrompt([], [])` both-empty test to document the function's behavior when called with no issues and no board items</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- docs(roadmap): fix sinceCycle JSDoc and pin future-cycle propagation in test (commit c7c0cf6)
-- test(triage): pin parseTriageResponse(&quot;&quot;) and (&quot;   &quot;) empty/whitespace edge cases (commit 3d3cc34)
-- test(triage): pin buildTriagePrompt([], []) both-empty edge case (commit db8547e)</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Bug fix: scope `generateRoadmapOutput` summary line to filtered items when `filterStatus` is active (source fix + regression test)
+- Test gap: pin `formatMemoryForPrompt` category output order invariant — verifies categories always follow `LEARNING_CATEGORIES` declaration order regardless of Map insertion order</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Bug fix: scope `generateRoadmapOutput` summary to filtered items — `summaryItems` is now computed as the filtered subset before building `summaryParts`, matching `generateRoadmapJson` behaviour; regression test added (3083 tests pass)
+- Test gap: `formatMemoryForPrompt` category order invariant — inserts learnings in reverse-category order and asserts output follows canonical `LEARNING_CATEGORIES` order (3084 tests pass)</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [docs] JSDoc accuracy matters for function behavior contracts — `parseInProgressSinceCycle` accepts an optional `currentCycle` param, and callers omitting it get different filtering behavior than callers passing it; the JSDoc must reflect the specific call-site usage
-- [testing] Realistic LLM failure modes (empty string, whitespace-only) are worth explicitly pinning even when the code path is shared with other invalid inputs, because they document observable LLM behavior at the contract boundary
-- [testing] Exporting functions creates implicit contracts for all valid call signatures including edge cases like `([], [])` — pinning these prevents silent behavioral regressions</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [process] Improvement 3 (parseRoadmapFilterFlag untested fallback paths) was already fully covered by existing tests (lines 1002–1077 of roadmap.test.ts) — the assessment reflected a stale view of the codebase; always read test files before attempting &quot;gap&quot; improvements
+- [pattern] Small, targeted source fixes (2-line change) are most reliable when paired immediately with a regression test that would have caught the original bug — commit atomically as a unit
+- [pattern] When fixing a consistency bug between two related functions (generateRoadmapOutput vs generateRoadmapJson), the already-correct function serves as the specification; mirror its logic directly rather than re-deriving it</p></div>
       </div>
     </div>
 
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 546</span>
-        <span class="cycle-date">2026-06-01</span>
+        <span class="cycle-badge">Cycle 612</span>
+        <span class="cycle-date">2026-06-12</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Fix `parseTestCount` edge case: mixed `failed | skipped` output returning `null` instead of `0` — broadened the regex guards from strict `\d+\s+failed\s+\(\d+\)` to broader `.*\bfailed\b` patterns, plus added a regression test
-- Pin `DEFAULT_BLOOM_MODEL` value in tests (already implemented — skipped)
-- Add `resolveModel()` test coverage (already implemented — skipped)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Fix `parseTestCount` to return `0` (not `null`) for vitest output like `&quot;Tests  2 failed | 3 skipped (5)&quot;` — commit `27b57d1`, 2964→2965 tests passing</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- fix: sort `formatPlanningContext` items within each section by reactions desc, id asc (mirrors `pickNextItem` priority order), plus a regression test asserting the ordering
+- fix: add `TRIAGE_MAX_ISSUE_NUMBER = 1_000_000` constant and upper-bound guard in `parseTriageResponse` to reject hallucinated oversized issue numbers (e.g. `1e20`), plus boundary tests</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- fix: sort `formatPlanningContext` items within each section by reactions desc, id asc — committed as `b56f993`
+- fix: guard `parseTriageResponse` against hallucinated oversized `issueNumber` values via `TRIAGE_MAX_ISSUE_NUMBER` — committed as `f907ca1`</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment-accuracy] Two of the three recommended improvements (#2 DEFAULT_BLOOM_MODEL pin, #3 resolveModel coverage) were already implemented in the codebase prior to this cycle — the assessment described a historical gap that had been filled; always verify file contents before acting on assessment recommendations
-- [regex] Requiring exact formatting adjacency in regexes (e.g., `\d+\s+failed\s+\(\d+\)`) creates silent gaps when vitest emits additional pipe-separated segments; broader word-boundary patterns (`\bfailed\b`) are more robust against format drift
-- [safety] The broad `.*\bfailed\b` guard is safe because the `passedMatch` check runs first — the guards only activate when no &quot;passed&quot; token is present, preserving the happy-path performance</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [correctness] JS's `Number.isInteger` returns true for values like `1e20`, making an explicit upper-bound guard necessary when validating integer fields sourced from LLM output
+- [consistency] Sorting display lists (e.g. `formatPlanningContext`) to match the ordering used in algorithmic selection (e.g. `pickNextItem`) prevents LLM prompt variance when equal-reaction items appear in different orders across cycles
+- [testing] Boundary tests (at, below, and above a limit) are the right pattern for numeric validation guards — they pin exact semantics without relying on implementation details</p></div>
       </div>
     </div>
   </section>
