@@ -23,6 +23,28 @@ import {
 import type { DbStats, JournalEntry, RoadmapSection } from "../src/page-helpers.js";
 
 // ---------------------------------------------------------------------------
+// PAGE_STATS_HISTORY_CYCLES / PAGE_RECENT_FAILURES_WINDOW sync pins
+// ---------------------------------------------------------------------------
+
+describe("PAGE_STATS_HISTORY_CYCLES", () => {
+  it("equals CYCLE_STATS_HISTORY_LIMIT from db.ts (must-match sync pin)", () => {
+    // page-helpers.ts declares this constant with a comment that it must match
+    // CYCLE_STATS_HISTORY_LIMIT in db.ts. This test enforces that contract so
+    // a change to either value without updating the other is caught immediately.
+    expect(PAGE_STATS_HISTORY_CYCLES).toBe(CYCLE_STATS_HISTORY_LIMIT);
+  });
+});
+
+describe("PAGE_RECENT_FAILURES_WINDOW", () => {
+  it("equals RECENT_FAILURES_WINDOW from db.ts (must-match sync pin)", () => {
+    // Mirrors the PAGE_STATS_HISTORY_CYCLES sync pin above; page-helpers.ts
+    // documents that this value must stay in sync with RECENT_FAILURES_WINDOW
+    // in db.ts so the rendered HTML label always matches the actual query window.
+    expect(PAGE_RECENT_FAILURES_WINDOW).toBe(RECENT_FAILURES_WINDOW);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // GITHUB_REPO_URL
 // ---------------------------------------------------------------------------
 
