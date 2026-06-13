@@ -5,10 +5,10 @@
 ## Up Next
 
 ## In Progress
-- [ ] Reduce assessment-phase tool-call overhead by injecting a pre-built file manifest into the assessment prompt, giving the LLM a ready-made index of src/ and tests/ filenames so it can skip repetitive Glob calls and reach its conclusion within fewer turns
-  [since: 617]
 
 ## Done
+- [x] Reduce assessment-phase tool-call overhead by injecting a pre-built file manifest into the assessment prompt, giving the LLM a ready-made index of src/ and tests/ filenames so it can skip repetitive Glob calls and reach its conclusion within fewer turns
+  Completed in cycle 618: 1/3 improvements succeeded.
 - [x] Add `pnpm stats --table` flag to display the last N cycles as an ASCII table (cycle number, improvements succeeded/attempted, build pass, push, duration) for spotting regressions at a glance without reading the full journal
   Completed in cycle 617: 2/3 improvements succeeded.
 - [x] Add --filter flag to pnpm roadmap to show items of a specific status only
