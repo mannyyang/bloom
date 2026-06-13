@@ -243,6 +243,16 @@ describe("buildFileManifest", () => {
     const result = buildFileManifest(tmpdir());
     expect(result).toBe("");
   });
+
+  it("returns files sorted alphabetically", () => {
+    // buildFileManifest calls files.sort() before joining — verify the output
+    // is in sorted order so callers and the LLM receive a stable, predictable list.
+    const result = buildFileManifest();
+    if (result.length === 0) return; // skip when dirs are absent (e.g. tmpdir)
+    const lines = result.split("\n");
+    const sorted = [...lines].sort();
+    expect(lines).toEqual(sorted);
+  });
 });
 
 describe("buildEvolutionPrompt", () => {
