@@ -590,8 +590,8 @@ describe("resolveModel", () => {
     expect(ASSESSMENT_PREVIEW_CHARS).toBe(500);
   });
 
-  it("AGENT_ASSESSMENT_MAX_TURNS is pinned to 20", () => {
-    expect(AGENT_ASSESSMENT_MAX_TURNS).toBe(20);
+  it("AGENT_ASSESSMENT_MAX_TURNS is pinned to 30", () => {
+    expect(AGENT_ASSESSMENT_MAX_TURNS).toBe(30);
   });
 
   it("AGENT_ASSESSMENT_MAX_BUDGET_USD is pinned to 2.0", () => {

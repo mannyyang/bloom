@@ -35,7 +35,7 @@ export const DEFAULT_BLOOM_MODEL = "claude-sonnet-4-6";
 export const ASSESSMENT_PREVIEW_CHARS = 500;
 
 /** Maximum agent turns allowed in the assessment phase. */
-export const AGENT_ASSESSMENT_MAX_TURNS = 20;
+export const AGENT_ASSESSMENT_MAX_TURNS = 30;
 /** Maximum USD budget allowed for the assessment phase. */
 export const AGENT_ASSESSMENT_MAX_BUDGET_USD = 2.0;
 /** Maximum agent turns allowed in the evolution phase. */
