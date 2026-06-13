@@ -11,7 +11,7 @@
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import type Database from "better-sqlite3";
-import { initDb, getCycleStats, formatCycleStats, getLatestCycleNumber, getCycleRows, CYCLE_SUMMARY_SEPARATOR, type CycleStats, type CycleRow } from "./db.js";
+import { initDb, getCycleStats, formatCycleStats, getLatestCycleNumber, getCycleRows, CYCLE_SUMMARY_SEPARATOR, MS_PER_MINUTE, type CycleStats, type CycleRow } from "./db.js";
 import { formatMemoryForPrompt } from "./memory.js";
 
 /**
@@ -89,7 +89,7 @@ export function generateStatsTable(db: Database.Database, lastN?: number): strin
 
   const dataRows = rows.map((r: CycleRow) => {
     const durationStr = r.durationMs !== null
-      ? `${(r.durationMs / 60_000).toFixed(1)} min`
+      ? `${(r.durationMs / MS_PER_MINUTE).toFixed(1)} min`
       : "—";
     return [
       pad(String(r.cycleNumber), COL_CYCLE, true),
