@@ -192,6 +192,33 @@ describe("body truncation at 500 chars", () => {
     expect(warnSpy).not.toHaveBeenCalled();
     warnSpy.mockRestore();
   });
+
+  it("truncates completionNote in updateItemStatus Done and appends truncation indicator", () => {
+    const item = makeItem({ id: "item-0", title: "Work item", status: "In Progress" });
+    writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([item]), "utf-8");
+
+    const longNote = "z".repeat(600);
+    updateItemStatus(config, "item-0", "Done", longNote);
+
+    const written = readFileSync(join(tmpDir, "ROADMAP.md"), "utf-8");
+    const items = parseRoadmap(written);
+    expect(items[0].status).toBe("Done");
+    expect(items[0].body.endsWith(TRUNCATION_SUFFIX)).toBe(true);
+    expect(items[0].body.startsWith("z".repeat(500))).toBe(true);
+  });
+
+  it("does NOT truncate completionNote in updateItemStatus Done when within limit", () => {
+    const item = makeItem({ id: "item-0", title: "Work item", status: "In Progress" });
+    writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([item]), "utf-8");
+
+    const shortNote = "Completed successfully.";
+    updateItemStatus(config, "item-0", "Done", shortNote);
+
+    const written = readFileSync(join(tmpDir, "ROADMAP.md"), "utf-8");
+    const items = parseRoadmap(written);
+    expect(items[0].status).toBe("Done");
+    expect(items[0].body).toBe(shortNote);
+  });
 });
 
 describe("addDraftItem case-insensitive deduplication", () => {
