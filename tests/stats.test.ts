@@ -844,6 +844,15 @@ describe("generateStatsTable", () => {
     expect(lines.length).toBe(4);
   });
 
+  it("lastN=0 returns empty string (no rows, same as no-cycles path)", () => {
+    // parseLastNArg guards against 0 at the CLI level, but generateStatsTable
+    // is a public function callable directly. Pinning this prevents a silent
+    // regression where lastN=0 displays all rows instead of zero rows.
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    expect(generateStatsTable(db, 0)).toBe("");
+  });
+
   it("returns multiple rows for multiple cycles", () => {
     insertCycle(db, makeOutcome({ cycleNumber: 1 }));
     insertCycle(db, makeOutcome({ cycleNumber: 2 }));
