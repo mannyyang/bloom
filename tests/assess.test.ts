@@ -52,7 +52,7 @@ vi.mock("../src/usage.js", () => ({
 
 vi.mock("../src/agent-phases.js", () => ({
   resolveModel: vi.fn(),
-  AGENT_ASSESSMENT_MAX_TURNS: 20,
+  AGENT_ASSESSMENT_MAX_TURNS: 30,
   AGENT_ASSESSMENT_MAX_BUDGET_USD: 2.0,
 }));
 
@@ -107,8 +107,8 @@ function mockGen(messages: unknown[]) {
 }
 
 describe("assess.ts constants", () => {
-  it("ASSESS_MAX_TURNS equals 20", () => {
-    expect(ASSESS_MAX_TURNS).toBe(20);
+  it("ASSESS_MAX_TURNS equals 30", () => {
+    expect(ASSESS_MAX_TURNS).toBe(30);
   });
 
   it("ASSESS_MAX_BUDGET_USD equals 2.0", () => {
@@ -393,7 +393,7 @@ describe("assess.ts main()", () => {
     const { options } = mockQuery.mock.calls[0][0];
     expect(options?.permissionMode).toBe("dontAsk");
     expect(options?.allowedTools).toEqual(["Read", "Glob", "Grep", "Bash"]);
-    expect(options?.maxTurns).toBe(20);
+    expect(options?.maxTurns).toBe(30);
     expect(options?.maxBudgetUsd).toBe(2.0);
   });
 
