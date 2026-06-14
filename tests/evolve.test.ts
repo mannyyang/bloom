@@ -253,6 +253,48 @@ describe("buildFileManifest", () => {
     const sorted = [...lines].sort();
     expect(lines).toEqual(sorted);
   });
+
+  it("returns only tests/ files when src/ directory is missing (partial fallback)", async () => {
+    // Guards the per-directory try/catch: if the catch block is ever removed,
+    // a missing src/ would throw and the agent would lose all file context.
+    const { tmpdir } = await import("node:os");
+    const { mkdtempSync, mkdirSync, writeFileSync, rmSync } = await import("node:fs");
+    const { join } = await import("node:path");
+
+    const tempDir = mkdtempSync(join(tmpdir(), "bloom-manifest-test-"));
+    try {
+      const testsDir = join(tempDir, "tests");
+      mkdirSync(testsDir);
+      writeFileSync(join(testsDir, "example.test.ts"), "// test");
+
+      const result = buildFileManifest(tempDir);
+      // src/ is absent — only tests/ files should appear, no throw
+      expect(result).toBe("tests/example.test.ts");
+    } finally {
+      rmSync(tempDir, { recursive: true });
+    }
+  });
+
+  it("returns only src/ files when tests/ directory is missing (partial fallback)", async () => {
+    // Symmetric guard for the tests/ directory: a missing tests/ dir must not
+    // halt the function — src/ files should still be returned.
+    const { tmpdir } = await import("node:os");
+    const { mkdtempSync, mkdirSync, writeFileSync, rmSync } = await import("node:fs");
+    const { join } = await import("node:path");
+
+    const tempDir = mkdtempSync(join(tmpdir(), "bloom-manifest-test-"));
+    try {
+      const srcDir = join(tempDir, "src");
+      mkdirSync(srcDir);
+      writeFileSync(join(srcDir, "main.ts"), "// source");
+
+      const result = buildFileManifest(tempDir);
+      // tests/ is absent — only src/ files should appear, no throw
+      expect(result).toBe("src/main.ts");
+    } finally {
+      rmSync(tempDir, { recursive: true });
+    }
+  });
 });
 
 describe("buildEvolutionPrompt", () => {
