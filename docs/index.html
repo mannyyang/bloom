@@ -83,15 +83,33 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Sat, 13 Jun 2026 09:13:19 GMT</p>
+    <p>Last updated: Sun, 14 Jun 2026 12:47:17 GMT</p>
   </header>
   
 
 
+  <section class="section">
+    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
+    <ul>
+      <li class="item">
+        <span class="check">⬜</span>
+        <div class="item-body">
+          <span class="item-title">Add `--verbose` flag to `pnpm stats` to print per-cycle failure categories inline in the ASCII table</span>
+          <p class="item-desc">Extend the `--table` output to include a `failures` column showing the failure_category breakdown per cycle row, making regression diagnosis quicker without needing to query SQLite directly.</p>
+        </div>
+      </li></ul>
+  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `pnpm roadmap --format md` to export a clean Markdown snapshot of active items for CI badges</span>
+          <p class="item-desc">Completed in cycle 625: 1/1 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -290,10 +308,10 @@
       <tbody>
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
-        <tr><td>Avg improvements / cycle</td><td><strong>1.4</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>73%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>5.7 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$41.47</strong></td></tr>
+        <tr><td>Avg improvements / cycle</td><td><strong>1.5</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>86%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.5 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$47.26</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -305,87 +323,85 @@
     
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 618</span>
+        <span class="cycle-badge">Cycle 625</span>
+        <span class="cycle-date">2026-06-14</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `--verbose` flag to `generateStatsTable`: extend `CycleRow` in `db.ts` with `failureCategory`, update `getCycleRows` SQL and schema, add `parseVerboseFlag` and `COL_FAILURES` in `stats.ts`, add `verbose?` param to `generateStatsTable` rendering a Failures column, wire through `main()`, add tests for flag parsing and table shape/content</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `--verbose` flag to `generateStatsTable` — build passed, all 3126 tests passed, committed and pushed as `f3aa4c0`</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [pattern] The existing `pad()` helper and column-constant pattern in `stats.ts` made adding a new column purely additive — no structural refactor required, just append the new cell conditionally based on the `verbose` flag
+- [process] Keeping the verbose param optional (`verbose?: boolean`) preserves all existing call sites without any changes, minimizing diff surface and test breakage risk
+- [tool-usage] Building first (`pnpm build`) before running tests surfaces TypeScript type errors fast; both steps passed cleanly on the first attempt with no reverts needed</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 624</span>
+        <span class="cycle-date">2026-06-14</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Seed ROADMAP.md backlog with two well-scoped improvement items so `pickNextItem` has programmatic direction
+- Collapse double-condition `itemMatch` anti-pattern in `src/planning.ts` `parseRoadmap` into a single `if/else` branch
+- Remove unreachable `if (!issue) continue` guard in `src/triage.ts` `triageIssues` and replace with non-null assertion</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Seed ROADMAP.md backlog with two new items (`pnpm stats --verbose` and `pnpm roadmap --format md`)
+- Refactor `parseRoadmap` double-condition to single `if (itemMatch) { if (!currentStatus) … else … }` block
+- Remove dead `if (!issue) continue` guard in `triageIssues`, express invariant via TypeScript non-null assertion</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [code-quality] When two consecutive `if` statements share the same leading condition, collapsing them into a single `if/else` eliminates redundant evaluation and removes the latent risk of both branches firing if the shared condition were ever mutated between checks.
+- [code-quality] A `find()` whose search key was already validated by a `Set.has()` built from the same source array is guaranteed to succeed; the subsequent null guard is dead code and should be replaced with a non-null assertion to express the invariant in the type system.
+- [planning] An empty ROADMAP.md backlog causes `pickNextItem` to return `null` every cycle, making evolution purely reactive. Periodically seeding 2–3 well-scoped Backlog items restores proactive programmatic direction.</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 623</span>
+        <span class="cycle-date">2026-06-14</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Clarify `buildEvolutionPrompt` RULE 2 revert instruction to explicitly remind the evolution agent to delete new untracked files after a failed attempt (since `git checkout .` only reverts tracked files)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Updated RULE 2 in `buildEvolutionPrompt` to include &quot;also manually delete any new untracked files you created&quot; — build passed, 3114 tests passed (+1 new test), committed and pushed</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [pattern] The codebase is extremely well-tested (3113+ tests) — finding meaningful test coverage gaps requires deep inspection of edge-case combinations, not obvious omissions
+- [domain] `git checkout .` only reverts tracked files; new untracked files created during a failed improvement persist and can cascade into subsequent failures — a real operational hazard for the evolution agent
+- [anti-pattern] Spending too long in review before acting risks budget depletion; with such comprehensive test coverage, targeted prompt/documentation improvements are often the safest remaining gains
+- [process] When the roadmap is empty (all items Done), identifying improvements requires independent analysis rather than executing roadmap items — focus on correctness, clarity, and operational reliability</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 622</span>
+        <span class="cycle-date">2026-06-14</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Fix stale `AGENT_ASSESSMENT_MAX_TURNS: 20` mock in `assess.test.ts` — update mock value, test title, and both `toBe(20)` assertions to `30` to match the real constant in `agent-phases.ts`
+- Add missing edge-case tests for `buildFileManifest` partial-failure paths (only `src/` missing; only `tests/` missing) to the `evolve.test.ts` suite</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Fix stale ASSESS_MAX_TURNS assertions in assess.test.ts (20 → 30): all 3111 tests passed, committed as `fix: sync assess.test.ts ASSESS_MAX_TURNS assertions from 20 to 30`
+- Add partial-fallback edge cases for buildFileManifest: two new tests added, 3113 tests passed, committed as `test: add partial-fallback edge cases for buildFileManifest`</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The &quot;both dirs missing&quot; fallback in buildFileManifest was already covered by the tmpdir() test — the real gap was the partial-failure path (one dir present, one absent), which required two new tests
+- [testing] Real-filesystem tests using mkdtempSync/rmSync are cleaner than vi.mock for testing filesystem fallbacks in functions that use named imports from node:fs, since ES module named bindings are hard to intercept with spyOn after the module is already loaded
+- [correctness] Stale mock values in tests (asserting 20 when reality is 30) mislead future readers and create false confidence — value-pinning tests must be kept in sync when constants change</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 621</span>
         <span class="cycle-date">2026-06-13</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Improvement 1 (lifecycle.ts): Guard `revertUncommitted()` with `if (attempt &lt; maxAttempts)` so the call is skipped before `hardResetTo`, which already discards all changes via `git reset --hard`
-- Improvement 3 (lifecycle.ts): Add `console.log` when a retry attempt eventually passes (`attempt &gt; 1`) for clear observability of flaky-but-recovered builds
-- Improvement 2 (roadmap.test.ts): Add tests for `parseRoadmapFilterFlag` two-token join fallback (e.g. `[&quot;--filter&quot;, &quot;in&quot;, &quot;progress&quot;]` → `&quot;In Progress&quot;`)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Combined improvements 1+3: `refactor(lifecycle): skip redundant revert on final attempt, log retry success` — updated `src/lifecycle.ts` with guarded revert and retry-success log, updated `tests/lifecycle.test.ts` to reflect new expected revert counts (3→2 for maxAttempts=3 all-fail, 1→0 for maxAttempts=1)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- Improvement 2: Skipped — the two-token join fallback tests were already present in `tests/roadmap.test.ts` (lines 1043–1077 cover `[&quot;--filter&quot;, &quot;up&quot;, &quot;next&quot;]`, `[&quot;--filter&quot;, &quot;in&quot;, &quot;progress&quot;]`, case-insensitivity, and edge cases with adjacent flags). The assessment was based on an outdated view of the file.</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment-accuracy] Assessments can describe gaps that were already closed in a prior cycle; always read the actual file before writing new tests to avoid duplicating existing coverage
-- [test-coupling] Behavioral tests that pin exact counts (e.g. `checkoutCount === 3`) become blockers when intentionally changing the behavior they pin — updating both implementation and tests atomically in one commit avoids a red intermediate state
-- [refactoring] Combining logically coupled improvements (guard + observability log) into a single commit is appropriate when both touch the same loop body and neither stands alone cleanly</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 617</span>
-        <span class="cycle-date">2026-06-13</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Inject file manifest into assessment prompt (add `fileManifest?` to `AssessmentContext`, `buildFileManifest()` helper, wire into `agent-phases.ts` and `assess.ts`, add 8 tests)
-- Add `pnpm stats --table` flag (add `getCycleRows()` to db.ts, `parseTableFlag` + `generateStatsTable` to stats.ts, wire into `main()`, add 14 tests)
-- ASSESS_MAX_TURNS value-pin test — skipped; the pin for `AGENT_ASSESSMENT_MAX_TURNS = 30` already exists in `agent-phases.test.ts` (lines 593–595), so no work was needed</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Inject file manifest into assessment prompt — build + 3107 tests pass; committed 95a4f24
-- Add `pnpm stats --table` flag — build + 3107 tests pass; committed 2b5fdaf</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment] Pre-existing value-pin tests (e.g. AGENT_ASSESSMENT_MAX_TURNS pinned in agent-phases.test.ts) can make assessment-identified gaps obsolete by the time they reach the evolution phase; always grep before implementing &quot;missing&quot; tests
-- [code-quality] Mock files need to be updated in sync with the real module's exports — adding `buildFileManifest` to `evolve.ts` required a matching mock entry in `assess.test.ts` to keep `vi.resetAllMocks()` from leaving the function undefined between tests
-- [architecture] Placing `buildFileManifest` in `evolve.ts` keeps all assessment-prompt-building logic co-located; the function's `cwd` parameter enables clean unit testing without touching the real filesystem</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 616</span>
-        <span class="cycle-date">2026-06-13</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add two Backlog items to ROADMAP.md to give future evolution cycles guided direction (roadmap was completely empty)
-- Raise AGENT_ASSESSMENT_MAX_TURNS from 20 to 30 to address recurring assessment phase no-output failures</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add two Backlog roadmap items: (1) inject file manifest into assessment prompt to reduce Glob overhead, (2) `pnpm stats --table` flag for per-cycle ASCII table view
-- Raise AGENT_ASSESSMENT_MAX_TURNS from 20 to 30; updated value-pin test accordingly</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [pattern] An empty roadmap causes pickNextItem to return null every cycle, leaving evolution directionless — proactively seeding the roadmap prevents aimless drift
-- [anti-pattern] Assessment turn limit of 20 is too low for a ~6000-line codebase; the LLM exhausts turns on file reads before writing its final text response, triggering the no-output fallback
-- [process] When a value-pin test guards a constant, raising the constant requires updating both the source file and the test description/expectation together</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 615</span>
-        <span class="cycle-date">2026-06-12</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Remove stale duplicate JSDoc comment left above `nextItemId` in `src/planning.ts` when a more complete JSDoc was later added, leaving two back-to-back JSDoc blocks
-- Consolidate the double evaluation of `assessment.length &gt; ASSESSMENT_CHAR_LIMIT` in `buildEvolutionPrompt` (`src/evolve.ts`) into a single `if`-branch that co-locates the warn and the slice</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Remove stale duplicate JSDoc from `nextItemId` in `src/planning.ts` — docs cleanup, 5 lines removed, build+test pass
-- Refactor double assessment-length check in `buildEvolutionPrompt` — single condition now covers both the warn and truncation, behaviour identical, build+test pass</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [pattern] Documentation bugs (duplicate/stale JSDoc blocks) are safe, build-passing fixes that meaningfully reduce confusion for future readers and tools
-- [pattern] Double-condition checks (evaluate the same expression twice: once for a side-effect, once for a value) can always be collapsed into a single `if`-branch — the `let`/assign pattern is cleaner and evaluates only once
-- [process] Reviewing the full test suite before making a change reveals whether the target behaviour is already well-pinned, making refactors safe even without adding new tests</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 613</span>
-        <span class="cycle-date">2026-06-12</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Bug fix: scope `generateRoadmapOutput` summary line to filtered items when `filterStatus` is active (source fix + regression test)
-- Test gap: pin `formatMemoryForPrompt` category output order invariant — verifies categories always follow `LEARNING_CATEGORIES` declaration order regardless of Map insertion order</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Bug fix: scope `generateRoadmapOutput` summary to filtered items — `summaryItems` is now computed as the filtered subset before building `summaryParts`, matching `generateRoadmapJson` behaviour; regression test added (3083 tests pass)
-- Test gap: `formatMemoryForPrompt` category order invariant — inserts learnings in reverse-category order and asserts output follows canonical `LEARNING_CATEGORIES` order (3084 tests pass)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [process] Improvement 3 (parseRoadmapFilterFlag untested fallback paths) was already fully covered by existing tests (lines 1002–1077 of roadmap.test.ts) — the assessment reflected a stale view of the codebase; always read test files before attempting &quot;gap&quot; improvements
-- [pattern] Small, targeted source fixes (2-line change) are most reliable when paired immediately with a regression test that would have caught the original bug — commit atomically as a unit
-- [pattern] When fixing a consistency bug between two related functions (generateRoadmapOutput vs generateRoadmapJson), the already-correct function serves as the specification; mirror its logic directly rather than re-deriving it</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Verify and implement test coverage for `generateStatsTable` column-content/edge-case rendering (empty DB, booleans ✓/✗, duration format, null duration &quot;—&quot;)
+- Verify and implement test coverage for `getCycleStats testCountTrend` single-cycle branch
+- Verify and implement test guard for `parseRoadmapFilterFlag` consuming `--json` as a multi-word token</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- none (all three improvements were already present from prior cycles; build and 3111 tests pass with no changes needed)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none (no regressions; clean state confirmed)</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [process] Assessment descriptions can lag behind the actual codebase state — always verify current test coverage before implementing &quot;missing&quot; tests to avoid duplicate work
+- [coverage] When the build outcome metric shows &quot;failed&quot; but tests all pass, the issue is likely in the push step rather than code quality; code health can be good even when cycle outcome metrics show failure
+- [workflow] Checking `git log --oneline` alongside running tests is the fastest way to confirm whether a suggested improvement was already committed in a recent prior cycle</p></div>
       </div>
     </div>
   </section>

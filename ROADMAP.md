@@ -2,16 +2,16 @@
 
 ## Backlog
 
-- [ ] Add `--verbose` flag to `pnpm stats` to print per-cycle failure categories inline in the ASCII table
-  Extend the `--table` output to include a `failures` column showing the failure_category breakdown per cycle row, making regression diagnosis quicker without needing to query SQLite directly.
-- [ ] Add `pnpm roadmap --format md` to export a clean Markdown snapshot of active items for CI badges
-  Follow the existing `--filter` flag pattern; when `--format md` is passed, output a compact Markdown table of Backlog/Up Next/In Progress items suitable for embedding in README shields or CI summary comments.
-
 ## Up Next
 
 ## In Progress
+- [ ] Add `--verbose` flag to `pnpm stats` to print per-cycle failure categories inline in the ASCII table
+  Extend the `--table` output to include a `failures` column showing the failure_category breakdown per cycle row, making regression diagnosis quicker without needing to query SQLite directly.
+  [since: 625]
 
 ## Done
+- [x] Add `pnpm roadmap --format md` to export a clean Markdown snapshot of active items for CI badges
+  Completed in cycle 625: 1/1 improvements succeeded.
 - [x] Reduce assessment-phase tool-call overhead by injecting a pre-built file manifest into the assessment prompt, giving the LLM a ready-made index of src/ and tests/ filenames so it can skip repetitive Glob calls and reach its conclusion within fewer turns
   Completed in cycle 618: 1/3 improvements succeeded.
 - [x] Add `pnpm stats --table` flag to display the last N cycles as an ASCII table (cycle number, improvements succeeded/attempted, build pass, push, duration) for spotting regressions at a glance without reading the full journal
