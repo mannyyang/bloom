@@ -171,10 +171,10 @@ export function parseRoadmap(content: string): ProjectItem[] {
     const itemMatch = line.match(
       /^-\s+\[[ xX]\]\s+(.+)$/,
     );
-    if (itemMatch && !currentStatus) {
-      console.warn(`[planning] parseRoadmap: item line found before any ## heading — ignoring: "${line.trim()}"`);
-    }
-    if (itemMatch && currentStatus) {
+    if (itemMatch) {
+      if (!currentStatus) {
+        console.warn(`[planning] parseRoadmap: item line found before any ## heading — ignoring: "${line.trim()}"`);
+      } else {
       // Flush previous item
       if (currentItem?.title) {
         items.push(finalizeItem(currentItem, idCounter++));
@@ -191,7 +191,8 @@ export function parseRoadmap(content: string): ProjectItem[] {
         linkedIssueNumber,
         reactions: 0,
       };
-      continue;
+        continue;
+      }
     }
 
     // Body lines (indented under an item)
