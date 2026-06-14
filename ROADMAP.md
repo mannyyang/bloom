@@ -2,6 +2,11 @@
 
 ## Backlog
 
+- [ ] Add `--verbose` flag to `pnpm stats` to print per-cycle failure categories inline in the ASCII table
+  Extend the `--table` output to include a `failures` column showing the failure_category breakdown per cycle row, making regression diagnosis quicker without needing to query SQLite directly.
+- [ ] Add `pnpm roadmap --format md` to export a clean Markdown snapshot of active items for CI badges
+  Follow the existing `--filter` flag pattern; when `--format md` is passed, output a compact Markdown table of Backlog/Up Next/In Progress items suitable for embedding in README shields or CI summary comments.
+
 ## Up Next
 
 ## In Progress
