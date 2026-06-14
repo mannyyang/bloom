@@ -48,6 +48,14 @@ export function parseTableFlag(argv: string[]): boolean {
   return argv.includes("--table");
 }
 
+/**
+ * Parse `--verbose` from an argv array, returning true when the flag is present.
+ * When combined with `--table`, adds a Failures column to the ASCII table.
+ */
+export function parseVerboseFlag(argv: string[]): boolean {
+  return argv.includes("--verbose");
+}
+
 /** Column widths for the ASCII stats table. */
 const COL_CYCLE = 6;
 const COL_ATTEMPTED = 9;
@@ -55,6 +63,7 @@ const COL_SUCCEEDED = 9;
 const COL_BUILD = 6;
 const COL_PUSH = 5;
 const COL_DURATION = 10;
+const COL_FAILURES = 16;
 
 function pad(s: string, width: number, right = false): string {
   return right ? s.padStart(width) : s.padEnd(width);
@@ -64,41 +73,55 @@ function pad(s: string, width: number, right = false): string {
  * Render per-cycle data as a fixed-width ASCII table.
  * Rows are ordered newest-first (highest cycle number at top).
  * Returns an empty string when no cycles exist.
+ * When `verbose` is true, appends a Failures column showing each row's
+ * failure_category (rendered as "—" when the category is "none" or absent).
  */
-export function generateStatsTable(db: Database.Database, lastN?: number): string {
+export function generateStatsTable(db: Database.Database, lastN?: number, verbose?: boolean): string {
   const rows = getCycleRows(db, lastN);
   if (rows.length === 0) return "";
 
-  const header = [
+  const baseHeaderCells = [
     pad("Cycle", COL_CYCLE, true),
     pad("Attempt", COL_ATTEMPTED, true),
     pad("Succeed", COL_SUCCEEDED, true),
     pad("Build", COL_BUILD),
     pad("Push", COL_PUSH),
     pad("Duration", COL_DURATION, true),
-  ].join("  ");
-
-  const separator = [
+  ];
+  const baseSepCells = [
     "-".repeat(COL_CYCLE),
     "-".repeat(COL_ATTEMPTED),
     "-".repeat(COL_SUCCEEDED),
     "-".repeat(COL_BUILD),
     "-".repeat(COL_PUSH),
     "-".repeat(COL_DURATION),
-  ].join("  ");
+  ];
+
+  if (verbose) {
+    baseHeaderCells.push(pad("Failures", COL_FAILURES));
+    baseSepCells.push("-".repeat(COL_FAILURES));
+  }
+
+  const header = baseHeaderCells.join("  ");
+  const separator = baseSepCells.join("  ");
 
   const dataRows = rows.map((r: CycleRow) => {
     const durationStr = r.durationMs !== null
       ? `${(r.durationMs / MS_PER_MINUTE).toFixed(1)} min`
       : "—";
-    return [
+    const cells = [
       pad(String(r.cycleNumber), COL_CYCLE, true),
       pad(String(r.attempted), COL_ATTEMPTED, true),
       pad(String(r.succeeded), COL_SUCCEEDED, true),
       pad(r.buildPassed ? "✓" : "✗", COL_BUILD),
       pad(r.pushed ? "✓" : "✗", COL_PUSH),
       pad(durationStr, COL_DURATION, true),
-    ].join("  ");
+    ];
+    if (verbose) {
+      const cat = r.failureCategory && r.failureCategory !== "none" ? r.failureCategory : "—";
+      cells.push(pad(cat, COL_FAILURES));
+    }
+    return cells.join("  ");
   });
 
   return [header, separator, ...dataRows].join("\n");
@@ -161,6 +184,7 @@ function main() {
   const lastN = parseLastNArg(process.argv);
   const jsonMode = parseJsonFlag(process.argv);
   const tableMode = parseTableFlag(process.argv);
+  const verbose = parseVerboseFlag(process.argv);
   const db = initDb();
 
   try {
@@ -168,7 +192,7 @@ function main() {
       const result = generateStatsJson(db, lastN);
       console.log(JSON.stringify(result, null, 2));
     } else if (tableMode) {
-      const table = generateStatsTable(db, lastN);
+      const table = generateStatsTable(db, lastN, verbose);
       console.log(table || "No evolution cycles recorded yet.");
     } else {
       const output = generateStatsOutput(db, lastN);

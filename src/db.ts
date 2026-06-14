@@ -237,6 +237,7 @@ export interface CycleRow {
   buildPassed: boolean;
   pushed: boolean;
   durationMs: number | null;
+  failureCategory: string | null;
 }
 
 /**
@@ -251,11 +252,12 @@ export function getCycleRows(db: Database.Database, limit: number = CYCLE_STATS_
     build_verification_passed: number;
     push_succeeded: number;
     duration_ms: number | null;
+    failure_category: string | null;
   };
   const rows = validateRows<RawRow>(
     db.prepare(`
       SELECT cycle_number, improvements_attempted, improvements_succeeded,
-             build_verification_passed, push_succeeded, duration_ms
+             build_verification_passed, push_succeeded, duration_ms, failure_category
       FROM cycles
       ORDER BY cycle_number DESC
       LIMIT ?
@@ -267,6 +269,7 @@ export function getCycleRows(db: Database.Database, limit: number = CYCLE_STATS_
       build_verification_passed: "number",
       push_succeeded: "number",
       duration_ms: "number?",
+      failure_category: "string?",
     },
     "getCycleRows",
   );
@@ -277,6 +280,7 @@ export function getCycleRows(db: Database.Database, limit: number = CYCLE_STATS_
     buildPassed: r.build_verification_passed === 1,
     pushed: r.push_succeeded === 1,
     durationMs: r.duration_ms,
+    failureCategory: r.failure_category,
   }));
 }
 

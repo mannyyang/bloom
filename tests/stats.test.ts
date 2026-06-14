@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseLastNArg, parseJsonFlag, parseTableFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS } from "../src/stats.js";
+import { generateStatsOutput, parseLastNArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { makeOutcome } from "./helpers.js";
 
@@ -867,5 +867,81 @@ describe("generateStatsTable", () => {
     const firstDataCycle = parseInt(dataLines[0].trim().split(/\s+/)[0]);
     const lastDataCycle = parseInt(dataLines[dataLines.length - 1].trim().split(/\s+/)[0]);
     expect(firstDataCycle).toBeGreaterThan(lastDataCycle);
+  });
+
+  describe("verbose mode", () => {
+    it("includes Failures column header when verbose=true", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      const table = generateStatsTable(db, undefined, true);
+      expect(table).toContain("Failures");
+    });
+
+    it("does not include Failures column header when verbose is absent", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      const table = generateStatsTable(db);
+      expect(table).not.toContain("Failures");
+    });
+
+    it("shows failure category in Failures column when category is not 'none'", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "build_failure" }));
+      const table = generateStatsTable(db, undefined, true);
+      expect(table).toContain("build_failure");
+    });
+
+    it("shows — in Failures column when failure category is 'none'", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true, pushSucceeded: true, failureCategory: "none" }));
+      const table = generateStatsTable(db, undefined, true);
+      // The data row should contain the em-dash for no failure
+      const lines = table.split("\n");
+      const dataRow = lines[2]; // header, separator, first data row
+      expect(dataRow).toContain("—");
+    });
+
+    it("verbose table has one more column than non-verbose table", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      const normalTable = generateStatsTable(db);
+      const verboseTable = generateStatsTable(db, undefined, true);
+      const normalHeaderCols = normalTable.split("\n")[0].trim().split(/\s{2,}/);
+      const verboseHeaderCols = verboseTable.split("\n")[0].trim().split(/\s{2,}/);
+      expect(verboseHeaderCols.length).toBe(normalHeaderCols.length + 1);
+    });
+
+    it("verbose table separator row is longer than normal separator", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      const normalSep = generateStatsTable(db).split("\n")[1];
+      const verboseSep = generateStatsTable(db, undefined, true).split("\n")[1];
+      expect(verboseSep.length).toBeGreaterThan(normalSep.length);
+    });
+
+    it("shows multiple failure categories correctly across rows", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1, failureCategory: "build_failure" }));
+      insertCycle(db, makeOutcome({ cycleNumber: 2, failureCategory: "test_failure" }));
+      insertCycle(db, makeOutcome({ cycleNumber: 3, failureCategory: "none" }));
+      const table = generateStatsTable(db, undefined, true);
+      expect(table).toContain("build_failure");
+      expect(table).toContain("test_failure");
+    });
+  });
+});
+
+describe("parseVerboseFlag", () => {
+  it("returns false when --verbose is absent", () => {
+    expect(parseVerboseFlag(["node", "stats.js"])).toBe(false);
+  });
+
+  it("returns true when --verbose is present", () => {
+    expect(parseVerboseFlag(["node", "stats.js", "--verbose"])).toBe(true);
+  });
+
+  it("returns true when --verbose appears alongside other flags", () => {
+    expect(parseVerboseFlag(["node", "stats.js", "--table", "--verbose"])).toBe(true);
+  });
+
+  it("returns false for an empty argv", () => {
+    expect(parseVerboseFlag([])).toBe(false);
+  });
+
+  it("returns false for similar-but-not-equal flags", () => {
+    expect(parseVerboseFlag(["--verbose2", "--VERBOSE", "--verb"])).toBe(false);
   });
 });
