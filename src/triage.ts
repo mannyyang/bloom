@@ -384,8 +384,8 @@ export async function triageIssues(
       continue;
     }
     processedIssueNumbers.add(decision.issueNumber);
-    const issue = untriaged.find((i) => i.number === decision.issueNumber);
-    if (!issue) continue;
+    // untriagedNumbers.has() guard above guarantees find() always succeeds here
+    const issue = untriaged.find((i) => i.number === decision.issueNumber)!;
 
     try {
       // Done-gate: if LLM says already_done but no "Done" board item is linked
