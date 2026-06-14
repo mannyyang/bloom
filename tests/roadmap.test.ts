@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { generateRoadmapOutput, generateRoadmapJson, parseRoadmapFilterFlag, ROADMAP_BODY_PREVIEW_MAX_CHARS, type RoadmapJsonSummary } from "../src/roadmap.js";
+import { generateRoadmapOutput, generateRoadmapJson, generateRoadmapMarkdown, parseRoadmapFilterFlag, parseFormatFlag, ROADMAP_BODY_PREVIEW_MAX_CHARS, type RoadmapJsonSummary } from "../src/roadmap.js";
 import * as planning from "../src/planning.js";
 import { parseRoadmap, serializeRoadmap } from "../src/planning.js";
 
@@ -1203,5 +1203,100 @@ describe("generateRoadmapOutput --filter", () => {
     expect(joined).not.toContain("a".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS + 1));
     // Ellipsis must be appended
     expect(joined).toContain("a".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS) + "…");
+  });
+});
+
+describe("parseFormatFlag", () => {
+  it("returns undefined when --format is absent", () => {
+    expect(parseFormatFlag(["node", "roadmap.js"])).toBeUndefined();
+  });
+
+  it("returns 'md' when --format md is present", () => {
+    expect(parseFormatFlag(["node", "roadmap.js", "--format", "md"])).toBe("md");
+  });
+
+  it("returns undefined when --format has an unrecognised value", () => {
+    expect(parseFormatFlag(["node", "roadmap.js", "--format", "html"])).toBeUndefined();
+  });
+
+  it("returns undefined when --format is present with no following value", () => {
+    expect(parseFormatFlag(["node", "roadmap.js", "--format"])).toBeUndefined();
+  });
+
+  it("returns undefined for an empty argv", () => {
+    expect(parseFormatFlag([])).toBeUndefined();
+  });
+});
+
+describe("generateRoadmapMarkdown", () => {
+  it("returns a string starting with the h1 title", () => {
+    const md = generateRoadmapMarkdown(SAMPLE_ROADMAP);
+    expect(md.startsWith("# Bloom Evolution Roadmap")).toBe(true);
+  });
+
+  it("renders each status as an h2 section heading", () => {
+    const md = generateRoadmapMarkdown(SAMPLE_ROADMAP);
+    expect(md).toContain("## In Progress");
+    expect(md).toContain("## Up Next");
+    expect(md).toContain("## Backlog");
+    expect(md).toContain("## Done");
+  });
+
+  it("renders incomplete items as GFM unchecked checkboxes", () => {
+    const md = generateRoadmapMarkdown(SAMPLE_ROADMAP);
+    expect(md).toContain("- [ ] Write more tests");
+    expect(md).toContain("- [ ] Add error classification");
+  });
+
+  it("renders Done items as GFM checked checkboxes", () => {
+    const md = generateRoadmapMarkdown(SAMPLE_ROADMAP);
+    expect(md).toContain("- [x] Track token usage");
+  });
+
+  it("includes issue number in the item line when present", () => {
+    const md = generateRoadmapMarkdown(SAMPLE_ROADMAP);
+    expect(md).toContain("(#8)");
+    expect(md).toContain("(#4)");
+  });
+
+  it("omits reactions badge when reactions are zero", () => {
+    // SAMPLE_ROADMAP items have 0 reactions — the ★ badge must be absent
+    const md = generateRoadmapMarkdown(SAMPLE_ROADMAP);
+    expect(md).not.toContain("★");
+  });
+
+  it("filters by status when filterStatus is provided", () => {
+    const md = generateRoadmapMarkdown(SAMPLE_ROADMAP, "Backlog");
+    expect(md).toContain("## Backlog");
+    expect(md).not.toContain("## In Progress");
+    expect(md).not.toContain("## Done");
+  });
+
+  it("emits italic fallback when no items exist for the filtered status", () => {
+    const md = generateRoadmapMarkdown(EMPTY_ROADMAP, "Backlog");
+    expect(md).toContain("_No Backlog items on the roadmap._");
+  });
+
+  it("emits italic fallback when the roadmap is entirely empty", () => {
+    const md = generateRoadmapMarkdown(EMPTY_ROADMAP);
+    expect(md).toContain("_No items on the roadmap yet._");
+  });
+
+  it("includes body preview indented under the item", () => {
+    const md = generateRoadmapMarkdown(SAMPLE_ROADMAP);
+    // "Improve prompt efficiency" has a body "Target: reduce median cycle cost by ~20%."
+    expect(md).toContain("  Target: reduce median cycle cost by ~20%.");
+  });
+
+  it("respects ROADMAP_BODY_PREVIEW_MAX_CHARS truncation limit", () => {
+    const longBody = "x".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS + 50);
+    const roadmap = `# Bloom Evolution Roadmap\n\n## Backlog\n- [ ] Lengthy item\n  ${longBody}\n`;
+    const md = generateRoadmapMarkdown(roadmap);
+    expect(md).not.toContain("x".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS + 1));
+    expect(md).toContain("…");
+  });
+
+  it("output is a string (not an array)", () => {
+    expect(typeof generateRoadmapMarkdown(SAMPLE_ROADMAP)).toBe("string");
   });
 });

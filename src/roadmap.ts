@@ -61,6 +61,97 @@ export function parseRoadmapFilterFlag(argv: string[]): StatusColumn | undefined
 }
 
 /**
+ * Parse `--format <value>` from an argv array. Currently the only recognised
+ * value is `"md"` (GitHub-flavoured Markdown). Returns `"md"` when the flag is
+ * present with that value, or `undefined` otherwise.
+ *
+ * Example:
+ *   --format md  → "md"
+ */
+export function parseFormatFlag(argv: string[]): "md" | undefined {
+  const idx = argv.indexOf("--format");
+  if (idx === -1) return undefined;
+  return argv[idx + 1] === "md" ? "md" : undefined;
+}
+
+/**
+ * Render the roadmap as GitHub-flavoured Markdown suitable for embedding in
+ * PRs, issues, and release notes without editing ROADMAP.md directly.
+ *
+ * Layout:
+ *   # Bloom Evolution Roadmap
+ *   ## In Progress
+ *   - [ ] Title (#N) [R ★] (since cycle C)
+ *     Body preview...
+ *   ## Up Next
+ *   - [ ] Title
+ *   ## Done
+ *   - [x] Title
+ *
+ * When `filterStatus` is provided, only the section for that status is emitted.
+ * Storage metadata ([since: N] annotations and …[truncated] markers) are
+ * stripped from item bodies — matching the behaviour of generateRoadmapOutput.
+ */
+export function generateRoadmapMarkdown(content: string, filterStatus?: StatusColumn): string {
+  const items = parseRoadmap(content);
+  const lines: string[] = [];
+
+  lines.push("# Bloom Evolution Roadmap");
+  lines.push("");
+
+  const statusesToRender = filterStatus ? [filterStatus] : STATUS_ORDER;
+  let anyRendered = false;
+
+  for (const status of statusesToRender) {
+    const statusItems = items.filter((i) => i.status === status);
+    if (statusItems.length === 0) continue;
+
+    anyRendered = true;
+    lines.push(`## ${status}`);
+    lines.push("");
+
+    for (const item of statusItems) {
+      const checkbox = item.status === STATUS_DONE ? "[x]" : "[ ]";
+      const issue = item.linkedIssueNumber ? ` (#${item.linkedIssueNumber})` : "";
+      const reactions = item.reactions > 0 ? ` [${item.reactions} ★]` : "";
+
+      let sinceLabel = "";
+      if (item.status === STATUS_IN_PROGRESS && item.body) {
+        const sinceCycle = parseInProgressSinceCycle(item.body);
+        if (sinceCycle !== null) {
+          sinceLabel = ` (since cycle ${sinceCycle})`;
+        }
+      }
+
+      lines.push(`- ${checkbox} ${item.title}${issue}${reactions}${sinceLabel}`);
+
+      if (item.body) {
+        const displayBody = cleanItemBody(item.body);
+        if (displayBody) {
+          const preview = truncateWithEllipsis(displayBody, ROADMAP_BODY_PREVIEW_MAX_CHARS);
+          for (const bodyLine of preview.split("\n")) {
+            lines.push(`  ${bodyLine}`);
+          }
+        }
+      }
+    }
+
+    lines.push("");
+  }
+
+  if (!anyRendered) {
+    lines.push(
+      filterStatus
+        ? `_No ${filterStatus} items on the roadmap._`
+        : "_No items on the roadmap yet._",
+    );
+    lines.push("");
+  }
+
+  return lines.join("\n");
+}
+
+/**
  * Core roadmap display logic, accepting raw markdown for testability.
  * Returns the lines that would be printed to the console.
  * When `filterStatus` is provided, only items with that status are shown.
@@ -241,11 +332,14 @@ function main() {
   }
 
   const jsonMode = parseJsonFlag(process.argv);
+  const formatFlag = parseFormatFlag(process.argv);
   const filterStatus = parseRoadmapFilterFlag(process.argv);
 
   if (jsonMode) {
     const result = generateRoadmapJson(content, filterStatus);
     console.log(JSON.stringify(result, null, 2));
+  } else if (formatFlag === "md") {
+    console.log(generateRoadmapMarkdown(content, filterStatus));
   } else {
     const output = generateRoadmapOutput(content, filterStatus);
     for (const line of output) {
