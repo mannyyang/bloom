@@ -150,6 +150,18 @@ describe("formatPlanningContext", () => {
     expect(formatPlanningContext([], null)).toBe("");
   });
 
+  it("returns empty string when all items are Done and currentItem is null", () => {
+    // Regression guard: previously the early-exit fired only on items.length === 0,
+    // so an all-Done roadmap emitted a dangling "## Evolution Roadmap" header
+    // with no actionable content — callers checking planningContext.length > 0
+    // would treat it as real context.
+    const items = [
+      makeItem({ id: "a", title: "Done A", status: "Done" }),
+      makeItem({ id: "b", title: "Done B", status: "Done" }),
+    ];
+    expect(formatPlanningContext(items, null)).toBe("");
+  });
+
   it("shows current focus item", () => {
     const current = makeItem({ title: "Fix test flakiness" });
     const result = formatPlanningContext([], current);

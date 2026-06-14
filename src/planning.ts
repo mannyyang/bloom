@@ -572,6 +572,12 @@ export function formatPlanningContext(
 ): string {
   if (items.length === 0 && !currentItem) return "";
 
+  // When all items are Done, non-Done filtering below yields no sections.
+  // Return "" here so callers get a reliably empty string rather than a
+  // dangling "## Evolution Roadmap" header with no actionable content.
+  const hasNonDone = items.some((i) => i.status !== STATUS_DONE);
+  if (!hasNonDone && !currentItem) return "";
+
   const lines: string[] = ["## Evolution Roadmap"];
 
   if (currentItem) {
