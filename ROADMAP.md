@@ -1,6 +1,9 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
+- [ ] Add `pnpm assess --verbose` flag to print the full assessment prompt to stdout without calling the LLM, enabling cost-free prompt inspection and debugging
+- [ ] Surface an explicit "roadmap empty" warning in the assessment prompt when all items are Done, so the LLM knows to generate new backlog items rather than improvising direction
+- [ ] Expose per-category staleness in `pnpm stats --verbose` to show which learning categories have not been updated in the most recent N cycles
 
 ## Up Next
 
