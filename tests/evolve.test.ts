@@ -315,6 +315,15 @@ describe("buildEvolutionPrompt", () => {
     expect(prompt).toContain("Make ONE change at a time");
   });
 
+  it("instructs agent to manually delete new untracked files when reverting", () => {
+    // When the LLM creates new files and the build fails, `git checkout .` only
+    // reverts tracked files — new untracked files remain. The prompt must
+    // explicitly remind the agent to also delete those files so failed attempts
+    // don't leave orphaned files that break subsequent improvement attempts.
+    const prompt = buildEvolutionPrompt("assessment");
+    expect(prompt).toContain("new untracked files");
+  });
+
   it("enforces rule 5: agent must keep changes small and incremental", () => {
     const prompt = buildEvolutionPrompt("assessment");
     expect(prompt).toContain("Keep changes small and incremental");

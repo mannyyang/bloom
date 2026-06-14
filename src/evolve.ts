@@ -242,7 +242,7 @@ ${truncatedAssessment}${usageSection}${outcomeSection}
 
 RULES:
 1. Make ONE change at a time.
-2. After each change: \`pnpm build && pnpm test\` — if PASS commit with a descriptive message; if FAIL revert with \`git checkout .\` and continue.
+2. After each change: \`pnpm build && pnpm test\` — if PASS commit with a descriptive message; if FAIL revert with \`git checkout .\` (also manually delete any new untracked files you created) and continue.
 3. NEVER modify IDENTITY.md.
 4. Do NOT write to JOURNAL.md — journal entries are now stored in SQLite and managed by the orchestrator.
 5. Keep changes small and incremental.
