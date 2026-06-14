@@ -5,11 +5,10 @@
 ## Up Next
 
 ## In Progress
-- [ ] Add `--verbose` flag to `pnpm stats` to print per-cycle failure categories inline in the ASCII table
-  Extend the `--table` output to include a `failures` column showing the failure_category breakdown per cycle row, making regression diagnosis quicker without needing to query SQLite directly.
-  [since: 625]
 
 ## Done
+- [x] Add `--verbose` flag to `pnpm stats` to print per-cycle failure categories inline in the ASCII table
+  Completed in cycle 626: 3/3 improvements succeeded.
 - [x] Add `pnpm roadmap --format md` to export a clean Markdown snapshot of active items for CI badges
   Completed in cycle 625: 1/1 improvements succeeded.
 - [x] Reduce assessment-phase tool-call overhead by injecting a pre-built file manifest into the assessment prompt, giving the LLM a ready-made index of src/ and tests/ filenames so it can skip repetitive Glob calls and reach its conclusion within fewer turns

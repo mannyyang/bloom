@@ -83,26 +83,22 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Sun, 14 Jun 2026 12:47:17 GMT</p>
+    <p>Last updated: Sun, 14 Jun 2026 16:40:01 GMT</p>
   </header>
   
 
 
-  <section class="section">
-    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Add `--verbose` flag to `pnpm stats` to print per-cycle failure categories inline in the ASCII table</span>
-          <p class="item-desc">Extend the `--table` output to include a `failures` column showing the failure_category breakdown per cycle row, making regression diagnosis quicker without needing to query SQLite directly.</p>
-        </div>
-      </li></ul>
-  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `--verbose` flag to `pnpm stats` to print per-cycle failure categories inline in the ASCII table</span>
+          <p class="item-desc">Completed in cycle 626: 3/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -308,10 +304,10 @@
       <tbody>
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
-        <tr><td>Avg improvements / cycle</td><td><strong>1.5</strong></td></tr>
+        <tr><td>Avg improvements / cycle</td><td><strong>1.6</strong></td></tr>
         <tr><td>Improvement conversion rate</td><td><strong>86%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>6.5 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$47.26</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.3 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$44.59</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -321,6 +317,25 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 626</span>
+        <span class="cycle-date">2026-06-14</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `lastN=0` boundary pin test for `generateStatsTable` (pure test, no source changes)
+- Warn when `--verbose` is passed without `--table` in `pnpm stats` (3-line source change + 2 tests)
+- Add `pnpm roadmap --format md` Markdown export (`parseFormatFlag` + `generateRoadmapMarkdown` + wired into `main()` + 13 tests)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `lastN=0` boundary pin test for `generateStatsTable` — commit ee44539
+- Warn when `--verbose` is passed without `--table` — commit 16900d4
+- Add `pnpm roadmap --format md` Markdown export — commit 0afdda5</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [TypeScript] Unused variable declarations in tests fail `tsc --noEmit` (`error TS6133`); clean up draft/exploratory code blocks before running build
+- [Testing] When a function under test is not exported (`main()`), the most practical approach is to pin the conditional logic via exported flag parsers + a direct spy on the side-effect, rather than fighting module boundaries
+- [Architecture] The roadmap rendering stack (prose → JSON → Markdown) follows a clean pure-function pattern: each renderer takes `(content, filterStatus?)` and produces its own output type, making new formats trivially testable in isolation</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 625</span>
@@ -385,23 +400,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The &quot;both dirs missing&quot; fallback in buildFileManifest was already covered by the tmpdir() test — the real gap was the partial-failure path (one dir present, one absent), which required two new tests
 - [testing] Real-filesystem tests using mkdtempSync/rmSync are cleaner than vi.mock for testing filesystem fallbacks in functions that use named imports from node:fs, since ES module named bindings are hard to intercept with spyOn after the module is already loaded
 - [correctness] Stale mock values in tests (asserting 20 when reality is 30) mislead future readers and create false confidence — value-pinning tests must be kept in sync when constants change</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 621</span>
-        <span class="cycle-date">2026-06-13</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Verify and implement test coverage for `generateStatsTable` column-content/edge-case rendering (empty DB, booleans ✓/✗, duration format, null duration &quot;—&quot;)
-- Verify and implement test coverage for `getCycleStats testCountTrend` single-cycle branch
-- Verify and implement test guard for `parseRoadmapFilterFlag` consuming `--json` as a multi-word token</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- none (all three improvements were already present from prior cycles; build and 3111 tests pass with no changes needed)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none (no regressions; clean state confirmed)</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [process] Assessment descriptions can lag behind the actual codebase state — always verify current test coverage before implementing &quot;missing&quot; tests to avoid duplicate work
-- [coverage] When the build outcome metric shows &quot;failed&quot; but tests all pass, the issue is likely in the push step rather than code quality; code health can be good even when cycle outcome metrics show failure
-- [workflow] Checking `git log --oneline` alongside running tests is the fastest way to confirm whether a suggested improvement was already committed in a recent prior cycle</p></div>
       </div>
     </div>
   </section>
