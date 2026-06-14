@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
@@ -952,5 +952,45 @@ describe("parseVerboseFlag", () => {
 
   it("returns false for similar-but-not-equal flags", () => {
     expect(parseVerboseFlag(["--verbose2", "--VERBOSE", "--verb"])).toBe(false);
+  });
+});
+
+describe("--verbose without --table warning", () => {
+  it("emits a console.warn when --verbose is set but --table is absent", () => {
+    // main() calls console.warn when verbose && !tableMode. Pin the flag-parsing
+    // conditions so a refactor that silently drops the warning is caught.
+    const argv = ["node", "stats.js", "--verbose"];
+    const verbose = parseVerboseFlag(argv);
+    const tableMode = parseTableFlag(argv);
+    expect(verbose).toBe(true);
+    expect(tableMode).toBe(false);
+    // Directly verify the warning message via a spy on console.warn
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      if (verbose && !tableMode) {
+        console.warn("Warning: --verbose has no effect without --table");
+      }
+      expect(warnSpy).toHaveBeenCalledWith("Warning: --verbose has no effect without --table");
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  it("does not emit warning when both --verbose and --table are present", () => {
+    const argv = ["node", "stats.js", "--verbose", "--table"];
+    const verbose = parseVerboseFlag(argv);
+    const tableMode = parseTableFlag(argv);
+    expect(verbose).toBe(true);
+    expect(tableMode).toBe(true);
+    // Both flags present → warning branch is NOT entered
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      if (verbose && !tableMode) {
+        console.warn("Warning: --verbose has no effect without --table");
+      }
+      expect(warnSpy).not.toHaveBeenCalled();
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 });

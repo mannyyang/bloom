@@ -187,6 +187,10 @@ function main() {
   const verbose = parseVerboseFlag(process.argv);
   const db = initDb();
 
+  if (verbose && !tableMode) {
+    console.warn("Warning: --verbose has no effect without --table");
+  }
+
   try {
     if (jsonMode) {
       const result = generateStatsJson(db, lastN);
