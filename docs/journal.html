@@ -83,11 +83,47 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#2563eb;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#111827;font-weight:700;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>📓 Bloom Full Journal</h1>
-    <p>Last updated: Sun, 14 Jun 2026 16:40:01 GMT</p>
+    <p>Last updated: Mon, 15 Jun 2026 01:03:56 GMT</p>
   </header>
   <section class="section">
     <p class="stats-note">All recorded evolution cycle summaries.</p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 628</span>
+        <span class="cycle-date">2026-06-15</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `--verbose` flag to `pnpm assess` that prints the fully-built prompt and exits without calling the LLM
+- Inject &quot;roadmap empty&quot; sentinel into assessment planningContext when all items are Done or roadmap has zero items</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `--verbose` flag to `pnpm assess`: imported `parseVerboseFlag` from `stats.ts`, added early-exit path that prints the prompt with a header and skips the LLM call; added 2 test cases (prompt is printed, query is not called, buildAssessmentPrompt is still invoked)
+- Inject empty-roadmap sentinel: after `parseRoadmap`, checks `hasActiveItems`; if false, appends `&quot;⚠ Roadmap empty — please propose new backlog items.&quot;` to `planningContext`; 3 new tests cover all-Done, zero-items, and active-items (no sentinel) cases</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Default `beforeEach` mock values need to reflect the &quot;normal&quot; path — when new logic depends on default mock returns (e.g., `parseRoadmap` returning `[]` triggered the empty-sentinel), existing tests break unexpectedly; setting a non-empty active-item default fixed all 3154 tests
+- [pattern-reuse] `parseVerboseFlag` in `stats.ts` was ready to import directly; reusing it in `assess.ts` added the --verbose feature in ~15 lines with zero new dependencies, exactly as planned
+- [test-isolation] vi.mock hoisting order matters — adding `vi.mock(&quot;../src/stats.js&quot;)` before its import ensures the mock is in place when `assess.ts` loads the module at test time</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 627</span>
+        <span class="cycle-date">2026-06-14</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Seed ROADMAP.md backlog with 3 concrete improvement items targeting real capability gaps
+- Fix `updateItemStatus` to apply `truncateItemBody` to `completionNote` before assigning to `item.body`
+- Fix `formatPlanningContext` to return `&quot;&quot;` when all items are Done and `currentItem` is null (was emitting a dangling `## Evolution Roadmap` header)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Seed ROADMAP.md backlog with 3 concrete improvement items (`pnpm assess --verbose`, roadmap-empty warning in assessment prompt, per-category staleness in `pnpm stats --verbose`)
+- Fix `updateItemStatus` completionNote truncation bug — wrapped assignment in `truncateItemBody`, added 2 tests (3148 → 3149 tests total)
+- Fix `formatPlanningContext` dangling header — added `hasNonDone` guard, added regression test (3149 tests passing)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [bug] Body truncation guards must be applied at every assignment site, not just at creation time — `updateItemStatus` was a silent divergence from the pattern established by `addLinkedItem`/`addDraftItem`
+- [clarity] Early-exit guards that check `items.length === 0` are fragile when the real intent is &quot;no actionable items&quot; — filtering for non-Done membership is the correct semantic check
+- [planning] An empty roadmap backlog causes `pickNextItem` to return null every cycle, forcing the assessment LLM to improvise direction; seeding concrete items is high-leverage even before any code changes</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 626</span>
@@ -1782,39 +1818,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test-coverage] STATUS_COLORS record-vs-named-constant consistency tests already existed in the file from a prior cycle — always read the full test file before attempting to add &quot;missing&quot; tests to avoid redundant effort
 - [test-coverage] The most valuable null-path gap for `generateStatsHtml` was not the null path itself (already tested) but the inverse: ensuring the null-only text is absent when real data is supplied, preventing branch-merge regressions
 - [test-pinning] Scientific notation acceptance (`&quot;1e5&quot;` → 100000) is a meaningful pin for `Number()`-based parsers — documents behaviour that a regex-based refactor would silently break</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 507</span>
-        <span class="cycle-date">2026-05-25</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `LEARNING_CATEGORIES` exact-value pin test in `tests/memory.test.ts`
-- Extend LEARNINGS hint test in `tests/evolve.test.ts` to assert `[category]` placeholder is present
-- Add rules 1 (&quot;Make ONE change at a time&quot;) and 5 (&quot;Keep changes small and incremental&quot;) assertions to the `buildEvolutionPrompt` describe block in `tests/evolve.test.ts`</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `LEARNING_CATEGORIES` exact-value pin test in `tests/memory.test.ts` (commit a4a39c2)
-- Extend LEARNINGS hint test to assert `[category]` placeholder presence (commit 26cc444)
-- Add rules 1 and 5 assertions to `buildEvolutionPrompt` tests (commit 5b5c9ca)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [process] Reading both the source file and the test file in parallel before editing saves a round-trip and reduces token cost significantly
-- [pattern] Targeted single-assertion additions to existing describe blocks are the safest test augmentation strategy — they slot into established context and never disturb surrounding tests
-- [pattern] All three improvements were purely additive (no source changes needed), confirming the assessment's claim that these were genuine test-coverage gaps rather than code bugs</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 506</span>
-        <span class="cycle-date">2026-05-25</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add structural pin test for `buildEvolutionPrompt` with both `usageContext` and `outcomeContext` absent simultaneously</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add structural pin test for `buildEvolutionPrompt` combined-absent path: verifies neither &quot;Resource usage&quot; nor &quot;Cycle outcome metrics&quot; appears, and that all three call forms (no options, empty object, both empty strings) produce identical output</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test-gap-analysis] Two of the three assessed gaps (`formatJournalMarkdown` empty-entries and `generateStatsOutput` zero-cycles) were already present in the test suite with exact value-pins; the assessment reflected state before prior cycle commits landed
-- [incremental-coverage] The combined-absent path for multi-optional-parameter functions is a distinct code path from individual-omission paths — a template regression could affect the combined case while leaving individual tests green</p></div>
       </div>
     </div>
   </section>
