@@ -30,6 +30,7 @@ import {
 import { extractResultText, formatDurationSec } from "./usage.js";
 import { resolveModel, AGENT_ASSESSMENT_MAX_TURNS, AGENT_ASSESSMENT_MAX_BUDGET_USD } from "./agent-phases.js";
 import { CONTEXT_JOURNAL_MAX_CHARS, CONTEXT_JOURNAL_MAX_CYCLES } from "./context.js";
+import { parseVerboseFlag } from "./stats.js";
 
 /**
  * Re-export the canonical assessment limits so callers that import from
@@ -94,6 +95,18 @@ export async function main() {
     planningContext,
     fileManifest,
   });
+
+  // --verbose: print the fully-built prompt and exit without making an LLM call.
+  // Useful for offline prompt debugging and cost-free auditing of what context
+  // the assessor will receive. Mirrors the pattern used by `pnpm stats --verbose`.
+  if (parseVerboseFlag(process.argv)) {
+    console.log("\n[assess] --verbose: printing prompt (no LLM call)\n");
+    console.log("========================================");
+    console.log("  Assessment Prompt");
+    console.log("========================================\n");
+    console.log(prompt);
+    return;
+  }
 
   console.log("\n[assess] Querying LLM...\n");
 

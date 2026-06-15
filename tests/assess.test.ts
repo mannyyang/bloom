@@ -50,6 +50,10 @@ vi.mock("../src/usage.js", () => ({
   formatDurationSec: vi.fn(),
 }));
 
+vi.mock("../src/stats.js", () => ({
+  parseVerboseFlag: vi.fn().mockReturnValue(false),
+}));
+
 vi.mock("../src/agent-phases.js", () => ({
   resolveModel: vi.fn(),
   AGENT_ASSESSMENT_MAX_TURNS: 30,
@@ -73,6 +77,7 @@ import { errorMessage } from "../src/errors.js";
 import { ensureProject, readRoadmap, parseRoadmap, formatPlanningContext, pickNextItem } from "../src/planning.js";
 import { formatMemoryForPrompt, MAX_MEMORY_CHARS } from "../src/memory.js";
 import { resolveModel } from "../src/agent-phases.js";
+import { parseVerboseFlag } from "../src/stats.js";
 import { main, ASSESS_MAX_TURNS, ASSESS_MAX_BUDGET_USD } from "../src/assess.js";
 import { CONTEXT_JOURNAL_MAX_CHARS, CONTEXT_JOURNAL_MAX_CYCLES } from "../src/context.js";
 
@@ -95,6 +100,7 @@ const mockInitDb = vi.mocked(initDb);
 const mockGetCycleStats = vi.mocked(getCycleStats);
 const mockResolveModel = vi.mocked(resolveModel);
 const mockErrorMessage = vi.mocked(errorMessage);
+const mockParseVerboseFlag = vi.mocked(parseVerboseFlag);
 
 // Helper: create an async generator that yields the provided messages.
 // Cast to `never` is required because the SDK's Query type extends AsyncGenerator
@@ -142,6 +148,7 @@ describe("assess.ts main()", () => {
     mockFormatDurationSec.mockReturnValue("1.00s");
     mockResolveModel.mockReturnValue("claude-opus-4-5");
     mockErrorMessage.mockImplementation((e: unknown) => String(e));
+    mockParseVerboseFlag.mockReturnValue(false);
   });
 
   it("calls buildAssessmentPrompt with cycleCount one above the latest cycle", async () => {
@@ -510,5 +517,38 @@ describe("assess.ts main()", () => {
     await main();
 
     expect(mockEnsureProject).not.toHaveBeenCalled();
+  });
+
+  it("--verbose: prints the prompt and does NOT call query", async () => {
+    // Core contract: when --verbose is set, main() must return early after
+    // printing the prompt without invoking the LLM (zero cost, offline-safe).
+    mockParseVerboseFlag.mockReturnValue(true);
+    mockBuildAssessmentPrompt.mockReturnValue("the verbose prompt text");
+
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    // prompt must appear in logged output
+    const logged = consoleSpy.mock.calls.map((c) => c.join(" "));
+    expect(logged.some((l) => l.includes("the verbose prompt text"))).toBe(true);
+
+    // query must NOT be called — no LLM invocation in verbose mode
+    expect(mockQuery).not.toHaveBeenCalled();
+
+    consoleSpy.mockRestore();
+  });
+
+  it("--verbose: prompt is built from context before early exit", async () => {
+    // Regression guard: the verbose path must go through the full context-loading
+    // and prompt-building pipeline, not short-circuit before buildAssessmentPrompt.
+    mockParseVerboseFlag.mockReturnValue(true);
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    expect(mockBuildAssessmentPrompt).toHaveBeenCalledOnce();
+
+    vi.restoreAllMocks();
   });
 });
