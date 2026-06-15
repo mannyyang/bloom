@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
-import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution } from "../src/db.js";
+import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution, getLastUpdatedCyclePerCategory } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
 import { generateStatsOutput, parseLastNArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
@@ -748,6 +748,127 @@ describe("getLearningCategoryDistribution", () => {
   });
 });
 
+describe("getLastUpdatedCyclePerCategory", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("returns empty array when no learnings exist", () => {
+    expect(getLastUpdatedCyclePerCategory(db)).toEqual([]);
+  });
+
+  it("returns one entry per category with the max cycle number", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 3 }));
+    insertLearning(db, 1, "pattern", "First learning");
+    insertLearning(db, 3, "pattern", "Newer learning");
+    insertLearning(db, 1, "domain", "Domain knowledge");
+    const result = getLastUpdatedCyclePerCategory(db);
+    const byCategory = Object.fromEntries(result.map(r => [r.category, r.lastCycle]));
+    expect(byCategory["pattern"]).toBe(3);
+    expect(byCategory["domain"]).toBe(1);
+    expect(result.length).toBe(2);
+  });
+
+  it("orders results by lastCycle descending (most recently updated first)", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 5 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 10 }));
+    insertLearning(db, 1, "process", "Old process learning");
+    insertLearning(db, 5, "domain", "Mid domain learning");
+    insertLearning(db, 10, "pattern", "Recent pattern learning");
+    const result = getLastUpdatedCyclePerCategory(db);
+    expect(result[0].lastCycle).toBeGreaterThanOrEqual(result[1].lastCycle);
+    expect(result[1].lastCycle).toBeGreaterThanOrEqual(result[2].lastCycle);
+    expect(result[0].category).toBe("pattern");
+  });
+
+  it("handles single category with multiple cycles correctly", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 8 }));
+    insertLearning(db, 2, "anti-pattern", "Avoid mutation");
+    insertLearning(db, 8, "anti-pattern", "Avoid globals");
+    const result = getLastUpdatedCyclePerCategory(db);
+    expect(result.length).toBe(1);
+    expect(result[0].category).toBe("anti-pattern");
+    expect(result[0].lastCycle).toBe(8);
+  });
+});
+
+describe("generateStatsOutput verbose mode", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("does not include staleness block when verbose is false (default)", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertLearning(db, 1, "pattern", "Test-first development");
+    const output = generateStatsOutput(db);
+    expect(output.join("\n")).not.toContain("Learnings staleness");
+  });
+
+  it("does not include staleness block when verbose=true but no learnings exist", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    const output = generateStatsOutput(db, undefined, true);
+    expect(output.join("\n")).not.toContain("Learnings staleness");
+  });
+
+  it("includes staleness header when verbose=true and learnings exist", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertLearning(db, 1, "pattern", "Test-first development");
+    const output = generateStatsOutput(db, undefined, true);
+    expect(output.join("\n")).toContain("Learnings staleness (by category):");
+  });
+
+  it("includes one line per category with correct format", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 5 }));
+    insertLearning(db, 5, "pattern", "Incremental changes");
+    insertLearning(db, 5, "domain", "SQLite patterns");
+    const output = generateStatsOutput(db, undefined, true);
+    const joined = output.join("\n");
+    expect(joined).toContain("  pattern: last updated cycle 5");
+    expect(joined).toContain("  domain: last updated cycle 5");
+  });
+
+  it("shows the most recent cycle per category when a category spans multiple cycles", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 3 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 7 }));
+    insertLearning(db, 3, "process", "First process learning");
+    insertLearning(db, 7, "process", "Updated process learning");
+    const output = generateStatsOutput(db, undefined, true);
+    const joined = output.join("\n");
+    // Should show cycle 7, not cycle 3
+    expect(joined).toContain("  process: last updated cycle 7");
+    expect(joined).not.toContain("  process: last updated cycle 3");
+  });
+
+  it("verbose output still ends with an empty string (trailing newline)", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertLearning(db, 1, "pattern", "Test-first");
+    const output = generateStatsOutput(db, undefined, true);
+    expect(output[output.length - 1]).toBe("");
+  });
+
+  it("non-verbose output length is unaffected by verbose flag being absent", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertLearning(db, 1, "pattern", "Always run tests before committing");
+    const normalOutput = generateStatsOutput(db);
+    expect(normalOutput).toHaveLength(10);
+  });
+
+  it("verbose output is longer than non-verbose when learnings exist", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertLearning(db, 1, "pattern", "Always run tests before committing");
+    const normalOutput = generateStatsOutput(db);
+    const verboseOutput = generateStatsOutput(db, undefined, true);
+    expect(verboseOutput.length).toBeGreaterThan(normalOutput.length);
+  });
+});
+
 describe("parseTableFlag", () => {
   it("returns false when --table is absent", () => {
     expect(parseTableFlag(["node", "stats.js"])).toBe(false);
@@ -955,42 +1076,19 @@ describe("parseVerboseFlag", () => {
   });
 });
 
-describe("--verbose without --table warning", () => {
-  it("emits a console.warn when --verbose is set but --table is absent", () => {
-    // main() calls console.warn when verbose && !tableMode. Pin the flag-parsing
-    // conditions so a refactor that silently drops the warning is caught.
+describe("--verbose flag behaviour", () => {
+  it("--verbose is valid without --table (now shows staleness block in default output)", () => {
+    // --verbose is now meaningful in both --table and default output modes.
+    // Verify the flag combination is well-formed and does not clash.
     const argv = ["node", "stats.js", "--verbose"];
-    const verbose = parseVerboseFlag(argv);
-    const tableMode = parseTableFlag(argv);
-    expect(verbose).toBe(true);
-    expect(tableMode).toBe(false);
-    // Directly verify the warning message via a spy on console.warn
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    try {
-      if (verbose && !tableMode) {
-        console.warn("Warning: --verbose has no effect without --table");
-      }
-      expect(warnSpy).toHaveBeenCalledWith("Warning: --verbose has no effect without --table");
-    } finally {
-      warnSpy.mockRestore();
-    }
+    expect(parseVerboseFlag(argv)).toBe(true);
+    expect(parseTableFlag(argv)).toBe(false);
+    // No warning should be emitted — --verbose has a real effect without --table
   });
 
-  it("does not emit warning when both --verbose and --table are present", () => {
+  it("--verbose combined with --table is also valid", () => {
     const argv = ["node", "stats.js", "--verbose", "--table"];
-    const verbose = parseVerboseFlag(argv);
-    const tableMode = parseTableFlag(argv);
-    expect(verbose).toBe(true);
-    expect(tableMode).toBe(true);
-    // Both flags present → warning branch is NOT entered
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    try {
-      if (verbose && !tableMode) {
-        console.warn("Warning: --verbose has no effect without --table");
-      }
-      expect(warnSpy).not.toHaveBeenCalled();
-    } finally {
-      warnSpy.mockRestore();
-    }
+    expect(parseVerboseFlag(argv)).toBe(true);
+    expect(parseTableFlag(argv)).toBe(true);
   });
 });

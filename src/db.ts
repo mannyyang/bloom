@@ -485,6 +485,31 @@ export interface CycleStats {
 }
 
 /**
+ * Per-category staleness row: the most recent cycle number in which a learning
+ * of that category was recorded. Used by `pnpm stats --verbose` to surface
+ * categories that have not received new learnings recently.
+ */
+export interface CategoryStaleness {
+  category: string;
+  lastCycle: number;
+}
+
+/**
+ * Return the most recent cycle number in which each learning category was updated.
+ * Ordered by lastCycle descending (most recently updated first).
+ * Returns an empty array when no learnings exist.
+ */
+export function getLastUpdatedCyclePerCategory(db: Database.Database): CategoryStaleness[] {
+  return validateRows<CategoryStaleness>(
+    db.prepare(
+      "SELECT category, MAX(cycle_number) as lastCycle FROM learnings GROUP BY category ORDER BY lastCycle DESC",
+    ).all(),
+    { category: "string", lastCycle: "number" },
+    "getLastUpdatedCyclePerCategory",
+  );
+}
+
+/**
  * Return a count of learnings per category across all currently stored learnings.
  * Useful for identifying over- or under-represented learning types in the DB.
  */

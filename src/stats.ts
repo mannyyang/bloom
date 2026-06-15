@@ -11,7 +11,7 @@
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import type Database from "better-sqlite3";
-import { initDb, getCycleStats, formatCycleStats, getLatestCycleNumber, getCycleRows, CYCLE_SUMMARY_SEPARATOR, MS_PER_MINUTE, type CycleStats, type CycleRow } from "./db.js";
+import { initDb, getCycleStats, formatCycleStats, getLatestCycleNumber, getCycleRows, getLastUpdatedCyclePerCategory, CYCLE_SUMMARY_SEPARATOR, MS_PER_MINUTE, type CycleStats, type CycleRow } from "./db.js";
 import { formatMemoryForPrompt } from "./memory.js";
 
 /**
@@ -147,8 +147,10 @@ export function generateStatsJson(
  * Core stats logic, accepting a db parameter for testability.
  * Returns the lines that would be printed to console.
  * @param lastN - optional override for how many recent cycles to summarise
+ * @param verbose - when true, appends a "Learnings staleness" block showing
+ *   the most recent cycle in which each learning category was updated
  */
-export function generateStatsOutput(db: Database.Database, lastN?: number): string[] {
+export function generateStatsOutput(db: Database.Database, lastN?: number, verbose?: boolean): string[] {
   const lines: string[] = [];
 
   const latestCycle = getLatestCycleNumber(db);
@@ -175,6 +177,18 @@ export function generateStatsOutput(db: Database.Database, lastN?: number): stri
     lines.push(memory);
   }
 
+  // When verbose, append a per-category staleness block
+  if (verbose) {
+    const staleness = getLastUpdatedCyclePerCategory(db);
+    if (staleness.length > 0) {
+      lines.push("");
+      lines.push("Learnings staleness (by category):");
+      for (const entry of staleness) {
+        lines.push(`  ${entry.category}: last updated cycle ${entry.lastCycle}`);
+      }
+    }
+  }
+
   lines.push("");
 
   return lines;
@@ -187,10 +201,6 @@ function main() {
   const verbose = parseVerboseFlag(process.argv);
   const db = initDb();
 
-  if (verbose && !tableMode) {
-    console.warn("Warning: --verbose has no effect without --table");
-  }
-
   try {
     if (jsonMode) {
       const result = generateStatsJson(db, lastN);
@@ -199,7 +209,7 @@ function main() {
       const table = generateStatsTable(db, lastN, verbose);
       console.log(table || "No evolution cycles recorded yet.");
     } else {
-      const output = generateStatsOutput(db, lastN);
+      const output = generateStatsOutput(db, lastN, verbose);
       for (const line of output) {
         console.log(line);
       }
