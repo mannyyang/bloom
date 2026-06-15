@@ -112,6 +112,15 @@ describe("extractLearnings", () => {
     expect(result).toEqual({ learnings: [] });
   });
 
+  it("silently drops bullet lines with a recognized category tag but whitespace-only content", () => {
+    // '- [pattern]   ' has categoryMatch[2] === '   ' (all spaces); after
+    // cleanContent.trim() the content is empty and the entry is discarded.
+    // This boundary pins the whitespace-trim guard for recognised categories,
+    // complementing the bare-tag test above.
+    const result = extractLearnings("- [pattern]   ");
+    expect(result).toEqual({ learnings: [] });
+  });
+
   it("produces zero learnings for a mix of empty-tag and blank lines", () => {
     const text = "- [pattern]\n- [anti-pattern]\n\n- [tool-usage]";
     const result = extractLearnings(text);
