@@ -1,13 +1,14 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Expose per-category staleness in `pnpm stats --verbose` to show which learning categories have not been updated in the most recent N cycles
 
 ## Up Next
 
 ## In Progress
 
 ## Done
+- [x] Expose per-category staleness in `pnpm stats --verbose` to show which learning categories have not been updated in the most recent N cycles
+  Completed in cycle 630: 1/3 improvements succeeded.
 - [x] Add `pnpm assess --verbose` flag to print the full assessment prompt to stdout without calling the LLM, enabling cost-free prompt inspection and debugging
   Completed in cycle 629: 1/1 improvements succeeded.
 - [x] Surface an explicit "roadmap empty" warning in the assessment prompt when all items are Done, so the LLM knows to generate new backlog items rather than improvising direction

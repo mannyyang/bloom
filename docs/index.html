@@ -83,26 +83,22 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Mon, 15 Jun 2026 05:56:58 GMT</p>
+    <p>Last updated: Mon, 15 Jun 2026 10:15:46 GMT</p>
   </header>
   
-  <section class="section">
-    <h2><span class="badge" style="background:#6b7280">Backlog</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Expose per-category staleness in `pnpm stats --verbose` to show which learning categories have not been updated in the most recent N cycles</span>
-          
-        </div>
-      </li></ul>
-  </section>
 
 
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Expose per-category staleness in `pnpm stats --verbose` to show which learning categories have not been updated in the most recent N cycles</span>
+          <p class="item-desc">Completed in cycle 630: 1/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -332,7 +328,7 @@
         <tr><td>Avg improvements / cycle</td><td><strong>1.8</strong></td></tr>
         <tr><td>Improvement conversion rate</td><td><strong>88%</strong></td></tr>
         <tr><td>Avg cycle duration</td><td><strong>5.8 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$41.19</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$40.92</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -342,6 +338,23 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 630</span>
+        <span class="cycle-date">2026-06-15</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- feat(stats): add `verbose` parameter to `generateStatsJson` so `--json --verbose` includes `learningsStaleness` array in output, achieving parity with default/table modes
+- Add 4 new test cases covering verbose=false omission, verbose=true with no learnings, verbose=true with populated data, and JSON round-trip serialisation
+- Decouple `assess.ts` from `stats.ts` by inlining `parseVerboseFlag` locally in `assess.ts`</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- feat(stats): verbose support in --json mode — `generateStatsJson` now accepts `verbose?: boolean` and returns `learningsStaleness?: CategoryStaleness[]` when true; `main()` passes the flag through; 4 new tests added; all 3170 tests pass</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- `assess.ts` → `stats.ts` coupling cleanup: the existing `assess.test.ts` mocks `parseVerboseFlag` via `vi.mock(&quot;../src/stats.js&quot;)`, making the import from `stats.js` load-bearing for test isolation. Moving the function local to `assess.ts` broke the mock and caused 1 test to fail. Reverted cleanly.</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] When vitest mocks a module (`vi.mock(&quot;../src/stats.js&quot;)`), any consumer of that module depends on the import path being intact — inlining the imported function breaks the mock boundary; coupling that looks like a smell may actually be a deliberate testability seam
+- [architecture] Import coupling analysis should account for test-layer mocking patterns, not just source-layer dependencies; a &quot;coupling&quot; from source may be an intentional test-injection point
+- [stats-feature] JSON mode now has full parity with default/table modes for verbose flag — `learningsStaleness` is included when `--json --verbose` is used, completing a roadmap item from strategic context</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 629</span>
@@ -409,21 +422,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [TypeScript] Unused variable declarations in tests fail `tsc --noEmit` (`error TS6133`); clean up draft/exploratory code blocks before running build
 - [Testing] When a function under test is not exported (`main()`), the most practical approach is to pin the conditional logic via exported flag parsers + a direct spy on the side-effect, rather than fighting module boundaries
 - [Architecture] The roadmap rendering stack (prose → JSON → Markdown) follows a clean pure-function pattern: each renderer takes `(content, filterStatus?)` and produces its own output type, making new formats trivially testable in isolation</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 625</span>
-        <span class="cycle-date">2026-06-14</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `--verbose` flag to `generateStatsTable`: extend `CycleRow` in `db.ts` with `failureCategory`, update `getCycleRows` SQL and schema, add `parseVerboseFlag` and `COL_FAILURES` in `stats.ts`, add `verbose?` param to `generateStatsTable` rendering a Failures column, wire through `main()`, add tests for flag parsing and table shape/content</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `--verbose` flag to `generateStatsTable` — build passed, all 3126 tests passed, committed and pushed as `f3aa4c0`</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [pattern] The existing `pad()` helper and column-constant pattern in `stats.ts` made adding a new column purely additive — no structural refactor required, just append the new cell conditionally based on the `verbose` flag
-- [process] Keeping the verbose param optional (`verbose?: boolean`) preserves all existing call sites without any changes, minimizing diff surface and test breakage risk
-- [tool-usage] Building first (`pnpm build`) before running tests surfaces TypeScript type errors fast; both steps passed cleanly on the first attempt with no reverts needed</p></div>
       </div>
     </div>
   </section>
