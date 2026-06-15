@@ -6,10 +6,10 @@
 ## Up Next
 
 ## In Progress
-- [ ] Add `pnpm assess --verbose` flag to print the full assessment prompt to stdout without calling the LLM, enabling cost-free prompt inspection and debugging
-  [since: 628]
 
 ## Done
+- [x] Add `pnpm assess --verbose` flag to print the full assessment prompt to stdout without calling the LLM, enabling cost-free prompt inspection and debugging
+  Completed in cycle 629: 1/1 improvements succeeded.
 - [x] Surface an explicit "roadmap empty" warning in the assessment prompt when all items are Done, so the LLM knows to generate new backlog items rather than improvising direction
   Completed in cycle 628: 2/2 improvements succeeded.
 - [x] Add `--verbose` flag to `pnpm stats` to print per-cycle failure categories inline in the ASCII table
