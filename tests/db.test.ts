@@ -733,6 +733,12 @@ describe("db", () => {
       const result = getRecentJournalSummary(db, maxChars, 2);
       expect(result.length).toBeLessThanOrEqual(maxChars);
     });
+
+    it("returns empty string when maxCycles is 0 (LIMIT 0 fetches no rows)", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertJournalEntry(db, 1, "attempted", "Something");
+      expect(getRecentJournalSummary(db, JOURNAL_SUMMARY_MAX_CHARS, 0)).toBe("");
+    });
   });
 
   describe("insertPhaseUsage", () => {

@@ -885,6 +885,10 @@ export function pruneStrategicContext(
  * Returns an empty string on DB error (non-fatal: cycle can still proceed).
  */
 export function getRecentJournalSummary(db: Database.Database, maxChars: number = JOURNAL_SUMMARY_MAX_CHARS, maxCycles: number = JOURNAL_SUMMARY_MAX_CYCLES): string {
+  // A zero cycle limit means "fetch nothing" — return early to avoid the
+  // falsy-zero pitfall in exportJournalJson's `maxCycles ? ... : undefined`
+  // guard, which would otherwise treat 0 as "no limit" and return all rows.
+  if (maxCycles === 0) return "";
   let entries: JournalExportEntry[];
   try {
     entries = exportJournalJson(db, maxCycles);
