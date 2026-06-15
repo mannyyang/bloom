@@ -74,7 +74,7 @@ import {
 import { extractResultText, formatDurationSec } from "../src/usage.js";
 import { buildAssessmentPrompt, buildFileManifest } from "../src/evolve.js";
 import { errorMessage } from "../src/errors.js";
-import { ensureProject, readRoadmap, parseRoadmap, formatPlanningContext, pickNextItem } from "../src/planning.js";
+import { ensureProject, readRoadmap, parseRoadmap, formatPlanningContext, pickNextItem, STATUS_DONE } from "../src/planning.js";
 import { formatMemoryForPrompt, MAX_MEMORY_CHARS } from "../src/memory.js";
 import { resolveModel } from "../src/agent-phases.js";
 import { parseVerboseFlag } from "../src/stats.js";
@@ -140,7 +140,11 @@ describe("assess.ts main()", () => {
     mockBuildAssessmentPrompt.mockReturnValue("mock assessment prompt");
     mockBuildFileManifest.mockReturnValue("src/evolve.ts\ntests/evolve.test.ts");
     mockReadRoadmap.mockReturnValue("");
-    mockParseRoadmap.mockReturnValue([]);
+    // Default: one active (non-Done) item so the empty-roadmap sentinel is NOT
+    // injected by default. Tests that need the sentinel must override this mock.
+    mockParseRoadmap.mockReturnValue([
+      { id: "item-0", title: "Active item", status: "Backlog" as const, body: "", linkedIssueNumber: null, reactions: 0 },
+    ]);
     mockPickNextItem.mockReturnValue(null);
     mockFormatPlanningContext.mockReturnValue("mock planning context");
     mockQuery.mockReturnValue(mockGen([]));
@@ -550,5 +554,51 @@ describe("assess.ts main()", () => {
     expect(mockBuildAssessmentPrompt).toHaveBeenCalledOnce();
 
     vi.restoreAllMocks();
+  });
+
+  it("injects empty-roadmap sentinel when all items are Done", async () => {
+    // When every item has status "Done", formatPlanningContext returns "" and the
+    // LLM has no direction. The sentinel must appear in planningContext so the LLM
+    // knows to propose new backlog items rather than improvise direction.
+    mockParseRoadmap.mockReturnValue([
+      { id: "item-0", title: "Old feature", status: STATUS_DONE, body: "", linkedIssueNumber: null, reactions: 0 },
+    ]);
+    mockPickNextItem.mockReturnValue(null);
+    mockFormatPlanningContext.mockReturnValue(""); // all-Done → empty context
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    const call = mockBuildAssessmentPrompt.mock.calls[0][0];
+    expect(call.planningContext).toContain("⚠ Roadmap empty — please propose new backlog items.");
+  });
+
+  it("does NOT inject sentinel when active (non-Done) items exist", async () => {
+    // Sentinel must stay absent when there are actionable items — injecting it
+    // unnecessarily would confuse the LLM when a real backlog is present.
+    mockParseRoadmap.mockReturnValue([
+      { id: "item-0", title: "Active item", status: "Backlog" as const, body: "", linkedIssueNumber: null, reactions: 0 },
+    ]);
+    mockPickNextItem.mockReturnValue(null);
+    mockFormatPlanningContext.mockReturnValue("## Evolution Roadmap\n### Backlog\n- Active item");
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    const call = mockBuildAssessmentPrompt.mock.calls[0][0];
+    expect(call.planningContext).not.toContain("⚠ Roadmap empty");
+  });
+
+  it("injects sentinel when roadmap is completely empty (zero items)", async () => {
+    // Edge case: empty ROADMAP.md with zero items should also trigger the sentinel.
+    mockParseRoadmap.mockReturnValue([]);
+    mockPickNextItem.mockReturnValue(null);
+    mockFormatPlanningContext.mockReturnValue("");
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    const call = mockBuildAssessmentPrompt.mock.calls[0][0];
+    expect(call.planningContext).toContain("⚠ Roadmap empty — please propose new backlog items.");
   });
 });
