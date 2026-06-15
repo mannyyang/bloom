@@ -83,10 +83,11 @@ describe("escapeHtml", () => {
   it("handles empty string", () => {
     expect(escapeHtml("")).toBe("");
   });
-  it("does not escape single quotes (only double-quoted attribute context is used)", () => {
-    // Single quotes are intentionally left unescaped — all HTML attributes in
-    // page-helpers.ts use double quotes, so ' is safe and must not become &#39;.
-    expect(escapeHtml("it's fine")).toBe("it's fine");
+  it("escapes single quotes as &#39; (standard HTML escaping convention)", () => {
+    // Single quotes are escaped to &#39; following standard HTML escaping convention.
+    // This closes a latent security gap where ' could break out of style='...' or
+    // onclick='...' attribute contexts in future templates.
+    expect(escapeHtml("it's fine")).toBe("it&#39;s fine");
   });
 });
 
