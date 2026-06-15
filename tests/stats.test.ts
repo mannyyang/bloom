@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution, getLastUpdatedCyclePerCategory } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseLastNArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL } from "../src/stats.js";
+import { generateStatsOutput, parseLastNArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { makeOutcome } from "./helpers.js";
 
@@ -17,6 +17,12 @@ describe("STATS_MEMORY_PREVIEW_CHARS", () => {
 describe("STATS_NO_FAILURE_SYMBOL", () => {
   it("is pinned to the em-dash character '—'", () => {
     expect(STATS_NO_FAILURE_SYMBOL).toBe("—");
+  });
+});
+
+describe("STATS_NO_DURATION_SYMBOL", () => {
+  it("is pinned to the em-dash character '—'", () => {
+    expect(STATS_NO_DURATION_SYMBOL).toBe("—");
   });
 });
 
@@ -988,10 +994,10 @@ describe("generateStatsTable", () => {
     expect(table).toContain("1.5 min");
   });
 
-  it("shows — for duration when durationMs is null", () => {
+  it("shows STATS_NO_DURATION_SYMBOL for duration when durationMs is null", () => {
     insertCycle(db, makeOutcome({ cycleNumber: 1, durationMs: null }));
     const table = generateStatsTable(db);
-    expect(table).toContain("—");
+    expect(table).toContain(STATS_NO_DURATION_SYMBOL);
   });
 
   it("shows attempted and succeeded counts", () => {

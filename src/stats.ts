@@ -29,6 +29,14 @@ export const STATS_MEMORY_PREVIEW_CHARS = 1000;
 export const STATS_NO_FAILURE_SYMBOL = "—";
 
 /**
+ * Symbol rendered in the Duration column when a cycle's durationMs is null
+ * (i.e. the cycle completed without recording a duration).
+ * Named for consistency with STATS_NO_FAILURE_SYMBOL and to make future
+ * symbol changes auditable in one place.
+ */
+export const STATS_NO_DURATION_SYMBOL = "—";
+
+/**
  * Parse `--last N` from an argv array, returning N as a positive integer or
  * undefined when the flag is absent, missing a value, or the value is invalid.
  */
@@ -115,7 +123,7 @@ export function generateStatsTable(db: Database.Database, lastN?: number, verbos
   const dataRows = rows.map((r: CycleRow) => {
     const durationStr = r.durationMs !== null
       ? `${(r.durationMs / MS_PER_MINUTE).toFixed(1)} min`
-      : "—";
+      : STATS_NO_DURATION_SYMBOL;
     const cells = [
       pad(String(r.cycleNumber), COL_CYCLE, true),
       pad(String(r.attempted), COL_ATTEMPTED, true),
