@@ -11,7 +11,7 @@
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import type Database from "better-sqlite3";
-import { initDb, getCycleStats, formatCycleStats, getLatestCycleNumber, getCycleRows, getLastUpdatedCyclePerCategory, CYCLE_SUMMARY_SEPARATOR, MS_PER_MINUTE, type CycleStats, type CycleRow } from "./db.js";
+import { initDb, getCycleStats, formatCycleStats, getLatestCycleNumber, getCycleRows, getLastUpdatedCyclePerCategory, CYCLE_SUMMARY_SEPARATOR, MS_PER_MINUTE, type CycleStats, type CycleRow, type CategoryStaleness } from "./db.js";
 import { formatMemoryForPrompt } from "./memory.js";
 
 /**
@@ -133,14 +133,24 @@ export function generateStatsTable(db: Database.Database, lastN?: number, verbos
  * The `window` field records the lastN argument used to compute stats (null
  * means all-time), making the output self-describing for dashboard consumers.
  * When no cycles exist, latestCycle is 0 and stats contains zero-value fields.
+ * When `verbose` is true, includes a `learningsStaleness` array with per-category
+ * staleness data (the most recent cycle in which each learning category was updated),
+ * achieving output parity with the default and table modes.
  */
 export function generateStatsJson(
   db: Database.Database,
   lastN?: number,
-): { latestCycle: number; window: number | null; generatedAt: string; stats: CycleStats } {
+  verbose?: boolean,
+): { latestCycle: number; window: number | null; generatedAt: string; stats: CycleStats; learningsStaleness?: CategoryStaleness[] } {
   const latestCycle = getLatestCycleNumber(db);
   const stats = getCycleStats(db, lastN);
-  return { latestCycle, window: lastN ?? null, generatedAt: new Date().toISOString(), stats };
+  const result: { latestCycle: number; window: number | null; generatedAt: string; stats: CycleStats; learningsStaleness?: CategoryStaleness[] } = {
+    latestCycle, window: lastN ?? null, generatedAt: new Date().toISOString(), stats,
+  };
+  if (verbose) {
+    result.learningsStaleness = getLastUpdatedCyclePerCategory(db);
+  }
+  return result;
 }
 
 /**
@@ -203,7 +213,7 @@ function main() {
 
   try {
     if (jsonMode) {
-      const result = generateStatsJson(db, lastN);
+      const result = generateStatsJson(db, lastN, verbose);
       console.log(JSON.stringify(result, null, 2));
     } else if (tableMode) {
       const table = generateStatsTable(db, lastN, verbose);

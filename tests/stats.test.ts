@@ -584,6 +584,46 @@ describe("generateStatsJson", () => {
     expect(typeof parsed.generatedAt).toBe("string");
     expect(new Date(parsed.generatedAt).toString()).not.toBe("Invalid Date");
   });
+
+  it("verbose=false omits learningsStaleness from result", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    const result = generateStatsJson(db, undefined, false);
+    expect(Object.prototype.hasOwnProperty.call(result, "learningsStaleness")).toBe(false);
+  });
+
+  it("verbose=true includes learningsStaleness array even when no learnings exist", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    const result = generateStatsJson(db, undefined, true);
+    expect(Object.prototype.hasOwnProperty.call(result, "learningsStaleness")).toBe(true);
+    expect(Array.isArray(result.learningsStaleness)).toBe(true);
+    expect(result.learningsStaleness).toHaveLength(0);
+  });
+
+  it("verbose=true populates learningsStaleness with per-category data when learnings exist", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 3 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 5 }));
+    insertLearning(db, 3, "architecture", "keep modules small");
+    insertLearning(db, 5, "testing", "test edge cases");
+    const result = generateStatsJson(db, undefined, true);
+    expect(result.learningsStaleness).toBeDefined();
+    expect(result.learningsStaleness!.length).toBe(2);
+    // Ordered by lastCycle descending
+    expect(result.learningsStaleness![0].category).toBe("testing");
+    expect(result.learningsStaleness![0].lastCycle).toBe(5);
+    expect(result.learningsStaleness![1].category).toBe("architecture");
+    expect(result.learningsStaleness![1].lastCycle).toBe(3);
+  });
+
+  it("verbose=true result is JSON-serialisable and round-trips correctly", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    insertLearning(db, 2, "process", "run tests before commit");
+    const result = generateStatsJson(db, undefined, true);
+    expect(() => JSON.stringify(result)).not.toThrow();
+    const parsed = JSON.parse(JSON.stringify(result));
+    expect(Array.isArray(parsed.learningsStaleness)).toBe(true);
+    expect(parsed.learningsStaleness[0].category).toBe("process");
+    expect(parsed.learningsStaleness[0].lastCycle).toBe(2);
+  });
 });
 
 describe("formatCycleStats", () => {
