@@ -245,6 +245,18 @@ describe("buildTriagePrompt", () => {
     expect(prompt).not.toContain(overBody);
   });
 
+  it("includes verbatim (no ellipsis) a body that is exactly PROMPT_BODY_PREVIEW_CHARS after whitespace normalization", () => {
+    // The body has leading/trailing spaces that trim() removes, shrinking the raw
+    // length to exactly PROMPT_BODY_PREVIEW_CHARS after normalization. Because the
+    // condition is strict `>`, the normalized string must be included verbatim with
+    // no ellipsis — confirming normalization runs before truncation, not after.
+    const normalizedBody = "a".repeat(PROMPT_BODY_PREVIEW_CHARS);
+    const rawBody = "  " + normalizedBody + "  "; // 4 extra chars, all whitespace
+    const prompt = buildTriagePrompt([makeIssue({ body: rawBody })], []);
+    expect(prompt).toContain(normalizedBody);
+    expect(prompt).not.toContain(normalizedBody + "…");
+  });
+
   it("handles issues with empty bodies", () => {
     const prompt = buildTriagePrompt([makeIssue({ number: 7, title: "No body", body: "" })], []);
     expect(prompt).toContain("#7");
