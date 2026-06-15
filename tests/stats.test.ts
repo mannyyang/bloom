@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution, getLastUpdatedCyclePerCategory } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseLastNArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS } from "../src/stats.js";
+import { generateStatsOutput, parseLastNArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { makeOutcome } from "./helpers.js";
 
@@ -11,6 +11,12 @@ describe("STATS_MEMORY_PREVIEW_CHARS", () => {
     expect(STATS_MEMORY_PREVIEW_CHARS).toBe(1000);
     expect(STATS_MEMORY_PREVIEW_CHARS).toBeGreaterThan(0);
     expect(STATS_MEMORY_PREVIEW_CHARS).toBeLessThan(1200);
+  });
+});
+
+describe("STATS_NO_FAILURE_SYMBOL", () => {
+  it("is pinned to the em-dash character '—'", () => {
+    expect(STATS_NO_FAILURE_SYMBOL).toBe("—");
   });
 });
 

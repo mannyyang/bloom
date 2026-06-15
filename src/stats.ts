@@ -22,6 +22,13 @@ import { formatMemoryForPrompt } from "./memory.js";
 export const STATS_MEMORY_PREVIEW_CHARS = 1000;
 
 /**
+ * Symbol rendered in the verbose table Failures column when a cycle has no
+ * recorded failure category (i.e. failureCategory is "none" or absent).
+ * Named so future changes to the symbol are auditable in one place.
+ */
+export const STATS_NO_FAILURE_SYMBOL = "—";
+
+/**
  * Parse `--last N` from an argv array, returning N as a positive integer or
  * undefined when the flag is absent, missing a value, or the value is invalid.
  */
@@ -118,7 +125,7 @@ export function generateStatsTable(db: Database.Database, lastN?: number, verbos
       pad(durationStr, COL_DURATION, true),
     ];
     if (verbose) {
-      const cat = r.failureCategory && r.failureCategory !== "none" ? r.failureCategory : "—";
+      const cat = r.failureCategory && r.failureCategory !== "none" ? r.failureCategory : STATS_NO_FAILURE_SYMBOL;
       cells.push(pad(cat, COL_FAILURES));
     }
     return cells.join("  ");
