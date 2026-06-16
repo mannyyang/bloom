@@ -33,11 +33,19 @@ export function parseHookInput(input: unknown): ParsedHookInput {
   };
 }
 
+/** Deny reason returned when an agent attempts to modify IDENTITY.md. */
+export const PROTECT_IDENTITY_DENY_REASON =
+  "IDENTITY.md is the immutable constitution and cannot be modified.";
+
+/** Deny reason returned when an agent attempts to modify JOURNAL.md. */
+export const PROTECT_JOURNAL_DENY_REASON =
+  "JOURNAL.md is append-only. Journal entries are managed by the orchestrator via SQLite.";
+
 export const protectIdentity: HookCallback = async (input) => {
   const { filePath } = parseHookInput(input);
 
   if (filePath.includes("IDENTITY.md")) {
-    return denyResult("IDENTITY.md is the immutable constitution and cannot be modified.");
+    return denyResult(PROTECT_IDENTITY_DENY_REASON);
   }
   return {};
 };
@@ -46,7 +54,7 @@ export const protectJournal: HookCallback = async (input) => {
   const { filePath } = parseHookInput(input);
 
   if (filePath.includes("JOURNAL.md")) {
-    return denyResult("JOURNAL.md is append-only. Journal entries are managed by the orchestrator via SQLite.");
+    return denyResult(PROTECT_JOURNAL_DENY_REASON);
   }
   return {};
 };

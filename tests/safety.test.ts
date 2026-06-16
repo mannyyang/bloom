@@ -11,6 +11,8 @@ import {
   denyResult,
   DANGEROUS_PATTERNS,
   escapeRegex,
+  PROTECT_IDENTITY_DENY_REASON,
+  PROTECT_JOURNAL_DENY_REASON,
 } from "../src/safety.js";
 
 const baseFields = {
@@ -3331,5 +3333,31 @@ describe("category: file-permission-tampering", () => {
   });
   it("does not flag echo message mentioning install (not a command invocation)", () => {
     expect(isDangerousCommand("echo 'run: install -D src dst'")).toBeNull();
+  });
+});
+
+describe("safety deny-reason constants", () => {
+  it("PROTECT_IDENTITY_DENY_REASON pins exact string value", () => {
+    expect(PROTECT_IDENTITY_DENY_REASON).toBe(
+      "IDENTITY.md is the immutable constitution and cannot be modified.",
+    );
+  });
+
+  it("PROTECT_JOURNAL_DENY_REASON pins exact string value", () => {
+    expect(PROTECT_JOURNAL_DENY_REASON).toBe(
+      "JOURNAL.md is append-only. Journal entries are managed by the orchestrator via SQLite.",
+    );
+  });
+
+  it("protectIdentity deny reason matches PROTECT_IDENTITY_DENY_REASON", async () => {
+    const result = await protectIdentity(makeInput("Write", "IDENTITY.md"), "tool-1", hookOpts) as Record<string, unknown>;
+    const output = result.hookSpecificOutput as Record<string, unknown>;
+    expect(output.permissionDecisionReason).toBe(PROTECT_IDENTITY_DENY_REASON);
+  });
+
+  it("protectJournal deny reason matches PROTECT_JOURNAL_DENY_REASON", async () => {
+    const result = await protectJournal(makeInput("Write", "JOURNAL.md"), "tool-1", hookOpts) as Record<string, unknown>;
+    const output = result.hookSpecificOutput as Record<string, unknown>;
+    expect(output.permissionDecisionReason).toBe(PROTECT_JOURNAL_DENY_REASON);
   });
 });
