@@ -117,6 +117,10 @@ describe("triage.ts constants", () => {
   it("TRIAGE_STATUS_ORDER pins the exact board-item display order", () => {
     expect(TRIAGE_STATUS_ORDER).toEqual(["In Progress", "Up Next", "Backlog", "Done"]);
   });
+
+  it("TRIAGE_MAX_ISSUE_NUMBER is pinned to 1_000_000", () => {
+    expect(TRIAGE_MAX_ISSUE_NUMBER).toBe(1_000_000);
+  });
 });
 
 describe("buildTriagePrompt", () => {
