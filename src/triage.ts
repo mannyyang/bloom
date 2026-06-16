@@ -72,7 +72,7 @@ export interface TriageResult {
 // Canonical board-item display order — mirrors STATUS_ORDER in roadmap.ts.
 // Defined here so buildTriagePrompt can defensively sort boardItems into a
 // consistent order regardless of the order the caller provides them.
-const TRIAGE_STATUS_ORDER = [STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, STATUS_DONE];
+export const TRIAGE_STATUS_ORDER = [STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, STATUS_DONE];
 
 // --- Prompt Building ---
 

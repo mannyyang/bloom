@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach, afterAll, beforeAll, beforeEach } from "vitest";
-import { buildTriagePrompt, parseTriageResponse, triageIssues, PROMPT_BODY_PREVIEW_CHARS, PROMPT_TITLE_PREVIEW_CHARS, BOARD_BODY_PREVIEW_CHARS, TRIAGE_MAX_TURNS, TRIAGE_MAX_BUDGET_USD, TRIAGE_REASON_MAX_CHARS, TRIAGE_ERROR_PREVIEW_CHARS, TRIAGE_ACTION_NAME, TRIAGE_BOARD_STATUS_DONE, TRIAGE_ALREADY_ON_BOARD_COMMENT, TRIAGE_MAX_ISSUE_NUMBER } from "../src/triage.js";
+import { buildTriagePrompt, parseTriageResponse, triageIssues, PROMPT_BODY_PREVIEW_CHARS, PROMPT_TITLE_PREVIEW_CHARS, BOARD_BODY_PREVIEW_CHARS, TRIAGE_MAX_TURNS, TRIAGE_MAX_BUDGET_USD, TRIAGE_REASON_MAX_CHARS, TRIAGE_ERROR_PREVIEW_CHARS, TRIAGE_ACTION_NAME, TRIAGE_BOARD_STATUS_DONE, TRIAGE_ALREADY_ON_BOARD_COMMENT, TRIAGE_MAX_ISSUE_NUMBER, TRIAGE_STATUS_ORDER } from "../src/triage.js";
 import type { CommunityIssue } from "../src/issues.js";
 import { closeIssueWithComment, detectRepo, isValidRepo } from "../src/issues.js";
 import { hasIssueAction, insertIssueAction, initDb, insertCycle } from "../src/db.js";
@@ -112,6 +112,10 @@ describe("triage.ts constants", () => {
     expect(TRIAGE_ALREADY_ON_BOARD_COMMENT).toBe(
       "This issue is already tracked on the Bloom Evolution Roadmap.",
     );
+  });
+
+  it("TRIAGE_STATUS_ORDER pins the exact board-item display order", () => {
+    expect(TRIAGE_STATUS_ORDER).toEqual(["In Progress", "Up Next", "Backlog", "Done"]);
   });
 });
 
