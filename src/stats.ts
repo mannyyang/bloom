@@ -189,7 +189,7 @@ export function generateStatsOutput(db: Database.Database, lastN?: number, verbo
 
   lines.push("");
   lines.push(CYCLE_SUMMARY_SEPARATOR);
-  lines.push("  Bloom Evolution Statistics");
+  lines.push(`  Bloom Evolution Statistics${lastN !== undefined ? ` (last ${lastN} cycles)` : ""}`);
   lines.push(`  Latest cycle: ${latestCycle}`);
   lines.push(CYCLE_SUMMARY_SEPARATOR);
   lines.push("");

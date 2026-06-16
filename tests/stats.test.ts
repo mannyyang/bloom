@@ -148,6 +148,19 @@ describe("generateStatsOutput", () => {
     expect(output[3]).toBe("  Latest cycle: 42");
   });
 
+  it("appends (last N cycles) to the title when lastN is provided", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 10 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 11 }));
+    const output = generateStatsOutput(db, 5);
+    expect(output[2]).toBe("  Bloom Evolution Statistics (last 5 cycles)");
+  });
+
+  it("does not append window label to title when lastN is undefined", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    const output = generateStatsOutput(db, undefined);
+    expect(output[2]).toBe("  Bloom Evolution Statistics");
+  });
+
   it("includes success rate in output", () => {
     insertCycle(db, makeOutcome({
       cycleNumber: 1,
