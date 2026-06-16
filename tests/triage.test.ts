@@ -565,6 +565,16 @@ describe("buildTriagePrompt", () => {
     expect(prompt).toContain("No items on board yet");
     expect(prompt).toContain("add_to_backlog");
   });
+
+  it("pins exact example JSON response line in prompt", () => {
+    // Tripwire: a wording change to the inline example (different reason text,
+    // added field, etc.) could subtly affect LLM output quality without failing
+    // any existing test. Pins the full example substring so any change is explicit.
+    const prompt = buildTriagePrompt([makeIssue()], []);
+    expect(prompt).toContain(
+      '[{"issueNumber": 1, "action": "add_to_backlog", "reason": "Valid feature request for improving error messages."}]',
+    );
+  });
 });
 
 describe("parseTriageResponse", () => {
