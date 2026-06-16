@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution, getLastUpdatedCyclePerCategory } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseLastNArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL } from "../src/stats.js";
+import { generateStatsOutput, parseLastNArg, parseSinceArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { makeOutcome } from "./helpers.js";
 
@@ -1186,5 +1186,107 @@ describe("--verbose flag behaviour", () => {
     const argv = ["node", "stats.js", "--verbose", "--table"];
     expect(parseVerboseFlag(argv)).toBe(true);
     expect(parseTableFlag(argv)).toBe(true);
+  });
+});
+
+describe("parseSinceArg", () => {
+  it("returns undefined when --since is absent", () => {
+    expect(parseSinceArg(["node", "stats.js"])).toBeUndefined();
+  });
+
+  it("returns the parsed integer for a valid --since N argument", () => {
+    expect(parseSinceArg(["node", "stats.js", "--since", "100"])).toBe(100);
+    expect(parseSinceArg(["--since", "1"])).toBe(1);
+    expect(parseSinceArg(["--since", "600"])).toBe(600);
+  });
+
+  it("returns undefined when --since is given an invalid value", () => {
+    expect(parseSinceArg(["--since", "notanumber"])).toBeUndefined();
+    expect(parseSinceArg(["--since", "-5"])).toBeUndefined();
+    expect(parseSinceArg(["--since", "0"])).toBeUndefined();
+  });
+
+  it("returns undefined when --since is the final argv item with no following value", () => {
+    expect(parseSinceArg(["--since"])).toBeUndefined();
+    expect(parseSinceArg(["node", "stats.js", "--since"])).toBeUndefined();
+  });
+
+  it("returns undefined for an empty argv", () => {
+    expect(parseSinceArg([])).toBeUndefined();
+  });
+});
+
+describe("generateStatsTable --since N", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("filters rows to only those with cycleNumber >= sinceN", () => {
+    for (let i = 1; i <= 5; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    const table = generateStatsTable(db, undefined, undefined, 3);
+    const lines = table.split("\n").filter(l => l.trim());
+    // header + separator + rows for cycles 3, 4, 5 = 5 non-empty lines
+    expect(lines.length).toBe(5);
+  });
+
+  it("returns empty string when sinceN is higher than all cycle numbers", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    expect(generateStatsTable(db, undefined, undefined, 999)).toBe("");
+  });
+
+  it("includes sinceN boundary cycle in results", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 10 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 20 }));
+    const table = generateStatsTable(db, undefined, undefined, 10);
+    expect(table).toContain("10");
+    expect(table).toContain("20");
+  });
+
+  it("excludes cycles below sinceN", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 5 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 15 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 25 }));
+    const table = generateStatsTable(db, undefined, undefined, 10);
+    expect(table).not.toContain("     5"); // padded cycle 5 should be absent
+    expect(table).toContain("15");
+    expect(table).toContain("25");
+  });
+});
+
+describe("generateStatsJson --since N", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("includes since field as null when sinceN is not provided", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    const result = generateStatsJson(db);
+    expect(result.since).toBeNull();
+  });
+
+  it("includes since field equal to sinceN when provided", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    const result = generateStatsJson(db, undefined, undefined, 50);
+    expect(result.since).toBe(50);
+  });
+
+  it("since field is present and null in JSON serialisation when sinceN absent", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    const parsed = JSON.parse(JSON.stringify(generateStatsJson(db)));
+    expect(Object.prototype.hasOwnProperty.call(parsed, "since")).toBe(true);
+    expect(parsed.since).toBeNull();
+  });
+
+  it("since field round-trips correctly through JSON serialisation", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    const parsed = JSON.parse(JSON.stringify(generateStatsJson(db, undefined, undefined, 42)));
+    expect(parsed.since).toBe(42);
   });
 });

@@ -48,6 +48,19 @@ export function parseLastNArg(argv: string[]): number | undefined {
 }
 
 /**
+ * Parse `--since N` from an argv array, returning N as a positive integer
+ * representing a minimum cycle number (inclusive), or undefined when the flag
+ * is absent, missing a value, or the value is invalid.
+ * Mirrors the pattern of parseLastNArg for consistency.
+ */
+export function parseSinceArg(argv: string[]): number | undefined {
+  const idx = argv.indexOf("--since");
+  if (idx === -1) return undefined;
+  const val = parseInt(argv[idx + 1] ?? "", 10);
+  return !isNaN(val) && val > 0 ? val : undefined;
+}
+
+/**
  * Parse `--json` from an argv array, returning true when the flag is present.
  * Mirrors the pattern of parseLastNArg for consistency.
  */
@@ -91,8 +104,11 @@ function pad(s: string, width: number, right = false): string {
  * When `verbose` is true, appends a Failures column showing each row's
  * failure_category (rendered as "—" when the category is "none" or absent).
  */
-export function generateStatsTable(db: Database.Database, lastN?: number, verbose?: boolean): string {
-  const rows = getCycleRows(db, lastN);
+export function generateStatsTable(db: Database.Database, lastN?: number, verbose?: boolean, sinceN?: number): string {
+  let rows = getCycleRows(db, lastN);
+  if (sinceN !== undefined) {
+    rows = rows.filter((r: CycleRow) => r.cycleNumber >= sinceN);
+  }
   if (rows.length === 0) return "";
 
   const baseHeaderCells = [
@@ -156,11 +172,12 @@ export function generateStatsJson(
   db: Database.Database,
   lastN?: number,
   verbose?: boolean,
-): { latestCycle: number; window: number | null; generatedAt: string; stats: CycleStats; learningsStaleness?: CategoryStaleness[] } {
+  sinceN?: number,
+): { latestCycle: number; window: number | null; since: number | null; generatedAt: string; stats: CycleStats; learningsStaleness?: CategoryStaleness[] } {
   const latestCycle = getLatestCycleNumber(db);
   const stats = getCycleStats(db, lastN);
-  const result: { latestCycle: number; window: number | null; generatedAt: string; stats: CycleStats; learningsStaleness?: CategoryStaleness[] } = {
-    latestCycle, window: lastN ?? null, generatedAt: new Date().toISOString(), stats,
+  const result: { latestCycle: number; window: number | null; since: number | null; generatedAt: string; stats: CycleStats; learningsStaleness?: CategoryStaleness[] } = {
+    latestCycle, window: lastN ?? null, since: sinceN ?? null, generatedAt: new Date().toISOString(), stats,
   };
   if (verbose) {
     result.learningsStaleness = getLastUpdatedCyclePerCategory(db);
@@ -221,6 +238,7 @@ export function generateStatsOutput(db: Database.Database, lastN?: number, verbo
 
 function main() {
   const lastN = parseLastNArg(process.argv);
+  const sinceN = parseSinceArg(process.argv);
   const jsonMode = parseJsonFlag(process.argv);
   const tableMode = parseTableFlag(process.argv);
   const verbose = parseVerboseFlag(process.argv);
@@ -228,10 +246,10 @@ function main() {
 
   try {
     if (jsonMode) {
-      const result = generateStatsJson(db, lastN, verbose);
+      const result = generateStatsJson(db, lastN, verbose, sinceN);
       console.log(JSON.stringify(result, null, 2));
     } else if (tableMode) {
-      const table = generateStatsTable(db, lastN, verbose);
+      const table = generateStatsTable(db, lastN, verbose, sinceN);
       console.log(table || "No evolution cycles recorded yet.");
     } else {
       const output = generateStatsOutput(db, lastN, verbose);
