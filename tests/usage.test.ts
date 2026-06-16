@@ -9,12 +9,19 @@ import {
   formatDurationSec,
   COST_DECIMAL_PLACES,
   RESOURCE_USAGE_HEADER,
+  DURATION_MINUTE_THRESHOLD_DECISECONDS,
   PhaseUsage,
 } from "../src/usage.js";
 
 describe("RESOURCE_USAGE_HEADER", () => {
   it("has the expected value (value-pin)", () => {
     expect(RESOURCE_USAGE_HEADER).toBe("### Resource Usage");
+  });
+});
+
+describe("DURATION_MINUTE_THRESHOLD_DECISECONDS", () => {
+  it("is pinned to 600 (60 s × 10 deciseconds/s)", () => {
+    expect(DURATION_MINUTE_THRESHOLD_DECISECONDS).toBe(600);
   });
 });
 

@@ -39,6 +39,15 @@ export const COST_DECIMAL_PLACES = 4;
 export const RESOURCE_USAGE_HEADER = "### Resource Usage";
 
 /**
+ * Threshold used by formatDurationSec to decide whether to render a duration in
+ * "Xs" (sub-minute) or "Xm Ys" (minute+) format.
+ * Value is 600 deciseconds (= 60 seconds × 10 deciseconds/second).
+ * Compared against Math.round(totalSec * 10) so that values whose toFixed(1)
+ * would produce the anomalous string "60.0s" are routed to the minute branch.
+ */
+export const DURATION_MINUTE_THRESHOLD_DECISECONDS = 600;
+
+/**
  * Format a millisecond duration as a human-readable string.
  * Durations under 60 s are shown as "1.2s"; durations of 60 s or more are
  * shown as "3m 3.0s" so that multi-minute cycles are immediately readable.
@@ -50,7 +59,7 @@ export function formatDurationSec(ms: number): string {
   // Use the rounded display value for the branch condition so that values whose
   // toFixed(1) output would be "60.0" are routed to the minute branch instead of
   // appearing as the anomalous sub-minute string "60.0s".
-  if (Math.round(totalSec * 10) < 600) {
+  if (Math.round(totalSec * 10) < DURATION_MINUTE_THRESHOLD_DECISECONDS) {
     return `${totalSec.toFixed(1)}s`;
   }
   const minutes = Math.floor(totalSec / 60);
