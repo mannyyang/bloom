@@ -1038,6 +1038,31 @@ describe("generateStatsTable", () => {
     expect(lines.length).toBe(5);
   });
 
+  it("renders an exact data row for fully-known cycle values (non-verbose)", () => {
+    // Pin the exact cell layout so a column-width or padding regression is
+    // caught immediately. All inputs are fully-determined (no nulls).
+    insertCycle(db, makeOutcome({
+      cycleNumber: 7,
+      improvementsAttempted: 2,
+      improvementsSucceeded: 1,
+      buildVerificationPassed: true,
+      pushSucceeded: true,
+      durationMs: 90000, // 1.5 min
+    }));
+    const lines = generateStatsTable(db).split("\n");
+    const dataRow = lines[2]; // header, separator, first data row
+    // Reconstruct the expected cells using the same pad logic as stats.ts.
+    const expectedCells = [
+      "     7",      // padStart(6)
+      "        2",   // padStart(9)
+      "        1",   // padStart(9)
+      "✓     ",      // padEnd(6)
+      "✓    ",       // padEnd(5)
+      "   1.5 min",  // padStart(10)
+    ];
+    expect(dataRow).toBe(expectedCells.join("  "));
+  });
+
   it("rows are ordered newest-first (highest cycle number at top)", () => {
     // JSDoc documents "ordered newest-first" — this pin ensures a refactor
     // that changes the ORDER BY direction is caught immediately.
