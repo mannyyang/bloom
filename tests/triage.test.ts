@@ -253,6 +253,25 @@ describe("buildTriagePrompt", () => {
     expect(prompt).not.toContain(overBody);
   });
 
+  it("collapses newlines and tabs in body to a single space", () => {
+    // Guards the replace(/\s+/g, " ") normalization in buildTriagePrompt.
+    // A silent regression (e.g. removing or reordering the replace call) would
+    // break prompt hygiene without this test catching it.
+    const messyBody = "first\n\nsecond\tthird";
+    const prompt = buildTriagePrompt([makeIssue({ body: messyBody })], []);
+    // The normalised body should appear inline — no raw newlines or tabs from the body.
+    expect(prompt).toContain("first second third");
+    expect(prompt).not.toContain("first\n");
+    expect(prompt).not.toContain("second\t");
+  });
+
+  it("collapses multiple consecutive spaces in body to a single space", () => {
+    // Ensures that double-spaces and mixed whitespace are also normalised.
+    const messyBody = "word1  word2   word3";
+    const prompt = buildTriagePrompt([makeIssue({ body: messyBody })], []);
+    expect(prompt).toContain("word1 word2 word3");
+  });
+
   it("includes verbatim (no ellipsis) a body that is exactly PROMPT_BODY_PREVIEW_CHARS after whitespace normalization", () => {
     // The body has leading/trailing spaces that trim() removes, shrinking the raw
     // length to exactly PROMPT_BODY_PREVIEW_CHARS after normalization. Because the
