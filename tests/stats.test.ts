@@ -24,6 +24,9 @@ describe("STATS_NO_DURATION_SYMBOL", () => {
   it("is pinned to the em-dash character '—'", () => {
     expect(STATS_NO_DURATION_SYMBOL).toBe("—");
   });
+  it("equals STATS_NO_FAILURE_SYMBOL so both columns share the same no-value glyph", () => {
+    expect(STATS_NO_DURATION_SYMBOL).toBe(STATS_NO_FAILURE_SYMBOL);
+  });
 });
 
 describe("generateStatsOutput", () => {

@@ -31,10 +31,10 @@ export const STATS_NO_FAILURE_SYMBOL = "—";
 /**
  * Symbol rendered in the Duration column when a cycle's durationMs is null
  * (i.e. the cycle completed without recording a duration).
- * Named for consistency with STATS_NO_FAILURE_SYMBOL and to make future
- * symbol changes auditable in one place.
+ * Aliased to STATS_NO_FAILURE_SYMBOL so both columns always share the same
+ * "no value" glyph — a future symbol change only needs to happen in one place.
  */
-export const STATS_NO_DURATION_SYMBOL = "—";
+export const STATS_NO_DURATION_SYMBOL = STATS_NO_FAILURE_SYMBOL;
 
 /**
  * Parse `--last N` from an argv array, returning N as a positive integer or
