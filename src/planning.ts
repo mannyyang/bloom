@@ -19,7 +19,13 @@ export interface ProjectConfig {
 // --- Constants ---
 
 const ROADMAP_FILE = "ROADMAP.md";
-const STATUS_COLUMNS = ["Backlog", "Up Next", "In Progress", "Done"] as const;
+
+/**
+ * Canonical ordered list of all status columns in display order.
+ * Exported so callers can iterate or validate against the authoritative
+ * list without reconstructing it from individual STATUS_* constants.
+ */
+export const STATUS_COLUMNS = ["Backlog", "Up Next", "In Progress", "Done"] as const;
 
 /**
  * Canonical string for the "In Progress" status column.

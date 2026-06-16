@@ -11,7 +11,7 @@ const mockReadFileSync = vi.mocked(readFileSync);
 const mockWriteFileSync = vi.mocked(writeFileSync);
 const mockExistsSync = vi.mocked(existsSync);
 
-import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, cleanItemBody, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, getProjectItems, truncateWithEllipsis, PLANNING_BODY_PREVIEW_CHARS, ITEM_BODY_LIMIT, PLANNING_CONTEXT_MAX_CHARS, PLANNING_CONTEXT_MAX_ITEMS, STALE_IN_PROGRESS_THRESHOLD_CYCLES, ROADMAP_HEADER, STATUS_BACKLOG, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_DONE, type ProjectItem } from "../src/planning.js";
+import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, cleanItemBody, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, getProjectItems, truncateWithEllipsis, PLANNING_BODY_PREVIEW_CHARS, ITEM_BODY_LIMIT, PLANNING_CONTEXT_MAX_CHARS, PLANNING_CONTEXT_MAX_ITEMS, STALE_IN_PROGRESS_THRESHOLD_CYCLES, ROADMAP_HEADER, STATUS_BACKLOG, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_DONE, STATUS_COLUMNS, type ProjectItem } from "../src/planning.js";
 
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
@@ -64,6 +64,17 @@ describe("planning.ts constants", () => {
 
   it('STATUS_DONE is pinned to "Done"', () => {
     expect(STATUS_DONE).toBe("Done");
+  });
+
+  it("STATUS_COLUMNS is pinned to the canonical ordered list of all four status values", () => {
+    expect(STATUS_COLUMNS).toEqual(["Backlog", "Up Next", "In Progress", "Done"]);
+  });
+
+  it("STATUS_COLUMNS contains all individual STATUS_* constants", () => {
+    expect(STATUS_COLUMNS).toContain(STATUS_BACKLOG);
+    expect(STATUS_COLUMNS).toContain(STATUS_UP_NEXT);
+    expect(STATUS_COLUMNS).toContain(STATUS_IN_PROGRESS);
+    expect(STATUS_COLUMNS).toContain(STATUS_DONE);
   });
 });
 
