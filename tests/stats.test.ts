@@ -1074,12 +1074,15 @@ describe("generateStatsTable", () => {
     });
 
     it("shows — in Failures column when failure category is 'none'", () => {
-      insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true, pushSucceeded: true, failureCategory: "none" }));
+      // durationMs: 90000 renders "1.5 min" in the Duration column so the only
+      // em-dash in the data row is the one produced by the Failures column.
+      // This isolates the Failures column assertion from the Duration column.
+      insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true, pushSucceeded: true, failureCategory: "none", durationMs: 90000 }));
       const table = generateStatsTable(db, undefined, true);
-      // The data row should contain the em-dash for no failure
       const lines = table.split("\n");
       const dataRow = lines[2]; // header, separator, first data row
-      expect(dataRow).toContain("—");
+      expect(dataRow).toContain("1.5 min"); // Duration column renders a real value, not the symbol
+      expect(dataRow).toContain(STATS_NO_FAILURE_SYMBOL); // Failures column renders the no-value symbol
     });
 
     it("verbose table has one more column than non-verbose table", () => {
