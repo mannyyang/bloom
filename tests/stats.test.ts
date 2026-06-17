@@ -1500,3 +1500,38 @@ describe("generateStatsOutput verbose=true + sinceN combined", () => {
     expect(verbose.length).toBeGreaterThan(normal.length);
   });
 });
+
+describe("generateStatsJson verbose=true + sinceN combined", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("learningsStaleness is present when verbose=true and sinceN is set", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 5 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 10 }));
+    insertLearning(db, 10, "architecture", "keep modules small");
+    const result = generateStatsJson(db, undefined, true, 5);
+    expect(Object.prototype.hasOwnProperty.call(result, "learningsStaleness")).toBe(true);
+    expect(Array.isArray(result.learningsStaleness)).toBe(true);
+    expect(result.learningsStaleness!.length).toBe(1);
+    expect(result.learningsStaleness![0].category).toBe("architecture");
+  });
+
+  it("stats.totalCycles reflects only cycles >= sinceN when verbose=true and sinceN set", () => {
+    // Cycles 1–4 exist; sinceN=3 should count only cycles 3 and 4
+    for (let i = 1; i <= 4; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    const result = generateStatsJson(db, undefined, true, 3);
+    expect(result.stats.totalCycles).toBe(2);
+  });
+
+  it("since field equals sinceN when verbose=true and sinceN are both set", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 7 }));
+    const result = generateStatsJson(db, undefined, true, 7);
+    expect(result.since).toBe(7);
+    expect(Object.prototype.hasOwnProperty.call(result, "learningsStaleness")).toBe(true);
+  });
+});
