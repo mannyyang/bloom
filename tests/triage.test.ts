@@ -594,6 +594,20 @@ describe("buildTriagePrompt", () => {
       '[{"issueNumber": 1, "action": "add_to_backlog", "reason": "Valid feature request for improving error messages."}]',
     );
   });
+
+  it("contains exact '## New issues to triage:' section header", () => {
+    // Pin the exact header string so a rename silently changing LLM behaviour
+    // is caught immediately. The LLM uses this header to locate the issue list.
+    const prompt = buildTriagePrompt([makeIssue()], []);
+    expect(prompt).toContain("## New issues to triage:");
+  });
+
+  it("contains exact '## Current roadmap state:' section header", () => {
+    // Pin the exact header string for the board section. Renaming it would
+    // silently change LLM behaviour without breaking any other test.
+    const prompt = buildTriagePrompt([makeIssue()], []);
+    expect(prompt).toContain("## Current roadmap state:");
+  });
 });
 
 describe("parseTriageResponse", () => {
