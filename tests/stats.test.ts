@@ -1374,3 +1374,129 @@ describe("generateStatsJson --since N", () => {
     expect(parsed.since).toBe(42);
   });
 });
+
+describe("generateStatsTable verbose=true + sinceN combined", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("shows only cycles >= sinceN AND includes Failures column when verbose=true + sinceN set", () => {
+    for (let i = 1; i <= 5; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    const table = generateStatsTable(db, undefined, true, 3);
+    // Failures column must be present
+    expect(table).toContain("Failures");
+    // Only cycles 3, 4, 5 should appear — cycles 1 and 2 must be absent
+    const lines = table.split("\n").filter(l => l.trim());
+    // header + separator + 3 data rows
+    expect(lines.length).toBe(5);
+  });
+
+  it("data rows contain failure category values with verbose=true + sinceN filter", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1, failureCategory: "build_failure" }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2, failureCategory: "test_failure" }));
+    insertCycle(db, makeOutcome({ cycleNumber: 3, failureCategory: "none", buildVerificationPassed: true, pushSucceeded: true, durationMs: 90000 }));
+    // sinceN=2 excludes cycle 1; verbose=true adds Failures column
+    const table = generateStatsTable(db, undefined, true, 2);
+    expect(table).toContain("Failures");
+    expect(table).toContain("test_failure");
+    // cycle 1 (build_failure) excluded by sinceN filter
+    expect(table).not.toContain("build_failure");
+  });
+
+  it("returns empty string when sinceN excludes all rows even with verbose=true", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    expect(generateStatsTable(db, undefined, true, 999)).toBe("");
+  });
+});
+
+describe("generateStatsTable lastN + sinceN combined", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("applies lastN limit first then sinceN filter: only cycles >= sinceN appear", () => {
+    for (let i = 1; i <= 10; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    // lastN=3 fetches cycles 10, 9, 8; sinceN=8 keeps all three (8, 9, 10 >= 8)
+    const table = generateStatsTable(db, 3, undefined, 8);
+    const lines = table.split("\n").filter(l => l.trim());
+    // header + separator + 3 data rows
+    expect(lines.length).toBe(5);
+    expect(table).toContain("10");
+    expect(table).toContain("9");
+    expect(table).toContain("8");
+  });
+
+  it("sinceN further restricts the lastN window", () => {
+    for (let i = 1; i <= 10; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    // lastN=5 fetches cycles 10, 9, 8, 7, 6; sinceN=9 keeps only 10, 9
+    const table = generateStatsTable(db, 5, undefined, 9);
+    const lines = table.split("\n").filter(l => l.trim());
+    // header + separator + 2 data rows
+    expect(lines.length).toBe(4);
+    expect(table).toContain("10");
+    expect(table).toContain("9");
+    expect(table).not.toContain("     8"); // padded cycle 8 absent
+  });
+
+  it("returns empty string when sinceN excludes all rows in lastN window", () => {
+    for (let i = 1; i <= 10; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    // lastN=3 fetches cycles 10, 9, 8 but sinceN=999 excludes them all
+    expect(generateStatsTable(db, 3, undefined, 999)).toBe("");
+  });
+});
+
+describe("generateStatsOutput verbose=true + sinceN combined", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("stats reflect only cycles >= sinceN AND staleness block appears when verbose=true", () => {
+    // Cycles 1–3 fail; cycles 4–5 succeed.
+    for (let i = 1; i <= 3; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i, buildVerificationPassed: false, pushSucceeded: false }));
+    }
+    for (let i = 4; i <= 5; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i, buildVerificationPassed: true, pushSucceeded: true }));
+    }
+    insertLearning(db, 5, "pattern", "Incremental changes are safer");
+    const output = generateStatsOutput(db, undefined, true, 4);
+    const joined = output.join("\n");
+    // sinceN=4 means only cycles 4–5 counted → 100% success
+    expect(joined).toContain("100%");
+    expect(joined).not.toContain("40%");
+    // verbose=true means staleness block appears (learnings exist)
+    expect(joined).toContain("Learnings staleness (by category):");
+  });
+
+  it("staleness block appears with sinceN active when learnings exist", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 10 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 20 }));
+    insertLearning(db, 20, "domain", "SQLite index usage");
+    const output = generateStatsOutput(db, undefined, true, 10);
+    expect(output.join("\n")).toContain("Learnings staleness (by category):");
+  });
+
+  it("verbose=true + sinceN output is longer than non-verbose sinceN output when learnings exist", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    insertLearning(db, 2, "pattern", "Keep tests green");
+    const normal = generateStatsOutput(db, undefined, false, 1);
+    const verbose = generateStatsOutput(db, undefined, true, 1);
+    expect(verbose.length).toBeGreaterThan(normal.length);
+  });
+});
