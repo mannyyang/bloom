@@ -295,6 +295,30 @@ describe("buildFileManifest", () => {
       rmSync(tempDir, { recursive: true });
     }
   });
+
+  it("includes files in nested subdirectories with correct path prefix (recursive: true guard)", async () => {
+    // readdirSync uses { recursive: true } to collect nested files.
+    // A regression removing that flag would silently exclude subdirectory files
+    // (e.g. src/subdir/nested.ts), breaking the LLM's file-awareness context.
+    // This test creates a real temp dir with a nested source file and asserts
+    // the manifest contains the full relative path with the src/ prefix.
+    const { tmpdir } = await import("node:os");
+    const { mkdtempSync, mkdirSync, writeFileSync, rmSync } = await import("node:fs");
+    const { join } = await import("node:path");
+
+    const tempDir = mkdtempSync(join(tmpdir(), "bloom-manifest-recurse-"));
+    try {
+      const subDir = join(tempDir, "src", "subdir");
+      mkdirSync(subDir, { recursive: true });
+      writeFileSync(join(subDir, "nested.ts"), "// nested");
+
+      const result = buildFileManifest(tempDir);
+      // The nested file must appear with its full relative path
+      expect(result).toContain("src/subdir/nested.ts");
+    } finally {
+      rmSync(tempDir, { recursive: true });
+    }
+  });
 });
 
 describe("buildEvolutionPrompt", () => {
