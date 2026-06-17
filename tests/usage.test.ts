@@ -1771,6 +1771,18 @@ describe("formatDurationSec", () => {
     expect(formatDurationSec(-1000)).toBe("0.0s");
     expect(formatDurationSec(-60000)).toBe("0.0s");
   });
+
+  it("returns '0.0s' for NaN (guards against corrupted duration arithmetic)", () => {
+    expect(formatDurationSec(NaN)).toBe("0.0s");
+  });
+
+  it("returns '0.0s' for Infinity (guards against missing start-time initialisation)", () => {
+    expect(formatDurationSec(Infinity)).toBe("0.0s");
+  });
+
+  it("returns '0.0s' for -Infinity (symmetric guard for negative non-finite input)", () => {
+    expect(formatDurationSec(-Infinity)).toBe("0.0s");
+  });
 });
 
 describe("COST_DECIMAL_PLACES", () => {
