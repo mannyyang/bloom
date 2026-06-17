@@ -161,6 +161,16 @@ describe("generateStatsOutput", () => {
     expect(output[2]).toBe("  Bloom Evolution Statistics");
   });
 
+  it("appends (since cycle N) to the title when only sinceN is provided", () => {
+    // Value-pin for the sinceN-only label path: output[2] must read "(since cycle N)"
+    // when lastN is absent. Completes the window-label matrix alongside the lastN-only
+    // and combined (lastN+sinceN) tests that exist elsewhere in this suite.
+    insertCycle(db, makeOutcome({ cycleNumber: 10 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 15 }));
+    const output = generateStatsOutput(db, undefined, undefined, 10);
+    expect(output[2]).toBe("  Bloom Evolution Statistics (since cycle 10)");
+  });
+
   it("includes success rate in output", () => {
     insertCycle(db, makeOutcome({
       cycleNumber: 1,
