@@ -191,8 +191,10 @@ export function generateStatsJson(
  * @param lastN - optional override for how many recent cycles to summarise
  * @param verbose - when true, appends a "Learnings staleness" block showing
  *   the most recent cycle in which each learning category was updated
+ * @param sinceN - when provided, the header notes that the view starts from
+ *   cycle N; mirrors the sinceN parameter of generateStatsTable/generateStatsJson
  */
-export function generateStatsOutput(db: Database.Database, lastN?: number, verbose?: boolean): string[] {
+export function generateStatsOutput(db: Database.Database, lastN?: number, verbose?: boolean, sinceN?: number): string[] {
   const lines: string[] = [];
 
   const latestCycle = getLatestCycleNumber(db);
@@ -204,9 +206,16 @@ export function generateStatsOutput(db: Database.Database, lastN?: number, verbo
   const stats = getCycleStats(db, lastN);
   const formatted = formatCycleStats(stats);
 
+  let windowLabel = "";
+  if (sinceN !== undefined) {
+    windowLabel = ` (since cycle ${sinceN})`;
+  } else if (lastN !== undefined) {
+    windowLabel = ` (last ${lastN} cycles)`;
+  }
+
   lines.push("");
   lines.push(CYCLE_SUMMARY_SEPARATOR);
-  lines.push(`  Bloom Evolution Statistics${lastN !== undefined ? ` (last ${lastN} cycles)` : ""}`);
+  lines.push(`  Bloom Evolution Statistics${windowLabel}`);
   lines.push(`  Latest cycle: ${latestCycle}`);
   lines.push(CYCLE_SUMMARY_SEPARATOR);
   lines.push("");
@@ -252,7 +261,7 @@ function main() {
       const table = generateStatsTable(db, lastN, verbose, sinceN);
       console.log(table || "No evolution cycles recorded yet.");
     } else {
-      const output = generateStatsOutput(db, lastN, verbose);
+      const output = generateStatsOutput(db, lastN, verbose, sinceN);
       for (const line of output) {
         console.log(line);
       }
