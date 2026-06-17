@@ -1571,3 +1571,34 @@ describe("generateStatsOutput lastN + sinceN stats accuracy", () => {
     expect(joined).toContain("3");
   });
 });
+
+describe("generateStatsJson lastN + sinceN stats accuracy", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("stats.totalCycles reflects the intersection of lastN and sinceN filters", () => {
+    for (let i = 1; i <= 10; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    // lastN=5 fetches cycles 10,9,8,7,6; sinceN=9 keeps cycles 10,9 → totalCycles=2
+    const result = generateStatsJson(db, 5, undefined, 9);
+    expect(result.stats.totalCycles).toBe(2);
+  });
+
+  it("stats.successRate reflects only cycles in the lastN + sinceN intersection", () => {
+    // Cycles 1–5 fail; cycles 6–10 succeed.
+    for (let i = 1; i <= 5; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i, buildVerificationPassed: false, pushSucceeded: false }));
+    }
+    for (let i = 6; i <= 10; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i, buildVerificationPassed: true, pushSucceeded: true }));
+    }
+    // lastN=6 fetches cycles 10,9,8,7,6,5; sinceN=7 keeps cycles 10,9,8,7 (all successes) → 100%
+    const result = generateStatsJson(db, 6, undefined, 7);
+    expect(result.stats.totalCycles).toBe(4);
+    expect(result.stats.successRate).toBe(100);
+  });
+});
