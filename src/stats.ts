@@ -189,7 +189,7 @@ export function generateStatsJson(
   sinceN?: number,
 ): StatsJsonOutput {
   const latestCycle = getLatestCycleNumber(db);
-  const stats = getCycleStats(db, lastN);
+  const stats = getCycleStats(db, lastN, sinceN);
   const result: StatsJsonOutput = {
     latestCycle, window: lastN ?? null, since: sinceN ?? null, generatedAt: new Date().toISOString(), stats,
   };
@@ -217,7 +217,7 @@ export function generateStatsOutput(db: Database.Database, lastN?: number, verbo
     return lines;
   }
 
-  const stats = getCycleStats(db, lastN);
+  const stats = getCycleStats(db, lastN, sinceN);
   const formatted = formatCycleStats(stats);
 
   let windowLabel = "";

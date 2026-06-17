@@ -529,16 +529,29 @@ export function getLearningCategoryDistribution(db: Database.Database): Record<s
 /**
  * Compute aggregate success metrics over the last N cycles.
  * Answers the question: "How are you measuring success?" (community issue #3).
+ * @param sinceN - when provided, only cycles with cycle_number >= sinceN are included
  */
-export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS_HISTORY_LIMIT): CycleStats {
-  const rawRows = db.prepare(`
-    SELECT
-      cycle_number, preflight_passed, improvements_attempted, improvements_succeeded,
-      build_verification_passed, push_succeeded,
-      test_count_before, test_count_after,
-      duration_ms, started_at, completed_at
-    FROM cycles ORDER BY cycle_number DESC LIMIT ?
-  `).all(limit);
+export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS_HISTORY_LIMIT, sinceN?: number): CycleStats {
+  let rawRows: unknown[];
+  if (sinceN !== undefined) {
+    rawRows = db.prepare(`
+      SELECT
+        cycle_number, preflight_passed, improvements_attempted, improvements_succeeded,
+        build_verification_passed, push_succeeded,
+        test_count_before, test_count_after,
+        duration_ms, started_at, completed_at
+      FROM cycles WHERE cycle_number >= ? ORDER BY cycle_number DESC LIMIT ?
+    `).all(sinceN, limit);
+  } else {
+    rawRows = db.prepare(`
+      SELECT
+        cycle_number, preflight_passed, improvements_attempted, improvements_succeeded,
+        build_verification_passed, push_succeeded,
+        test_count_before, test_count_after,
+        duration_ms, started_at, completed_at
+      FROM cycles ORDER BY cycle_number DESC LIMIT ?
+    `).all(limit);
+  }
 
   interface CycleRow {
     cycle_number: number;
