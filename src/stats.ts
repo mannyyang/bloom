@@ -159,6 +159,20 @@ export function generateStatsTable(db: Database.Database, lastN?: number, verbos
 }
 
 /**
+ * Shape of the object returned by generateStatsJson and serialised to stdout
+ * in --json mode. Exported so tests and external consumers can reference the
+ * type without duplicating the inline annotation.
+ */
+export interface StatsJsonOutput {
+  latestCycle: number;
+  window: number | null;
+  since: number | null;
+  generatedAt: string;
+  stats: CycleStats;
+  learningsStaleness?: CategoryStaleness[];
+}
+
+/**
  * Machine-readable JSON output for CI automation, dashboards, and scripting.
  * Returns the latest cycle number alongside the raw CycleStats object.
  * The `window` field records the lastN argument used to compute stats (null
@@ -173,10 +187,10 @@ export function generateStatsJson(
   lastN?: number,
   verbose?: boolean,
   sinceN?: number,
-): { latestCycle: number; window: number | null; since: number | null; generatedAt: string; stats: CycleStats; learningsStaleness?: CategoryStaleness[] } {
+): StatsJsonOutput {
   const latestCycle = getLatestCycleNumber(db);
   const stats = getCycleStats(db, lastN);
-  const result: { latestCycle: number; window: number | null; since: number | null; generatedAt: string; stats: CycleStats; learningsStaleness?: CategoryStaleness[] } = {
+  const result: StatsJsonOutput = {
     latestCycle, window: lastN ?? null, since: sinceN ?? null, generatedAt: new Date().toISOString(), stats,
   };
   if (verbose) {
