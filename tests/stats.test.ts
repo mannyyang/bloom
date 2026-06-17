@@ -1303,6 +1303,45 @@ describe("generateStatsOutput --since N stat values", () => {
   });
 });
 
+describe("combined --since M and --last N flags", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("parseLastNArg and parseSinceArg both parse when both flags are present", () => {
+    const argv = ["node", "stats.js", "--since", "50", "--last", "10"];
+    expect(parseLastNArg(argv)).toBe(10);
+    expect(parseSinceArg(argv)).toBe(50);
+  });
+
+  it("getCycleStats applies sinceN filter and lastN limit together", () => {
+    // Insert cycles 1–10; call with sinceN=5 and lastN=3
+    // Expected: cycles 10, 9, 8 (3 most recent that are >= 5)
+    for (let i = 1; i <= 10; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    const stats = getCycleStats(db, 3, 5);
+    expect(stats.totalCycles).toBe(3);
+  });
+
+  it("generateStatsOutput header uses sinceN label when both flags present", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 10 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 20 }));
+    // When both are provided sinceN wins the label (see windowLabel logic)
+    const output = generateStatsOutput(db, 5, undefined, 10);
+    expect(output[2]).toBe("  Bloom Evolution Statistics (since cycle 10)");
+  });
+
+  it("generateStatsJson window and since fields are both set when both flags present", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    const result = generateStatsJson(db, 5, undefined, 10);
+    expect(result.window).toBe(5);
+    expect(result.since).toBe(10);
+  });
+});
+
 describe("generateStatsJson --since N", () => {
   let db: Database.Database;
 
