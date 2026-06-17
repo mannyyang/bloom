@@ -1258,6 +1258,51 @@ describe("generateStatsTable --since N", () => {
   });
 });
 
+describe("generateStatsOutput --since N stat values", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("stats body reflects only cycles >= sinceN, not earlier ones", () => {
+    // Cycles 1–3 all fail; cycles 4–5 all succeed.
+    // With sinceN=4 the success rate should be 100%, not 40%.
+    for (let i = 1; i <= 3; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i, buildVerificationPassed: false, pushSucceeded: false }));
+    }
+    for (let i = 4; i <= 5; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i, buildVerificationPassed: true, pushSucceeded: true }));
+    }
+    const output = generateStatsOutput(db, undefined, undefined, 4);
+    const joined = output.join("\n");
+    // With sinceN=4 only cycles 4 and 5 are counted — both succeeded → 100%
+    expect(joined).toContain("100%");
+    // The all-time rate over all 5 cycles would be 40%, which must not appear
+    expect(joined).not.toContain("40%");
+  });
+
+  it("getCycleStats respects sinceN and totalCycles reflects the filtered window", () => {
+    for (let i = 1; i <= 10; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    const stats = getCycleStats(db, undefined, 6);
+    // Only cycles 6–10 (5 cycles) should be counted
+    expect(stats.totalCycles).toBe(5);
+  });
+
+  it("generateStatsJson stats reflect sinceN window", () => {
+    // Cycles 1–2 fail; cycle 3 succeeds.
+    insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: false, pushSucceeded: false }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2, buildVerificationPassed: false, pushSucceeded: false }));
+    insertCycle(db, makeOutcome({ cycleNumber: 3, buildVerificationPassed: true, pushSucceeded: true }));
+    const result = generateStatsJson(db, undefined, undefined, 3);
+    // sinceN=3 means only cycle 3 counts → 1 cycle, 100% success rate
+    expect(result.stats.totalCycles).toBe(1);
+    expect(result.stats.successRate).toBe(100);
+  });
+});
+
 describe("generateStatsJson --since N", () => {
   let db: Database.Database;
 
