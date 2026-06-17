@@ -1535,3 +1535,39 @@ describe("generateStatsJson verbose=true + sinceN combined", () => {
     expect(Object.prototype.hasOwnProperty.call(result, "learningsStaleness")).toBe(true);
   });
 });
+
+describe("generateStatsOutput lastN + sinceN stats accuracy", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("success rate reflects only the intersection of lastN window and sinceN filter", () => {
+    // Cycles 1–4 fail; cycles 5–10 succeed.
+    for (let i = 1; i <= 4; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i, buildVerificationPassed: false, pushSucceeded: false }));
+    }
+    for (let i = 5; i <= 10; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i, buildVerificationPassed: true, pushSucceeded: true }));
+    }
+    // lastN=5 fetches cycles 10,9,8,7,6; sinceN=7 keeps cycles 10,9,8,7 (4 successes, 0 failures)
+    const output = generateStatsOutput(db, 5, undefined, 7);
+    const joined = output.join("\n");
+    // All 4 remaining cycles pass → 100% success rate
+    expect(joined).toContain("100%");
+    // All-window rate (6 successes / 10 total = 60%) must not appear
+    expect(joined).not.toContain("60%");
+  });
+
+  it("Cycles tracked count equals the filtered intersection of lastN and sinceN", () => {
+    for (let i = 1; i <= 10; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    // lastN=6 fetches cycles 10,9,8,7,6,5; sinceN=8 keeps cycles 10,9,8 → 3 cycles
+    const output = generateStatsOutput(db, 6, undefined, 8);
+    const joined = output.join("\n");
+    expect(joined).toContain("Cycles tracked");
+    expect(joined).toContain("3");
+  });
+});
