@@ -491,6 +491,31 @@ describe("buildEvolutionPrompt", () => {
     expect(prompt).not.toContain(overflowText);
   });
 
+  it("section order: assessment → usageSection → outcomeSection → RULES (positional guard)", () => {
+    // toContain-only tests cannot catch a template reorder — this positional test
+    // pins the relative order of the four key sections in buildEvolutionPrompt.
+    // A reorder (e.g. outcomeSection before usageSection, or RULES before outcome)
+    // would be caught immediately by these indexOf comparisons.
+    const ASSESSMENT_SENTINEL = "ASSESSMENT_SENTINEL_XYZ";
+    const prompt = buildEvolutionPrompt(ASSESSMENT_SENTINEL, {
+      usageContext: "USAGE_SENTINEL_XYZ",
+      outcomeContext: "OUTCOME_SENTINEL_XYZ",
+    });
+    const assessmentIdx = prompt.indexOf("ASSESSMENT_SENTINEL_XYZ");
+    const usageIdx = prompt.indexOf("USAGE_SENTINEL_XYZ");
+    const outcomeIdx = prompt.indexOf("OUTCOME_SENTINEL_XYZ");
+    const rulesIdx = prompt.indexOf("RULES:");
+    // All four sections must be present
+    expect(assessmentIdx).toBeGreaterThanOrEqual(0);
+    expect(usageIdx).toBeGreaterThanOrEqual(0);
+    expect(outcomeIdx).toBeGreaterThanOrEqual(0);
+    expect(rulesIdx).toBeGreaterThanOrEqual(0);
+    // Order: assessment < usage < outcome < RULES
+    expect(assessmentIdx).toBeLessThan(usageIdx);
+    expect(usageIdx).toBeLessThan(outcomeIdx);
+    expect(outcomeIdx).toBeLessThan(rulesIdx);
+  });
+
   it("emits a console.warn when assessment exceeds ASSESSMENT_CHAR_LIMIT", () => {
     // A truncation-warn must fire whenever the assessment is over-limit so CI logs
     // surface the event — previously truncation was completely invisible.
