@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution, getLastUpdatedCyclePerCategory } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseLastNArg, parseSinceArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL } from "../src/stats.js";
+import { generateStatsOutput, parseLastNArg, parseSinceArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { makeOutcome } from "./helpers.js";
 
@@ -11,6 +11,34 @@ describe("STATS_MEMORY_PREVIEW_CHARS", () => {
     expect(STATS_MEMORY_PREVIEW_CHARS).toBe(1000);
     expect(STATS_MEMORY_PREVIEW_CHARS).toBeGreaterThan(0);
     expect(STATS_MEMORY_PREVIEW_CHARS).toBeLessThan(1200);
+  });
+});
+
+describe("parseHelpFlag", () => {
+  it("returns false when --help is absent", () => {
+    expect(parseHelpFlag(["node", "stats.js", "--table"])).toBe(false);
+  });
+  it("returns true when --help is present", () => {
+    expect(parseHelpFlag(["node", "stats.js", "--help"])).toBe(true);
+  });
+  it("returns true when -h shorthand is present", () => {
+    expect(parseHelpFlag(["node", "stats.js", "-h"])).toBe(true);
+  });
+});
+
+describe("STATS_HELP_TEXT", () => {
+  it("mentions every supported flag", () => {
+    expect(STATS_HELP_TEXT).toContain("--last");
+    expect(STATS_HELP_TEXT).toContain("--since");
+    expect(STATS_HELP_TEXT).toContain("--json");
+    expect(STATS_HELP_TEXT).toContain("--table");
+    expect(STATS_HELP_TEXT).toContain("--verbose");
+    expect(STATS_HELP_TEXT).toContain("--help");
+  });
+  it("is a non-empty string ending with a newline", () => {
+    expect(typeof STATS_HELP_TEXT).toBe("string");
+    expect(STATS_HELP_TEXT.length).toBeGreaterThan(0);
+    expect(STATS_HELP_TEXT.endsWith("\n")).toBe(true);
   });
 });
 

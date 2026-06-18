@@ -84,6 +84,31 @@ export function parseVerboseFlag(argv: string[]): boolean {
   return argv.includes("--verbose");
 }
 
+/**
+ * Parse `--help` from an argv array, returning true when the flag is present.
+ * When true, main() prints STATS_HELP_TEXT and exits without querying the DB.
+ */
+export function parseHelpFlag(argv: string[]): boolean {
+  return argv.includes("--help") || argv.includes("-h");
+}
+
+/**
+ * Usage text printed when `pnpm stats --help` is invoked.
+ * Lists every supported flag with a short description, mirroring the
+ * convention used by standard CLI tools.
+ */
+export const STATS_HELP_TEXT = `\
+Usage: pnpm stats [options]
+
+Options:
+  --last <N>      Show stats for the last N cycles only
+  --since <N>     Show stats starting from cycle number N (inclusive)
+  --json          Output raw stats as JSON (for scripting/CI)
+  --table         Output per-cycle data as an ASCII table
+  --verbose       Include extra detail (staleness data or Failures column)
+  --help, -h      Print this help message and exit
+`;
+
 /** Column widths for the ASCII stats table. */
 const COL_CYCLE = 6;
 const COL_ATTEMPTED = 9;
@@ -260,6 +285,10 @@ export function generateStatsOutput(db: Database.Database, lastN?: number, verbo
 }
 
 function main() {
+  if (parseHelpFlag(process.argv)) {
+    process.stdout.write(STATS_HELP_TEXT);
+    return;
+  }
   const lastN = parseLastNArg(process.argv);
   const sinceN = parseSinceArg(process.argv);
   const jsonMode = parseJsonFlag(process.argv);
