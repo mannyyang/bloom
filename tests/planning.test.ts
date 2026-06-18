@@ -407,6 +407,29 @@ describe("formatPlanningContext", () => {
     expect(result).not.toContain("... and");
   });
 
+  it("maxItemsPerSection=0 shows no item bullets but emits '... and N more' immediately", () => {
+    // When the cap is zero, slice(0, 0) renders no items. However hiddenCount = N - 0 = N > 0
+    // so the overflow hint still appears under the section header with nothing listed above it.
+    const items = Array.from({ length: 3 }, (_, i) =>
+      makeItem({ id: `item-${i}`, title: `Zero Cap Item ${i}`, status: "Backlog" }),
+    );
+    const result = formatPlanningContext(items, null, 10000, 0);
+    expect(result).toContain("### Backlog");
+    // No bullet lines for any actual items
+    expect(result).not.toContain("- Zero Cap Item");
+    // Overflow hint should reflect all 3 hidden items
+    expect(result).toContain("- ... and 3 more");
+  });
+
+  it("maxItemsPerSection=0 with a single-item section still emits the overflow hint", () => {
+    // Edge case: exactly one item with a zero cap → hiddenCount = 1 > 0 → hint appears.
+    const items = [makeItem({ id: "item-0", title: "Single Zero Cap", status: "Up Next" })];
+    const result = formatPlanningContext(items, null, 10000, 0);
+    expect(result).toContain("### Up Next");
+    expect(result).not.toContain("- Single Zero Cap");
+    expect(result).toContain("- ... and 1 more");
+  });
+
   it("uses truncated string as-is when no newline found (single long line)", () => {
     // A single item whose title is long enough to exceed maxChars, with no
     // embedded newline, so lastNewline is -1 — exercises the fallback branch.
