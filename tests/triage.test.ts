@@ -1950,6 +1950,42 @@ describe("triageIssues with injected deps", () => {
     expect(mockInsertIssueAction.mock.calls.length).toBeGreaterThanOrEqual(2);
   });
 
+  it("concurrent fan-out mixed results: only successful closes appear in result.closed", async () => {
+    // The closeCandidates path fans out via Promise.all(allSettled). When multiple
+    // close candidates run concurrently and produce a mix of true/false results,
+    // only the issues whose closeIssueWithComment resolved true must appear in
+    // result.closed — false returns must be silently excluded.
+    // This is the key boundary condition of the concurrent fan-out.
+    const issues = [
+      makeIssue({ number: 20, title: "On board Done A" }),
+      makeIssue({ number: 21, title: "On board Done B" }),
+      makeIssue({ number: 22, title: "On board Done C" }),
+    ];
+    const boardItems = [
+      makeBoardItem({ linkedIssueNumber: 20, status: "Done" }),
+      makeBoardItem({ id: "item-21", linkedIssueNumber: 21, status: "Done" }),
+      makeBoardItem({ id: "item-22", linkedIssueNumber: 22, status: "Done" }),
+    ];
+    const deps = makeDeps([]);
+    const mockDb = { transaction: <T>(fn: () => T) => fn } as unknown as import("better-sqlite3").Database;
+
+    // Concurrent calls return mixed results: #20 closes, #21 fails, #22 closes
+    mockCloseIssue
+      .mockResolvedValueOnce(true)   // issue #20 — succeeds
+      .mockResolvedValueOnce(false)  // issue #21 — soft failure
+      .mockResolvedValueOnce(true);  // issue #22 — succeeds
+
+    const result = await triageIssues(issues, boardItems, 7, projectConfig, mockDb, deps);
+
+    // Only the two successful closes must appear — the false result is excluded
+    expect(result.closed).toHaveLength(2);
+    expect(result.closed).toContain(20);
+    expect(result.closed).not.toContain(21);
+    expect(result.closed).toContain(22);
+    // All three candidates were attempted
+    expect(mockCloseIssue).toHaveBeenCalledTimes(3);
+  });
+
   it("calls insertIssueAction before closeIssueWithComment for alreadyOnBoard path (invocationCallOrder)", async () => {
     // Integration ordering test: the DB pre-record must happen before the API fan-out
     // so that a close failure still leaves "triaged" persisted in the DB, preventing
