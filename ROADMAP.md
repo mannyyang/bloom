@@ -1,6 +1,9 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
+- [ ] Add `--help` flag to `pnpm roadmap` CLI to print available flags and usage, mirroring the pattern established by `pnpm stats --help`
+- [ ] Add `formatPlanningContext` snapshot test with a mixed roadmap (items in every status) to catch unintended rendering regressions in the assessment prompt
+- [ ] Expose `pickNextItem` selection rationale in `pnpm stats --verbose` output (e.g. "resumed In Progress item X" vs "promoted Backlog item Y") to make cycle-to-cycle planning decisions auditable
 
 ## Up Next
 
