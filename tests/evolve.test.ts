@@ -212,6 +212,25 @@ describe("buildAssessmentPrompt", () => {
     });
     expect(prompt).not.toContain("File index");
   });
+
+  it("fileManifest section appears after planningContext section in the prompt", () => {
+    // Pins the section concatenation order in buildAssessmentPrompt:
+    // journal → stats → memory → planningContext → fileManifest.
+    // toContain-only tests cannot catch a section reorder — this positional
+    // assertion ensures the LLM always sees the file index after the planning
+    // context, not before it.
+    const prompt = buildAssessmentPrompt({
+      journalSummary: "",
+      cycleCount: 1,
+      planningContext: "PLANNING_SENTINEL: Current item: Improve error handling",
+      fileManifest: "src/evolve.ts\ntests/evolve.test.ts",
+    });
+    const planningIdx = prompt.indexOf("PLANNING_SENTINEL:");
+    const fileManifestIdx = prompt.indexOf("File index");
+    expect(planningIdx).toBeGreaterThanOrEqual(0);
+    expect(fileManifestIdx).toBeGreaterThanOrEqual(0);
+    expect(fileManifestIdx).toBeGreaterThan(planningIdx);
+  });
 });
 
 describe("buildFileManifest", () => {
