@@ -181,22 +181,22 @@ export function parseRoadmap(content: string): ProjectItem[] {
       if (!currentStatus) {
         console.warn(`[planning] parseRoadmap: item line found before any ## heading — ignoring: "${line.trim()}"`);
       } else {
-      // Flush previous item
-      if (currentItem?.title) {
-        items.push(finalizeItem(currentItem, idCounter++));
-      }
-      const raw = itemMatch[1];
-      const issueMatch = raw.match(/\(#(\d+)\)\s*$/);
-      const linkedIssueNumber = issueMatch ? parseInt(issueMatch[1], 10) : null;
-      const title = issueMatch ? raw.replace(/\s*\(#\d+\)\s*$/, "").trim() : raw.trim();
+        // Flush previous item
+        if (currentItem?.title) {
+          items.push(finalizeItem(currentItem, idCounter++));
+        }
+        const raw = itemMatch[1];
+        const issueMatch = raw.match(/\(#(\d+)\)\s*$/);
+        const linkedIssueNumber = issueMatch ? parseInt(issueMatch[1], 10) : null;
+        const title = issueMatch ? raw.replace(/\s*\(#\d+\)\s*$/, "").trim() : raw.trim();
 
-      currentItem = {
-        title,
-        status: currentStatus,
-        body: "",
-        linkedIssueNumber,
-        reactions: 0,
-      };
+        currentItem = {
+          title,
+          status: currentStatus,
+          body: "",
+          linkedIssueNumber,
+          reactions: 0,
+        };
         continue;
       }
     }
