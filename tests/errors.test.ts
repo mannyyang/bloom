@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { errorMessage, execSyncOutput } from "../src/errors.js";
+import { errorMessage, execSyncOutput, ERROR_CATEGORY_NONE } from "../src/errors.js";
+
+describe("ERROR_CATEGORY_NONE", () => {
+  it('is pinned to the string "none"', () => {
+    expect(ERROR_CATEGORY_NONE).toBe("none");
+  });
+});
 
 describe("errorMessage", () => {
   it("extracts message from Error instances", () => {

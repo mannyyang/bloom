@@ -4,6 +4,7 @@
  */
 
 import type { ErrorCategory } from "./errors.js";
+import { ERROR_CATEGORY_NONE } from "./errors.js";
 import { formatDurationSec } from "./usage.js";
 
 /**
@@ -99,7 +100,7 @@ export function createOutcome(cycleNumber: number): CycleOutcome {
     testTotalBefore: null,
     testTotalAfter: null,
     durationMs: null,
-    failureCategory: "none",
+    failureCategory: ERROR_CATEGORY_NONE,
   };
 }
 
@@ -129,7 +130,7 @@ export function formatOutcomeForJournal(outcome: CycleOutcome): string {
   );
   lines.push(`- **Push**: ${outcome.pushSucceeded ? "succeeded" : "failed"}`);
 
-  if (outcome.failureCategory !== "none") {
+  if (outcome.failureCategory !== ERROR_CATEGORY_NONE) {
     lines.push(`- **Failure category**: ${outcome.failureCategory}`);
   }
 

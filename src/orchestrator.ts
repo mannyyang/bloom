@@ -1,7 +1,7 @@
 import type Database from "better-sqlite3";
 import { insertJournalEntry, CYCLE_SUMMARY_SEPARATOR } from "./db.js";
 export { CYCLE_SUMMARY_SEPARATOR };
-import { errorMessage } from "./errors.js";
+import { errorMessage, ERROR_CATEGORY_NONE } from "./errors.js";
 import { parseEvolutionResult, countImprovements, type EvolutionSections } from "./evolve.js";
 import { extractLearnings, storeLearnings, storeStrategicContext } from "./memory.js";
 import type { CycleOutcome } from "./outcomes.js";
@@ -151,7 +151,7 @@ export function formatCycleSummaryWithDuration(
     `  Improvements: ${outcome.improvementsSucceeded}/${outcome.improvementsAttempted}`,
     `  Tests: ${formatTestCount(outcome.testCountBefore, outcome.testTotalBefore)} → ${formatTestCount(outcome.testCountAfter, outcome.testTotalAfter)}`,
     `  Build: ${outcome.buildVerificationPassed ? "PASSED" : "FAILED"}`,
-    ...(outcome.failureCategory !== "none" ? [`  Failure: ${outcome.failureCategory}`] : []),
+    ...(outcome.failureCategory !== ERROR_CATEGORY_NONE ? [`  Failure: ${outcome.failureCategory}`] : []),
     `  Push: ${outcome.pushSucceeded ? "OK" : "FAILED"}`,
     CYCLE_SUMMARY_SEPARATOR,
   ];

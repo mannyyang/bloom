@@ -14,7 +14,7 @@ import type Database from "better-sqlite3";
 import { initDb, getCycleStats, formatCycleStats, getLatestCycleNumber, getCycleRows, getLastUpdatedCyclePerCategory, CYCLE_SUMMARY_SEPARATOR, MS_PER_MINUTE, type CycleStats, type CycleRow, type CategoryStaleness } from "./db.js";
 import { formatMemoryForPrompt } from "./memory.js";
 import { readRoadmap, parseRoadmap, pickNextItemWithRationale } from "./planning.js";
-import { errorMessage } from "./errors.js";
+import { errorMessage, ERROR_CATEGORY_NONE } from "./errors.js";
 
 /**
  * Number of characters of memory to include in the stats preview.
@@ -176,7 +176,7 @@ export function generateStatsTable(db: Database.Database, lastN?: number, verbos
       pad(durationStr, COL_DURATION, true),
     ];
     if (verbose) {
-      const cat = r.failureCategory && r.failureCategory !== "none" ? r.failureCategory : STATS_NO_FAILURE_SYMBOL;
+      const cat = r.failureCategory && r.failureCategory !== ERROR_CATEGORY_NONE ? r.failureCategory : STATS_NO_FAILURE_SYMBOL;
       cells.push(pad(cat, COL_FAILURES));
     }
     return cells.join("  ");

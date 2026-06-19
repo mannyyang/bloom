@@ -15,6 +15,14 @@
 export type ErrorCategory = "build_failure" | "test_failure" | "llm_error" | "none";
 
 /**
+ * Named constant for the "no failure" ErrorCategory value.
+ * Follows the pattern of STATUS_DONE, STATS_NO_FAILURE_SYMBOL, etc.
+ * Using this constant instead of the bare string literal catches typos
+ * and rename mismatches at compile time.
+ */
+export const ERROR_CATEGORY_NONE = "none" as const satisfies ErrorCategory;
+
+/**
  * Extract a human-readable message from an unknown thrown value.
  * Handles Error instances, strings, objects with a message property, and fallbacks.
  * For plain objects without a message property, returns a JSON representation

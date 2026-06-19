@@ -1,6 +1,6 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { initDb, getLatestCycleNumber, insertCycle, insertJournalEntry, updateCycleOutcome } from "./db.js";
-import { errorMessage } from "./errors.js";
+import { errorMessage, ERROR_CATEGORY_NONE } from "./errors.js";
 import {
   protectIdentity,
   protectJournal,
@@ -96,7 +96,7 @@ async function main() {
     console.error(`\n[error] Evolution failed: ${errorMessage(err)}`);
 
     // Classify failure if not already set by a sub-phase (e.g. build verification)
-    if (outcome.failureCategory === "none") {
+    if (outcome.failureCategory === ERROR_CATEGORY_NONE) {
       outcome.failureCategory = "llm_error";
     }
 
