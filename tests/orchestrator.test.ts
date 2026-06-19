@@ -10,6 +10,7 @@ import {
 } from "../src/orchestrator.js";
 import { insertCycle } from "../src/db.js";
 import { makeOutcome } from "./helpers.js";
+import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE, ERROR_CATEGORY_LLM_ERROR } from "../src/errors.js";
 
 describe("isDryRun", () => {
   afterEach(() => {
@@ -547,25 +548,25 @@ STRATEGIC_CONTEXT: Focus on testing`;
     });
 
     it("includes failure category line when failureCategory is not none", () => {
-      const outcome = makeOutcome({ failureCategory: "build_failure" });
+      const outcome = makeOutcome({ failureCategory: ERROR_CATEGORY_BUILD_FAILURE });
       const summary = formatCycleSummaryWithDuration(1, outcome, true, 5000);
       expect(summary).toContain("Failure: build_failure");
     });
 
     it("includes test_failure category in summary", () => {
-      const outcome = makeOutcome({ failureCategory: "test_failure" });
+      const outcome = makeOutcome({ failureCategory: ERROR_CATEGORY_TEST_FAILURE });
       const summary = formatCycleSummaryWithDuration(1, outcome, true, 5000);
       expect(summary).toContain("Failure: test_failure");
     });
 
     it("includes llm_error category in summary", () => {
-      const outcome = makeOutcome({ failureCategory: "llm_error" });
+      const outcome = makeOutcome({ failureCategory: ERROR_CATEGORY_LLM_ERROR });
       const summary = formatCycleSummaryWithDuration(1, outcome, true, 5000);
       expect(summary).toContain("Failure: llm_error");
     });
 
     it("omits failure category line when failureCategory is none", () => {
-      const outcome = makeOutcome({ failureCategory: "none" });
+      const outcome = makeOutcome({ failureCategory: ERROR_CATEGORY_NONE });
       const summary = formatCycleSummaryWithDuration(1, outcome, false, 5000);
       expect(summary).not.toContain("Failure:");
     });
@@ -611,19 +612,19 @@ STRATEGIC_CONTEXT: Focus on testing`;
     });
 
     it("produces exactly 8 lines when failureCategory is none", () => {
-      const outcome = makeOutcome({ failureCategory: "none" });
+      const outcome = makeOutcome({ failureCategory: ERROR_CATEGORY_NONE });
       const summary = formatCycleSummaryWithDuration(1, outcome, false, 5000);
       expect(summary.split("\n")).toHaveLength(8);
     });
 
     it("produces exactly 9 lines when failureCategory is not none", () => {
-      const outcome = makeOutcome({ failureCategory: "build_failure" });
+      const outcome = makeOutcome({ failureCategory: ERROR_CATEGORY_BUILD_FAILURE });
       const summary = formatCycleSummaryWithDuration(1, outcome, true, 5000);
       expect(summary.split("\n")).toHaveLength(9);
     });
 
     it("full-output pin: exact string when failureCategory is none (no-failure path)", () => {
-      const outcome = makeOutcome({ failureCategory: "none" });
+      const outcome = makeOutcome({ failureCategory: ERROR_CATEGORY_NONE });
       const summary = formatCycleSummaryWithDuration(1, outcome, false, 5000);
       expect(summary).toBe(
         "========================================\n" +
@@ -638,7 +639,7 @@ STRATEGIC_CONTEXT: Focus on testing`;
     });
 
     it("full-output pin: exact string when failureCategory is build_failure (with-failure path)", () => {
-      const outcome = makeOutcome({ failureCategory: "build_failure" });
+      const outcome = makeOutcome({ failureCategory: ERROR_CATEGORY_BUILD_FAILURE });
       const summary = formatCycleSummaryWithDuration(1, outcome, true, 5000);
       expect(summary).toBe(
         "========================================\n" +
@@ -654,7 +655,7 @@ STRATEGIC_CONTEXT: Focus on testing`;
     });
 
     it("hadError=true with failureCategory=none shows FAILED but omits Failure: line (orthogonality pin)", () => {
-      const outcome = makeOutcome({ failureCategory: "none" });
+      const outcome = makeOutcome({ failureCategory: ERROR_CATEGORY_NONE });
       const summary = formatCycleSummaryWithDuration(1, outcome, true, 5000);
       expect(summary).toContain("FAILED");
       expect(summary).not.toContain("Failure:");

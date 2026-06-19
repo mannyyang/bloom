@@ -27,6 +27,7 @@ import { runBuildVerificationPhase, updatePlanningStatus, pushChangesPhase } fro
 import { runBuildVerification, pushChanges, commitRoadmap } from "../src/lifecycle.js";
 import { updateItemStatus } from "../src/planning.js";
 import { closeIssueWithComment } from "../src/issues.js";
+import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_TEST_FAILURE, ERROR_CATEGORY_BUILD_FAILURE } from "../src/errors.js";
 
 function createOutcome(overrides: Partial<CycleOutcome> = {}): CycleOutcome {
   return {
@@ -41,7 +42,7 @@ function createOutcome(overrides: Partial<CycleOutcome> = {}): CycleOutcome {
     testTotalBefore: null,
     testTotalAfter: null,
     durationMs: null,
-    failureCategory: "none" as const,
+    failureCategory: ERROR_CATEGORY_NONE,
     ...overrides,
   };
 }
@@ -80,7 +81,7 @@ describe("runBuildVerificationPhase", () => {
     expect(outcome.buildVerificationPassed).toBe(false);
     expect(outcome.testCountAfter).toBe(3);
     expect(outcome.testTotalAfter).toBe(5);
-    expect(outcome.failureCategory).toBe("test_failure");
+    expect(outcome.failureCategory).toBe(ERROR_CATEGORY_TEST_FAILURE);
   });
 
   it("throws on failed build and classifies as build_failure when TypeScript compilation fails", () => {
@@ -93,7 +94,7 @@ describe("runBuildVerificationPhase", () => {
       "Build verification failed",
     );
     expect(outcome.buildVerificationPassed).toBe(false);
-    expect(outcome.failureCategory).toBe("build_failure");
+    expect(outcome.failureCategory).toBe(ERROR_CATEGORY_BUILD_FAILURE);
   });
 
   it("handles missing test counts gracefully", () => {

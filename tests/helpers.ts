@@ -1,4 +1,5 @@
 import type { CycleOutcome } from "../src/outcomes.js";
+import { ERROR_CATEGORY_NONE } from "../src/errors.js";
 
 /**
  * Create a CycleOutcome with sensible defaults, overriding only the fields
@@ -17,7 +18,7 @@ export function makeOutcome(overrides: Partial<CycleOutcome> = {}): CycleOutcome
     testTotalBefore: null,
     testTotalAfter: null,
     durationMs: null,
-    failureCategory: "none" as const,
+    failureCategory: ERROR_CATEGORY_NONE,
     ...overrides,
   };
 }

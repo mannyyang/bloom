@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type Database from "better-sqlite3";
 import { runAssessmentPhase, runEvolutionPhase, createDefaultDeps, resolveModel, DEFAULT_BLOOM_MODEL, ASSESSMENT_PREVIEW_CHARS, AGENT_ASSESSMENT_MAX_TURNS, AGENT_ASSESSMENT_MAX_BUDGET_USD, AGENT_EVOLUTION_MAX_TURNS, AGENT_EVOLUTION_MAX_BUDGET_USD, type QueryFn, type PhaseDeps, type SafetyHooks } from "../src/agent-phases.js";
+import { ERROR_CATEGORY_NONE } from "../src/errors.js";
 import type { PhaseUsage } from "../src/usage.js";
 import type { EvolutionContext } from "../src/context.js";
 import type { CycleOutcome } from "../src/outcomes.js";
@@ -39,7 +40,7 @@ function createOutcome(overrides: Partial<CycleOutcome> = {}): CycleOutcome {
     testTotalBefore: null,
     testTotalAfter: null,
     durationMs: null,
-    failureCategory: "none" as const,
+    failureCategory: ERROR_CATEGORY_NONE,
     ...overrides,
   };
 }
