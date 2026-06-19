@@ -1697,6 +1697,29 @@ describe("parse→serialize→parse roundtrip", () => {
     expect(countByStatus("In Progress")).toBe(1);
     expect(countByStatus("Done")).toBe(3);
   });
+
+  it("renders all statuses correctly in a mixed-status roadmap (snapshot)", () => {
+    // One item per status: Backlog, Up Next, In Progress (as currentItem), Done.
+    // This pins the full section-ordering, header, and Done-exclusion in one test.
+    const currentItem = makeItem({ id: "item-1", title: "In Progress Work", status: "In Progress", body: "" });
+    const items = [
+      makeItem({ id: "item-2", title: "Backlog Task", status: "Backlog", body: "" }),
+      makeItem({ id: "item-3", title: "Up Next Task", status: "Up Next", body: "" }),
+      makeItem({ id: "item-4", title: "Done Task", status: "Done", body: "" }),
+    ];
+    const result = formatPlanningContext(items, currentItem, 10000, 10);
+    expect(result).toMatchInlineSnapshot(`
+      "## Evolution Roadmap
+
+      **Current focus**: In Progress Work
+
+      ### Backlog
+      - Backlog Task
+
+      ### Up Next
+      - Up Next Task"
+    `);
+  });
 });
 
 describe("nextItemId", () => {
