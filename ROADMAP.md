@@ -5,10 +5,10 @@
 ## Up Next
 
 ## In Progress
-- [ ] Expose `pickNextItem` selection rationale in `pnpm stats --verbose` output (e.g. "resumed In Progress item X" vs "promoted Backlog item Y") to make cycle-to-cycle planning decisions auditable
-  [since: 653]
 
 ## Done
+- [x] Expose `pickNextItem` selection rationale in `pnpm stats --verbose` output (e.g. "resumed In Progress item X" vs "promoted Backlog item Y") to make cycle-to-cycle planning decisions auditable
+  Completed in cycle 653: 2/2 improvements succeeded.
 - [x] Add `--help` flag to `pnpm roadmap` CLI to print available flags and usage, mirroring the pattern established by `pnpm stats --help`
   Completed in cycle 652: 1/1 improvements succeeded.
 - [x] Add `formatPlanningContext` snapshot test with a mixed roadmap (items in every status) to catch unintended rendering regressions in the assessment prompt
