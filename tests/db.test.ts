@@ -42,6 +42,7 @@ import {
   DEFAULT_DB_PATH,
 } from "../src/db.js";
 import Database from "better-sqlite3";
+import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE } from "../src/errors.js";
 import { makeOutcome } from "./helpers.js";
 
 describe("db constants (value-pinning)", () => {
@@ -307,7 +308,7 @@ describe("db", () => {
     it("directly persists failureCategory in the inserted row", () => {
       insertCycle(db, makeOutcome({
         cycleNumber: 1, buildVerificationPassed: false, pushSucceeded: false,
-        failureCategory: "build_failure",
+        failureCategory: ERROR_CATEGORY_BUILD_FAILURE,
       }));
 
       const row = db.prepare("SELECT failure_category FROM cycles WHERE cycle_number = 1").get() as { failure_category: string };
@@ -379,7 +380,7 @@ describe("db", () => {
       insertCycle(db, makeOutcome({ cycleNumber: 1 }));
       updateCycleOutcome(db, makeOutcome({
         cycleNumber: 1, buildVerificationPassed: false,
-        failureCategory: "test_failure",
+        failureCategory: ERROR_CATEGORY_TEST_FAILURE,
       }));
       const row = db.prepare("SELECT failure_category FROM cycles WHERE cycle_number = 1").get() as { failure_category: string };
       expect(row.failure_category).toBe("test_failure");
@@ -1014,14 +1015,14 @@ describe("db", () => {
       for (let i = 1; i <= 5; i++) {
         insertCycle(db, makeOutcome({
           cycleNumber: i, buildVerificationPassed: false, pushSucceeded: false,
-          failureCategory: "build_failure",
+          failureCategory: ERROR_CATEGORY_BUILD_FAILURE,
         }));
       }
       for (let i = 6; i <= 10; i++) {
         insertCycle(db, makeOutcome({
           cycleNumber: i, improvementsAttempted: 1, improvementsSucceeded: 1,
           buildVerificationPassed: true, pushSucceeded: true,
-          failureCategory: "none",
+          failureCategory: ERROR_CATEGORY_NONE,
         }));
       }
 
@@ -1117,25 +1118,25 @@ describe("db", () => {
     it("counts failure categories across cycles", () => {
       insertCycle(db, makeOutcome({
         cycleNumber: 1, buildVerificationPassed: false, pushSucceeded: false,
-        failureCategory: "test_failure",
+        failureCategory: ERROR_CATEGORY_TEST_FAILURE,
       }));
       insertCycle(db, makeOutcome({
         cycleNumber: 2, buildVerificationPassed: false, pushSucceeded: false,
-        failureCategory: "test_failure",
+        failureCategory: ERROR_CATEGORY_TEST_FAILURE,
       }));
       insertCycle(db, makeOutcome({
         cycleNumber: 3, buildVerificationPassed: false, pushSucceeded: false,
-        failureCategory: "build_failure",
+        failureCategory: ERROR_CATEGORY_BUILD_FAILURE,
       }));
       insertCycle(db, makeOutcome({
         cycleNumber: 4, buildVerificationPassed: true, pushSucceeded: true,
-        failureCategory: "none",
+        failureCategory: ERROR_CATEGORY_NONE,
       }));
 
       const stats = getCycleStats(db);
-      expect(stats.failureCategoryBreakdown["test_failure"]).toBe(2);
-      expect(stats.failureCategoryBreakdown["build_failure"]).toBe(1);
-      expect(stats.failureCategoryBreakdown["none"]).toBeUndefined();
+      expect(stats.failureCategoryBreakdown[ERROR_CATEGORY_TEST_FAILURE]).toBe(2);
+      expect(stats.failureCategoryBreakdown[ERROR_CATEGORY_BUILD_FAILURE]).toBe(1);
+      expect(stats.failureCategoryBreakdown[ERROR_CATEGORY_NONE]).toBeUndefined();
     });
 
     it("recentFailures does not count failing cycles outside the newest 5", () => {
@@ -1143,7 +1144,7 @@ describe("db", () => {
       for (let i = 1; i <= 2; i++) {
         insertCycle(db, makeOutcome({
           cycleNumber: i, buildVerificationPassed: false, pushSucceeded: false,
-          failureCategory: "build_failure",
+          failureCategory: ERROR_CATEGORY_BUILD_FAILURE,
         }));
       }
       for (let i = 3; i <= 7; i++) {
