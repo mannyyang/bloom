@@ -27,18 +27,18 @@ describe("parseHelpFlag", () => {
 });
 
 describe("STATS_HELP_TEXT", () => {
-  it("mentions every supported flag", () => {
-    expect(STATS_HELP_TEXT).toContain("--last");
-    expect(STATS_HELP_TEXT).toContain("--since");
-    expect(STATS_HELP_TEXT).toContain("--json");
-    expect(STATS_HELP_TEXT).toContain("--table");
-    expect(STATS_HELP_TEXT).toContain("--verbose");
-    expect(STATS_HELP_TEXT).toContain("--help");
-  });
-  it("is a non-empty string ending with a newline", () => {
-    expect(typeof STATS_HELP_TEXT).toBe("string");
-    expect(STATS_HELP_TEXT.length).toBeGreaterThan(0);
-    expect(STATS_HELP_TEXT.endsWith("\n")).toBe(true);
+  it("matches the exact expected help text", () => {
+    expect(STATS_HELP_TEXT).toBe(
+      `Usage: pnpm stats [options]\n` +
+      `\n` +
+      `Options:\n` +
+      `  --last <N>      Show stats for the last N cycles only\n` +
+      `  --since <N>     Show stats starting from cycle number N (inclusive)\n` +
+      `  --json          Output raw stats as JSON (for scripting/CI)\n` +
+      `  --table         Output per-cycle data as an ASCII table\n` +
+      `  --verbose       Include extra detail (staleness data or Failures column)\n` +
+      `  --help, -h      Print this help message and exit\n`,
+    );
   });
 });
 
