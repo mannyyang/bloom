@@ -39,14 +39,23 @@ export const STATS_NO_FAILURE_SYMBOL = "—";
 export const STATS_NO_DURATION_SYMBOL = STATS_NO_FAILURE_SYMBOL;
 
 /**
+ * Shared implementation for flag-followed-by-integer argv parsing.
+ * Returns the positive integer after `flag`, or undefined when the flag is
+ * absent, its value is missing, or the value is not a positive integer.
+ */
+function parseIntArg(argv: string[], flag: string): number | undefined {
+  const idx = argv.indexOf(flag);
+  if (idx === -1) return undefined;
+  const val = parseInt(argv[idx + 1] ?? "", 10);
+  return !isNaN(val) && val > 0 ? val : undefined;
+}
+
+/**
  * Parse `--last N` from an argv array, returning N as a positive integer or
  * undefined when the flag is absent, missing a value, or the value is invalid.
  */
 export function parseLastNArg(argv: string[]): number | undefined {
-  const idx = argv.indexOf("--last");
-  if (idx === -1) return undefined;
-  const val = parseInt(argv[idx + 1] ?? "", 10);
-  return !isNaN(val) && val > 0 ? val : undefined;
+  return parseIntArg(argv, "--last");
 }
 
 /**
@@ -56,10 +65,7 @@ export function parseLastNArg(argv: string[]): number | undefined {
  * Mirrors the pattern of parseLastNArg for consistency.
  */
 export function parseSinceArg(argv: string[]): number | undefined {
-  const idx = argv.indexOf("--since");
-  if (idx === -1) return undefined;
-  const val = parseInt(argv[idx + 1] ?? "", 10);
-  return !isNaN(val) && val > 0 ? val : undefined;
+  return parseIntArg(argv, "--since");
 }
 
 /**
