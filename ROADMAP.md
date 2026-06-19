@@ -1,16 +1,18 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Expose `pickNextItem` selection rationale in `pnpm stats --verbose` output (e.g. "resumed In Progress item X" vs "promoted Backlog item Y") to make cycle-to-cycle planning decisions auditable
 
 ## Up Next
-- [ ] Add `formatPlanningContext` snapshot test with a mixed roadmap (items in every status) to catch unintended rendering regressions in the assessment prompt
 
 ## In Progress
-- [ ] Add `--help` flag to `pnpm roadmap` CLI to print available flags and usage, mirroring the pattern established by `pnpm stats --help`
-  [since: 652]
+- [ ] Expose `pickNextItem` selection rationale in `pnpm stats --verbose` output (e.g. "resumed In Progress item X" vs "promoted Backlog item Y") to make cycle-to-cycle planning decisions auditable
+  [since: 653]
 
 ## Done
+- [x] Add `--help` flag to `pnpm roadmap` CLI to print available flags and usage, mirroring the pattern established by `pnpm stats --help`
+  Completed in cycle 652: 1/1 improvements succeeded.
+- [x] Add `formatPlanningContext` snapshot test with a mixed roadmap (items in every status) to catch unintended rendering regressions in the assessment prompt
+  Completed in cycle 652: 1/1 improvements succeeded.
 - [x] Expose per-category staleness in `pnpm stats --verbose` to show which learning categories have not been updated in the most recent N cycles
   Completed in cycle 630: 1/3 improvements succeeded.
 - [x] Add `pnpm assess --verbose` flag to print the full assessment prompt to stdout without calling the LLM, enabling cost-free prompt inspection and debugging
