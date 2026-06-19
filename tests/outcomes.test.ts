@@ -7,6 +7,10 @@ import {
   classifyBuildFailure,
   OUTCOME_METRICS_HEADER,
 } from "../src/outcomes.js";
+import {
+  ERROR_CATEGORY_BUILD_FAILURE,
+  ERROR_CATEGORY_TEST_FAILURE,
+} from "../src/errors.js";
 import { makeOutcome } from "./helpers.js";
 
 describe("OUTCOME_METRICS_HEADER", () => {
@@ -710,43 +714,43 @@ describe("parseTestCount/parseTestTotal null propagation round-trip", () => {
 
 describe("classifyBuildFailure", () => {
   it("returns test_failure when vitest reports failed tests", () => {
-    expect(classifyBuildFailure("Tests  5 failed (5)")).toBe("test_failure");
+    expect(classifyBuildFailure("Tests  5 failed (5)")).toBe(ERROR_CATEGORY_TEST_FAILURE);
   });
 
   it("returns test_failure for mixed passed/failed vitest output", () => {
-    expect(classifyBuildFailure("Tests  490 passed | 3 failed (493)")).toBe("test_failure");
+    expect(classifyBuildFailure("Tests  490 passed | 3 failed (493)")).toBe(ERROR_CATEGORY_TEST_FAILURE);
   });
 
   it("returns build_failure for TypeScript compiler output (no test lines)", () => {
-    expect(classifyBuildFailure("src/foo.ts(10,5): error TS2345: Argument of type")).toBe("build_failure");
+    expect(classifyBuildFailure("src/foo.ts(10,5): error TS2345: Argument of type")).toBe(ERROR_CATEGORY_BUILD_FAILURE);
   });
 
   it("returns build_failure for empty output", () => {
-    expect(classifyBuildFailure("")).toBe("build_failure");
+    expect(classifyBuildFailure("")).toBe(ERROR_CATEGORY_BUILD_FAILURE);
   });
 
   it("returns build_failure when build output has no vitest failure pattern", () => {
-    expect(classifyBuildFailure("Tests  10 passed (10)")).toBe("build_failure");
+    expect(classifyBuildFailure("Tests  10 passed (10)")).toBe(ERROR_CATEGORY_BUILD_FAILURE);
   });
 
   it("returns test_failure for zero-count failed line (Tests  0 failed)", () => {
     // Regex /Tests\s+.*\d+\s+failed/ matches "0 failed" — pin this edge case
-    expect(classifyBuildFailure("Tests  0 failed (0)")).toBe("test_failure");
+    expect(classifyBuildFailure("Tests  0 failed (0)")).toBe(ERROR_CATEGORY_TEST_FAILURE);
   });
 
   it("returns test_failure when both passed and failed tokens appear (mixed run)", () => {
-    expect(classifyBuildFailure("Tests  100 passed | 2 failed (102)")).toBe("test_failure");
+    expect(classifyBuildFailure("Tests  100 passed | 2 failed (102)")).toBe(ERROR_CATEGORY_TEST_FAILURE);
   });
 
   it("returns build_failure for all-skipped vitest output (no failed token)", () => {
     // "Tests  3 skipped (3)" has no "failed" token so the regex does not match — pin this.
-    expect(classifyBuildFailure("Tests  3 skipped (3)")).toBe("build_failure");
+    expect(classifyBuildFailure("Tests  3 skipped (3)")).toBe(ERROR_CATEGORY_BUILD_FAILURE);
   });
 
   it("returns build_failure when only 'Test Files N failed' line is present (no Tests line)", () => {
     // "Test Files  2 failed (2)" is the per-file summary line, NOT the per-test line.
     // classifyBuildFailure must not treat it as a test_failure — pin this contract.
-    expect(classifyBuildFailure("Test Files  2 failed (2)")).toBe("build_failure");
+    expect(classifyBuildFailure("Test Files  2 failed (2)")).toBe(ERROR_CATEGORY_BUILD_FAILURE);
   });
 
   it("returns test_failure when output contains both a TypeScript compiler error and vitest failure (mixed output)", () => {
@@ -757,7 +761,7 @@ describe("classifyBuildFailure", () => {
       "src/foo.ts(10,5): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'\n" +
       " Test Files  1 failed (1)\n" +
       "      Tests  3 failed (3)\n";
-    expect(classifyBuildFailure(mixedOutput)).toBe("test_failure");
+    expect(classifyBuildFailure(mixedOutput)).toBe(ERROR_CATEGORY_TEST_FAILURE);
   });
 
   it("returns build_failure when TypeScript compiler error appears with no vitest failure pattern (build-only failure)", () => {
@@ -766,7 +770,7 @@ describe("classifyBuildFailure", () => {
     const tsOnlyOutput =
       "src/bar.ts(5,1): error TS2551: Property 'foo' does not exist on type 'Bar'.\n" +
       "error TS5055: Cannot write file 'dist/bar.js'\n";
-    expect(classifyBuildFailure(tsOnlyOutput)).toBe("build_failure");
+    expect(classifyBuildFailure(tsOnlyOutput)).toBe(ERROR_CATEGORY_BUILD_FAILURE);
   });
 
   it("returns test_failure for multiline mixed output matching real pnpm output format", () => {
@@ -779,6 +783,6 @@ describe("classifyBuildFailure", () => {
       " Test Files  1 failed | 1 passed (2)\n" +
       "      Tests  490 passed | 3 failed (493)\n" +
       "   Duration  1.23s\n";
-    expect(classifyBuildFailure(realisticMixed)).toBe("test_failure");
+    expect(classifyBuildFailure(realisticMixed)).toBe(ERROR_CATEGORY_TEST_FAILURE);
   });
 });

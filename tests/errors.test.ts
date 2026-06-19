@@ -1,9 +1,30 @@
 import { describe, it, expect } from "vitest";
-import { errorMessage, execSyncOutput, ERROR_CATEGORY_NONE } from "../src/errors.js";
+import {
+  errorMessage,
+  execSyncOutput,
+  ERROR_CATEGORY_NONE,
+  ERROR_CATEGORY_BUILD_FAILURE,
+  ERROR_CATEGORY_TEST_FAILURE,
+  ERROR_CATEGORY_LLM_ERROR,
+} from "../src/errors.js";
 
 describe("ERROR_CATEGORY_NONE", () => {
   it('is pinned to the string "none"', () => {
     expect(ERROR_CATEGORY_NONE).toBe("none");
+  });
+});
+
+describe("ErrorCategory named constants", () => {
+  it('ERROR_CATEGORY_BUILD_FAILURE is pinned to "build_failure"', () => {
+    expect(ERROR_CATEGORY_BUILD_FAILURE).toBe("build_failure");
+  });
+
+  it('ERROR_CATEGORY_TEST_FAILURE is pinned to "test_failure"', () => {
+    expect(ERROR_CATEGORY_TEST_FAILURE).toBe("test_failure");
+  });
+
+  it('ERROR_CATEGORY_LLM_ERROR is pinned to "llm_error"', () => {
+    expect(ERROR_CATEGORY_LLM_ERROR).toBe("llm_error");
   });
 });
 
