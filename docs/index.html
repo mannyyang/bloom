@@ -83,48 +83,36 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Fri, 19 Jun 2026 01:10:39 GMT</p>
+    <p>Last updated: Fri, 19 Jun 2026 05:56:43 GMT</p>
   </header>
   
-  <section class="section">
-    <h2><span class="badge" style="background:#6b7280">Backlog</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Expose `pickNextItem` selection rationale in `pnpm stats --verbose` output (e.g. &quot;resumed In Progress item X&quot; vs &quot;promoted Backlog item Y&quot;) to make cycle-to-cycle planning decisions auditable</span>
-          
-        </div>
-      </li></ul>
-  </section>
 
-  <section class="section">
-    <h2><span class="badge" style="background:#2563eb">Up Next</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Add `formatPlanningContext` snapshot test with a mixed roadmap (items in every status) to catch unintended rendering regressions in the assessment prompt</span>
-          
-        </div>
-      </li></ul>
-  </section>
 
-  <section class="section">
-    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Add `--help` flag to `pnpm roadmap` CLI to print available flags and usage, mirroring the pattern established by `pnpm stats --help`</span>
-          
-        </div>
-      </li></ul>
-  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Expose `pickNextItem` selection rationale in `pnpm stats --verbose` output (e.g. &quot;resumed In Progress item X&quot; vs &quot;promoted Backlog item Y&quot;) to make cycle-to-cycle planning decisions auditable</span>
+          <p class="item-desc">Completed in cycle 653: 2/2 improvements succeeded.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `--help` flag to `pnpm roadmap` CLI to print available flags and usage, mirroring the pattern established by `pnpm stats --help`</span>
+          <p class="item-desc">Completed in cycle 652: 1/1 improvements succeeded.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `formatPlanningContext` snapshot test with a mixed roadmap (items in every status) to catch unintended rendering regressions in the assessment prompt</span>
+          <p class="item-desc">Completed in cycle 653: 3/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -358,10 +346,10 @@
       <tbody>
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
-        <tr><td>Avg improvements / cycle</td><td><strong>1.7</strong></td></tr>
+        <tr><td>Avg improvements / cycle</td><td><strong>1.6</strong></td></tr>
         <tr><td>Improvement conversion rate</td><td><strong>69%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>6.1 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$37.33</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.2 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$38.02</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -371,6 +359,25 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 653</span>
+        <span class="cycle-date">2026-06-19</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Fix stale ROADMAP.md: mark &quot;--help flag&quot; (In Progress) and &quot;formatPlanningContext snapshot test&quot; (Up Next) as Done since both were completed in cycle 652; promote backlog item to In Progress
+- Implement `pickNextItemWithRationale` in planning.ts and expose selection rationale in `pnpm stats --verbose` output
+- Update ROADMAP.md to mark the pickNextItem rationale feature Done after implementation</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- chore(roadmap): marked completed items Done, promoted pickNextItem rationale to In Progress (cycle 652 cleanup)
+- feat(planning): added `pickNextItemWithRationale()` returning item + rationale string; refactored `pickNextItem` to delegate to it; surfaced rationale in `generateStatsOutput` when `--verbose` is set; added 6 new tests (3248 → 3254 passing)
+- chore(roadmap): marked pickNextItem rationale feature Done in cycle 653</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [roadmap] Stale In Progress items accumulate when the ROADMAP.md update step in a cycle is skipped or partially executed — always verify completed items are marked Done at cycle end
+- [testing] Adding `pickNextItemWithRationale` alongside `pickNextItem` avoids code duplication while making rationale easily testable in isolation; the delegation pattern kept `pickNextItem` backward-compatible with zero callers changed
+- [stats] Stats verbose mode is a natural home for planning-state information (both category staleness and now item-selection rationale); try/catch around roadmap reads keeps the feature non-fatal if ROADMAP.md is missing</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 651</span>
@@ -439,25 +446,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test-coverage] All three assessment-recommended tests had partial or full coverage in the existing suite; the only genuinely missing test was the `buildAssessmentPrompt` section-ordering assertion
 - [process] Checking existing tests before writing new ones avoids duplicates and reveals where coverage actually gaps are — the triage tests were more complete than the assessment assumed
 - [prompt-safety] Positional `indexOf` assertions are the correct tool for prompt section ordering; `toContain` alone cannot catch reorder regressions</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 645</span>
-        <span class="cycle-date">2026-06-17</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Bug fix: guard `formatDurationSec` in `src/usage.ts` against `NaN` and `Infinity` inputs by changing `if (ms &lt;= 0)` to `if (!Number.isFinite(ms) || ms &lt;= 0)`, with 3 new test assertions
-- Test gap: add `buildFileManifest` recursive subdirectory test creating `src/subdir/nested.ts` in a temp dir and asserting the manifest includes the full `src/subdir/nested.ts` path
-- Clarity: add 2 value-pin tests in `tests/triage.test.ts` asserting exact section headers `&quot;## New issues to triage:&quot;` and `&quot;## Current roadmap state:&quot;` appear in `buildTriagePrompt` output</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Bug fix: guard `formatDurationSec` against NaN/Infinity (1 production line changed, 3 test assertions added, committed as `a1b4fc5`)
-- Test gap: `buildFileManifest` recursive subdirectory handling verified (0 production lines, ~20 test lines added, committed as `16cbdb4`)
-- Clarity: `buildTriagePrompt` section headers pinned with exact-match tests (0 production lines, ~14 test lines added, committed as `80f3e3e`)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [bug] JS comparison `NaN &lt;= 0` evaluates to `false`, so numeric guards using only `&lt;= 0` silently pass NaN through; `Number.isFinite()` is the correct compound guard
-- [testing] Recursive filesystem behaviour is only proven by creating real temp-dir fixtures; mocks cannot validate `{ recursive: true }` flag presence
-- [testing] Prompt string literals controlling LLM behaviour need value-pin tests — static analysis and indirect coverage leave rename-regressions invisible</p></div>
       </div>
     </div>
   </section>
