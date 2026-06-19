@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import { generateRoadmapOutput, generateRoadmapJson, generateRoadmapMarkdown, parseRoadmapFilterFlag, parseFormatFlag, ROADMAP_BODY_PREVIEW_MAX_CHARS, type RoadmapJsonSummary } from "../src/roadmap.js";
+import { generateRoadmapOutput, generateRoadmapJson, generateRoadmapMarkdown, parseRoadmapFilterFlag, parseFormatFlag, ROADMAP_BODY_PREVIEW_MAX_CHARS, ROADMAP_HELP_TEXT, type RoadmapJsonSummary } from "../src/roadmap.js";
+import { parseHelpFlag } from "../src/stats.js";
 import * as planning from "../src/planning.js";
 import { parseRoadmap, serializeRoadmap } from "../src/planning.js";
 
@@ -1298,5 +1299,25 @@ describe("generateRoadmapMarkdown", () => {
 
   it("output is a string (not an array)", () => {
     expect(typeof generateRoadmapMarkdown(SAMPLE_ROADMAP)).toBe("string");
+  });
+});
+
+describe("ROADMAP_HELP_TEXT and parseHelpFlag", () => {
+  it("ROADMAP_HELP_TEXT contains key flags", () => {
+    expect(ROADMAP_HELP_TEXT).toContain("--filter");
+    expect(ROADMAP_HELP_TEXT).toContain("--format");
+    expect(ROADMAP_HELP_TEXT).toContain("--json");
+    expect(ROADMAP_HELP_TEXT).toContain("--help");
+    expect(ROADMAP_HELP_TEXT).toContain("-h");
+  });
+
+  it("ROADMAP_HELP_TEXT starts with Usage line", () => {
+    expect(ROADMAP_HELP_TEXT.startsWith("Usage: pnpm roadmap")).toBe(true);
+  });
+
+  it("parseHelpFlag detects --help in roadmap argv", () => {
+    expect(parseHelpFlag(["node", "roadmap.js", "--help"])).toBe(true);
+    expect(parseHelpFlag(["node", "roadmap.js", "-h"])).toBe(true);
+    expect(parseHelpFlag(["node", "roadmap.js", "--json"])).toBe(false);
   });
 });

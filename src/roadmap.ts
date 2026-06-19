@@ -23,11 +23,26 @@ import {
   type StatusColumn,
   type ProjectItem,
 } from "./planning.js";
-import { parseJsonFlag } from "./stats.js";
+import { parseJsonFlag, parseHelpFlag } from "./stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "./db.js";
 import { errorMessage } from "./errors.js";
 
 export const ROADMAP_BODY_PREVIEW_MAX_CHARS = 120;
+
+/**
+ * Usage text printed when `pnpm roadmap --help` is invoked.
+ * Lists every supported flag with a short description, mirroring the
+ * convention used by `pnpm stats --help`.
+ */
+export const ROADMAP_HELP_TEXT = `\
+Usage: pnpm roadmap [options]
+
+Options:
+  --filter <status>  Show only items with the given status (e.g. Backlog, "In Progress", Done)
+  --format md        Output roadmap as GitHub-flavoured Markdown
+  --json             Output roadmap as JSON (for scripting/CI)
+  --help, -h         Print this help message and exit
+`;
 
 const STATUS_ORDER: StatusColumn[] = [STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, STATUS_DONE];
 
@@ -323,6 +338,11 @@ export function generateRoadmapJson(content: string, filterStatus?: StatusColumn
 }
 
 function main() {
+  if (parseHelpFlag(process.argv)) {
+    process.stdout.write(ROADMAP_HELP_TEXT);
+    return;
+  }
+
   let content: string;
   try {
     content = readRoadmap();
