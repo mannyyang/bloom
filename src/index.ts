@@ -1,6 +1,6 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { initDb, getLatestCycleNumber, insertCycle, insertJournalEntry, updateCycleOutcome } from "./db.js";
-import { errorMessage, ERROR_CATEGORY_NONE } from "./errors.js";
+import { errorMessage, ERROR_CATEGORY_NONE, ERROR_CATEGORY_LLM_ERROR } from "./errors.js";
 import {
   protectIdentity,
   protectJournal,
@@ -97,7 +97,7 @@ async function main() {
 
     // Classify failure if not already set by a sub-phase (e.g. build verification)
     if (outcome.failureCategory === ERROR_CATEGORY_NONE) {
-      outcome.failureCategory = "llm_error";
+      outcome.failureCategory = ERROR_CATEGORY_LLM_ERROR;
     }
 
     // Record the error as a journal entry so it's visible on GitHub Pages

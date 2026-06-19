@@ -21,6 +21,9 @@ export type ErrorCategory = "build_failure" | "test_failure" | "llm_error" | "no
  * and rename mismatches at compile time.
  */
 export const ERROR_CATEGORY_NONE = "none" as const satisfies ErrorCategory;
+export const ERROR_CATEGORY_BUILD_FAILURE = "build_failure" as const satisfies ErrorCategory;
+export const ERROR_CATEGORY_TEST_FAILURE = "test_failure" as const satisfies ErrorCategory;
+export const ERROR_CATEGORY_LLM_ERROR = "llm_error" as const satisfies ErrorCategory;
 
 /**
  * Extract a human-readable message from an unknown thrown value.

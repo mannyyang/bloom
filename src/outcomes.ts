@@ -4,7 +4,11 @@
  */
 
 import type { ErrorCategory } from "./errors.js";
-import { ERROR_CATEGORY_NONE } from "./errors.js";
+import {
+  ERROR_CATEGORY_NONE,
+  ERROR_CATEGORY_BUILD_FAILURE,
+  ERROR_CATEGORY_TEST_FAILURE,
+} from "./errors.js";
 import { formatDurationSec } from "./usage.js";
 
 /**
@@ -78,9 +82,9 @@ export function parseTestTotal(output: string): number | null {
 export function classifyBuildFailure(output: string): ErrorCategory {
   // Vitest prints "Tests  N failed" or "Tests  N passed | N failed" when tests run and fail
   if (/Tests\s+.*\d+\s+failed/.test(output)) {
-    return "test_failure";
+    return ERROR_CATEGORY_TEST_FAILURE;
   }
-  return "build_failure";
+  return ERROR_CATEGORY_BUILD_FAILURE;
 }
 
 /**
