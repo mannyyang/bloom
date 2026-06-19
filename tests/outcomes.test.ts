@@ -8,8 +8,10 @@ import {
   OUTCOME_METRICS_HEADER,
 } from "../src/outcomes.js";
 import {
+  ERROR_CATEGORY_NONE,
   ERROR_CATEGORY_BUILD_FAILURE,
   ERROR_CATEGORY_TEST_FAILURE,
+  ERROR_CATEGORY_LLM_ERROR,
 } from "../src/errors.js";
 import { makeOutcome } from "./helpers.js";
 
@@ -338,7 +340,7 @@ describe("formatOutcomeForJournal", () => {
       improvementsSucceeded: 2,
       buildVerificationPassed: true,
       pushSucceeded: true,
-      failureCategory: "none",
+      failureCategory: ERROR_CATEGORY_NONE,
       durationMs: 60000,
       testCountBefore: 100,
       testCountAfter: 103,
@@ -359,7 +361,7 @@ describe("formatOutcomeForJournal", () => {
     const outcome = makeOutcome({
       testCountBefore: 100,
       testCountAfter: null,
-      failureCategory: "none",
+      failureCategory: ERROR_CATEGORY_NONE,
       durationMs: null,
     });
     const result = formatOutcomeForJournal(outcome);
@@ -375,7 +377,7 @@ describe("formatOutcomeForJournal", () => {
     const outcome = makeOutcome({
       testCountBefore: 100,
       testCountAfter: null,
-      failureCategory: "none",
+      failureCategory: ERROR_CATEGORY_NONE,
       durationMs: 60000,
     });
     const result = formatOutcomeForJournal(outcome);
@@ -394,7 +396,7 @@ describe("formatOutcomeForJournal", () => {
     const outcome = makeOutcome({
       testCountBefore: null,
       testCountAfter: 100,
-      failureCategory: "none",
+      failureCategory: ERROR_CATEGORY_NONE,
       durationMs: null,
     });
     const result = formatOutcomeForJournal(outcome);
@@ -410,7 +412,7 @@ describe("formatOutcomeForJournal", () => {
     const outcome = makeOutcome({
       testCountBefore: null,
       testCountAfter: 100,
-      failureCategory: "none",
+      failureCategory: ERROR_CATEGORY_NONE,
       durationMs: 60000,
     });
     const result = formatOutcomeForJournal(outcome);
@@ -432,7 +434,7 @@ describe("formatOutcomeForJournal", () => {
       improvementsSucceeded: 0,
       buildVerificationPassed: false,
       pushSucceeded: false,
-      failureCategory: "build_failure",
+      failureCategory: ERROR_CATEGORY_BUILD_FAILURE,
       durationMs: null,
       testCountBefore: 100,
       testCountAfter: 100,
@@ -457,7 +459,7 @@ describe("formatOutcomeForJournal", () => {
       improvementsSucceeded: 1,
       buildVerificationPassed: true,
       pushSucceeded: true,
-      failureCategory: "none",
+      failureCategory: ERROR_CATEGORY_NONE,
       durationMs: null,
       testCountBefore: null,
       testCountAfter: null,
@@ -479,7 +481,7 @@ describe("formatOutcomeForJournal", () => {
       improvementsSucceeded: 1,
       buildVerificationPassed: false,
       pushSucceeded: false,
-      failureCategory: "test_failure",
+      failureCategory: ERROR_CATEGORY_TEST_FAILURE,
       durationMs: 90000,
       testCountBefore: 100,
       testCountAfter: 98,
@@ -500,7 +502,7 @@ describe("formatOutcomeForJournal", () => {
     // always appear before duration. An accidental swap would not be caught by
     // toContain() checks alone; index comparison catches it directly.
     const outcome = makeOutcome({
-      failureCategory: "build_failure",
+      failureCategory: ERROR_CATEGORY_BUILD_FAILURE,
       durationMs: 30000,
       testCountBefore: null,
       testCountAfter: null,
@@ -629,25 +631,25 @@ describe("formatOutcomeForJournal", () => {
   });
 
   it("includes failure category line when failureCategory is build_failure", () => {
-    const outcome = makeOutcome({ failureCategory: "build_failure" });
+    const outcome = makeOutcome({ failureCategory: ERROR_CATEGORY_BUILD_FAILURE });
     const result = formatOutcomeForJournal(outcome);
     expect(result).toContain("**Failure category**: build_failure");
   });
 
   it("includes failure category line when failureCategory is test_failure", () => {
-    const outcome = makeOutcome({ failureCategory: "test_failure" });
+    const outcome = makeOutcome({ failureCategory: ERROR_CATEGORY_TEST_FAILURE });
     const result = formatOutcomeForJournal(outcome);
     expect(result).toContain("**Failure category**: test_failure");
   });
 
   it("includes failure category line when failureCategory is llm_error", () => {
-    const outcome = makeOutcome({ failureCategory: "llm_error" });
+    const outcome = makeOutcome({ failureCategory: ERROR_CATEGORY_LLM_ERROR });
     const result = formatOutcomeForJournal(outcome);
     expect(result).toContain("**Failure category**: llm_error");
   });
 
   it("omits failure category line when failureCategory is none", () => {
-    const outcome = makeOutcome({ failureCategory: "none" });
+    const outcome = makeOutcome({ failureCategory: ERROR_CATEGORY_NONE });
     const result = formatOutcomeForJournal(outcome);
     expect(result).not.toContain("**Failure category**");
   });
