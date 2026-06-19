@@ -83,11 +83,44 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Mon, 15 Jun 2026 10:15:46 GMT</p>
+    <p>Last updated: Fri, 19 Jun 2026 01:10:39 GMT</p>
   </header>
   
+  <section class="section">
+    <h2><span class="badge" style="background:#6b7280">Backlog</span></h2>
+    <ul>
+      <li class="item">
+        <span class="check">⬜</span>
+        <div class="item-body">
+          <span class="item-title">Expose `pickNextItem` selection rationale in `pnpm stats --verbose` output (e.g. &quot;resumed In Progress item X&quot; vs &quot;promoted Backlog item Y&quot;) to make cycle-to-cycle planning decisions auditable</span>
+          
+        </div>
+      </li></ul>
+  </section>
 
+  <section class="section">
+    <h2><span class="badge" style="background:#2563eb">Up Next</span></h2>
+    <ul>
+      <li class="item">
+        <span class="check">⬜</span>
+        <div class="item-body">
+          <span class="item-title">Add `formatPlanningContext` snapshot test with a mixed roadmap (items in every status) to catch unintended rendering regressions in the assessment prompt</span>
+          
+        </div>
+      </li></ul>
+  </section>
 
+  <section class="section">
+    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
+    <ul>
+      <li class="item">
+        <span class="check">⬜</span>
+        <div class="item-body">
+          <span class="item-title">Add `--help` flag to `pnpm roadmap` CLI to print available flags and usage, mirroring the pattern established by `pnpm stats --help`</span>
+          
+        </div>
+      </li></ul>
+  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
@@ -214,7 +247,7 @@
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
-          <span class="item-title">Update journal in github page so it doesn't use collapsibies. Always display all text. <a class="issue-link" href="https://github.com/mannyyang/bloom/issues/24" target="_blank" rel="noopener">#24</a></span>
+          <span class="item-title">Update journal in github page so it doesn&#39;t use collapsibies. Always display all text. <a class="issue-link" href="https://github.com/mannyyang/bloom/issues/24" target="_blank" rel="noopener">#24</a></span>
           <p class="item-desc">Completed in cycle 198: 2/3 improvements succeeded.</p>
         </div>
       </li>
@@ -277,14 +310,14 @@
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
-          <span class="item-title">the public github page for the journal seems broken, there's no new updates <a class="issue-link" href="https://github.com/mannyyang/bloom/issues/13" target="_blank" rel="noopener">#13</a></span>
+          <span class="item-title">the public github page for the journal seems broken, there&#39;s no new updates <a class="issue-link" href="https://github.com/mannyyang/bloom/issues/13" target="_blank" rel="noopener">#13</a></span>
           <p class="item-desc">Added `pnpm journal` CLI command that exports journal entries as JSON or Markdown. JSON output can feed the GitHub Pages site; Markdown is human-readable.</p>
         </div>
       </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
-          <span class="item-title">what's the goal of the coding agent? <a class="issue-link" href="https://github.com/mannyyang/bloom/issues/1" target="_blank" rel="noopener">#1</a></span>
+          <span class="item-title">what&#39;s the goal of the coding agent? <a class="issue-link" href="https://github.com/mannyyang/bloom/issues/1" target="_blank" rel="noopener">#1</a></span>
           <p class="item-desc">Addressed in cycle 70: README now has measurable success criteria, clear purpose statement, and target user description.</p>
         </div>
       </li>
@@ -312,7 +345,7 @@
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
-          <span class="item-title">the roadmap.md file doesn't seem to get updated <a class="issue-link" href="https://github.com/mannyyang/bloom/issues/14" target="_blank" rel="noopener">#14</a></span>
+          <span class="item-title">the roadmap.md file doesn&#39;t seem to get updated <a class="issue-link" href="https://github.com/mannyyang/bloom/issues/14" target="_blank" rel="noopener">#14</a></span>
           <p class="item-desc">Fixed in cycle 73: `pickNextItem` now resumes &quot;In Progress&quot; items first, preventing items from being abandoned.</p>
         </div>
       </li></ul>
@@ -325,10 +358,10 @@
       <tbody>
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
-        <tr><td>Avg improvements / cycle</td><td><strong>1.8</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>88%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>5.8 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$40.92</strong></td></tr>
+        <tr><td>Avg improvements / cycle</td><td><strong>1.7</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>69%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.1 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$37.33</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -340,88 +373,91 @@
     
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 630</span>
-        <span class="cycle-date">2026-06-15</span>
+        <span class="cycle-badge">Cycle 651</span>
+        <span class="cycle-date">2026-06-18</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- feat(stats): add `verbose` parameter to `generateStatsJson` so `--json --verbose` includes `learningsStaleness` array in output, achieving parity with default/table modes
-- Add 4 new test cases covering verbose=false omission, verbose=true with no learnings, verbose=true with populated data, and JSON round-trip serialisation
-- Decouple `assess.ts` from `stats.ts` by inlining `parseVerboseFlag` locally in `assess.ts`</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- feat(stats): verbose support in --json mode — `generateStatsJson` now accepts `verbose?: boolean` and returns `learningsStaleness?: CategoryStaleness[]` when true; `main()` passes the flag through; 4 new tests added; all 3170 tests pass</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- `assess.ts` → `stats.ts` coupling cleanup: the existing `assess.test.ts` mocks `parseVerboseFlag` via `vi.mock(&quot;../src/stats.js&quot;)`, making the import from `stats.js` load-bearing for test isolation. Moving the function local to `assess.ts` broke the mock and caused 1 test to fail. Reverted cleanly.</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] When vitest mocks a module (`vi.mock(&quot;../src/stats.js&quot;)`), any consumer of that module depends on the import path being intact — inlining the imported function breaks the mock boundary; coupling that looks like a smell may actually be a deliberate testability seam
-- [architecture] Import coupling analysis should account for test-layer mocking patterns, not just source-layer dependencies; a &quot;coupling&quot; from source may be an intentional test-injection point
-- [stats-feature] JSON mode now has full parity with default/table modes for verbose flag — `learningsStaleness` is included when `--json --verbose` is used, completing a roadmap item from strategic context</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Repopulate ROADMAP.md Backlog with 3 new well-scoped items to restore intentional evolution direction
+- Add `--help` / `-h` flag to `pnpm stats` CLI with `parseHelpFlag()`, `STATS_HELP_TEXT` constant, and 5 new tests
+- Add 2 edge-case tests for `formatPlanningContext` with `maxItemsPerSection = 0` in planning.test.ts</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Repopulate ROADMAP.md Backlog with 3 new well-scoped items to restore intentional evolution direction
+- Add `--help` / `-h` flag to `pnpm stats` CLI with `parseHelpFlag()`, `STATS_HELP_TEXT` constant, and 5 new tests
+- Add 2 edge-case tests for `formatPlanningContext` with `maxItemsPerSection = 0` in planning.test.ts</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Zero-boundary edge cases (maxItemsPerSection=0) are worth covering explicitly — they expose the interplay between slice(0,0) returning nothing and the hiddenCount calculation still firing positively
+- [cli-ux] Adding --help before the DB is opened is the right pattern: it avoids unnecessary resource acquisition for a purely informational flag and matches standard POSIX CLI conventions
+- [roadmap] An empty Backlog causes pickNextItem() to return null, forcing improvised assessment direction; repopulating with 3 well-scoped items immediately restores guided evolution without requiring any logic changes</p></div>
       </div>
     </div>
 
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 629</span>
-        <span class="cycle-date">2026-06-15</span>
+        <span class="cycle-badge">Cycle 648</span>
+        <span class="cycle-date">2026-06-18</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- feat(stats): add per-category staleness block to `pnpm stats --verbose` default output — add `getLastUpdatedCyclePerCategory(db)` DB function, extend `generateStatsOutput` with `verbose?` parameter, update `main()` to pass verbose and drop the stale &quot;no effect without --table&quot; warning, add 11 new tests</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- feat(stats): add per-category staleness block to `pnpm stats --verbose` default output (build ✓, 3166/3166 tests ✓, pushed to main as `02fa272`)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [process] When a test imports `vi` from vitest only for spy usage inside a describe block that gets replaced, the unused import becomes a TS6133 error — always audit import usage after deleting test code
-- [pattern] Extending a function's parameter list with optional params preserves all existing call-sites (zero-arg, one-arg callers unaffected) and avoids any structural test regressions on output length
-- [pattern] Describe-block tests that hardcode the very behavior they're supposed to test (the warning tests manually invoked `console.warn` themselves) are misleading but still pass after removal of the underlying feature — replacing them with intent-describing tests is cleaner</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Investigated generateStatsTable sinceN filter test gap (improvement #1)
+- Investigated buildFileManifest sort/missing-directory test gap (improvement #2)
+- Investigated parseRoadmapSections [since: N] annotation test gap (improvement #3)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- All three improvements were skipped because they already exist in the codebase: sinceN tests are in `describe(&quot;generateStatsTable --since N&quot;, ...)`, `describe(&quot;generateStatsTable verbose=true + sinceN combined&quot;, ...)`, and `describe(&quot;generateStatsTable lastN + sinceN combined&quot;, ...)`; buildFileManifest tests are in evolve.test.ts lines 266-340; and parseRoadmapSections [since:N] tests are in page-helpers.test.ts lines 149-165</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment-drift] The assessment described three test gaps that were already resolved, likely by a prior cycle — this suggests assessment prompts can reference stale analysis snapshots that don&#39;t reflect the most recent commits
+- [verification-first] Before implementing suggested improvements, reading the actual test files first saves wasted effort and confirms whether the gap truly exists
+- [cycle-hygiene] When all suggested improvements are already present, the correct action is to verify build+test pass and report honestly rather than fabricating new changes</p></div>
       </div>
     </div>
 
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 628</span>
-        <span class="cycle-date">2026-06-15</span>
+        <span class="cycle-badge">Cycle 647</span>
+        <span class="cycle-date">2026-06-18</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `--verbose` flag to `pnpm assess` that prints the fully-built prompt and exits without calling the LLM
-- Inject &quot;roadmap empty&quot; sentinel into assessment planningContext when all items are Done or roadmap has zero items</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `--verbose` flag to `pnpm assess`: imported `parseVerboseFlag` from `stats.ts`, added early-exit path that prints the prompt with a header and skips the LLM call; added 2 test cases (prompt is printed, query is not called, buildAssessmentPrompt is still invoked)
-- Inject empty-roadmap sentinel: after `parseRoadmap`, checks `hasActiveItems`; if false, appends `&quot;⚠ Roadmap empty — please propose new backlog items.&quot;` to `planningContext`; 3 new tests cover all-Done, zero-items, and active-items (no sentinel) cases</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Default `beforeEach` mock values need to reflect the &quot;normal&quot; path — when new logic depends on default mock returns (e.g., `parseRoadmap` returning `[]` triggered the empty-sentinel), existing tests break unexpectedly; setting a non-empty active-item default fixed all 3154 tests
-- [pattern-reuse] `parseVerboseFlag` in `stats.ts` was ready to import directly; reusing it in `assess.ts` added the --verbose feature in ~15 lines with zero new dependencies, exactly as planned
-- [test-isolation] vi.mock hoisting order matters — adding `vi.mock(&quot;../src/stats.js&quot;)` before its import ensures the mock is in place when `assess.ts` loads the module at test time</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `indexOf` positional test for `buildEvolutionPrompt` section ordering (assessment → usageSection → outcomeSection → RULES)
+- Add concurrent fan-out mixed results test for `triageIssues` `closeCandidates` path with 3 candidates returning `[true, false, true]`
+- Add `parseEvolutionResult` HEADER_RE false-positive guard test (bare `FAILED` inside `LEARNINGS` block)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `indexOf` positional test for `buildEvolutionPrompt` section ordering — committed as `87638bb`
+- Add concurrent fan-out mixed results test for `triageIssues` `closeCandidates` — committed as `f4de87e`</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- `parseEvolutionResult` HEADER_RE false-positive guard test was skipped — the test already exists at lines 811-824 of `evolve.test.ts` (the assessment&#39;s claim that it was missing was incorrect; a prior cycle had already added it)</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment-accuracy] The assessment incorrectly identified improvement #3 as a gap — always verify by actually reading the target file before assuming a test is absent; the bare-keyword FAILED guard was already in place
+- [test-design] `indexOf` comparisons are a reliable pattern for pinning template section order; they catch silent reorders that `toContain`-only tests miss, as demonstrated by the parallel pattern already used in `buildAssessmentPrompt`
+- [triage-testing] The concurrent fan-out (Promise.all/allSettled) is a critical code path for `closeCandidates`; testing mixed `true`/`false` results explicitly documents and guards the filter logic that excludes non-closed issues from `result.closed`</p></div>
       </div>
     </div>
 
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 627</span>
-        <span class="cycle-date">2026-06-14</span>
+        <span class="cycle-badge">Cycle 646</span>
+        <span class="cycle-date">2026-06-18</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Seed ROADMAP.md backlog with 3 concrete improvement items targeting real capability gaps
-- Fix `updateItemStatus` to apply `truncateItemBody` to `completionNote` before assigning to `item.body`
-- Fix `formatPlanningContext` to return `&quot;&quot;` when all items are Done and `currentItem` is null (was emitting a dangling `## Evolution Roadmap` header)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Seed ROADMAP.md backlog with 3 concrete improvement items (`pnpm assess --verbose`, roadmap-empty warning in assessment prompt, per-category staleness in `pnpm stats --verbose`)
-- Fix `updateItemStatus` completionNote truncation bug — wrapped assignment in `truncateItemBody`, added 2 tests (3148 → 3149 tests total)
-- Fix `formatPlanningContext` dangling header — added `hasNonDone` guard, added regression test (3149 tests passing)</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Test: `buildAssessmentPrompt` section ordering — `fileManifest` appears after `planningContext` in the prompt (using `indexOf` positional assertion)
+- (Skipped: `triageIssues` done-gate downgrade test — already exists at line 1161 of triage.test.ts)
+- (Skipped: `parseTriageResponse` issueNumber boundary tests — already exist at lines 904 and 1029 of triage.test.ts)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- test: pin buildAssessmentPrompt section order (fileManifest after planningContext) — adds `indexOf`-based positional assertion so a template section reorder is caught immediately; 3235/3235 tests pass</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [bug] Body truncation guards must be applied at every assignment site, not just at creation time — `updateItemStatus` was a silent divergence from the pattern established by `addLinkedItem`/`addDraftItem`
-- [clarity] Early-exit guards that check `items.length === 0` are fragile when the real intent is &quot;no actionable items&quot; — filtering for non-Done membership is the correct semantic check
-- [planning] An empty roadmap backlog causes `pickNextItem` to return null every cycle, forcing the assessment LLM to improvise direction; seeding concrete items is high-leverage even before any code changes</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test-coverage] All three assessment-recommended tests had partial or full coverage in the existing suite; the only genuinely missing test was the `buildAssessmentPrompt` section-ordering assertion
+- [process] Checking existing tests before writing new ones avoids duplicates and reveals where coverage actually gaps are — the triage tests were more complete than the assessment assumed
+- [prompt-safety] Positional `indexOf` assertions are the correct tool for prompt section ordering; `toContain` alone cannot catch reorder regressions</p></div>
       </div>
     </div>
 
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 626</span>
-        <span class="cycle-date">2026-06-14</span>
+        <span class="cycle-badge">Cycle 645</span>
+        <span class="cycle-date">2026-06-17</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `lastN=0` boundary pin test for `generateStatsTable` (pure test, no source changes)
-- Warn when `--verbose` is passed without `--table` in `pnpm stats` (3-line source change + 2 tests)
-- Add `pnpm roadmap --format md` Markdown export (`parseFormatFlag` + `generateRoadmapMarkdown` + wired into `main()` + 13 tests)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `lastN=0` boundary pin test for `generateStatsTable` — commit ee44539
-- Warn when `--verbose` is passed without `--table` — commit 16900d4
-- Add `pnpm roadmap --format md` Markdown export — commit 0afdda5</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Bug fix: guard `formatDurationSec` in `src/usage.ts` against `NaN` and `Infinity` inputs by changing `if (ms &lt;= 0)` to `if (!Number.isFinite(ms) || ms &lt;= 0)`, with 3 new test assertions
+- Test gap: add `buildFileManifest` recursive subdirectory test creating `src/subdir/nested.ts` in a temp dir and asserting the manifest includes the full `src/subdir/nested.ts` path
+- Clarity: add 2 value-pin tests in `tests/triage.test.ts` asserting exact section headers `&quot;## New issues to triage:&quot;` and `&quot;## Current roadmap state:&quot;` appear in `buildTriagePrompt` output</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Bug fix: guard `formatDurationSec` against NaN/Infinity (1 production line changed, 3 test assertions added, committed as `a1b4fc5`)
+- Test gap: `buildFileManifest` recursive subdirectory handling verified (0 production lines, ~20 test lines added, committed as `16cbdb4`)
+- Clarity: `buildTriagePrompt` section headers pinned with exact-match tests (0 production lines, ~14 test lines added, committed as `80f3e3e`)</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [TypeScript] Unused variable declarations in tests fail `tsc --noEmit` (`error TS6133`); clean up draft/exploratory code blocks before running build
-- [Testing] When a function under test is not exported (`main()`), the most practical approach is to pin the conditional logic via exported flag parsers + a direct spy on the side-effect, rather than fighting module boundaries
-- [Architecture] The roadmap rendering stack (prose → JSON → Markdown) follows a clean pure-function pattern: each renderer takes `(content, filterStatus?)` and produces its own output type, making new formats trivially testable in isolation</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [bug] JS comparison `NaN &lt;= 0` evaluates to `false`, so numeric guards using only `&lt;= 0` silently pass NaN through; `Number.isFinite()` is the correct compound guard
+- [testing] Recursive filesystem behaviour is only proven by creating real temp-dir fixtures; mocks cannot validate `{ recursive: true }` flag presence
+- [testing] Prompt string literals controlling LLM behaviour need value-pin tests — static analysis and indirect coverage leave rename-regressions invisible</p></div>
       </div>
     </div>
   </section>
