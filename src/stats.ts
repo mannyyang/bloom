@@ -13,6 +13,8 @@ import { resolve } from "node:path";
 import type Database from "better-sqlite3";
 import { initDb, getCycleStats, formatCycleStats, getLatestCycleNumber, getCycleRows, getLastUpdatedCyclePerCategory, CYCLE_SUMMARY_SEPARATOR, MS_PER_MINUTE, type CycleStats, type CycleRow, type CategoryStaleness } from "./db.js";
 import { formatMemoryForPrompt } from "./memory.js";
+import { readRoadmap, parseRoadmap, pickNextItemWithRationale } from "./planning.js";
+import { errorMessage } from "./errors.js";
 
 /**
  * Number of characters of memory to include in the stats preview.
@@ -276,6 +278,19 @@ export function generateStatsOutput(db: Database.Database, lastN?: number, verbo
       for (const entry of staleness) {
         lines.push(`  ${entry.category}: last updated cycle ${entry.lastCycle}`);
       }
+    }
+
+    // Show pickNextItem selection rationale so planning decisions are auditable
+    try {
+      const roadmapContent = readRoadmap();
+      const items = parseRoadmap(roadmapContent);
+      const { rationale } = pickNextItemWithRationale(items);
+      lines.push("");
+      lines.push("Next item selection:");
+      lines.push(`  ${rationale ?? "No actionable items on the roadmap."}`);
+    } catch (err) {
+      lines.push("");
+      lines.push(`Next item selection: unavailable (${errorMessage(err)})`);
     }
   }
 

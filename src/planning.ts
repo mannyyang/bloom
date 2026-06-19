@@ -533,10 +533,25 @@ export function demoteStaleInProgressItems(
 // --- Planning Logic ---
 
 /**
- * Pick the highest-priority item to work on this cycle.
- * Priority: "In Progress" first (resume unfinished work), then "Up Next", then "Backlog".
+ * Result type returned by pickNextItemWithRationale.
+ * `item` is the chosen ProjectItem (null when no actionable items exist).
+ * `rationale` is a human-readable explanation of why this item was chosen,
+ * e.g. "resumed In Progress item" / "promoted Up Next item" / "selected Backlog item".
+ * Both fields are null together when the roadmap has no actionable items.
  */
-export function pickNextItem(items: ProjectItem[]): ProjectItem | null {
+export interface PickNextItemResult {
+  item: ProjectItem | null;
+  rationale: string | null;
+}
+
+/**
+ * Pick the highest-priority item to work on this cycle and explain why.
+ * Priority: "In Progress" first (resume unfinished work), then "Up Next", then "Backlog".
+ * Within each status, items are ranked by reactions (descending) then by item ID (ascending).
+ * Returns both the chosen item and a short rationale string suitable for display in
+ * `pnpm stats --verbose` output so planning decisions are auditable cycle-to-cycle.
+ */
+export function pickNextItemWithRationale(items: ProjectItem[]): PickNextItemResult {
   const statusPriority = [STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG] as const;
   for (const status of statusPriority) {
     const candidates = items
@@ -554,9 +569,29 @@ export function pickNextItem(items: ProjectItem[]): ProjectItem | null {
         }
         return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
       });
-    if (candidates.length > 0) return candidates[0];
+    if (candidates.length > 0) {
+      const item = candidates[0];
+      let rationale: string;
+      if (status === STATUS_IN_PROGRESS) {
+        rationale = `resumed In Progress item "${item.title}"`;
+      } else if (status === STATUS_UP_NEXT) {
+        rationale = `promoted Up Next item "${item.title}"`;
+      } else {
+        rationale = `selected Backlog item "${item.title}"`;
+      }
+      return { item, rationale };
+    }
   }
-  return null;
+  return { item: null, rationale: null };
+}
+
+/**
+ * Pick the highest-priority item to work on this cycle.
+ * Priority: "In Progress" first (resume unfinished work), then "Up Next", then "Backlog".
+ * Delegates to pickNextItemWithRationale and discards the rationale.
+ */
+export function pickNextItem(items: ProjectItem[]): ProjectItem | null {
+  return pickNextItemWithRationale(items).item;
 }
 
 /**

@@ -11,7 +11,7 @@ const mockReadFileSync = vi.mocked(readFileSync);
 const mockWriteFileSync = vi.mocked(writeFileSync);
 const mockExistsSync = vi.mocked(existsSync);
 
-import { pickNextItem, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, cleanItemBody, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, getProjectItems, truncateWithEllipsis, PLANNING_BODY_PREVIEW_CHARS, ITEM_BODY_LIMIT, PLANNING_CONTEXT_MAX_CHARS, PLANNING_CONTEXT_MAX_ITEMS, STALE_IN_PROGRESS_THRESHOLD_CYCLES, ROADMAP_HEADER, STATUS_BACKLOG, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_DONE, STATUS_COLUMNS, type ProjectItem } from "../src/planning.js";
+import { pickNextItem, pickNextItemWithRationale, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, cleanItemBody, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, getProjectItems, truncateWithEllipsis, PLANNING_BODY_PREVIEW_CHARS, ITEM_BODY_LIMIT, PLANNING_CONTEXT_MAX_CHARS, PLANNING_CONTEXT_MAX_ITEMS, STALE_IN_PROGRESS_THRESHOLD_CYCLES, ROADMAP_HEADER, STATUS_BACKLOG, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_DONE, STATUS_COLUMNS, type ProjectItem } from "../src/planning.js";
 
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
@@ -153,6 +153,51 @@ describe("pickNextItem", () => {
       makeItem({ id: "alpha-z",   status: "Backlog", reactions: 3 }),
     ];
     expect(pickNextItem(items)!.id).toBe("alpha-z");
+  });
+});
+
+describe("pickNextItemWithRationale", () => {
+  it("returns null item and null rationale when no items exist", () => {
+    const result = pickNextItemWithRationale([]);
+    expect(result.item).toBeNull();
+    expect(result.rationale).toBeNull();
+  });
+
+  it("returns null item and null rationale when all items are Done", () => {
+    const result = pickNextItemWithRationale([makeItem({ status: "Done" })]);
+    expect(result.item).toBeNull();
+    expect(result.rationale).toBeNull();
+  });
+
+  it("uses 'resumed' rationale for In Progress items", () => {
+    const item = makeItem({ title: "Fix the bug", status: "In Progress" });
+    const result = pickNextItemWithRationale([item]);
+    expect(result.item).toBe(item);
+    expect(result.rationale).toBe('resumed In Progress item "Fix the bug"');
+  });
+
+  it("uses 'promoted' rationale for Up Next items when no In Progress exists", () => {
+    const item = makeItem({ title: "Add feature", status: "Up Next" });
+    const result = pickNextItemWithRationale([item]);
+    expect(result.item).toBe(item);
+    expect(result.rationale).toBe('promoted Up Next item "Add feature"');
+  });
+
+  it("uses 'selected' rationale for Backlog items when no higher-priority items exist", () => {
+    const item = makeItem({ title: "Refactor code", status: "Backlog" });
+    const result = pickNextItemWithRationale([item]);
+    expect(result.item).toBe(item);
+    expect(result.rationale).toBe('selected Backlog item "Refactor code"');
+  });
+
+  it("picks same item as pickNextItem", () => {
+    const items = [
+      makeItem({ id: "item-1", title: "Up Next item", status: "Up Next", reactions: 5 }),
+      makeItem({ id: "item-2", title: "Backlog item", status: "Backlog", reactions: 10 }),
+    ];
+    const picked = pickNextItem(items);
+    const { item } = pickNextItemWithRationale(items);
+    expect(item).toBe(picked);
   });
 });
 
