@@ -4,6 +4,7 @@ import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLe
 import type { CycleStats } from "../src/db.js";
 import { generateStatsOutput, parseLastNArg, parseSinceArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
+import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE, ERROR_CATEGORY_LLM_ERROR } from "../src/errors.js";
 import { makeOutcome } from "./helpers.js";
 
 describe("STATS_MEMORY_PREVIEW_CHARS", () => {
@@ -335,21 +336,21 @@ describe("generateStatsOutput", () => {
 
   describe("failure category breakdown", () => {
     it("getCycleStats returns correct counts per category", () => {
-      insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "build_failure" }));
-      insertCycle(db, makeOutcome({ cycleNumber: 2, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "build_failure" }));
-      insertCycle(db, makeOutcome({ cycleNumber: 3, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "test_failure" }));
-      insertCycle(db, makeOutcome({ cycleNumber: 4, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "llm_error" }));
-      insertCycle(db, makeOutcome({ cycleNumber: 5, buildVerificationPassed: true, pushSucceeded: true, failureCategory: "none" }));
+      insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: false, pushSucceeded: false, failureCategory: ERROR_CATEGORY_BUILD_FAILURE }));
+      insertCycle(db, makeOutcome({ cycleNumber: 2, buildVerificationPassed: false, pushSucceeded: false, failureCategory: ERROR_CATEGORY_BUILD_FAILURE }));
+      insertCycle(db, makeOutcome({ cycleNumber: 3, buildVerificationPassed: false, pushSucceeded: false, failureCategory: ERROR_CATEGORY_TEST_FAILURE }));
+      insertCycle(db, makeOutcome({ cycleNumber: 4, buildVerificationPassed: false, pushSucceeded: false, failureCategory: ERROR_CATEGORY_LLM_ERROR }));
+      insertCycle(db, makeOutcome({ cycleNumber: 5, buildVerificationPassed: true, pushSucceeded: true, failureCategory: ERROR_CATEGORY_NONE }));
       const stats = getCycleStats(db);
-      expect(stats.failureCategoryBreakdown["build_failure"]).toBe(2);
-      expect(stats.failureCategoryBreakdown["test_failure"]).toBe(1);
-      expect(stats.failureCategoryBreakdown["llm_error"]).toBe(1);
-      expect(stats.failureCategoryBreakdown["none"]).toBeUndefined();
+      expect(stats.failureCategoryBreakdown[ERROR_CATEGORY_BUILD_FAILURE]).toBe(2);
+      expect(stats.failureCategoryBreakdown[ERROR_CATEGORY_TEST_FAILURE]).toBe(1);
+      expect(stats.failureCategoryBreakdown[ERROR_CATEGORY_LLM_ERROR]).toBe(1);
+      expect(stats.failureCategoryBreakdown[ERROR_CATEGORY_NONE]).toBeUndefined();
     });
 
     it("failure breakdown appears in generateStatsOutput when failures exist", () => {
-      insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "build_failure" }));
-      insertCycle(db, makeOutcome({ cycleNumber: 2, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "test_failure" }));
+      insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: false, pushSucceeded: false, failureCategory: ERROR_CATEGORY_BUILD_FAILURE }));
+      insertCycle(db, makeOutcome({ cycleNumber: 2, buildVerificationPassed: false, pushSucceeded: false, failureCategory: ERROR_CATEGORY_TEST_FAILURE }));
       const output = generateStatsOutput(db);
       const joined = output.join("\n");
       expect(joined).toContain("build_failure");
@@ -359,7 +360,7 @@ describe("generateStatsOutput", () => {
     });
 
     it("failure breakdown omitted when all cycles have category none", () => {
-      insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "none" }));
+      insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: false, pushSucceeded: false, failureCategory: ERROR_CATEGORY_NONE }));
       const output = generateStatsOutput(db);
       const joined = output.join("\n");
       expect(joined).not.toContain("Failure breakdown");
@@ -1144,7 +1145,7 @@ describe("generateStatsTable", () => {
     });
 
     it("shows failure category in Failures column when category is not 'none'", () => {
-      insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "build_failure" }));
+      insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: false, pushSucceeded: false, failureCategory: ERROR_CATEGORY_BUILD_FAILURE }));
       const table = generateStatsTable(db, undefined, true);
       expect(table).toContain("build_failure");
     });
@@ -1153,7 +1154,7 @@ describe("generateStatsTable", () => {
       // durationMs: 90000 renders "1.5 min" in the Duration column so the only
       // em-dash in the data row is the one produced by the Failures column.
       // This isolates the Failures column assertion from the Duration column.
-      insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true, pushSucceeded: true, failureCategory: "none", durationMs: 90000 }));
+      insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true, pushSucceeded: true, failureCategory: ERROR_CATEGORY_NONE, durationMs: 90000 }));
       const table = generateStatsTable(db, undefined, true);
       const lines = table.split("\n");
       const dataRow = lines[2]; // header, separator, first data row
@@ -1178,9 +1179,9 @@ describe("generateStatsTable", () => {
     });
 
     it("shows multiple failure categories correctly across rows", () => {
-      insertCycle(db, makeOutcome({ cycleNumber: 1, failureCategory: "build_failure" }));
-      insertCycle(db, makeOutcome({ cycleNumber: 2, failureCategory: "test_failure" }));
-      insertCycle(db, makeOutcome({ cycleNumber: 3, failureCategory: "none" }));
+      insertCycle(db, makeOutcome({ cycleNumber: 1, failureCategory: ERROR_CATEGORY_BUILD_FAILURE }));
+      insertCycle(db, makeOutcome({ cycleNumber: 2, failureCategory: ERROR_CATEGORY_TEST_FAILURE }));
+      insertCycle(db, makeOutcome({ cycleNumber: 3, failureCategory: ERROR_CATEGORY_NONE }));
       const table = generateStatsTable(db, undefined, true);
       expect(table).toContain("build_failure");
       expect(table).toContain("test_failure");
@@ -1434,9 +1435,9 @@ describe("generateStatsTable verbose=true + sinceN combined", () => {
   });
 
   it("data rows contain failure category values with verbose=true + sinceN filter", () => {
-    insertCycle(db, makeOutcome({ cycleNumber: 1, failureCategory: "build_failure" }));
-    insertCycle(db, makeOutcome({ cycleNumber: 2, failureCategory: "test_failure" }));
-    insertCycle(db, makeOutcome({ cycleNumber: 3, failureCategory: "none", buildVerificationPassed: true, pushSucceeded: true, durationMs: 90000 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 1, failureCategory: ERROR_CATEGORY_BUILD_FAILURE }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2, failureCategory: ERROR_CATEGORY_TEST_FAILURE }));
+    insertCycle(db, makeOutcome({ cycleNumber: 3, failureCategory: ERROR_CATEGORY_NONE, buildVerificationPassed: true, pushSucceeded: true, durationMs: 90000 }));
     // sinceN=2 excludes cycle 1; verbose=true adds Failures column
     const table = generateStatsTable(db, undefined, true, 2);
     expect(table).toContain("Failures");
