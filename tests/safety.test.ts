@@ -1040,6 +1040,10 @@ describe("isDangerousCommand", () => {
     ["systemctl start (persistence)", "systemctl start myservice", "persistence"],
     ["systemctl restart (persistence)", "systemctl restart myservice", "persistence"],
     ["systemctl daemon-reload (persistence)", "systemctl daemon-reload", "persistence"],
+    // script-interpreter-spawn
+    ["script -c bash", "script -c bash /dev/null", "script-interpreter-spawn"],
+    ["script -q /dev/null bash", "script -q /dev/null bash", "script-interpreter-spawn"],
+    ["chained script -c zsh", "; script -c zsh /dev/null", "script-interpreter-spawn"],
     // git-working-tree-destruction extras
     ["git switch --discard-changes", "git switch --discard-changes main", "git-working-tree-destruction"],
     ["git worktree remove --force (working tree)", "git worktree remove --force my-worktree", "git-working-tree-destruction"],
