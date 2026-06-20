@@ -312,7 +312,7 @@ describe("db", () => {
       }));
 
       const row = db.prepare("SELECT failure_category FROM cycles WHERE cycle_number = 1").get() as { failure_category: string };
-      expect(row.failure_category).toBe("build_failure");
+      expect(row.failure_category).toBe(ERROR_CATEGORY_BUILD_FAILURE);
     });
   });
 
@@ -383,7 +383,7 @@ describe("db", () => {
         failureCategory: ERROR_CATEGORY_TEST_FAILURE,
       }));
       const row = db.prepare("SELECT failure_category FROM cycles WHERE cycle_number = 1").get() as { failure_category: string };
-      expect(row.failure_category).toBe("test_failure");
+      expect(row.failure_category).toBe(ERROR_CATEGORY_TEST_FAILURE);
     });
 
     it("does nothing for non-existent cycle", () => {
