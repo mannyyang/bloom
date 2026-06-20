@@ -353,8 +353,8 @@ describe("generateStatsOutput", () => {
       insertCycle(db, makeOutcome({ cycleNumber: 2, buildVerificationPassed: false, pushSucceeded: false, failureCategory: ERROR_CATEGORY_TEST_FAILURE }));
       const output = generateStatsOutput(db);
       const joined = output.join("\n");
-      expect(joined).toContain("build_failure");
-      expect(joined).toContain("test_failure");
+      expect(joined).toContain(ERROR_CATEGORY_BUILD_FAILURE);
+      expect(joined).toContain(ERROR_CATEGORY_TEST_FAILURE);
       expect(joined).toContain("Failure breakdown");
       expect(joined).toContain("across all");
     });
@@ -1147,7 +1147,7 @@ describe("generateStatsTable", () => {
     it("shows failure category in Failures column when category is not 'none'", () => {
       insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: false, pushSucceeded: false, failureCategory: ERROR_CATEGORY_BUILD_FAILURE }));
       const table = generateStatsTable(db, undefined, true);
-      expect(table).toContain("build_failure");
+      expect(table).toContain(ERROR_CATEGORY_BUILD_FAILURE);
     });
 
     it("shows — in Failures column when failure category is 'none'", () => {
@@ -1183,8 +1183,8 @@ describe("generateStatsTable", () => {
       insertCycle(db, makeOutcome({ cycleNumber: 2, failureCategory: ERROR_CATEGORY_TEST_FAILURE }));
       insertCycle(db, makeOutcome({ cycleNumber: 3, failureCategory: ERROR_CATEGORY_NONE }));
       const table = generateStatsTable(db, undefined, true);
-      expect(table).toContain("build_failure");
-      expect(table).toContain("test_failure");
+      expect(table).toContain(ERROR_CATEGORY_BUILD_FAILURE);
+      expect(table).toContain(ERROR_CATEGORY_TEST_FAILURE);
     });
   });
 });
@@ -1441,9 +1441,9 @@ describe("generateStatsTable verbose=true + sinceN combined", () => {
     // sinceN=2 excludes cycle 1; verbose=true adds Failures column
     const table = generateStatsTable(db, undefined, true, 2);
     expect(table).toContain("Failures");
-    expect(table).toContain("test_failure");
+    expect(table).toContain(ERROR_CATEGORY_TEST_FAILURE);
     // cycle 1 (build_failure) excluded by sinceN filter
-    expect(table).not.toContain("build_failure");
+    expect(table).not.toContain(ERROR_CATEGORY_BUILD_FAILURE);
   });
 
   it("returns empty string when sinceN excludes all rows even with verbose=true", () => {
