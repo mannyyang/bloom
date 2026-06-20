@@ -1521,6 +1521,14 @@ describe("category: xargs-command-execution", () => {
   it.each([
     ["xargs piped to sh", 'echo "cmd" | xargs sh'],
     ["xargs with bash", "cat cmds.txt | xargs bash"],
+    // Remaining shell alternation arms: fish, zsh, dash, ash, ksh, csh, tcsh
+    ["xargs with fish", "find . | xargs fish"],
+    ["xargs with zsh", "find . | xargs zsh"],
+    ["xargs with dash", "find . | xargs dash"],
+    ["xargs with ash", "find . | xargs ash"],
+    ["xargs with ksh", "find . | xargs ksh"],
+    ["xargs with csh", "find . | xargs csh"],
+    ["xargs with tcsh", "find . | xargs tcsh"],
     ["xargs with full path to shell", "xargs /bin/sh"],
     ["xargs python", "find . -name '*.txt' | xargs python"],
     ["xargs python3", "find . | xargs python3 process.py"],
