@@ -154,6 +154,27 @@ describe("pickNextItem", () => {
     ];
     expect(pickNextItem(items)!.id).toBe("alpha-z");
   });
+
+  it("breaks ties by string comparison when only one ID is standard item-N format", () => {
+    // When one ID matches item-N and the other does not, the numeric guard
+    // (aMatch && bMatch) is false, so the sort falls back to string comparison.
+    // "custom-abc" < "item-5" lexicographically, so custom-abc wins.
+    const items = [
+      makeItem({ id: "item-5",    status: "Backlog", reactions: 2 }),
+      makeItem({ id: "custom-abc", status: "Backlog", reactions: 2 }),
+    ];
+    expect(pickNextItem(items)!.id).toBe("custom-abc");
+  });
+
+  it("breaks ties by string comparison when standard item-N ID is lexicographically smaller than custom ID", () => {
+    // item-3 < zfoo-bar lexicographically, so item-3 wins even though numeric
+    // comparison is unavailable (bMatch is null for the non-standard ID).
+    const items = [
+      makeItem({ id: "zfoo-bar", status: "Up Next", reactions: 7 }),
+      makeItem({ id: "item-3",  status: "Up Next", reactions: 7 }),
+    ];
+    expect(pickNextItem(items)!.id).toBe("item-3");
+  });
 });
 
 describe("pickNextItemWithRationale", () => {
