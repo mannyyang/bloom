@@ -551,6 +551,9 @@ describe("blockDangerousCommands", () => {
     ["dnf erase <pkg>", "dnf erase node"],
     ["yum remove <pkg>", "yum remove git"],
     ["yum erase <pkg>", "yum erase node"],
+    // process-substitution-execution
+    ["process substitution tee>(bash)", "tee >(bash)"],
+    ["process substitution cmd>(python3)", "cmd > >(python3 exploit.py)"],
     // JOURNAL.md modifications
     ["overwrite redirect to JOURNAL.md", 'echo "pwned" > JOURNAL.md'],
     ["rm JOURNAL.md", "rm JOURNAL.md"],
