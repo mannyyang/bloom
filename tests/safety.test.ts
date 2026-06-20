@@ -803,6 +803,13 @@ describe("isDangerousCommand", () => {
     ["base64 -d piped to bun", "base64 -d script.b64 | bun", "remote-code-execution"],
     ["base64 -d piped to lua", "base64 -d script.b64 | lua", "remote-code-execution"],
     ["base64 -d piped to php", "base64 -d script.b64 | php", "remote-code-execution"],
+    // --decode long-form flag (alternation sibling of -d in DANGEROUS_PATTERNS)
+    ["base64 --decode piped to bash", "base64 --decode script.b64 | bash", "remote-code-execution"],
+    ["base64 --decode piped to sh", "base64 --decode payload.txt | sh", "remote-code-execution"],
+    ["base64 --decode piped to python3", "base64 --decode payload.b64 | python3", "remote-code-execution"],
+    ["base64 --decode piped to node", "base64 --decode payload.b64 | node", "remote-code-execution"],
+    ["base64 --decode piped to bun", "base64 --decode script.b64 | bun", "remote-code-execution"],
+    ["base64 --decode piped to perl", "base64 --decode script.b64 | perl", "remote-code-execution"],
     ["eval", "eval something", "arbitrary-code-execution"],
     ["fish -c", "fish -c 'rm -rf /'", "arbitrary-code-execution"],
     ["npx", "npx some-pkg", "untrusted-package-execution"],
