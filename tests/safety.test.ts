@@ -1938,6 +1938,13 @@ describe("buildProtectedFilePatterns", () => {
       const patternsNoAppend = buildProtectedFilePatterns("CUSTOM.txt");
       expect(matchesAny(patternsNoAppend, "echo x | tee --append CUSTOM.txt")).toBe(true);
     });
+
+    it("blocks perl -pi -e even in allowAppend mode", () => {
+      // perl -i performs in-place editing (overwrite), not appending.
+      // buildProtectedFilePatterns adds the perl -i pattern unconditionally —
+      // there is no allowAppend variant — so it must remain blocked.
+      expect(matchesAny(patterns, "perl -pi -e 's/a/b/' CUSTOM.txt")).toBe(true);
+    });
   });
 
   describe("path prefix handling per pattern type", () => {
