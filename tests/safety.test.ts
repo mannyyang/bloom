@@ -2995,6 +2995,15 @@ describe("category: script-interpreter-spawn", () => {
   it("blocks script after semicolon (command boundary)", () => {
     expect(isDangerousCommand("echo hi; script -c sh /dev/null")).toBe("script-interpreter-spawn");
   });
+  it.each([
+    ["zsh", 'script -c "zsh" /dev/null'],
+    ["fish", 'script -c "fish" /dev/null'],
+    ["dash", 'script -c "dash" /dev/null'],
+    ["ksh", 'script -c "ksh" /dev/null'],
+    ["ash", 'script -c "ash" /dev/null'],
+  ])("blocks script -c %s (shell arm coverage)", (_shell, command) => {
+    expect(isDangerousCommand(command)).toBe("script-interpreter-spawn");
+  });
   it("allows bash script.sh (script is a filename, not the command)", () => {
     expect(isDangerousCommand("bash script.sh")).toBeNull();
   });
