@@ -3285,6 +3285,9 @@ describe("category: process-substitution-execution", () => {
     [">(bun)", "cmd > >(bun run exploit.ts)"],
     [">(awk -f)", "tee >(awk -f exploit.awk)"],
     [">(awk inline)", "cmd > >(awk '{system(\"id\")}')"],
+    [">(deno)", "output | tee >(deno run exploit.ts)"],
+    [">(lua)", "cmd > >(lua exploit.lua)"],
+    [">(php)", "cmd > >(php exploit.php)"],
   ])("blocks process substitution %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("process-substitution-execution");
   });
