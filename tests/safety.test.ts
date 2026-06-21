@@ -1744,6 +1744,7 @@ describe("category: arbitrary-code-execution", () => {
     ["eval", 'eval "rm -rf /"'],
     ["eval with variable expansion", "eval $PAYLOAD"],
     ["node --eval (eval word triggers pattern)", 'node --eval "process.exit()"'],
+    ["env node --eval (eval word triggers before env-bypass)", "env node --eval 'require(\"child_process\").exec(\"id\")'"],
     ["bash -c", 'bash -c "malicious command"'],
     ["sh -c", 'sh -c "malicious command"'],
     ["/bin/sh -c", '/bin/sh -c "malicious"'],
@@ -2514,6 +2515,7 @@ describe("category: env-interpreter-bypass", () => {
     ["env ruby -e inline eval", "env ruby -e 'exec(\"id\")'"],
     ["chained: ; env python3 -c", "setup.sh; env python3 -c 'payload'"],
     ["chained: && env node -e", "echo hi && env node -e 'cmd'"],
+    ["env perl -E enhanced-eval flag", "env perl -E 'system(\"id\")'"],
   ])("blocks %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("env-interpreter-bypass");
   });
