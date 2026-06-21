@@ -1298,6 +1298,20 @@ describe("category: awk-code-execution", () => {
     ["awk pipe to node", "awk '{print | \"node\"}'"],
     ["awk pipe to perl", "awk '{print | \"perl\"}'"],
     ["awk pipe to sh via zsh redirect", "awk '{cmd=\"ls\"; print | cmd}' | zsh"],
+    // Missing arms: shells
+    ["awk pipe to sh", "awk '{print | \"sh\"}'"],
+    ["awk pipe to fish", "awk '{print | \"fish\"}'"],
+    ["awk pipe to dash", "awk '{print | \"dash\"}'"],
+    ["awk pipe to ksh", "awk '{print | \"ksh\"}'"],
+    ["awk pipe to ash", "awk '{print | \"ash\"}'"],
+    ["awk pipe to csh", "awk '{print | \"csh\"}'"],
+    ["awk pipe to tcsh", "awk '{print | \"tcsh\"}'"],
+    // Missing arms: interpreters
+    ["awk pipe to ruby", "awk '{print | \"ruby\"}'"],
+    ["awk pipe to deno", "awk '{print | \"deno\"}'"],
+    ["awk pipe to bun", "awk '{print | \"bun\"}'"],
+    ["awk pipe to lua", "awk '{print | \"lua\"}'"],
+    ["awk pipe to php", "awk '{print | \"php\"}'"],
   ])("blocks %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("awk-code-execution");
   });
