@@ -2634,6 +2634,18 @@ describe("base64 decode pipe execution", () => {
     expect(isDangerousCommand("base64 file.txt | cat")).toBeNull();
   });
 
+  it("blocks base64 --decode piped into deno", () => {
+    expect(isDangerousCommand("base64 --decode exploit.b64 | deno run -")).toBe("remote-code-execution");
+  });
+
+  it("blocks base64 -d piped into lua", () => {
+    expect(isDangerousCommand("base64 -d script.b64 | lua")).toBe("remote-code-execution");
+  });
+
+  it("blocks base64 --decode piped into php", () => {
+    expect(isDangerousCommand("base64 --decode exploit.b64 | php")).toBe("remote-code-execution");
+  });
+
   it("blocks base64 -d piped into awk (shell-pattern symmetry)", () => {
     expect(isDangerousCommand("base64 -d payload.b64 | awk -f /dev/stdin")).toBe("remote-code-execution");
   });
