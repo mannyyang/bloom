@@ -2936,6 +2936,22 @@ describe("here-string RCE vector", () => {
     expect(isDangerousCommand('lua <<< "os.execute(\'id\')"')).toBe("remote-code-execution");
   });
 
+  it("blocks dash here-string execution", () => {
+    expect(isDangerousCommand("dash <<< 'malicious payload'")).toBe("remote-code-execution");
+  });
+
+  it("blocks ksh here-string execution", () => {
+    expect(isDangerousCommand("ksh <<< 'malicious payload'")).toBe("remote-code-execution");
+  });
+
+  it("blocks ash here-string execution", () => {
+    expect(isDangerousCommand("ash <<< 'malicious payload'")).toBe("remote-code-execution");
+  });
+
+  it("blocks php here-string execution", () => {
+    expect(isDangerousCommand('php <<< "<?php system(\'id\'); ?>"')).toBe("remote-code-execution");
+  });
+
   it("allows heredoc redirect (<<) which is not a here-string (<<<)", () => {
     expect(isDangerousCommand("cat << EOF\nhello\nEOF")).toBeNull();
   });
