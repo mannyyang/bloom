@@ -1350,10 +1350,17 @@ describe("category: find-exec-destructive", () => {
   it.each([
     ["find -exec rm", "find . -name '*.tmp' -exec rm {} +"],
     ["find -exec chmod", "find . -exec chmod 777 {} \\;"],
+    ["find -exec chown", "find . -exec chown root {} \\;"],
     ["find -exec mv", "find . -exec mv {} /tmp/ \\;"],
     ["find -exec cp", "find . -exec cp {} /tmp/ \\;"],
+    ["find -exec dd", "find . -name 'disk.img' -exec dd if=/dev/zero of={} \\;"],
+    ["find -exec truncate", "find logs -exec truncate -s 0 {} \\;"],
+    ["find -exec tee", "find . -exec tee /dev/null \\;"],
     ["find -exec sed -i", "find . -name '*.ts' -exec sed -i 's/x/y/g' {} \\;"],
     ["find -execdir sed -i", "find src -execdir sed -i '' 's/foo/bar/' {} \\;"],
+    ["find -exec unlink", "find . -name '*.tmp' -exec unlink {} \\;"],
+    ["find -exec shred", "find . -name '*.key' -exec shred -zuf {} \\;"],
+    ["find -exec install", "find dist -name '*.so' -exec install {} /usr/local/lib/ \\;"],
     ["find -delete (no -exec needed)", "find . -name '*.tmp' -delete"],
     ["find -delete with type filter", "find /tmp -type f -delete"],
   ])("blocks %s", (_desc, command) => {
