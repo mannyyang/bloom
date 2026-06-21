@@ -3300,6 +3300,12 @@ describe("category: process-substitution-execution", () => {
     [">(deno)", "output | tee >(deno run exploit.ts)"],
     [">(lua)", "cmd > >(lua exploit.lua)"],
     [">(php)", "cmd > >(php exploit.php)"],
+    [">(fish)", "cmd > >(fish)"],
+    [">(dash)", "cmd > >(dash)"],
+    [">(ksh)", "cmd > >(ksh)"],
+    [">(ash)", "cmd > >(ash)"],
+    [">(csh)", "cmd > >(csh)"],
+    [">(tcsh)", "cmd > >(tcsh)"],
   ])("blocks process substitution %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("process-substitution-execution");
   });
