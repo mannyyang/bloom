@@ -1561,6 +1561,8 @@ describe("category: xargs-command-execution", () => {
     ["xargs perl", "find . -name '*.pl' | xargs perl"],
     ["xargs ruby", "find . | xargs ruby script.rb"],
     ["xargs node", "find . -name '*.js' | xargs node"],
+    ["xargs lua", "find . -name '*.lua' | xargs lua"],
+    ["xargs php", "find . -name '*.php' | xargs php"],
     ["xargs rm", "find . | xargs rm -rf"],
     ["xargs chmod", "find .git -type f | xargs chmod 777"],
     ["xargs chown", "find .git -type f | xargs chown root"],
