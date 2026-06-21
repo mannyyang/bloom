@@ -2564,6 +2564,11 @@ describe("category: env-interpreter-bypass", () => {
     ["chained: ; env python3 -c", "setup.sh; env python3 -c 'payload'"],
     ["chained: && env node -e", "echo hi && env node -e 'cmd'"],
     ["env perl -E enhanced-eval flag", "env perl -E 'system(\"id\")'"],
+    // Newer-interpreter arms not tested before
+    ["env deno -e inline eval", "env deno -e 'Deno.exit()'"],
+    ["env bun -e inline eval", "env bun -e 'process.exit()'"],
+    ["env lua -e inline eval", "env lua -e 'os.exit()'"],
+    ["env php -r inline eval", "env php -r 'system(\"id\");'"],
   ])("blocks %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("env-interpreter-bypass");
   });
