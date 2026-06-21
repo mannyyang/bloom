@@ -1311,10 +1311,21 @@ describe("category: find-exec-shell", () => {
   it.each([
     ["find -exec sh", "find . -name '*.sh' -exec sh {} \\;"],
     ["find -exec bash", "find . -name '*.sh' -exec bash {} \\;"],
+    ["find -exec zsh", "find . -exec zsh {} \\;"],
+    ["find -exec fish", "find . -exec fish {} \\;"],
+    ["find -exec dash", "find . -exec dash {} \\;"],
+    ["find -exec ksh", "find . -exec ksh {} \\;"],
+    ["find -exec csh", "find . -exec csh {} \\;"],
+    ["find -exec tcsh", "find . -exec tcsh {} \\;"],
+    ["find -exec ash", "find . -exec ash {} \\;"],
     ["find -exec perl script", "find . -exec perl script.pl {} \\;"],
     ["find -exec python3 script", "find . -exec python3 script.py {} \\;"],
     ["find -execdir node script", "find . -execdir node script.js {} \\;"],
     ["find -exec ruby script", "find . -exec ruby script.rb {} \\;"],
+    ["find -exec deno script", "find . -exec deno run script.ts {} \\;"],
+    ["find -exec bun script", "find . -exec bun run script.ts {} \\;"],
+    ["find -exec lua script", "find . -exec lua script.lua {} \\;"],
+    ["find -exec php script", "find . -exec php script.php {} \\;"],
     ["find -exec awk plain (no system)", "find . -exec awk 'NR==1' {} +"],
   ])("blocks %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("find-exec-shell");
