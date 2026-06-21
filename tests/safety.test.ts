@@ -2680,6 +2680,46 @@ describe("base64 decode pipe execution", () => {
     expect(isDangerousCommand("base64 --decode exploit.b64 | php")).toBe("remote-code-execution");
   });
 
+  it("blocks base64 -d piped into zsh", () => {
+    expect(isDangerousCommand("base64 -d payload.b64 | zsh")).toBe("remote-code-execution");
+  });
+
+  it("blocks base64 -d piped into dash", () => {
+    expect(isDangerousCommand("base64 -d payload.b64 | dash")).toBe("remote-code-execution");
+  });
+
+  it("blocks base64 -d piped into ksh", () => {
+    expect(isDangerousCommand("base64 -d payload.b64 | ksh")).toBe("remote-code-execution");
+  });
+
+  it("blocks base64 -d piped into csh", () => {
+    expect(isDangerousCommand("base64 -d payload.b64 | csh")).toBe("remote-code-execution");
+  });
+
+  it("blocks base64 -d piped into tcsh", () => {
+    expect(isDangerousCommand("base64 -d payload.b64 | tcsh")).toBe("remote-code-execution");
+  });
+
+  it("blocks base64 -d piped into perl", () => {
+    expect(isDangerousCommand("base64 -d payload.b64 | perl")).toBe("remote-code-execution");
+  });
+
+  it("blocks base64 -d piped into ruby", () => {
+    expect(isDangerousCommand("base64 -d payload.b64 | ruby")).toBe("remote-code-execution");
+  });
+
+  it("blocks base64 -d piped into deno", () => {
+    expect(isDangerousCommand("base64 -d payload.b64 | deno run -")).toBe("remote-code-execution");
+  });
+
+  it("blocks base64 -d piped into bun", () => {
+    expect(isDangerousCommand("base64 -d payload.b64 | bun")).toBe("remote-code-execution");
+  });
+
+  it("blocks base64 -d piped into php", () => {
+    expect(isDangerousCommand("base64 -d payload.b64 | php")).toBe("remote-code-execution");
+  });
+
   it("blocks base64 -d piped into awk (shell-pattern symmetry)", () => {
     expect(isDangerousCommand("base64 -d payload.b64 | awk -f /dev/stdin")).toBe("remote-code-execution");
   });
