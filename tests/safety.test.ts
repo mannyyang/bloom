@@ -2600,6 +2600,23 @@ describe("category: env-interpreter-bypass", () => {
     expect(isDangerousCommand(command)).toBe("env-interpreter-bypass");
   });
 
+  // Shell arms: env <shell> -c '…' — the env-interpreter-bypass pattern covers these shells,
+  // but the earlier arbitrary-code-execution rule (<shell> -c) fires first and blocks them.
+  // Tests verify the commands ARE blocked (regardless of which rule fires first).
+  it.each([
+    ["env bash -c shell bypass", "env bash -c 'id'"],
+    ["env sh -c shell bypass", "env sh -c 'id'"],
+    ["env zsh -c shell bypass", "env zsh -c 'id'"],
+    ["env dash -c shell bypass", "env dash -c 'id'"],
+    ["env ksh -c shell bypass", "env ksh -c 'id'"],
+    ["env ash -c shell bypass", "env ash -c 'id'"],
+    ["env fish -c shell bypass", "env fish -c 'id'"],
+    ["env csh -c shell bypass", "env csh -c 'id'"],
+    ["env tcsh -c shell bypass", "env tcsh -c 'id'"],
+  ])("blocks %s (caught by arbitrary-code-execution rule)", (_desc, command) => {
+    expect(isDangerousCommand(command)).not.toBeNull();
+  });
+
   it("does not flag env python3 script.py (safe script invocation, no -c)", () => {
     expect(isDangerousCommand("env python3 script.py")).toBeNull();
   });
