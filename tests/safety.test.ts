@@ -1361,6 +1361,7 @@ describe("category: find-exec-shell", () => {
     ["find -exec ash", "find . -exec ash {} \\;"],
     ["find -exec perl script", "find . -exec perl script.pl {} \\;"],
     ["find -exec python3 script", "find . -exec python3 script.py {} \\;"],
+    ["find -exec python (bare interpreter)", "find . -exec python script.py {} \\;"],
     ["find -execdir node script", "find . -execdir node script.js {} \\;"],
     ["find -exec ruby script", "find . -exec ruby script.rb {} \\;"],
     ["find -exec deno script", "find . -exec deno run script.ts {} \\;"],
