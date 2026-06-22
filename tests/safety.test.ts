@@ -2798,6 +2798,16 @@ describe("base64 decode pipe execution", () => {
   it("blocks openssl enc -d piped into awk (interpreter-pattern symmetry)", () => {
     expect(isDangerousCommand("openssl enc -d -base64 -in payload.b64 | awk -f evil.awk")).toBe("remote-code-execution");
   });
+
+  // openssl enc -d shell arms: zsh, dash, ksh, ash not previously tested in this describe block
+  it.each([
+    ["openssl enc -d piped to zsh", "openssl enc -d -base64 -in payload.b64 | zsh"],
+    ["openssl enc -d piped to dash", "openssl enc -d -base64 -in payload.b64 | dash"],
+    ["openssl enc -d piped to ksh", "openssl enc -d -base64 -in payload.b64 | ksh"],
+    ["openssl enc -d piped to ash", "openssl enc -d -base64 -in payload.b64 | ash"],
+  ])("blocks %s", (_desc, command) => {
+    expect(isDangerousCommand(command)).toBe("remote-code-execution");
+  });
 });
 
 describe("two-step write-then-execute RCE vector", () => {
