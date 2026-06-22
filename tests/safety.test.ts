@@ -3474,6 +3474,7 @@ describe("category: shell-script-execution", () => {
     ["source after && chain", "build.sh && source /tmp/env.sh"],
     ["source after pipe", "cat env | source /dev/stdin"],
     ["dot-script after ampersand", "make && . ./inject.sh"],
+    ["dot-script after pipe", "cmd | . /dev/stdin"],
   ])("blocks %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("shell-script-execution");
   });
