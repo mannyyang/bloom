@@ -2584,6 +2584,7 @@ describe("category: env-var-injection", () => {
 describe("category: env-interpreter-bypass", () => {
   it.each([
     ["env python3 -c bypass", "env python3 -c 'import os; os.system(\"id\")'"],
+    ["env python -c bypass", "env python -c 'import os; os.system(\"id\")'"],
     ["env -S split-string bypass", "env -S 'python3 /tmp/evil.py'"],
     ["env -S with flag before -S", "env -u PATH -S 'python3 /tmp/evil.py'"],
     ["env node -e inline eval", "env node -e 'require(\"child_process\").exec(\"id\")'"],
@@ -2620,6 +2621,9 @@ describe("category: env-interpreter-bypass", () => {
 
   it("does not flag env python3 script.py (safe script invocation, no -c)", () => {
     expect(isDangerousCommand("env python3 script.py")).toBeNull();
+  });
+  it("does not flag env python script.py (safe invocation, no -c)", () => {
+    expect(isDangerousCommand("env python script.py")).toBeNull();
   });
   it("does not flag bare env (list environment variables)", () => {
     expect(isDangerousCommand("env")).toBeNull();
