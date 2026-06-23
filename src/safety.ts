@@ -283,8 +283,10 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Git history rewriting — amend rewrites the most recent commit in place
   { pattern: /git\s+commit\s+(?:.*\s)?--amend\b/, category: "git-history-rewriting" },
   // Data exfiltration — curl/wget sending data to external servers
-  { pattern: /\bcurl\s+.*(-d\b|--data\b|--data-binary\b|--data-raw\b|--data-urlencode\b|--upload-file\b|-F\b|--form\b|--json\b)/, category: "data-exfiltration" },
-  { pattern: /\bwget\s+.*--post-(data|file)\b/, category: "data-exfiltration" },
+  // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives when
+  // curl/wget appear as grep/echo arguments (e.g. grep 'curl -d @file' src/ or echo "curl --data").
+  { pattern: /(?:^|[;&|]\s*)curl\s+.*(-d\b|--data\b|--data-binary\b|--data-raw\b|--data-urlencode\b|--upload-file\b|-F\b|--form\b|--json\b)/, category: "data-exfiltration" },
+  { pattern: /(?:^|[;&|]\s*)wget\s+.*--post-(data|file)\b/, category: "data-exfiltration" },
   // xargs command execution bypass — xargs can invoke dangerous commands from stdin
   // Shell shorthand: (ba|z|da|k|a)?sh covers bash/zsh/dash/ksh/ash/sh; fish and t?csh are explicit
   // Flag-aware prefix prevents false positives like `xargs grep bash` or `xargs find sh`.

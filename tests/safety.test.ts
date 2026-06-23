@@ -3503,6 +3503,15 @@ describe("category: data-exfiltration", () => {
   it("allows wget plain download (no post flags)", () => {
     expect(isDangerousCommand("wget https://example.com/file.tar.gz")).toBeNull();
   });
+  it("does not flag grep searching for curl -d pattern in source (grep argument, not command)", () => {
+    expect(isDangerousCommand("grep 'curl -d @file' src/")).toBeNull();
+  });
+  it("does not flag echo describing curl --data usage (documentation context)", () => {
+    expect(isDangerousCommand('echo "use curl --data for POST requests"')).toBeNull();
+  });
+  it("does not flag grep searching for wget post-data in docs (grep argument, not command)", () => {
+    expect(isDangerousCommand("grep 'wget --post-data' README.md")).toBeNull();
+  });
 });
 
 describe("category: inline-code-execution", () => {
