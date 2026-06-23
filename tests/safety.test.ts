@@ -1218,6 +1218,13 @@ describe("category: privilege-escalation", () => {
   it("does not flag su --login (no -c flag)", () => {
     expect(isDangerousCommand("su --login")).toBeNull();
   });
+  // Boundary-anchor regressions: "sudo" appearing as grep/echo argument must not fire.
+  it("does not flag echo describing sudo usage (not a command invocation)", () => {
+    expect(isDangerousCommand("echo \"use sudo for system ops\"")).toBeNull();
+  });
+  it("does not flag grep searching for sudo in docs", () => {
+    expect(isDangerousCommand("grep 'sudo' README.md")).toBeNull();
+  });
 });
 
 describe("category: process-tracing", () => {
@@ -1239,6 +1246,13 @@ describe("category: process-tracing", () => {
   it("does not flag lsof for file-descriptor inspection", () => {
     expect(isDangerousCommand("lsof -p 1234")).toBeNull();
   });
+  // Boundary-anchor regressions: tracer names as grep/echo arguments must not fire.
+  it("does not flag grep searching for strace in a Makefile", () => {
+    expect(isDangerousCommand("grep 'strace' Makefile")).toBeNull();
+  });
+  it("does not flag echo describing ltrace usage (not a command invocation)", () => {
+    expect(isDangerousCommand("echo 'run ltrace for library tracing'")).toBeNull();
+  });
 });
 
 describe("category: kernel-module-loading", () => {
@@ -1253,6 +1267,13 @@ describe("category: kernel-module-loading", () => {
 
   it("does not flag lsmod (read-only module listing)", () => {
     expect(isDangerousCommand("lsmod")).toBeNull();
+  });
+  // Boundary-anchor regressions: module-loader names as grep/echo arguments must not fire.
+  it("does not flag grep searching for insmod in a script", () => {
+    expect(isDangerousCommand("grep 'insmod' setup.sh")).toBeNull();
+  });
+  it("does not flag echo describing modprobe usage (not a command invocation)", () => {
+    expect(isDangerousCommand("echo 'modprobe loads kernel modules'")).toBeNull();
   });
 });
 
@@ -1300,6 +1321,13 @@ describe("category: persistence (nohup/disown)", () => {
 
   it("does not flag an unrelated foreground build command", () => {
     expect(isDangerousCommand("pnpm build && pnpm test")).toBeNull();
+  });
+  // Boundary-anchor regressions: job-control names as grep/echo arguments must not fire.
+  it("does not flag grep searching for nohup in README", () => {
+    expect(isDangerousCommand("grep 'nohup' README.md")).toBeNull();
+  });
+  it("does not flag echo describing disown usage (not a command invocation)", () => {
+    expect(isDangerousCommand("echo 'disown removes jobs from table'")).toBeNull();
   });
 });
 
@@ -3410,6 +3438,13 @@ describe("category: reverse-shell (mkfifo)", () => {
   });
   it("blocks bare mkfifo command", () => {
     expect(isDangerousCommand("mkfifo /tmp/pipe")).toBe("reverse-shell");
+  });
+  // Boundary-anchor regressions: "mkfifo" as a grep/echo argument must not fire.
+  it("does not flag grep searching for mkfifo in docs", () => {
+    expect(isDangerousCommand("grep 'mkfifo' README.md")).toBeNull();
+  });
+  it("does not flag echo describing mkfifo usage (not a command invocation)", () => {
+    expect(isDangerousCommand("echo 'mkfifo creates named pipes'")).toBeNull();
   });
 });
 
