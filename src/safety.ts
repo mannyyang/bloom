@@ -551,7 +551,9 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // kernel parameters: e.g. re-enabling disabled profiling interfaces
   // (kernel.perf_event_paranoid=0) or destabilising memory accounting
   // (vm.overcommit_memory). Has no legitimate use in Bloom's pipeline.
-  { pattern: /\bsysctl\b.*(?:-w\b|--write\b)/, category: "kernel-parameter-tampering" },
+  // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives when
+  // "sysctl -w" appears as a grep/echo argument (e.g. grep 'sysctl -w' scripts/).
+  { pattern: /(?:^|[;&|]\s*)sysctl\b.*(?:-w\b|--write\b)/, category: "kernel-parameter-tampering" },
   // Session-persistence via job control — `nohup cmd &` detaches a running process from the
   // agent session, letting it outlive the evolution cycle entirely. `disown` achieves the same
   // by removing a background job from the shell's job table. Same threat model as `at`/`batch`.
@@ -582,8 +584,10 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // fully detached processes that outlive the evolution cycle; identical threat model to nohup/disown.
   // `screen -dm` uses lookaheads to match both -d and -m flags in any combined or separate form.
   // Neither has legitimate use in Bloom's pipeline.
-  { pattern: /\bscreen\b(?=.*-[a-zA-Z]*d)(?=.*-[a-zA-Z]*m)/, category: "persistence" },
-  { pattern: /\btmux\b.*\bnew(?:-session)?\b.*(?:-[a-zA-Z]*d[a-zA-Z]*\b|--detach\b)/, category: "persistence" },
+  // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives when these
+  // names appear as grep/echo arguments (e.g. grep 'screen -dm' README.md).
+  { pattern: /(?:^|[;&|]\s*)screen\b(?=.*-[a-zA-Z]*d)(?=.*-[a-zA-Z]*m)/, category: "persistence" },
+  { pattern: /(?:^|[;&|]\s*)tmux\b.*\bnew(?:-session)?\b.*(?:-[a-zA-Z]*d[a-zA-Z]*\b|--detach\b)/, category: "persistence" },
 ];
 
 /**

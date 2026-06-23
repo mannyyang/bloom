@@ -1313,6 +1313,14 @@ describe("category: kernel-parameter-tampering", () => {
   it("does not flag sysctl read-only query (no -w)", () => {
     expect(isDangerousCommand("sysctl vm.swappiness")).toBeNull();
   });
+  // Boundary-anchor regression: sysctl appearing as a grep argument must not fire.
+  it("does not flag grep for sysctl -w pattern as quoted arg", () => {
+    expect(isDangerousCommand("grep 'sysctl -w' scripts/setup.sh")).toBeNull();
+  });
+  // Chained command: anchored pattern must fire after ;, &&
+  it("blocks sysctl -w after && (chained)", () => {
+    expect(isDangerousCommand("echo setup && sysctl -w kernel.perf_event_paranoid=0")).toBe("kernel-parameter-tampering");
+  });
 });
 
 describe("category: namespace-escape", () => {
@@ -1378,6 +1386,20 @@ describe("category: persistence (screen/tmux multiplexer)", () => {
 
   it("does not flag screen -ls (read-only session listing)", () => {
     expect(isDangerousCommand("screen -ls")).toBeNull();
+  });
+  // Boundary-anchor regressions: multiplexer names as grep/echo arguments must not fire.
+  it("does not flag grep for screen -dm pattern as quoted arg", () => {
+    expect(isDangerousCommand("grep 'screen -dm' README.md")).toBeNull();
+  });
+  it("does not flag echo describing tmux usage (not a command invocation)", () => {
+    expect(isDangerousCommand("echo 'tmux new-session -d starts detached'")).toBeNull();
+  });
+  // Chained commands: anchored patterns must fire after ;, &&, |
+  it("blocks screen -dm after semicolon (chained)", () => {
+    expect(isDangerousCommand("echo setup; screen -dm bash evil.sh")).toBe("persistence");
+  });
+  it("blocks tmux new-session after && (chained)", () => {
+    expect(isDangerousCommand("true && tmux new-session -d -s evil")).toBe("persistence");
   });
 });
 
