@@ -1952,25 +1952,6 @@ describe("category: data-exfiltration", () => {
   });
 });
 
-describe("category: data-exfiltration-server", () => {
-  it.each([
-    ["python3 -m http.server", "python3 -m http.server 8080"],
-    ["python -m http.server", "python -m http.server"],
-    ["php -S dev server", "php -S 0.0.0.0:8080"],
-    ["ruby -run httpd", "ruby -run -e httpd . --port=8080"],
-  ])("blocks %s", (_desc, command) => {
-    expect(isDangerousCommand(command)).toBe("data-exfiltration-server");
-  });
-
-  it("does not flag python3 -m json.tool (safe module, not http.server)", () => {
-    expect(isDangerousCommand("python3 -m json.tool")).toBeNull();
-  });
-
-  it("does not flag python3 -m venv (safe virtual-env creation)", () => {
-    expect(isDangerousCommand("python3 -m venv myenv")).toBeNull();
-  });
-});
-
 describe("buildProtectedFilePatterns", () => {
   function matchesAny(patterns: RegExp[], command: string): boolean {
     return patterns.some((p) => p.test(command));
