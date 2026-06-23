@@ -3348,6 +3348,19 @@ describe("category: persistence (systemctl)", () => {
   it("allows systemctl is-active (read-only)", () => {
     expect(isDangerousCommand("systemctl is-active nginx")).toBeNull();
   });
+  it("allows systemctl is-enabled (read-only)", () => {
+    expect(isDangerousCommand("systemctl is-enabled sshd")).toBeNull();
+  });
+  // Boundary-anchor regressions: "crontab"/"systemctl start" as grep/echo args must not fire.
+  it("does not flag grep searching for crontab as a quoted argument", () => {
+    expect(isDangerousCommand("grep 'crontab -e' Makefile")).toBeNull();
+  });
+  it("does not flag echo describing systemctl start (not a command invocation)", () => {
+    expect(isDangerousCommand("echo \"use systemctl start nginx\"")).toBeNull();
+  });
+  it("does not flag grep searching for systemctl restart in a Dockerfile", () => {
+    expect(isDangerousCommand("grep 'systemctl restart' Dockerfile")).toBeNull();
+  });
 });
 
 

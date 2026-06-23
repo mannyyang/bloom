@@ -478,8 +478,9 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /(?:^|[;&|]\s*)batch\b/, category: "persistence" },
   // Persistence via cron — `crontab -e`, `echo "…" | crontab -`, and `crontab /tmp/evil` all
   // install cron jobs that execute outside the agent session, bypassing PreToolUse hooks.
-  // `\bcrontab\b` covers all forms; crontab has no legitimate use in Bloom's pipeline.
-  { pattern: /\bcrontab\b/, category: "persistence" },
+  // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives on commands
+  // that reference "crontab" as a grep/echo argument (e.g. grep 'crontab -e' Makefile).
+  { pattern: /(?:^|[;&|]\s*)crontab\b/, category: "persistence" },
   // Dynamic linker injection — LD_PRELOAD=/tmp/evil.so loads an attacker-controlled shared
   // library into the next process, silently hijacking system calls or git hooks.
   // LD_LIBRARY_PATH=/tmp/evil_libs: achieves the same effect by prepending a directory.
@@ -489,7 +490,9 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Persistent service installation — `systemctl enable/start/restart/daemon-reload` can install
   // a backdoor service that persists across reboots, well beyond the session boundary.
   // Read-only subcommands (status, is-active, is-enabled) are intentionally left unblocked.
-  { pattern: /\bsystemctl\s+(?:enable|start|restart|daemon-reload)\b/, category: "persistence" },
+  // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives on commands
+  // that reference "systemctl start" as a grep/echo argument.
+  { pattern: /(?:^|[;&|]\s*)systemctl\s+(?:enable|start|restart|daemon-reload)\b/, category: "persistence" },
   // Data-exfiltration server — these commands start an HTTP server that serves Bloom's source tree
   // to any external host. None have legitimate use in Bloom's build/test pipeline.
   // `python3 -m http.server` and `python -m http.server` — Python's built-in HTTP server
