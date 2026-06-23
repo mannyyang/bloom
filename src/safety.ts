@@ -511,9 +511,12 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // nsenter -t 1 -m -u -i -n bash  → enters the host PID-1 namespace from inside a container
   // chroot /host /bin/bash          → drops into a root filesystem shell
   // unshare --user bash             → creates an unprivileged user-namespace shell
-  { pattern: /\bnsenter\b/, category: "namespace-escape" },
-  { pattern: /\bchroot\b/, category: "namespace-escape" },
-  { pattern: /\bunshare\b/, category: "namespace-escape" },
+  // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives on commands
+  // that reference these names as grep/echo arguments (e.g. grep nsenter /var/log or echo "chroot").
+  // Consistent with the adjacent kernel-module-loading patterns (insmod, modprobe).
+  { pattern: /(?:^|[;&|]\s*)nsenter\b/, category: "namespace-escape" },
+  { pattern: /(?:^|[;&|]\s*)chroot\b/, category: "namespace-escape" },
+  { pattern: /(?:^|[;&|]\s*)unshare\b/, category: "namespace-escape" },
   // Interpreter search-path injection — setting PYTHONPATH=/tmp/evil causes every subsequent
   // `python3` invocation to import from an attacker-controlled directory, silently hijacking
   // standard-library modules such as `subprocess` or `os`. NODE_PATH and PERL5LIB are identical

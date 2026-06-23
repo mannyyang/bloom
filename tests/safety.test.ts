@@ -1306,6 +1306,15 @@ describe("category: namespace-escape", () => {
   it("does not flag reading namespace info via /proc", () => {
     expect(isDangerousCommand("ls /proc/1/ns")).toBeNull();
   });
+  it("does not flag grep nsenter in log file (grep argument, not command)", () => {
+    expect(isDangerousCommand("grep nsenter /var/log/auth.log")).toBeNull();
+  });
+  it("does not flag echo describing unshare (string argument, not command)", () => {
+    expect(isDangerousCommand('echo "unshare is used for container namespaces"')).toBeNull();
+  });
+  it("does not flag cat /proc/1/ns (path contains ns, not a namespace-escape tool)", () => {
+    expect(isDangerousCommand("cat /proc/1/ns")).toBeNull();
+  });
 });
 
 describe("category: persistence (nohup/disown)", () => {
