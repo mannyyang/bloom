@@ -1235,6 +1235,20 @@ describe("category: privilege-escalation", () => {
   it("does not flag grep searching for sudo in docs", () => {
     expect(isDangerousCommand("grep 'sudo' README.md")).toBeNull();
   });
+  // Boundary-anchor regressions: "su -c" and "pkexec" as grep/echo arguments must not fire.
+  it("does not flag grep searching for su -c pattern in scripts", () => {
+    expect(isDangerousCommand("grep 'su -c' scripts/setup.sh")).toBeNull();
+  });
+  it("does not flag echo describing pkexec (not a command invocation)", () => {
+    expect(isDangerousCommand("echo 'pkexec requires polkit to be installed'")).toBeNull();
+  });
+  // Chained privilege-escalation: anchored patterns must fire after ;, &&, |
+  it("blocks su -c after semicolon (chained)", () => {
+    expect(isDangerousCommand("echo hi; su -c 'id'")).toBe("privilege-escalation");
+  });
+  it("blocks pkexec after && (chained)", () => {
+    expect(isDangerousCommand("true && pkexec bash")).toBe("privilege-escalation");
+  });
 });
 
 describe("category: process-tracing", () => {

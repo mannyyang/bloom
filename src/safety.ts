@@ -566,8 +566,11 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives on commands
   // that reference "sudo" as a grep/echo argument (e.g. echo "use sudo for system ops").
   { pattern: /(?:^|[;&|]\s*)sudo\b/, category: "privilege-escalation" },
-  { pattern: /\bsu\b.*-c\b/, category: "privilege-escalation" },
-  { pattern: /\bpkexec\b/, category: "privilege-escalation" },
+  // su -c and pkexec anchored to command-start boundaries (^, ;, &, |) to prevent
+  // false positives when these names appear as grep/echo arguments
+  // (e.g. grep 'su -c' scripts/ or echo "pkexec requires polkit").
+  { pattern: /(?:^|[;&|]\s*)su\b.*-c\b/, category: "privilege-escalation" },
+  { pattern: /(?:^|[;&|]\s*)pkexec\b/, category: "privilege-escalation" },
   // Process tracing — `strace -p <pid>` and `ltrace -p <pid>` attach to running processes via
   // ptrace, dumping arbitrary memory contents, credentials, file descriptors, and syscalls in
   // real time without network access. Neither has legitimate use in Bloom's pipeline.
