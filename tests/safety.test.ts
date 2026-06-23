@@ -2657,6 +2657,18 @@ describe("category: env-var-injection", () => {
   it("does not flag reading LD_PRELOAD via printenv (read-only)", () => {
     expect(isDangerousCommand("printenv LD_PRELOAD")).toBeNull();
   });
+  it("does not flag echo with PYTHONPATH assignment text (documentation context)", () => {
+    expect(isDangerousCommand('echo "PYTHONPATH=/usr/lib/python3"')).toBeNull();
+  });
+  it("does not flag grep searching for PYTHONPATH= in config files", () => {
+    expect(isDangerousCommand("grep 'PYTHONPATH=' requirements.txt")).toBeNull();
+  });
+  it("does not flag echo with NODE_PATH assignment text (documentation context)", () => {
+    expect(isDangerousCommand('echo "NODE_PATH=/usr/lib/node"')).toBeNull();
+  });
+  it("does not flag grep searching for PERL5LIB= in Makefile", () => {
+    expect(isDangerousCommand("grep 'PERL5LIB=' Makefile")).toBeNull();
+  });
 });
 
 describe("category: env-interpreter-bypass", () => {

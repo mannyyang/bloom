@@ -488,9 +488,10 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Dynamic linker injection — LD_PRELOAD=/tmp/evil.so loads an attacker-controlled shared
   // library into the next process, silently hijacking system calls or git hooks.
   // LD_LIBRARY_PATH=/tmp/evil_libs: achieves the same effect by prepending a directory.
-  // Both assignments have no legitimate use in Bloom's pipeline; false-positive risk is low.
-  { pattern: /\bLD_PRELOAD\s*=/, category: "env-var-injection" },
-  { pattern: /\bLD_LIBRARY_PATH\s*=/, category: "env-var-injection" },
+  // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives when these
+  // appear inside grep/echo arguments (e.g. grep 'LD_PRELOAD=' Makefile or echo "LD_PRELOAD=...").
+  { pattern: /(?:^|[;&|]\s*)LD_PRELOAD\s*=/, category: "env-var-injection" },
+  { pattern: /(?:^|[;&|]\s*)LD_LIBRARY_PATH\s*=/, category: "env-var-injection" },
   // Persistent service installation — `systemctl enable/start/restart/daemon-reload` can install
   // a backdoor service that persists across reboots, well beyond the session boundary.
   // Read-only subcommands (status, is-active, is-enabled) are intentionally left unblocked.
@@ -523,16 +524,19 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // `python3` invocation to import from an attacker-controlled directory, silently hijacking
   // standard-library modules such as `subprocess` or `os`. NODE_PATH and PERL5LIB are identical
   // vectors for Node and Perl respectively. None have legitimate use in Bloom's pipeline.
-  { pattern: /\bPYTHONPATH\s*=/, category: "env-var-injection" },
-  { pattern: /\bNODE_PATH\s*=/, category: "env-var-injection" },
-  { pattern: /\bPERL5LIB\s*=/, category: "env-var-injection" },
+  // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives when these
+  // variable names appear inside grep/echo arguments (e.g. echo "PYTHONPATH=/usr/lib/python3").
+  { pattern: /(?:^|[;&|]\s*)PYTHONPATH\s*=/, category: "env-var-injection" },
+  { pattern: /(?:^|[;&|]\s*)NODE_PATH\s*=/, category: "env-var-injection" },
+  { pattern: /(?:^|[;&|]\s*)PERL5LIB\s*=/, category: "env-var-injection" },
   // Ruby interpreter search-path / startup injection:
   // RUBYOPT=-r/tmp/evil  → Ruby loads an arbitrary file via -require before every script
   // RUBYLIB=/tmp/evil    → prepends attacker directory to Ruby $LOAD_PATH (mirror of PERL5LIB)
   // PYTHONSTARTUP=/tmp/evil.py → Python executes this file before every interactive session
-  { pattern: /\bRUBYOPT\s*=/, category: "env-var-injection" },
-  { pattern: /\bRUBYLIB\s*=/, category: "env-var-injection" },
-  { pattern: /\bPYTHONSTARTUP\s*=/, category: "env-var-injection" },
+  // Anchored identically to the Python/Node/Perl patterns above.
+  { pattern: /(?:^|[;&|]\s*)RUBYOPT\s*=/, category: "env-var-injection" },
+  { pattern: /(?:^|[;&|]\s*)RUBYLIB\s*=/, category: "env-var-injection" },
+  { pattern: /(?:^|[;&|]\s*)PYTHONSTARTUP\s*=/, category: "env-var-injection" },
   // Kernel-module loading — `insmod` and `modprobe` load native code directly into ring-0.
   // A loaded module persists across reboots, can intercept any syscall, and cannot be
   // observed or blocked by userspace hook interception. Neither has legitimate use in Bloom.
