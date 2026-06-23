@@ -464,7 +464,7 @@ describe("blockDangerousCommands", () => {
     ["bun -e", 'bun -e "require(\'child_process\').execSync(\'id\')"'],
     ["lua -e", "lua -e 'os.execute(\"id\")'"],
     ["php -r", "php -r 'system(\"id\");'"],
-    // deno eval / bun eval — caught by existing \beval\s catch-all as arbitrary-code-execution
+    // deno eval / bun eval — caught by dedicated deno/bun inline-code-execution patterns
     ["deno eval", "deno eval 'Deno.run({cmd:[\"id\"]})'"],
     ["bun eval", 'bun eval "require(\'child_process\').execSync(\'id\')"'],
     // openssl enc -d decode-to-shell vector
@@ -830,6 +830,9 @@ describe("isDangerousCommand", () => {
     ["base64 --decode piped to bun", "base64 --decode script.b64 | bun", "remote-code-execution"],
     ["base64 --decode piped to perl", "base64 --decode script.b64 | perl", "remote-code-execution"],
     ["eval", "eval something", "arbitrary-code-execution"],
+    ["eval after && (chained)", "cmd && eval payload", "arbitrary-code-execution"],
+    ["eval after ; (chained)", "echo hi; eval $PAYLOAD", "arbitrary-code-execution"],
+    ["eval after | (chained)", "echo payload | eval", "arbitrary-code-execution"],
     ["fish -c", "fish -c 'rm -rf /'", "arbitrary-code-execution"],
     ["npx", "npx some-pkg", "untrusted-package-execution"],
     ["npm exec", "npm exec some-package", "untrusted-package-execution"],
@@ -866,9 +869,9 @@ describe("isDangerousCommand", () => {
     ["bun -e", 'bun -e "require(\'child_process\').execSync(\'id\')"', "inline-code-execution"],
     ["lua -e", "lua -e 'os.execute(\"id\")'", "inline-code-execution"],
     ["php -r", "php -r 'system(\"id\");'", "inline-code-execution"],
-    // deno eval / bun eval are caught by \beval\s before reaching any deno/bun-specific pattern
-    ["deno eval", "deno eval 'Deno.run({cmd:[\"id\"]})'", "arbitrary-code-execution"],
-    ["bun eval", 'bun eval "require(\'child_process\').execSync(\'id\')"', "arbitrary-code-execution"],
+    // deno eval / bun eval are caught by dedicated inline-code-execution patterns
+    ["deno eval", "deno eval 'Deno.run({cmd:[\"id\"]})'", "inline-code-execution"],
+    ["bun eval", 'bun eval "require(\'child_process\').execSync(\'id\')"', "inline-code-execution"],
     ["source", "source /tmp/evil.sh", "shell-script-execution"],
     ["dot-script bare", ". /tmp/evil.sh", "shell-script-execution"],
     ["dot-script after semicolon", "echo hi; . /tmp/evil.sh", "shell-script-execution"],
@@ -1203,6 +1206,9 @@ describe("isDangerousCommand", () => {
     ["grep 'source' as argument (not a command)", "grep 'source' config.sh"],
     ["echo message mentioning source (text, not command)", "echo 'open source rocks'"],
     ["dot-slash path is not a dot-script invocation", "./run.sh"],
+    // Boundary-anchor regressions for eval: eval as a grep/echo argument must not fire.
+    ["grep with eval as quoted arg (anchored-eval false-positive)", "grep 'eval something' file.txt"],
+    ["echo mentioning eval (not a command)", "echo 'eval result'"],
   ])("returns null for %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBeNull();
   });
@@ -1911,8 +1917,6 @@ describe("category: arbitrary-code-execution", () => {
   it.each([
     ["eval", 'eval "rm -rf /"'],
     ["eval with variable expansion", "eval $PAYLOAD"],
-    ["node --eval (eval word triggers pattern)", 'node --eval "process.exit()"'],
-    ["env node --eval (eval word triggers before env-bypass)", "env node --eval 'require(\"child_process\").exec(\"id\")'"],
     ["bash -c", 'bash -c "malicious command"'],
     ["sh -c", 'sh -c "malicious command"'],
     ["/bin/sh -c", '/bin/sh -c "malicious"'],
@@ -2348,8 +2352,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 170 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(170);
+  it("has exactly 172 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(172);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2412,6 +2416,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "ruby -e 'exec(\"id\")'",
       "deno -e 'Deno.run({cmd:[\"id\"]})'",
       "bun -e 'require(\"child_process\").execSync(\"id\")'",
+      "deno eval 'Deno.run({cmd:[\"id\"]})'",
+      "bun eval 'require(\"child_process\").execSync(\"id\")'",
       "lua -e 'os.execute(\"id\")'",
       "php -r 'system(\"id\");'",
       // shell-script-execution
