@@ -258,11 +258,14 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Dangerous recursive chown — -R/--recursive on /, ~, ., or .. can corrupt system-wide ownership
   { pattern: /\bchown\b(?=.*(?:-[a-zA-Z]*R\b|--recursive\b))(?=.*\s(?:\/(?:\s|$|\*)|~\/?(?:\s|$|\*)|\.(?:\/\*{0,2})?(?:\s|$)|\.\.(?:\/)?(?:\s|$)))/, category: "dangerous-recursive-chown" },
   // Disk/partition destruction — writing to raw devices or reformatting
+  // mkfs, wipefs, fdisk, and parted are anchored to command-start boundaries (^, ;, &, |)
+  // to prevent false positives when these tool names appear as grep/echo arguments
+  // (e.g. grep 'mkfs ext4' README.md or echo "wipefs removes filesystem signatures").
   { pattern: /\bdd\s+.*of=\/dev\//, category: "disk-destruction" },
-  { pattern: /\bmkfs\b/, category: "disk-destruction" },
-  { pattern: /\bwipefs\b/, category: "disk-destruction" },
-  { pattern: /\bfdisk\b/, category: "disk-destruction" },
-  { pattern: /\bparted\b/, category: "disk-destruction" },
+  { pattern: /(?:^|[;&|]\s*)mkfs\b/, category: "disk-destruction" },
+  { pattern: /(?:^|[;&|]\s*)wipefs\b/, category: "disk-destruction" },
+  { pattern: /(?:^|[;&|]\s*)fdisk\b/, category: "disk-destruction" },
+  { pattern: /(?:^|[;&|]\s*)parted\b/, category: "disk-destruction" },
   // Git working tree destruction — force-clean untracked files; force-remove linked worktrees with uncommitted changes
   { pattern: /git\s+clean\s+.*(-f|--force)/, category: "git-working-tree-destruction" },
   // (?<!\w)-[a-zA-Z]*f[a-zA-Z]*\b catches both bare -f and combined short flags like -fd (force+delete)
