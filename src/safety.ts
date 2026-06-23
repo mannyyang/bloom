@@ -493,11 +493,15 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Data-exfiltration server — these commands start an HTTP server that serves Bloom's source tree
   // to any external host. None have legitimate use in Bloom's build/test pipeline.
   // `python3 -m http.server` and `python -m http.server` — Python's built-in HTTP server
-  { pattern: /\bpython3?\s+-m\s+http\.server\b/, category: "data-exfiltration-server" },
+  // Anchored to command-start boundaries so that `grep 'python3 -m http.server' Makefile`
+  // (where the token appears as a quoted argument, not as a command) is not a false positive.
+  { pattern: /(?:^|[;&|]\s*)python3?\s+-m\s+http\.server\b/, category: "data-exfiltration-server" },
   // `php -S host:port` — PHP's built-in development web server
-  { pattern: /\bphp\s+-S\b/, category: "data-exfiltration-server" },
+  // Anchored to avoid false positives on `grep 'php -S' config.txt`.
+  { pattern: /(?:^|[;&|]\s*)php\s+-S\b/, category: "data-exfiltration-server" },
   // `ruby -run -e httpd` — Ruby's built-in HTTP server via the un library
-  { pattern: /\bruby\s+-run\b/, category: "data-exfiltration-server" },
+  // Anchored to avoid false positives on `echo 'ruby -run example'`.
+  { pattern: /(?:^|[;&|]\s*)ruby\s+-run\b/, category: "data-exfiltration-server" },
   // Container / namespace escape — these Linux tools bypass the sandbox entirely:
   // nsenter -t 1 -m -u -i -n bash  → enters the host PID-1 namespace from inside a container
   // chroot /host /bin/bash          → drops into a root filesystem shell

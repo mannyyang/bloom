@@ -685,6 +685,10 @@ describe("blockDangerousCommands", () => {
     // Boundary-anchor regressions for dnf/yum: tokens inside grep/echo arguments are allowed.
     ["grep with dnf-install as quoted arg", "grep 'dnf install' Dockerfile"],
     ["echo string describing yum install", "echo 'yum install node'"],
+    // Boundary-anchor regressions for data-exfiltration-server: tokens inside grep/echo are allowed.
+    ["grep with python3 http.server as quoted arg", "grep 'python3 -m http.server' Makefile"],
+    ["grep with php -S as quoted arg", "grep 'php -S' config.txt"],
+    ["echo string describing ruby -run", "echo 'ruby -run example'"],
   ])("allows %s", async (_desc, command) => {
     expectAllowed(await blockDangerousCommands(makeBashInput(command), "tool-1", hookOpts));
   });
@@ -3393,6 +3397,16 @@ describe("category: data-exfiltration-server", () => {
   });
   it("allows python3 -m compileall (not http.server)", () => {
     expect(isDangerousCommand("python3 -m compileall src/")).toBeNull();
+  });
+  // Boundary-anchor regressions: tool names appearing as quoted grep/echo args must not fire.
+  it("allows grep with python3 http.server as quoted argument", () => {
+    expect(isDangerousCommand("grep 'python3 -m http.server' Makefile")).toBeNull();
+  });
+  it("allows grep with php -S as quoted argument", () => {
+    expect(isDangerousCommand("grep 'php -S' config.txt")).toBeNull();
+  });
+  it("allows echo describing ruby -run", () => {
+    expect(isDangerousCommand("echo 'ruby -run example'")).toBeNull();
   });
 });
 
