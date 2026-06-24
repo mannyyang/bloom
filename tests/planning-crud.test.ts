@@ -221,6 +221,32 @@ describe("body truncation at 500 chars", () => {
   });
 });
 
+describe("CRLF normalization in addLinkedItem and addDraftItem", () => {
+  it("normalizes \\r\\n to \\n in addLinkedItem body before storing", () => {
+    writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([]), "utf-8");
+
+    const crlfBody = "First line\r\nSecond line\r\nThird line";
+    addLinkedItem(config, 55, "CRLF test", crlfBody);
+
+    const written = readFileSync(join(tmpDir, "ROADMAP.md"), "utf-8");
+    const items = parseRoadmap(written);
+    expect(items[0].body).not.toContain("\r");
+    expect(items[0].body).toContain("First line\nSecond line\nThird line");
+  });
+
+  it("normalizes \\r\\n to \\n in addDraftItem body before storing", () => {
+    writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([]), "utf-8");
+
+    const crlfBody = "Alpha\r\nBeta\r\nGamma";
+    addDraftItem(config, "CRLF draft test", crlfBody);
+
+    const written = readFileSync(join(tmpDir, "ROADMAP.md"), "utf-8");
+    const items = parseRoadmap(written);
+    expect(items[0].body).not.toContain("\r");
+    expect(items[0].body).toContain("Alpha\nBeta\nGamma");
+  });
+});
+
 describe("addDraftItem case-insensitive deduplication", () => {
   it("returns existing item id when title differs only by case", () => {
     writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([]), "utf-8");

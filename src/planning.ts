@@ -371,7 +371,7 @@ export function addLinkedItem(
       id: nextItemId(items),
       title,
       status,
-      body: truncateItemBody(`addLinkedItem #${issueNumber}`, body),
+      body: truncateItemBody(`addLinkedItem #${issueNumber}`, body.replace(/\r\n/g, "\n")),
       linkedIssueNumber: issueNumber,
       reactions: 0,
     };
@@ -394,7 +394,7 @@ export function addDraftItem(
       id: nextItemId(items),
       title,
       status,
-      body: truncateItemBody(`addDraftItem "${title}"`, body),
+      body: truncateItemBody(`addDraftItem "${title}"`, body.replace(/\r\n/g, "\n")),
       linkedIssueNumber: null,
       reactions: 0,
     };
