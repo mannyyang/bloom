@@ -103,6 +103,8 @@ export function parseRoadmapSections(content: string): RoadmapSection[] {
   let currentSection: RoadmapSection | null = null;
   let currentItem: RoadmapItem | null = null;
 
+  content = content.replace(/\r\n/g, "\n");
+
   const flush = () => {
     if (currentItem && currentSection) {
       currentSection.items.push(currentItem);

@@ -201,6 +201,21 @@ describe("parseRoadmapSections", () => {
     expect(html).not.toContain("…[truncated]");
   });
 
+  it("normalizes CRLF line endings before parsing (regression: \\r corrupted section headings and item titles)", () => {
+    // CRLF-terminated content (from git core.autocrlf or HTTP responses) leaves
+    // a trailing \r on each line, producing headings like "Backlog\r" and item
+    // titles like "Do something\r" in the structured output used for context injection.
+    const crlfMd = "## Backlog\r\n- [ ] Do something (#1)\r\n## Done\r\n- [x] Completed (#2)\r\n";
+    const sections = parseRoadmapSections(crlfMd);
+    expect(sections).toHaveLength(2);
+    expect(sections[0].heading).toBe("Backlog");
+    expect(sections[0].items[0].title).toBe("Do something");
+    expect(sections[0].items[0].issueNumber).toBe(1);
+    expect(sections[1].heading).toBe("Done");
+    expect(sections[1].items[0].title).toBe("Completed");
+    expect(sections[1].items[0].done).toBe(true);
+  });
+
   it("### sub-heading inside a section does not create a new section and does not appear in descriptions", () => {
     // The heading regex is /^##\s+/ which requires exactly two '#' followed by
     // whitespace. A '###' line has a third '#' where whitespace is expected, so
