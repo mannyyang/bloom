@@ -122,6 +122,7 @@ const INLINE_NUMBERED_RE = /(?:^|[\s,;(])\d+[.)]\s/gm;
  * Extracts ATTEMPTED, SUCCEEDED, FAILED, LEARNINGS, and STRATEGIC_CONTEXT sections.
  */
 export function parseEvolutionResult(result: string): EvolutionSections {
+  result = result.replace(/\r\n/g, "\n");
   const sections: EvolutionSections = {
     attempted: "",
     succeeded: "",
