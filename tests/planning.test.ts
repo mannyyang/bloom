@@ -220,6 +220,36 @@ describe("pickNextItemWithRationale", () => {
     const { item } = pickNextItemWithRationale(items);
     expect(item).toBe(picked);
   });
+
+  it("prefers In Progress over Up Next and Backlog when all four statuses are present", () => {
+    const inProgressItem = makeItem({ id: "item-1", title: "Active work", status: "In Progress" });
+    const upNextItem = makeItem({ id: "item-2", title: "Queued feature", status: "Up Next" });
+    const backlogItem = makeItem({ id: "item-3", title: "Future idea", status: "Backlog" });
+    const doneItem = makeItem({ id: "item-4", title: "Completed task", status: "Done" });
+
+    const { item, rationale } = pickNextItemWithRationale([doneItem, backlogItem, upNextItem, inProgressItem]);
+    expect(item).toBe(inProgressItem);
+    expect(rationale).toBe('resumed In Progress item "Active work"');
+  });
+
+  it("prefers Up Next over Backlog when no In Progress item exists (mixed statuses)", () => {
+    const upNextItem = makeItem({ id: "item-1", title: "Queued feature", status: "Up Next" });
+    const backlogItem = makeItem({ id: "item-2", title: "Future idea", status: "Backlog" });
+    const doneItem = makeItem({ id: "item-3", title: "Completed task", status: "Done" });
+
+    const { item, rationale } = pickNextItemWithRationale([doneItem, backlogItem, upNextItem]);
+    expect(item).toBe(upNextItem);
+    expect(rationale).toBe('promoted Up Next item "Queued feature"');
+  });
+
+  it("falls through to Backlog when only Backlog and Done items exist", () => {
+    const backlogItem = makeItem({ id: "item-1", title: "Future idea", status: "Backlog" });
+    const doneItem = makeItem({ id: "item-2", title: "Completed task", status: "Done" });
+
+    const { item, rationale } = pickNextItemWithRationale([doneItem, backlogItem]);
+    expect(item).toBe(backlogItem);
+    expect(rationale).toBe('selected Backlog item "Future idea"');
+  });
 });
 
 describe("formatPlanningContext", () => {
