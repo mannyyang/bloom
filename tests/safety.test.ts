@@ -1283,6 +1283,13 @@ describe("category: process-tracing", () => {
   it("does not flag echo describing ltrace usage (not a command invocation)", () => {
     expect(isDangerousCommand("echo 'run ltrace for library tracing'")).toBeNull();
   });
+  // Chained command: anchored pattern must fire after ;, &&
+  it("blocks strace after && (chained)", () => {
+    expect(isDangerousCommand("echo setup && strace -p 1234")).toBe("process-tracing");
+  });
+  it("blocks ltrace after ; (chained)", () => {
+    expect(isDangerousCommand("echo setup; ltrace ./myprogram")).toBe("process-tracing");
+  });
 });
 
 describe("category: kernel-module-loading", () => {
@@ -1304,6 +1311,13 @@ describe("category: kernel-module-loading", () => {
   });
   it("does not flag echo describing modprobe usage (not a command invocation)", () => {
     expect(isDangerousCommand("echo 'modprobe loads kernel modules'")).toBeNull();
+  });
+  // Chained command: anchored pattern must fire after ;, &&
+  it("blocks insmod after && (chained)", () => {
+    expect(isDangerousCommand("echo loading && insmod evil.ko")).toBe("kernel-module-loading");
+  });
+  it("blocks modprobe after ; (chained)", () => {
+    expect(isDangerousCommand("echo loading; modprobe evil_module")).toBe("kernel-module-loading");
   });
 });
 
