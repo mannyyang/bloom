@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach, afterAll, beforeAll, beforeEach } from "vitest";
-import { buildTriagePrompt, parseTriageResponse, triageIssues, PROMPT_BODY_PREVIEW_CHARS, PROMPT_TITLE_PREVIEW_CHARS, BOARD_BODY_PREVIEW_CHARS, TRIAGE_MAX_TURNS, TRIAGE_MAX_BUDGET_USD, TRIAGE_REASON_MAX_CHARS, TRIAGE_ERROR_PREVIEW_CHARS, TRIAGE_ACTION_NAME, TRIAGE_BOARD_STATUS_DONE, TRIAGE_ALREADY_ON_BOARD_COMMENT, TRIAGE_MAX_ISSUE_NUMBER, TRIAGE_STATUS_ORDER } from "../src/triage.js";
+import { buildTriagePrompt, parseTriageResponse, triageIssues, PROMPT_BODY_PREVIEW_CHARS, PROMPT_TITLE_PREVIEW_CHARS, BOARD_BODY_PREVIEW_CHARS, TRIAGE_MAX_TURNS, TRIAGE_MAX_BUDGET_USD, TRIAGE_REASON_MAX_CHARS, TRIAGE_ERROR_PREVIEW_CHARS, TRIAGE_ACTION_NAME, TRIAGE_BOARD_STATUS_DONE, TRIAGE_ALREADY_ON_BOARD_COMMENT, TRIAGE_MAX_ISSUE_NUMBER, TRIAGE_STATUS_ORDER, TRIAGE_MAX_DONE_ITEMS } from "../src/triage.js";
 import type { CommunityIssue } from "../src/issues.js";
 import { closeIssueWithComment, detectRepo, isValidRepo } from "../src/issues.js";
 import { hasIssueAction, insertIssueAction, initDb, insertCycle } from "../src/db.js";
@@ -607,6 +607,30 @@ describe("buildTriagePrompt", () => {
     // silently change LLM behaviour without breaking any other test.
     const prompt = buildTriagePrompt([makeIssue()], []);
     expect(prompt).toContain("## Current roadmap state:");
+  });
+
+  it("caps Done items at TRIAGE_MAX_DONE_ITEMS in the prompt", () => {
+    // Create TRIAGE_MAX_DONE_ITEMS + 5 Done items; only the first
+    // TRIAGE_MAX_DONE_ITEMS (alphabetically by title after sort) must appear.
+    const doneItems = Array.from({ length: TRIAGE_MAX_DONE_ITEMS + 5 }, (_, i) =>
+      makeBoardItem({ title: `Done item ${String(i).padStart(3, "0")}`, status: "Done", body: "" }),
+    );
+    const prompt = buildTriagePrompt([], doneItems);
+    // The first TRIAGE_MAX_DONE_ITEMS items must appear
+    expect(prompt).toContain("Done item 000");
+    expect(prompt).toContain(`Done item ${String(TRIAGE_MAX_DONE_ITEMS - 1).padStart(3, "0")}`);
+    // Items beyond the cap must be absent
+    expect(prompt).not.toContain(`Done item ${String(TRIAGE_MAX_DONE_ITEMS).padStart(3, "0")}`);
+  });
+
+  it("always includes all non-Done items even when Done items are capped", () => {
+    // Non-Done items must never be dropped, regardless of Done item count.
+    const doneItems = Array.from({ length: TRIAGE_MAX_DONE_ITEMS + 5 }, (_, i) =>
+      makeBoardItem({ title: `Done ${i}`, status: "Done", body: "" }),
+    );
+    const backlogItem = makeBoardItem({ title: "Keep this backlog item", status: "Backlog", body: "" });
+    const prompt = buildTriagePrompt([], [...doneItems, backlogItem]);
+    expect(prompt).toContain("Keep this backlog item");
   });
 });
 

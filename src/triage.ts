@@ -74,6 +74,11 @@ export interface TriageResult {
 // consistent order regardless of the order the caller provides them.
 export const TRIAGE_STATUS_ORDER = [STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, STATUS_DONE];
 
+/** Maximum number of Done board items included in the triage prompt.
+ *  All non-Done items are always included; Done items beyond this cap are
+ *  dropped so prompt size stays bounded as the roadmap accumulates history. */
+export const TRIAGE_MAX_DONE_ITEMS = 20;
+
 // --- Prompt Building ---
 
 /**
@@ -118,9 +123,26 @@ export function buildTriagePrompt(
     return ra !== rb ? ra - rb : a.title.localeCompare(b.title);
   });
 
+  // Cap Done items to avoid unbounded prompt growth as the roadmap history
+  // accumulates. All non-Done items are always included; Done items beyond
+  // TRIAGE_MAX_DONE_ITEMS are dropped (least signal-rich items, already sorted
+  // alphabetically, so the head of the sorted list is kept).
+  const cappedBoardItems: typeof sortedBoardItems = [];
+  let doneCount = 0;
+  for (const item of sortedBoardItems) {
+    if (item.status === STATUS_DONE) {
+      if (doneCount < TRIAGE_MAX_DONE_ITEMS) {
+        cappedBoardItems.push(item);
+        doneCount++;
+      }
+    } else {
+      cappedBoardItems.push(item);
+    }
+  }
+
   const boardList =
-    sortedBoardItems.length > 0
-      ? sortedBoardItems
+    cappedBoardItems.length > 0
+      ? cappedBoardItems
           .map((item) => {
             const issue = item.linkedIssueNumber ? ` (#${item.linkedIssueNumber})` : "";
             const reactions = item.reactions > 0 ? ` (${item.reactions} ★)` : "";
