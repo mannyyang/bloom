@@ -62,8 +62,14 @@ export function formatDurationSec(ms: number): string {
   if (Math.round(totalSec * 10) < DURATION_MINUTE_THRESHOLD_DECISECONDS) {
     return `${totalSec.toFixed(1)}s`;
   }
-  const minutes = Math.floor(totalSec / 60);
-  const remainingSec = totalSec - minutes * 60;
+  let minutes = Math.floor(totalSec / 60);
+  let remainingSec = totalSec - minutes * 60;
+  // Guard against floating-point rounding producing "60.0" in the remaining-seconds slot.
+  // e.g. 59950ms → minutes=0, remainingSec=59.95 → toFixed(1)="60.0" → carry 1 minute.
+  if (Math.round(remainingSec * 10) >= 600) {
+    minutes += 1;
+    remainingSec = 0;
+  }
   return `${minutes}m ${remainingSec.toFixed(1)}s`;
 }
 

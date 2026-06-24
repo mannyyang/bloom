@@ -1734,9 +1734,9 @@ describe("formatDurationSec", () => {
   });
 
   it("routes values whose toFixed(1) would display as 60.0s to the minute branch", () => {
-    // ms=59999 → totalSec=59.999 → toFixed(1)="60.0" → would produce anomalous "60.0s"
-    // with totalSec<60 check. Math.round(599.99)=600 routes it to the minute branch instead.
-    expect(formatDurationSec(59999)).toBe("0m 60.0s");
+    // ms=59999 → totalSec=59.999 → Math.round(599.99)=600 → minute branch;
+    // remainingSec=59.999 → Math.round(599.99)=600 ≥ 600 → carry: 1m 0.0s
+    expect(formatDurationSec(59999)).toBe("1m 0.0s");
   });
 
   it("formats 59949ms as sub-minute 59.9s (safely below the rounding boundary)", () => {
@@ -1746,8 +1746,8 @@ describe("formatDurationSec", () => {
 
   it("routes 59950ms to the minute branch (Math.round(599.5)=600 boundary)", () => {
     // 59950/1000 = 59.95 → 59.95*10 = 599.5 → Math.round(599.5) = 600 (not < 600)
-    // → minute branch; minutes=0, remaining=59.95, toFixed(1)="60.0" → "0m 60.0s"
-    expect(formatDurationSec(59950)).toBe("0m 60.0s");
+    // → minute branch; minutes=0, remainingSec=59.95 → Math.round(599.5)=600 ≥ 600 → carry: 1m 0.0s
+    expect(formatDurationSec(59950)).toBe("1m 0.0s");
   });
 
   it("formats exactly 60s as minutes", () => {
