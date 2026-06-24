@@ -35,6 +35,8 @@ export interface ExtractedLearnings {
 export function extractLearnings(learningsText: string): ExtractedLearnings {
   if (!learningsText || !learningsText.trim()) return { learnings: [] };
 
+  learningsText = learningsText.replace(/\r\n/g, "\n");
+
   const result: ExtractedLearnings = { learnings: [] };
   for (const line of learningsText.split("\n")) {
     const trimmed = line.trim();

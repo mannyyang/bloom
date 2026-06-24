@@ -169,6 +169,21 @@ describe("extractLearnings", () => {
     expect(result.learnings[0].category).toBe("domain");
     expect(result.learnings[0].content).toBe("Always run tests before committing");
   });
+
+  it("normalizes CRLF line endings before parsing (regression: \\r corrupted category match)", () => {
+    // LLM output or git checkouts with core.autocrlf=true may produce CRLF text.
+    // Without normalization, the trailing \r appears inside the [category] tag,
+    // breaking the regex match and forcing all learnings to fall back to "domain".
+    const crlfText = "- [pattern] Writing tests first catches edge cases\r\n- [anti-pattern] Avoid large commits\r\n- Untagged insight";
+    const result = extractLearnings(crlfText);
+    expect(result.learnings).toHaveLength(3);
+    expect(result.learnings[0].category).toBe("pattern");
+    expect(result.learnings[0].content).toBe("Writing tests first catches edge cases");
+    expect(result.learnings[1].category).toBe("anti-pattern");
+    expect(result.learnings[1].content).toBe("Avoid large commits");
+    expect(result.learnings[2].category).toBe("domain");
+    expect(result.learnings[2].content).toBe("Untagged insight");
+  });
 });
 
 describe("storeLearnings", () => {
