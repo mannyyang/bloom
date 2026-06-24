@@ -235,28 +235,39 @@ export function formatMemoryForPrompt(
       if (budgetExhausted) break;
       const items = grouped.get(category);
       if (!items || items.length === 0) continue;
-      const header = `### ${category} (${items.length})\n`;
+      // Use items.length for the initial budget check as a conservative upper
+      // bound on the header size; the actual emitted count may be lower after
+      // budget truncation cuts the category mid-way.
+      const tentativeHeader = `### ${category} (${items.length})\n`;
       const firstLine = `- ${items[0].content}\n`;
       // Require budget for both the category header AND its first item before
       // committing either to learningSection. This prevents a dangling header
       // with no items if the budget runs out immediately after the header.
-      if (totalLen + separatorLen + learningSection.length + header.length + firstLine.length > maxChars) {
+      if (totalLen + separatorLen + learningSection.length + tentativeHeader.length + firstLine.length > maxChars) {
         budgetExhausted = true;
         break;
       }
-      learningSection += header;
+      // Collect items into a temporary buffer to track the actual emitted count.
+      // The header is written after the loop so it accurately reflects how many
+      // items appear — writing items.length when only a subset fits would
+      // misrepresent the category to the LLM.
+      let categoryLines = "";
+      let emittedCount = 0;
       for (const item of items) {
         const line = `- ${item.content}\n`;
         // Each item is checked individually; the ceiling is enforced here rather
         // than at loop entry so partial categories still contribute learnings.
         // separatorLen is included because join("\n") will insert it at output
         // time — omitting it would allow totalLen to silently exceed maxChars.
-        if (totalLen + separatorLen + learningSection.length + line.length > maxChars) {
+        if (totalLen + separatorLen + learningSection.length + tentativeHeader.length + categoryLines.length + line.length > maxChars) {
           budgetExhausted = true;
           break;
         }
-        learningSection += line;
+        categoryLines += line;
+        emittedCount++;
       }
+      // Commit the header with the actual emitted count followed by the item lines.
+      learningSection += `### ${category} (${emittedCount})\n` + categoryLines;
     }
     // Only include the learnings section if it contains more than just the header
     if (learningSection.length > learningSectionHeader.length) {
