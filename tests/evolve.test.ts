@@ -847,6 +847,25 @@ More learning content`;
     expect(result.learnings).toContain("More learning content");
     expect(result.failed).toBe("");
   });
+
+  it("normalises CRLF line endings so section bodies contain no bare \\r", () => {
+    // If an LLM returns CRLF-terminated output, raw `line` values embedded in
+    // section bodies would carry a trailing \r on every interior line.  The
+    // result.replace(/\r\n/g,"\n") guard at the top of parseEvolutionResult
+    // must strip them before the split, keeping sections \r-free throughout.
+    const input =
+      "ATTEMPTED: Fix regex bug\r\n- Detail 1\r\n- Detail 2\r\nSUCCEEDED: Regex fixed\r\nFAILED: none\r\nLEARNINGS: [pattern] Always test\r\nSTRATEGIC_CONTEXT: Focused on parsing.\r\n";
+    const result = parseEvolutionResult(input);
+    expect(result.attempted).not.toContain("\r");
+    expect(result.succeeded).not.toContain("\r");
+    expect(result.failed).not.toContain("\r");
+    expect(result.learnings).not.toContain("\r");
+    expect(result.strategic_context).not.toContain("\r");
+    // Verify content is actually parsed correctly
+    expect(result.attempted).toContain("Fix regex bug");
+    expect(result.attempted).toContain("- Detail 1");
+    expect(result.succeeded).toContain("Regex fixed");
+  });
 });
 
 describe("cross-phase integration: buildAssessmentPrompt → buildEvolutionPrompt", () => {
