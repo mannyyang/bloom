@@ -157,7 +157,10 @@ export function parseRoadmap(content: string): ProjectItem[] {
   let currentItem: Partial<ProjectItem> | null = null;
   let idCounter = 0;
 
-  for (const line of content.split("\n")) {
+  // Normalise CRLF → LF so Windows-style line endings (e.g. from git
+  // checkouts with core.autocrlf=true) do not leave a trailing \r on each
+  // line and corrupt item titles, status headings, and body text.
+  for (const line of content.replace(/\r\n/g, "\n").split("\n")) {
     // Match status headings
     const headingMatch = line.match(/^##\s+(.+)$/);
     if (headingMatch) {

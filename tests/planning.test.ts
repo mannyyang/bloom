@@ -904,6 +904,22 @@ describe("serializeRoadmap", () => {
     expect(result).toContain("Normal Item");
     expect(result).not.toContain("Null Status Item");
   });
+
+  it("parses ROADMAP.md with CRLF line endings without corrupting titles", () => {
+    // readFileSync on Windows (or git with core.autocrlf=true) preserves \r\n.
+    // Splitting on "\n" leaves \r at the end of each line, corrupting titles,
+    // headings, and body text. parseRoadmap must normalise CRLF → LF first.
+    const crlfContent =
+      "## Backlog\r\n- [ ] Fix login bug\r\n  Login fails on bad input.\r\n## Done\r\n- [x] Old task\r\n";
+    const items = parseRoadmap(crlfContent);
+    expect(items).toHaveLength(2);
+    expect(items[0].title).toBe("Fix login bug");
+    expect(items[0].title).not.toContain("\r");
+    expect(items[0].body).toBe("Login fails on bad input.");
+    expect(items[0].body).not.toContain("\r");
+    expect(items[1].title).toBe("Old task");
+    expect(items[1].title).not.toContain("\r");
+  });
 });
 
 describe("parseInProgressSinceCycle", () => {
