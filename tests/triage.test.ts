@@ -632,6 +632,17 @@ describe("buildTriagePrompt", () => {
     const prompt = buildTriagePrompt([], [...doneItems, backlogItem]);
     expect(prompt).toContain("Keep this backlog item");
   });
+
+  it("strips embedded \\r from issue titles before rendering the prompt", () => {
+    // Regression guard: issue titles only get .trim() without CRLF normalization,
+    // so a title containing \r (e.g., from a malformed API response) would produce
+    // a garbled prompt line. Fix: .replace(/\r/g, "") runs after .trim() on titles.
+    const crlfTitle = "Title\r\nwith CRLF";
+    const prompt = buildTriagePrompt([makeIssue({ title: crlfTitle })], []);
+    expect(prompt).not.toContain("\r");
+    expect(prompt).toContain("Title");
+    expect(prompt).toContain("with CRLF");
+  });
 });
 
 describe("parseTriageResponse", () => {

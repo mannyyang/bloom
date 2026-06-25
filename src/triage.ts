@@ -105,7 +105,7 @@ export function buildTriagePrompt(
   const sortedIssues = [...issues].sort((a, b) => b.reactions - a.reactions || a.number - b.number);
   const issueList = sortedIssues
     .map((i) => {
-      const trimmedTitle = i.title.trim();
+      const trimmedTitle = i.title.trim().replace(/\r/g, "");
       const titlePreview = truncateWithEllipsis(trimmedTitle, PROMPT_TITLE_PREVIEW_CHARS);
       const normalizedBody = i.body.trim().replace(/\s+/g, " ");
       const bodyPreview = truncateWithEllipsis(normalizedBody, PROMPT_BODY_PREVIEW_CHARS);
