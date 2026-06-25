@@ -834,6 +834,25 @@ describe("parseRoadmap", () => {
     );
     warnSpy.mockRestore();
   });
+
+  it("section heading takes precedence over checkbox state: - [x] under ## Backlog yields status Backlog", () => {
+    // A manually edited file may have a checked checkbox under a non-Done section.
+    // parseRoadmap must assign status from the ## heading, not from [ ] vs [x].
+    const content = `# Bloom Evolution Roadmap\n\n## Backlog\n- [x] Checked but in Backlog\n`;
+    const items = parseRoadmap(content);
+    expect(items).toHaveLength(1);
+    expect(items[0].status).toBe("Backlog");
+    expect(items[0].title).toBe("Checked but in Backlog");
+  });
+
+  it("section heading takes precedence over checkbox state: - [ ] under ## Done yields status Done", () => {
+    // Similarly, an unchecked item under ## Done is still parsed as Done.
+    const content = `# Bloom Evolution Roadmap\n\n## Done\n- [ ] Unchecked but in Done\n`;
+    const items = parseRoadmap(content);
+    expect(items).toHaveLength(1);
+    expect(items[0].status).toBe("Done");
+    expect(items[0].title).toBe("Unchecked but in Done");
+  });
 });
 
 describe("serializeRoadmap", () => {
