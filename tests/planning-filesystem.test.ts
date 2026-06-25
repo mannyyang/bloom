@@ -420,6 +420,46 @@ describe("updateItemStatus", () => {
     expect(updated[0].body).toContain("[since: 55]");
     expect(updated[0].body).toContain("Some description");
   });
+
+  it("does NOT stamp [since: 0] annotation when sinceCycle=0 (boundary guard)", () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+- [ ] Zero cycle task
+
+## Up Next
+
+## In Progress
+
+## Done
+`);
+    const config = makeConfig();
+    const items = getProjectItems(config);
+    updateItemStatus(config, items[0].id, "In Progress", undefined, 0);
+
+    const updated = getProjectItems(config);
+    expect(updated[0].body).not.toContain("[since:");
+  });
+
+  it("does NOT stamp any [since: N] annotation when sinceCycle is undefined", () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+- [ ] Undefined cycle task
+
+## Up Next
+
+## In Progress
+
+## Done
+`);
+    const config = makeConfig();
+    const items = getProjectItems(config);
+    updateItemStatus(config, items[0].id, "In Progress", undefined, undefined);
+
+    const updated = getProjectItems(config);
+    expect(updated[0].body).not.toContain("[since:");
+  });
 });
 
 describe("demoteStaleInProgressItems", () => {
@@ -552,5 +592,28 @@ describe("demoteStaleInProgressItems", () => {
     const items = getProjectItems(config);
     expect(items[0].body).toContain("Important context");
     expect(items[0].body).not.toContain("[since:");
+  });
+
+  it("demotes item with future-cycle [since: N] (N > currentCycle) as always-stale", () => {
+    writeTestRoadmap(`# Bloom Evolution Roadmap
+
+## Backlog
+
+## Up Next
+
+## In Progress
+- [ ] Future annotated task
+  [since: 999]
+
+## Done
+`);
+    const config = makeConfig();
+    // currentCycle=10, since=999 → parseInProgressSinceCycle returns null (future)
+    // → treated as no annotation → always stale → demoted
+    const demoted = demoteStaleInProgressItems(config, 10, 3);
+
+    expect(demoted).toEqual(["Future annotated task"]);
+    const items = getProjectItems(config);
+    expect(items[0].status).toBe("Up Next");
   });
 });
