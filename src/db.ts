@@ -553,7 +553,9 @@ export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS
     `).all(limit);
   }
 
-  interface CycleRow {
+  /** Raw snake_case row shape returned by the cycles SELECT query inside getCycleStats.
+   * Named distinctly from the exported CycleRow (camelCase) to avoid scope shadowing. */
+  interface RawStatsCycleRow {
     cycle_number: number;
     preflight_passed: number;
     improvements_attempted: number;
@@ -575,7 +577,7 @@ export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS
     started_at: "string", completed_at: "string?",
   };
 
-  const rows = validateRows<CycleRow>(rawRows, cycleRowSchema, "getCycleStats");
+  const rows = validateRows<RawStatsCycleRow>(rawRows, cycleRowSchema, "getCycleStats");
 
   if (rows.length === 0) {
     return {
