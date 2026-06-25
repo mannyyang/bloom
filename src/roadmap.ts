@@ -266,9 +266,9 @@ export interface RoadmapJsonItem extends Omit<ProjectItem, "body"> {
    * by the `[since: N]` annotation in the item body. Only populated for items
    * with `status === STATUS_IN_PROGRESS` that have a valid `[since: N]`
    * annotation in their stored body. Null for all other statuses, or when the
-   * annotation is absent or malformed. Note: future-cycle values (N greater
-   * than the current cycle) are propagated as-is because no currentCycle
-   * context is available at JSON generation time.
+   * annotation is absent or malformed. When `currentCycle` is passed to
+   * `generateRoadmapJson`, future-cycle values (N > currentCycle) are rejected
+   * and produce null, preventing phantom staleness clock resets.
    */
   sinceCycle: number | null;
 }
@@ -298,12 +298,12 @@ export interface RoadmapJsonSummary {
  * the output and the summary reflects the filtered subset — matching the
  * behaviour of `generateRoadmapOutput` with a filterStatus argument.
  */
-export function generateRoadmapJson(content: string, filterStatus?: StatusColumn): { items: RoadmapJsonItem[]; summary: RoadmapJsonSummary } {
+export function generateRoadmapJson(content: string, filterStatus?: StatusColumn, currentCycle?: number): { items: RoadmapJsonItem[]; summary: RoadmapJsonSummary } {
   const items = parseRoadmap(content);
   let cleanItems: RoadmapJsonItem[] = items.map((item) => {
     const sinceCycle =
       item.status === STATUS_IN_PROGRESS && item.body
-        ? parseInProgressSinceCycle(item.body)
+        ? parseInProgressSinceCycle(item.body, currentCycle)
         : null;
     const cleanBody = cleanItemBody(item.body);
     return { ...item, body: cleanBody, sinceCycle };
