@@ -221,6 +221,22 @@ describe("body truncation at 500 chars", () => {
   });
 });
 
+describe("CRLF normalization in updateItemStatus", () => {
+  it("normalizes \\r\\n to \\n in completionNote before storing", () => {
+    const item = makeItem({ id: "item-0", title: "Work item", status: "In Progress" });
+    writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([item]), "utf-8");
+
+    const crlfNote = "Line one\r\nLine two\r\nLine three";
+    updateItemStatus(config, "item-0", "Done", crlfNote);
+
+    const written = readFileSync(join(tmpDir, "ROADMAP.md"), "utf-8");
+    const items = parseRoadmap(written);
+    expect(items[0].status).toBe("Done");
+    expect(items[0].body).not.toContain("\r");
+    expect(items[0].body).toContain("Line one\nLine two\nLine three");
+  });
+});
+
 describe("CRLF normalization in addLinkedItem and addDraftItem", () => {
   it("normalizes \\r\\n to \\n in addLinkedItem body before storing", () => {
     writeFileSync(join(tmpDir, "ROADMAP.md"), serializeRoadmap([]), "utf-8");

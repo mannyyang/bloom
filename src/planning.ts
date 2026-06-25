@@ -428,7 +428,7 @@ export function updateItemStatus(
 
     item.status = status;
     if (status === STATUS_DONE && completionNote) {
-      item.body = truncateItemBody("updateItemStatus Done", completionNote);
+      item.body = truncateItemBody("updateItemStatus Done", completionNote.replace(/\r\n/g, "\n"));
     } else if (status === STATUS_IN_PROGRESS && sinceCycle !== undefined && sinceCycle > 0) {
       // Preserve an existing [since: N] annotation so the staleness clock isn't
       // reset every cycle. Only stamp a new annotation when none is present yet
