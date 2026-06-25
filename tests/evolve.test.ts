@@ -1015,5 +1015,12 @@ describe("countImprovements", () => {
     // fires and returns lineCount (1), not Math.max(1, 2) = 2.
     expect(countImprovements("1) foo. 2) bar.\nsome prose")).toBe(1);
   });
+
+  it("counts CRLF-terminated bullet list correctly (LLM output regression)", () => {
+    // LLM responses sometimes use CRLF line endings; without explicit
+    // normalization, .split("\n") would leave trailing \r on each token,
+    // causing LINE_LIST_RE to fail and returning 0 instead of 2.
+    expect(countImprovements("- A\r\n- B")).toBe(2);
+  });
 });
 

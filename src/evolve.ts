@@ -176,6 +176,7 @@ export function parseEvolutionResult(result: string): EvolutionSections {
  */
 export function countImprovements(text: string): number {
   if (!text) return 0;
+  text = text.replace(/\r\n/g, "\n");
 
   // Split once and reuse for both the line count loop and nonEmptyLines check.
   const lines = text.split("\n");
