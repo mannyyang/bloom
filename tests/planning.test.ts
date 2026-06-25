@@ -1036,6 +1036,13 @@ describe("cleanItemBody", () => {
   it("trims surrounding whitespace", () => {
     expect(cleanItemBody("  trimmed  ")).toBe("trimmed");
   });
+
+  it("normalises CRLF line endings before stripping annotations", () => {
+    // Body with CRLF endings: [since: N] annotation follows a \r\n line break.
+    // Without normalization the regex \n?\[since: would not match \r\n\[since:
+    // and the annotation would survive into the cleaned output.
+    expect(cleanItemBody("Some work\r\n[since: 7]")).toBe("Some work");
+  });
 });
 
 describe("detectStaleInProgressItems", () => {

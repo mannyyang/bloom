@@ -489,6 +489,7 @@ function stripSinceAnnotation(body: string): string {
  * so the cleaned body is suitable for human-readable output and LLM prompts.
  */
 export function cleanItemBody(body: string): string {
+  body = body.replace(/\r\n/g, "\n");
   return stripSinceAnnotation(body)
     .replace(/ …\[truncated\]$/, "")
     .trim();
