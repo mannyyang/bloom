@@ -989,6 +989,24 @@ describe("serializeRoadmap + parseRoadmap round-trip", () => {
     // The blank line between "Line one." and "Line two." is dropped
     expect(items[0].body).toBe("Line one.\nLine two.");
   });
+
+  it("handles CRLF in item body without producing trailing \\r in output", () => {
+    // Regression guard for the CRLF bug: if item.body contains \r\n line endings
+    // (e.g. from a completionNote that wasn't normalized before storage), the
+    // serialized output must not contain any \r characters.
+    const items = parseRoadmap(
+      `# Bloom Evolution Roadmap\n\n## Backlog\n- [ ] CRLF item\n  Line one.\n`,
+    );
+    expect(items).toHaveLength(1);
+    // Inject CRLF into the body to simulate the bug scenario
+    items[0].body = "Line one.\r\nLine two.";
+    const serialized = serializeRoadmap(items);
+    expect(serialized).not.toContain("\r");
+    // Must also round-trip cleanly through parseRoadmap
+    const reparsed = parseRoadmap(serialized);
+    expect(reparsed).toHaveLength(1);
+    expect(reparsed[0].body).toBe("Line one.\nLine two.");
+  });
 });
 
 describe("parseRoadmapFilterFlag", () => {
