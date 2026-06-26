@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type Database from "better-sqlite3";
 import { runAssessmentPhase, runEvolutionPhase, createDefaultDeps, resolveModel, DEFAULT_BLOOM_MODEL, ASSESSMENT_PREVIEW_CHARS, AGENT_ASSESSMENT_MAX_TURNS, AGENT_ASSESSMENT_MAX_BUDGET_USD, AGENT_EVOLUTION_MAX_TURNS, AGENT_EVOLUTION_MAX_BUDGET_USD, type QueryFn, type PhaseDeps, type SafetyHooks } from "../src/agent-phases.js";
+import { ASSESS_MAX_TURNS } from "../src/assess.js";
 import { ERROR_CATEGORY_NONE } from "../src/errors.js";
 import type { PhaseUsage } from "../src/usage.js";
 import type { EvolutionContext } from "../src/context.js";
@@ -605,5 +606,14 @@ describe("resolveModel", () => {
 
   it("AGENT_EVOLUTION_MAX_BUDGET_USD is pinned to 5.0", () => {
     expect(AGENT_EVOLUTION_MAX_BUDGET_USD).toBe(5.0);
+  });
+
+  it("ASSESS_MAX_TURNS equals AGENT_ASSESSMENT_MAX_TURNS (cross-module sync pin)", () => {
+    // assess.ts re-exports AGENT_ASSESSMENT_MAX_TURNS as ASSESS_MAX_TURNS.
+    // This test uses real (non-mocked) imports from both modules to catch
+    // any drift between the two constants — the same pattern as the
+    // PAGE_STATS_HISTORY_CYCLES === CYCLE_STATS_HISTORY_LIMIT sync pin in
+    // page-helpers.test.ts.
+    expect(ASSESS_MAX_TURNS).toBe(AGENT_ASSESSMENT_MAX_TURNS);
   });
 });
