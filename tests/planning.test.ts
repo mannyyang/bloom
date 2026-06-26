@@ -1544,6 +1544,36 @@ describe("demoteStaleInProgressItems", () => {
     expect(result).toEqual(["Just Stale Task"]);
     expect(mockWriteFileSync).toHaveBeenCalled();
   });
+
+  it("uses STALE_IN_PROGRESS_THRESHOLD_CYCLES default: demotes when diff > default threshold", () => {
+    // Call without explicit threshold — relies on default parameter value.
+    // currentCycle = STALE_IN_PROGRESS_THRESHOLD_CYCLES + 2, since = 1
+    // → diff = STALE_IN_PROGRESS_THRESHOLD_CYCLES + 1 > threshold → stale
+    const cycleCount = STALE_IN_PROGRESS_THRESHOLD_CYCLES + 2;
+    const items = [makeItem({ id: "item-0", title: "Default Stale Task", status: "In Progress", body: "[since: 1]" })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    const result = demoteStaleInProgressItems(config, cycleCount);
+
+    expect(result).toEqual(["Default Stale Task"]);
+    expect(mockWriteFileSync).toHaveBeenCalled();
+  });
+
+  it("uses STALE_IN_PROGRESS_THRESHOLD_CYCLES default: no demotion at exact boundary (diff === default threshold)", () => {
+    // Call without explicit threshold — relies on default parameter value.
+    // since = cycleCount - STALE_IN_PROGRESS_THRESHOLD_CYCLES → diff === threshold → not stale
+    const cycleCount = STALE_IN_PROGRESS_THRESHOLD_CYCLES + 10;
+    const since = cycleCount - STALE_IN_PROGRESS_THRESHOLD_CYCLES;
+    const items = [makeItem({ id: "item-0", title: "Boundary Default Task", status: "In Progress", body: `[since: ${since}]` })];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockReadFileSync.mockReturnValue(serializeRoadmap(items) as any);
+
+    const result = demoteStaleInProgressItems(config, cycleCount);
+
+    expect(result).toEqual([]);
+    expect(mockWriteFileSync).not.toHaveBeenCalled();
+  });
 });
 
 describe("addLinkedItem", () => {
