@@ -41,7 +41,7 @@ export {
 function pushSection(lines: string[], header: string, content: string | null | undefined): void {
   if (content) {
     lines.push(header);
-    lines.push(content);
+    lines.push(content.replace(/\r\n/g, "\n"));
     lines.push("");
   }
 }

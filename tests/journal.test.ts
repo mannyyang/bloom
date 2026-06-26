@@ -387,6 +387,30 @@ describe("formatJournalMarkdown", () => {
     expect(lines[1]).toBe("");
   });
 
+  it("CRLF line endings in entry fields are normalised before joining (no \\r in output)", () => {
+    // GitHub issue bodies can arrive with \r\n. Without normalisation,
+    // split("\n") would produce lines with trailing \r, corrupting Markdown
+    // rendering and breaking string-equality pins.
+    const entries = [
+      {
+        cycleNumber: 3,
+        date: "2026-03-01",
+        attempted: "First step\r\nSecond step",
+        succeeded: "",
+        failed: "",
+        learnings: "",
+        strategic_context: "",
+      },
+    ];
+    const output = formatJournalMarkdown(entries);
+    const lines = output.split("\n");
+    // No line should contain a trailing \r after normalisation
+    expect(lines.every((l) => !l.includes("\r"))).toBe(true);
+    // Structural pins: doc-header and cycle heading are clean
+    expect(lines[0]).toBe("# Bloom Evolution Journal");
+    expect(lines[2]).toBe("## Cycle 3 — 2026-03-01");
+  });
+
   it("renders sections in the correct order: attempted, succeeded, failed, learnings, strategic_context", () => {
     const entries = [
       {
