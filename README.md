@@ -60,7 +60,7 @@ The workflow retries up to 3 times with backoff on failure.
 
 Bloom accumulates knowledge across evolution cycles via two mechanisms:
 
-- **Structured learnings** — Categorized insights (pattern, anti-pattern, domain, tool-usage) stored in SQLite with relevance decay. Newer learnings naturally rank higher than older ones. Injected into each assessment prompt so Bloom builds on past experience.
+- **Structured learnings** — Categorized insights (pattern, anti-pattern, domain, tool-usage, process) stored in SQLite with relevance decay. Newer learnings naturally rank higher than older ones. Injected into each assessment prompt so Bloom builds on past experience.
 - **Strategic context** — A persistent narrative summary of focus areas, trajectory, and ongoing goals. Updated each cycle so Bloom maintains awareness of its multi-cycle direction.
 
 ### Planning via ROADMAP.md
