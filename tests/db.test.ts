@@ -88,6 +88,13 @@ describe("db constants (value-pinning)", () => {
   it("DECAY_BY_CATEGORY tool-usage rate is 0.93", () => {
     expect(DECAY_BY_CATEGORY["tool-usage"]).toBe(0.93);
   });
+  it("DECAY_BY_CATEGORY domain rate equals DECAY_DEFAULT_RATE (explicit-equals-fallback contract)", () => {
+    // domain is listed in DECAY_BY_CATEGORY but intentionally set to the same
+    // value as DECAY_DEFAULT_RATE: domain knowledge should decay at the fallback
+    // rate, neither faster (process/tool-usage) nor slower (pattern/anti-pattern).
+    // This cross-check catches a change to either constant without updating the other.
+    expect(DECAY_BY_CATEGORY["domain"]).toBe(DECAY_DEFAULT_RATE);
+  });
   it("JOURNAL_SUMMARY_MAX_CHARS is pinned to 4000", () => {
     expect(JOURNAL_SUMMARY_MAX_CHARS).toBe(4000);
   });
