@@ -1424,6 +1424,41 @@ describe("generateRoadmapMarkdown", () => {
   it("output is a string (not an array)", () => {
     expect(typeof generateRoadmapMarkdown(SAMPLE_ROADMAP)).toBe("string");
   });
+
+  it("filterStatus keeps populated section and drops all other sections (multi-section roadmap)", () => {
+    // Structural pin: when a multi-section roadmap has items in several columns,
+    // filterStatus must render only the target section (with its items intact)
+    // while completely omitting sections that have items in other columns.
+    const multiSection = [
+      "# Bloom Evolution Roadmap",
+      "",
+      "## In Progress",
+      "- [ ] Active work",
+      "",
+      "## Up Next",
+      "- [ ] Queued item",
+      "",
+      "## Backlog",
+      "- [ ] Future idea",
+      "",
+      "## Done",
+      "- [x] Finished thing",
+      "",
+    ].join("\n");
+
+    const md = generateRoadmapMarkdown(multiSection, "Up Next");
+
+    // The target section and its item must be present
+    expect(md).toContain("## Up Next");
+    expect(md).toContain("- [ ] Queued item");
+    // Sections with items in other columns must be absent
+    expect(md).not.toContain("## In Progress");
+    expect(md).not.toContain("Active work");
+    expect(md).not.toContain("## Backlog");
+    expect(md).not.toContain("Future idea");
+    expect(md).not.toContain("## Done");
+    expect(md).not.toContain("Finished thing");
+  });
 });
 
 describe("ROADMAP_HELP_TEXT and parseHelpFlag", () => {
