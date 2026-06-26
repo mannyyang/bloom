@@ -903,6 +903,95 @@ describe("generateRoadmapJson", () => {
     // sinceCycle must be correctly extracted from the annotation
     expect(result.items[0].sinceCycle).toBe(42);
   });
+
+  it("combined filterStatus='In Progress' + currentCycle: valid since annotation is kept", () => {
+    // When both params are active together, filterStatus reduces to only In Progress
+    // items AND currentCycle bounds the sinceCycle extraction. A valid [since: N]
+    // where N <= currentCycle should still be returned correctly.
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Active item",
+        status: "In Progress",
+        body: "Work in progress\n[since: 5]",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+      {
+        id: "item-1",
+        title: "Backlog item",
+        status: "Backlog",
+        body: "Waiting",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const result = generateRoadmapJson("", "In Progress", 10);
+    spy.mockRestore();
+    // filterStatus path: only In Progress item is returned
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].title).toBe("Active item");
+    // currentCycle path: N=5 <= 10 so sinceCycle is preserved
+    expect(result.items[0].sinceCycle).toBe(5);
+    // body cleaning still fires alongside both filters
+    expect(result.items[0].body).not.toContain("[since:");
+  });
+
+  it("combined filterStatus='In Progress' + currentCycle: future-cycle annotation is rejected", () => {
+    // Both paths must coexist without either short-circuiting the other.
+    // filterStatus keeps only In Progress items; currentCycle rejects N > currentCycle.
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Future-annotated item",
+        status: "In Progress",
+        body: "Stale work\n[since: 9999]",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+      {
+        id: "item-1",
+        title: "Backlog item",
+        status: "Backlog",
+        body: "Queued",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const result = generateRoadmapJson("", "In Progress", 10);
+    spy.mockRestore();
+    // filterStatus: only the In Progress item is included
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].title).toBe("Future-annotated item");
+    // currentCycle: N=9999 > 10, so sinceCycle is null
+    expect(result.items[0].sinceCycle).toBeNull();
+    // body cleaning still strips the annotation
+    expect(result.items[0].body).not.toContain("[since:");
+  });
+
+  it("combined filterStatus='Done' + currentCycle: Done items always have null sinceCycle", () => {
+    // sinceCycle is only populated for In Progress items. Done items always return
+    // null regardless of currentCycle. This combination verifies that passing
+    // currentCycle does not accidentally populate sinceCycle for non-In Progress items.
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Completed item",
+        status: "Done",
+        body: "Finished\n[since: 3]",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const result = generateRoadmapJson("", "Done", 10);
+    spy.mockRestore();
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].title).toBe("Completed item");
+    // Done items: sinceCycle is always null, even when currentCycle is passed
+    expect(result.items[0].sinceCycle).toBeNull();
+    // summary total reflects the filtered Done subset
+    expect(result.summary.total).toBe(1);
+  });
 });
 
 describe("parseRoadmap", () => {
