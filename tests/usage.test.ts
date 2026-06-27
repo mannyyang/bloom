@@ -12,6 +12,7 @@ import {
   DURATION_MINUTE_THRESHOLD_DECISECONDS,
   PhaseUsage,
 } from "../src/usage.js";
+import { MS_PER_MINUTE } from "../src/db.js";
 
 describe("RESOURCE_USAGE_HEADER", () => {
   it("has the expected value (value-pin)", () => {
@@ -22,6 +23,12 @@ describe("RESOURCE_USAGE_HEADER", () => {
 describe("DURATION_MINUTE_THRESHOLD_DECISECONDS", () => {
   it("is pinned to 600 (60 s × 10 deciseconds/s)", () => {
     expect(DURATION_MINUTE_THRESHOLD_DECISECONDS).toBe(600);
+  });
+  it("equals (MS_PER_MINUTE / 1000) * 10 (cross-module arithmetic invariant)", () => {
+    // Guards the docstring claim: 60 seconds × 10 deciseconds/second.
+    // If MS_PER_MINUTE changes (e.g. typo) or the threshold formula drifts,
+    // this cross-module check catches the mismatch immediately.
+    expect(DURATION_MINUTE_THRESHOLD_DECISECONDS).toBe((MS_PER_MINUTE / 1000) * 10);
   });
 });
 
