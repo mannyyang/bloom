@@ -4,7 +4,7 @@ import type { CommunityIssue } from "../src/issues.js";
 import { closeIssueWithComment, detectRepo, isValidRepo } from "../src/issues.js";
 import { hasIssueAction, insertIssueAction, initDb, insertCycle } from "../src/db.js";
 import { makeOutcome } from "./helpers.js";
-import { addLinkedItem, STATUS_DONE } from "../src/planning.js";
+import { addLinkedItem, STATUS_DONE, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG } from "../src/planning.js";
 import type { ProjectItem, ProjectConfig } from "../src/planning.js";
 
 vi.mock("../src/issues.js", async (importOriginal) => {
@@ -116,6 +116,12 @@ describe("triage.ts constants", () => {
 
   it("TRIAGE_STATUS_ORDER pins the exact board-item display order", () => {
     expect(TRIAGE_STATUS_ORDER).toEqual(["In Progress", "Up Next", "Backlog", "Done"]);
+  });
+
+  it("TRIAGE_STATUS_ORDER elements equal planning.ts status constants (cross-module equality)", () => {
+    // Guards the delegation: if any status string changes in planning.ts, this
+    // test will catch the divergence even if the raw-value pin above still passes.
+    expect(TRIAGE_STATUS_ORDER).toEqual([STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, STATUS_DONE]);
   });
 
   it("TRIAGE_MAX_ISSUE_NUMBER is pinned to 1_000_000", () => {
