@@ -1459,6 +1459,81 @@ describe("generateRoadmapMarkdown", () => {
     expect(md).not.toContain("## Done");
     expect(md).not.toContain("Finished thing");
   });
+
+  it("shows '(since cycle N)' on the title line for In Progress items with a [since: N] annotation", () => {
+    // The [since: N] annotation in the body is translated to a human-readable
+    // "(since cycle N)" suffix on the item's title line in Markdown output,
+    // mirroring the behaviour of generateRoadmapOutput.
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Stuck item",
+        status: "In Progress",
+        body: "Some description\n[since: 512]",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const md = generateRoadmapMarkdown(SAMPLE_ROADMAP);
+    expect(md).toContain("Stuck item (since cycle 512)");
+    // The raw annotation must not appear in the output
+    expect(md).not.toContain("[since:");
+    spy.mockRestore();
+  });
+
+  it("does NOT show '(since cycle N)' for Backlog items even with a [since: N] annotation in body", () => {
+    // Only In Progress items get the sinceLabel — other statuses must be unaffected.
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Backlog item",
+        status: "Backlog",
+        body: "Some body\n[since: 400]",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const md = generateRoadmapMarkdown(SAMPLE_ROADMAP);
+    expect(md).not.toContain("since cycle");
+    spy.mockRestore();
+  });
+
+  it("strips [since: N] annotation from the body preview in Markdown output", () => {
+    // The annotation is planning metadata and must not appear in the indented
+    // body preview, only the human-readable label on the title line.
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Active item",
+        status: "In Progress",
+        body: "Real work\n[since: 99]",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const md = generateRoadmapMarkdown(SAMPLE_ROADMAP);
+    expect(md).toContain("Real work");
+    expect(md).not.toContain("[since:");
+    spy.mockRestore();
+  });
+
+  it("does NOT show '(since cycle N)' for In Progress items with no [since: N] annotation", () => {
+    // Items without the staleness annotation must have no suffix.
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Fresh item",
+        status: "In Progress",
+        body: "Just started",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const md = generateRoadmapMarkdown(SAMPLE_ROADMAP);
+    expect(md).toContain("Fresh item");
+    expect(md).not.toContain("since cycle");
+    spy.mockRestore();
+  });
 });
 
 describe("ROADMAP_HELP_TEXT and parseHelpFlag", () => {
