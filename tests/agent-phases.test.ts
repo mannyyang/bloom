@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type Database from "better-sqlite3";
 import { runAssessmentPhase, runEvolutionPhase, createDefaultDeps, resolveModel, DEFAULT_BLOOM_MODEL, ASSESSMENT_PREVIEW_CHARS, AGENT_ASSESSMENT_MAX_TURNS, AGENT_ASSESSMENT_MAX_BUDGET_USD, AGENT_EVOLUTION_MAX_TURNS, AGENT_EVOLUTION_MAX_BUDGET_USD, type QueryFn, type PhaseDeps, type SafetyHooks } from "../src/agent-phases.js";
-import { ASSESS_MAX_TURNS } from "../src/assess.js";
+import { ASSESS_MAX_TURNS, ASSESS_MAX_BUDGET_USD } from "../src/assess.js";
 import { ERROR_CATEGORY_NONE } from "../src/errors.js";
 import type { PhaseUsage } from "../src/usage.js";
 import type { EvolutionContext } from "../src/context.js";
@@ -615,5 +615,12 @@ describe("resolveModel", () => {
     // PAGE_STATS_HISTORY_CYCLES === CYCLE_STATS_HISTORY_LIMIT sync pin in
     // page-helpers.test.ts.
     expect(ASSESS_MAX_TURNS).toBe(AGENT_ASSESSMENT_MAX_TURNS);
+  });
+
+  it("ASSESS_MAX_BUDGET_USD equals AGENT_ASSESSMENT_MAX_BUDGET_USD (cross-module sync pin)", () => {
+    // assess.ts re-exports AGENT_ASSESSMENT_MAX_BUDGET_USD as ASSESS_MAX_BUDGET_USD.
+    // Symmetric to the ASSESS_MAX_TURNS pin above — ensures the budget alias
+    // in assess.ts never silently drifts from its canonical source in agent-phases.ts.
+    expect(ASSESS_MAX_BUDGET_USD).toBe(AGENT_ASSESSMENT_MAX_BUDGET_USD);
   });
 });
