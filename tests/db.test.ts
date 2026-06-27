@@ -44,6 +44,7 @@ import {
 import Database from "better-sqlite3";
 import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE } from "../src/errors.js";
 import { makeOutcome } from "./helpers.js";
+import { LEARNING_CATEGORIES } from "../src/memory.js";
 
 describe("db constants (value-pinning)", () => {
   it("DEFAULT_DB_PATH is bloom.db", () => {
@@ -94,6 +95,13 @@ describe("db constants (value-pinning)", () => {
     // rate, neither faster (process/tool-usage) nor slower (pattern/anti-pattern).
     // This cross-check catches a change to either constant without updating the other.
     expect(DECAY_BY_CATEGORY["domain"]).toBe(DECAY_DEFAULT_RATE);
+  });
+  it("DECAY_BY_CATEGORY covers every LEARNING_CATEGORIES entry and vice-versa (exhaustiveness)", () => {
+    // A category added to LEARNING_CATEGORIES without a DECAY_BY_CATEGORY entry
+    // silently falls back to DECAY_DEFAULT_RATE; this test makes that omission visible.
+    const decayKeys = Object.keys(DECAY_BY_CATEGORY).sort();
+    const categoryKeys = [...LEARNING_CATEGORIES].sort();
+    expect(decayKeys).toEqual(categoryKeys);
   });
   it("JOURNAL_SUMMARY_MAX_CHARS is pinned to 4000", () => {
     expect(JOURNAL_SUMMARY_MAX_CHARS).toBe(4000);
