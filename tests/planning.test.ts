@@ -250,6 +250,19 @@ describe("pickNextItemWithRationale", () => {
     expect(item).toBe(backlogItem);
     expect(rationale).toBe('selected Backlog item "Future idea"');
   });
+
+  it("appends (since cycle N) to rationale when In Progress item has a [since: N] annotation", () => {
+    const item = makeItem({ title: "Resume Me", status: "In Progress", body: "[since: 5]" });
+    const { rationale } = pickNextItemWithRationale([item]);
+    expect(rationale).toBe('resumed In Progress item "Resume Me" (since cycle 5)');
+  });
+
+  it("does not append (since cycle) to rationale when In Progress item has no [since: N] annotation", () => {
+    const item = makeItem({ title: "No Annotation", status: "In Progress", body: "Some work notes" });
+    const { rationale } = pickNextItemWithRationale([item]);
+    expect(rationale).toBe('resumed In Progress item "No Annotation"');
+    expect(rationale).not.toContain("(since cycle");
+  });
 });
 
 describe("formatPlanningContext", () => {
@@ -292,6 +305,16 @@ describe("formatPlanningContext", () => {
     const current = makeItem({ title: "Task", body: "Detailed description here" });
     const result = formatPlanningContext([], current);
     expect(result).toContain("Detailed description here");
+  });
+
+  it("strips [since: N] annotation from current-item body preview via cleanItemBody", () => {
+    // cleanItemBody is applied inside the currentItem block; a future refactor
+    // that removes the call would silently expose raw [since: N] metadata to
+    // the LLM. This test pins the integration so such a regression fails loudly.
+    const current = makeItem({ title: "Active Task", status: "In Progress", body: "Work in progress\n[since: 42]" });
+    const result = formatPlanningContext([], current);
+    expect(result).toContain("Work in progress");
+    expect(result).not.toContain("[since: 42]");
   });
 
   it("PLANNING_BODY_PREVIEW_CHARS is a positive integer", () => {
