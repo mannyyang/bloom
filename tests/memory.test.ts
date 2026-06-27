@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import type Database from "better-sqlite3";
-import { initDb, insertCycle, insertLearning, getRelevantLearnings, decayLearningRelevance, pruneLowRelevanceLearnings, insertStrategicContext, getLatestStrategicContext } from "../src/db.js";
+import { initDb, insertCycle, insertLearning, getRelevantLearnings, decayLearningRelevance, pruneLowRelevanceLearnings, insertStrategicContext, getLatestStrategicContext, STRATEGIC_CONTEXT_KEEP_LAST, RELEVANT_LEARNINGS_LIMIT } from "../src/db.js";
 import { extractLearnings, storeLearnings, storeStrategicContext, formatMemoryForPrompt, MAX_MEMORY_CHARS, STRATEGIC_CONTEXT_RETENTION_CYCLES, MAX_RELEVANT_LEARNINGS_TO_FETCH, MEMORY_STRATEGIC_CONTEXT_HEADER, MEMORY_KEY_LEARNINGS_HEADER, LEARNING_CATEGORIES, type ExtractedLearnings } from "../src/memory.js";
 import { makeOutcome } from "./helpers.js";
 
@@ -1111,11 +1111,17 @@ describe("STRATEGIC_CONTEXT_RETENTION_CYCLES", () => {
   it("is 20 (value-pinning)", () => {
     expect(STRATEGIC_CONTEXT_RETENTION_CYCLES).toBe(20);
   });
+  it("equals STRATEGIC_CONTEXT_KEEP_LAST (cross-module equality)", () => {
+    expect(STRATEGIC_CONTEXT_RETENTION_CYCLES).toBe(STRATEGIC_CONTEXT_KEEP_LAST);
+  });
 });
 
 describe("MAX_RELEVANT_LEARNINGS_TO_FETCH", () => {
   it("is 25 (value-pinning)", () => {
     expect(MAX_RELEVANT_LEARNINGS_TO_FETCH).toBe(25);
+  });
+  it("equals RELEVANT_LEARNINGS_LIMIT (cross-module equality)", () => {
+    expect(MAX_RELEVANT_LEARNINGS_TO_FETCH).toBe(RELEVANT_LEARNINGS_LIMIT);
   });
 });
 
