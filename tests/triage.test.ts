@@ -6,6 +6,7 @@ import { hasIssueAction, insertIssueAction, initDb, insertCycle } from "../src/d
 import { makeOutcome } from "./helpers.js";
 import { addLinkedItem, STATUS_DONE, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, ITEM_BODY_LIMIT } from "../src/planning.js";
 import type { ProjectItem, ProjectConfig } from "../src/planning.js";
+import { CONTEXT_REASON_PREVIEW_CHARS } from "../src/context.js";
 
 vi.mock("../src/issues.js", async (importOriginal) => {
   const actual = await importOriginal() as Record<string, unknown>;
@@ -106,6 +107,15 @@ describe("triage.ts constants", () => {
 
   it("TRIAGE_REASON_MAX_CHARS is pinned to 2000", () => {
     expect(TRIAGE_REASON_MAX_CHARS).toBe(2000);
+  });
+
+  it("CONTEXT_REASON_PREVIEW_CHARS is strictly less than TRIAGE_REASON_MAX_CHARS (cross-module invariant)", () => {
+    // context.ts uses CONTEXT_REASON_PREVIEW_CHARS (100) to truncate triage reason strings
+    // for log display. TRIAGE_REASON_MAX_CHARS (2000) is the maximum accepted stored length.
+    // The display preview must always be ≤ stored max: if TRIAGE_REASON_MAX_CHARS were ever
+    // reduced below CONTEXT_REASON_PREVIEW_CHARS, the log would silently show text that was
+    // never actually stored, making truncated log entries misleading.
+    expect(CONTEXT_REASON_PREVIEW_CHARS).toBeLessThan(TRIAGE_REASON_MAX_CHARS);
   });
 
   it("TRIAGE_ERROR_PREVIEW_CHARS is pinned to 200", () => {
