@@ -577,7 +577,10 @@ export function pickNextItemWithRationale(items: ProjectItem[]): PickNextItemRes
       const item = candidates[0];
       let rationale: string;
       if (status === STATUS_IN_PROGRESS) {
-        rationale = `resumed In Progress item "${item.title}"`;
+        const sinceCycle = parseInProgressSinceCycle(item.body);
+        rationale = sinceCycle !== null
+          ? `resumed In Progress item "${item.title}" (since cycle ${sinceCycle})`
+          : `resumed In Progress item "${item.title}"`;
       } else if (status === STATUS_UP_NEXT) {
         rationale = `promoted Up Next item "${item.title}"`;
       } else {
