@@ -4,7 +4,7 @@ import type { CommunityIssue } from "../src/issues.js";
 import { closeIssueWithComment, detectRepo, isValidRepo } from "../src/issues.js";
 import { hasIssueAction, insertIssueAction, initDb, insertCycle } from "../src/db.js";
 import { makeOutcome } from "./helpers.js";
-import { addLinkedItem, STATUS_DONE, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG } from "../src/planning.js";
+import { addLinkedItem, STATUS_DONE, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, ITEM_BODY_LIMIT } from "../src/planning.js";
 import type { ProjectItem, ProjectConfig } from "../src/planning.js";
 
 vi.mock("../src/issues.js", async (importOriginal) => {
@@ -86,6 +86,14 @@ describe("triage.ts constants", () => {
 
   it("PROMPT_BODY_PREVIEW_CHARS is pinned to 200", () => {
     expect(PROMPT_BODY_PREVIEW_CHARS).toBe(200);
+  });
+
+  it("PROMPT_BODY_PREVIEW_CHARS is strictly less than ITEM_BODY_LIMIT (cross-module invariant)", () => {
+    // triage.ts documents: "Prompt-preview cap for issue bodies — keeps prompts concise
+    // without affecting stored content (cf. ITEM_BODY_LIMIT in planning.ts which is 500)."
+    // If PROMPT_BODY_PREVIEW_CHARS ever exceeds ITEM_BODY_LIMIT, triage prompts could
+    // reference text beyond what is actually stored, silently corrupting triage context.
+    expect(PROMPT_BODY_PREVIEW_CHARS).toBeLessThan(ITEM_BODY_LIMIT);
   });
 
   it("PROMPT_TITLE_PREVIEW_CHARS is pinned to 120", () => {
