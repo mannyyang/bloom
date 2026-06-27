@@ -5,13 +5,14 @@ import type { CycleStats } from "../src/db.js";
 import { generateStatsOutput, parseLastNArg, parseSinceArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE, ERROR_CATEGORY_LLM_ERROR } from "../src/errors.js";
+import { MAX_MEMORY_CHARS } from "../src/memory.js";
 import { makeOutcome } from "./helpers.js";
 
 describe("STATS_MEMORY_PREVIEW_CHARS", () => {
-  it("is a positive number less than MAX_MEMORY_CHARS (1200)", () => {
+  it("is a positive number less than MAX_MEMORY_CHARS", () => {
     expect(STATS_MEMORY_PREVIEW_CHARS).toBe(1000);
     expect(STATS_MEMORY_PREVIEW_CHARS).toBeGreaterThan(0);
-    expect(STATS_MEMORY_PREVIEW_CHARS).toBeLessThan(1200);
+    expect(STATS_MEMORY_PREVIEW_CHARS).toBeLessThan(MAX_MEMORY_CHARS);
   });
 });
 
