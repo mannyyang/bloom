@@ -1498,6 +1498,30 @@ describe("generateStatsTable lastN + sinceN combined", () => {
   });
 });
 
+describe("generateStatsTable sinceN with >20 cycles regression", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("returns all cycles >= sinceN even when total cycles exceed CYCLE_STATS_HISTORY_LIMIT", () => {
+    // Insert 25 cycles so the default 20-row cap would drop cycles 1–5
+    for (let i = 1; i <= 25; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    // sinceN=3 should return cycles 3..25 = 23 rows, regardless of the 20-row default limit
+    const table = generateStatsTable(db, undefined, undefined, 3);
+    const dataLines = table.split("\n").filter(l => l.trim()).slice(2); // skip header + separator
+    expect(dataLines.length).toBe(23);
+    // Confirm cycle 3 is included (would be silently dropped before the fix)
+    expect(table).toContain("     3"); // right-aligned cycle number 3
+    // Confirm cycle 1 and 2 are absent
+    expect(table).not.toContain("     1");
+    expect(table).not.toContain("     2");
+  });
+});
+
 describe("generateStatsOutput verbose=true + sinceN combined", () => {
   let db: Database.Database;
 

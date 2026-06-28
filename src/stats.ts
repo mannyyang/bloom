@@ -138,7 +138,11 @@ function pad(s: string, width: number, right = false): string {
  * failure_category (rendered as "—" when the category is "none" or absent).
  */
 export function generateStatsTable(db: Database.Database, lastN?: number, verbose?: boolean, sinceN?: number): string {
-  let rows = getCycleRows(db, lastN);
+  // When sinceN is provided without an explicit lastN, fetch all rows so the
+  // JS filter can apply correctly. The default CYCLE_STATS_HISTORY_LIMIT cap
+  // would otherwise silently drop cycles older than the 20-row window.
+  const effectiveLimit = sinceN !== undefined && lastN === undefined ? Number.MAX_SAFE_INTEGER : lastN;
+  let rows = getCycleRows(db, effectiveLimit);
   if (sinceN !== undefined) {
     rows = rows.filter((r: CycleRow) => r.cycleNumber >= sinceN);
   }
