@@ -645,7 +645,17 @@ export function formatPlanningContext(
     const statusItems = items
       .filter((i) => i.status === status)
       .filter((i) => i !== currentItem)
-      .sort((a, b) => b.reactions - a.reactions || a.id.localeCompare(b.id));
+      .sort((a, b) => {
+        const rxDiff = b.reactions - a.reactions;
+        if (rxDiff !== 0) return rxDiff;
+        // Numeric comparison for canonical item-N IDs (mirrors pickNextItemWithRationale)
+        // so items appear in the same priority order in the planning prompt as they would
+        // be selected — prevents item-10 from appearing before item-2 in display.
+        const aMatch = a.id.match(/^item-(\d+)$/);
+        const bMatch = b.id.match(/^item-(\d+)$/);
+        if (aMatch && bMatch) return parseInt(aMatch[1], 10) - parseInt(bMatch[1], 10);
+        return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+      });
     if (statusItems.length === 0) continue;
 
     lines.push(`\n### ${status}`);

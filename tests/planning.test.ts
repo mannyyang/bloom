@@ -501,6 +501,22 @@ describe("formatPlanningContext", () => {
     expect(result).toContain("- ... and 2 more");
   });
 
+  it("within a status section, uses numeric ID sort — item-2 appears before item-10 when reactions are equal", () => {
+    // Regression guard for the localeCompare→numeric sort fix in formatPlanningContext.
+    // With localeCompare, "item-10" < "item-2" ("1" < "2") so item-10 would appear first.
+    // With numeric comparison, item-2 (2) < item-10 (10), matching pickNextItemWithRationale.
+    const items = [
+      makeItem({ id: "item-10", title: "Item 10", status: "Backlog", reactions: 0 }),
+      makeItem({ id: "item-2",  title: "Item 2",  status: "Backlog", reactions: 0 }),
+    ];
+    const result = formatPlanningContext(items, null);
+    const idx2  = result.indexOf("Item 2");
+    const idx10 = result.indexOf("Item 10");
+    expect(idx2).toBeGreaterThanOrEqual(0);
+    expect(idx10).toBeGreaterThanOrEqual(0);
+    expect(idx2).toBeLessThan(idx10);
+  });
+
   it("does not append overflow hint when item count is exactly at maxItemsPerSection", () => {
     // Exactly 5 items with a cap of 5 → 0 hidden → no hint should appear.
     const items = Array.from({ length: 5 }, (_, i) =>
