@@ -763,21 +763,13 @@ export function getRelevantLearnings(
   category?: string,
 ): Learning[] {
   const learningSchema: RowSchema = { id: "number", cycleNumber: "number", category: "string", content: "string", relevance: "number" };
-  if (category) {
-    return validateRows<Learning>(
-      db.prepare(
-        `SELECT id, cycle_number as cycleNumber, category, content, relevance
-         FROM learnings WHERE category = ? ORDER BY relevance DESC, id DESC LIMIT ?`,
-      ).all(category, maxItems),
-      learningSchema,
-      "getRelevantLearnings",
-    );
-  }
+  const whereClause = category ? "WHERE category = ?" : "";
+  const params: unknown[] = category ? [category, maxItems] : [maxItems];
   return validateRows<Learning>(
     db.prepare(
       `SELECT id, cycle_number as cycleNumber, category, content, relevance
-       FROM learnings ORDER BY relevance DESC, id DESC LIMIT ?`,
-    ).all(maxItems),
+       FROM learnings ${whereClause} ORDER BY relevance DESC, id DESC LIMIT ?`,
+    ).all(...params),
     learningSchema,
     "getRelevantLearnings",
   );
