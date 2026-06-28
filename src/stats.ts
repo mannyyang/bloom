@@ -39,6 +39,21 @@ export const STATS_NO_FAILURE_SYMBOL = "—";
 export const STATS_NO_DURATION_SYMBOL = STATS_NO_FAILURE_SYMBOL;
 
 /**
+ * Section header rendered in verbose output before the next-item selection
+ * rationale. Extracted as a constant so tests can pin the exact string and
+ * a future wording change is auditable in one place.
+ */
+export const STATS_NEXT_ITEM_HEADER = "Next item selection:";
+
+/**
+ * Fallback message rendered inside the next-item selection block when the
+ * roadmap has no actionable items (pickNextItemWithRationale returns
+ * rationale: null). Extracted as a constant to mirror the
+ * STATS_NO_FAILURE_SYMBOL / STATS_NO_DURATION_SYMBOL pattern.
+ */
+export const STATS_NO_ACTIONABLE_ITEMS_MSG = "No actionable items on the roadmap.";
+
+/**
  * Shared implementation for flag-followed-by-integer argv parsing.
  * Returns the positive integer after `flag`, or undefined when the flag is
  * absent, its value is missing, or the value is not a positive integer.
@@ -296,11 +311,11 @@ export function generateStatsOutput(db: Database.Database, lastN?: number, verbo
       const items = parseRoadmap(roadmapContent);
       const { rationale } = pickNextItemWithRationale(items);
       lines.push("");
-      lines.push("Next item selection:");
-      lines.push(`  ${rationale ?? "No actionable items on the roadmap."}`);
+      lines.push(STATS_NEXT_ITEM_HEADER);
+      lines.push(`  ${rationale ?? STATS_NO_ACTIONABLE_ITEMS_MSG}`);
     } catch (err) {
       lines.push("");
-      lines.push(`Next item selection: unavailable (${errorMessage(err)})`);
+      lines.push(`${STATS_NEXT_ITEM_HEADER} unavailable (${errorMessage(err)})`);
     }
   }
 

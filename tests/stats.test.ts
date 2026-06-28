@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution, getLastUpdatedCyclePerCategory } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseLastNArg, parseSinceArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT } from "../src/stats.js";
+import { generateStatsOutput, parseLastNArg, parseSinceArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE, ERROR_CATEGORY_LLM_ERROR } from "../src/errors.js";
 import { MAX_MEMORY_CHARS } from "../src/memory.js";
@@ -1664,5 +1664,48 @@ describe("generateStatsJson lastN + sinceN stats accuracy", () => {
     const result = generateStatsJson(db, 6, undefined, 7);
     expect(result.stats.totalCycles).toBe(4);
     expect(result.stats.successRate).toBe(100);
+  });
+});
+
+describe("STATS_NEXT_ITEM_HEADER constant", () => {
+  it("is pinned to the expected string", () => {
+    expect(STATS_NEXT_ITEM_HEADER).toBe("Next item selection:");
+  });
+});
+
+describe("STATS_NO_ACTIONABLE_ITEMS_MSG constant", () => {
+  it("is pinned to the expected string", () => {
+    expect(STATS_NO_ACTIONABLE_ITEMS_MSG).toBe("No actionable items on the roadmap.");
+  });
+});
+
+describe("generateStatsOutput verbose next-item selection block", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+  });
+
+  it("verbose output includes STATS_NEXT_ITEM_HEADER", () => {
+    const output = generateStatsOutput(db, undefined, true);
+    expect(output.join("\n")).toContain(STATS_NEXT_ITEM_HEADER);
+  });
+
+  it("non-verbose output does NOT include STATS_NEXT_ITEM_HEADER", () => {
+    const output = generateStatsOutput(db, undefined, false);
+    expect(output.join("\n")).not.toContain(STATS_NEXT_ITEM_HEADER);
+  });
+
+  it("verbose output includes STATS_NO_ACTIONABLE_ITEMS_MSG when roadmap is absent/empty", () => {
+    // readRoadmap() returns "" when ROADMAP.md is absent → parseRoadmap("") → []
+    // → pickNextItemWithRationale([]) → rationale: null → renders STATS_NO_ACTIONABLE_ITEMS_MSG
+    const output = generateStatsOutput(db, undefined, true);
+    expect(output.join("\n")).toContain(STATS_NO_ACTIONABLE_ITEMS_MSG);
+  });
+
+  it("verbose output still ends with empty string (trailing newline) when next-item block present", () => {
+    const output = generateStatsOutput(db, undefined, true);
+    expect(output[output.length - 1]).toBe("");
   });
 });
