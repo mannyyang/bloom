@@ -2,7 +2,8 @@ import type Database from "better-sqlite3";
 import { type CommunityIssue, closeIssueWithComment, detectRepo, isValidRepo, ISSUES_DEFAULT_ACTION } from "./issues.js";
 import { hasIssueAction, insertIssueAction } from "./db.js";
 import { errorMessage } from "./errors.js";
-import { addLinkedItem, cleanItemBody, truncateWithEllipsis, type ProjectConfig, type ProjectItem, STATUS_DONE, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG } from "./planning.js";
+import { addLinkedItem, cleanItemBody, truncateWithEllipsis, type ProjectConfig, type ProjectItem, STATUS_DONE } from "./planning.js";
+import { STATUS_ORDER } from "./roadmap.js";
 import { type QueryFn, resolveModel } from "./agent-phases.js";
 import { extractResultText } from "./usage.js";
 
@@ -69,10 +70,9 @@ export interface TriageResult {
   closed: number[];
 }
 
-// Canonical board-item display order — mirrors STATUS_ORDER in roadmap.ts.
-// Defined here so buildTriagePrompt can defensively sort boardItems into a
-// consistent order regardless of the order the caller provides them.
-export const TRIAGE_STATUS_ORDER = [STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, STATUS_DONE];
+// Canonical board-item display order — re-exports STATUS_ORDER from roadmap.ts
+// so triage and roadmap always use the same ordering without duplication.
+export const TRIAGE_STATUS_ORDER = STATUS_ORDER;
 
 /** Maximum number of Done board items included in the triage prompt.
  *  All non-Done items are always included; Done items beyond this cap are

@@ -44,7 +44,7 @@ Options:
   --help, -h         Print this help message and exit
 `;
 
-const STATUS_ORDER: StatusColumn[] = [STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, STATUS_DONE];
+export const STATUS_ORDER: StatusColumn[] = [STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, STATUS_DONE];
 
 /**
  * Parse `--filter <status>` from an argv array, returning the matched StatusColumn
