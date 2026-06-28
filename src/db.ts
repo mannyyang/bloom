@@ -532,26 +532,16 @@ export function getLearningCategoryDistribution(db: Database.Database): Record<s
  * @param sinceN - when provided, only cycles with cycle_number >= sinceN are included
  */
 export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS_HISTORY_LIMIT, sinceN?: number): CycleStats {
-  let rawRows: unknown[];
-  if (sinceN !== undefined) {
-    rawRows = db.prepare(`
-      SELECT
-        cycle_number, preflight_passed, improvements_attempted, improvements_succeeded,
-        build_verification_passed, push_succeeded,
-        test_count_before, test_count_after,
-        duration_ms, started_at, completed_at
-      FROM cycles WHERE cycle_number >= ? ORDER BY cycle_number DESC LIMIT ?
-    `).all(sinceN, limit);
-  } else {
-    rawRows = db.prepare(`
-      SELECT
-        cycle_number, preflight_passed, improvements_attempted, improvements_succeeded,
-        build_verification_passed, push_succeeded,
-        test_count_before, test_count_after,
-        duration_ms, started_at, completed_at
-      FROM cycles ORDER BY cycle_number DESC LIMIT ?
-    `).all(limit);
-  }
+  const whereClause = sinceN !== undefined ? "WHERE cycle_number >= ?" : "";
+  const params: unknown[] = sinceN !== undefined ? [sinceN, limit] : [limit];
+  const rawRows: unknown[] = db.prepare(`
+    SELECT
+      cycle_number, preflight_passed, improvements_attempted, improvements_succeeded,
+      build_verification_passed, push_succeeded,
+      test_count_before, test_count_after,
+      duration_ms, started_at, completed_at
+    FROM cycles ${whereClause} ORDER BY cycle_number DESC LIMIT ?
+  `).all(...params);
 
   /** Raw snake_case row shape returned by the cycles SELECT query inside getCycleStats.
    * Named distinctly from the exported CycleRow (camelCase) to avoid scope shadowing. */
