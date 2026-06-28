@@ -109,6 +109,26 @@ export function truncateWithEllipsis(s: string, max: number): string {
 }
 
 /**
+ * Comparator for sorting ProjectItems by reactions (descending) then by
+ * canonical item-N ID (ascending). Items with non-standard IDs fall back to
+ * lexicographic comparison so the sort remains deterministic regardless of
+ * ID format.
+ *
+ * Shared by pickNextItemWithRationale and formatPlanningContext so the
+ * priority ordering in the planning prompt exactly mirrors the selection order.
+ */
+export function compareItemsByReactionsThenId(a: ProjectItem, b: ProjectItem): number {
+  const rxDiff = b.reactions - a.reactions;
+  if (rxDiff !== 0) return rxDiff;
+  const aMatch = a.id.match(/^item-(\d+)$/);
+  const bMatch = b.id.match(/^item-(\d+)$/);
+  if (aMatch && bMatch) {
+    return parseInt(aMatch[1], 10) - parseInt(bMatch[1], 10);
+  }
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+
+/**
  * Truncate a body string to ITEM_BODY_LIMIT characters, emitting a warning
  * when truncation occurs. The `tag` label is included in the warning message
  * for easy identification (e.g. "addLinkedItem #42" or "addDraftItem \"Title\"").
@@ -560,19 +580,7 @@ export function pickNextItemWithRationale(items: ProjectItem[]): PickNextItemRes
   for (const status of statusPriority) {
     const candidates = items
       .filter((i) => i.status === status)
-      .sort((a, b) => {
-        const rxDiff = b.reactions - a.reactions;
-        if (rxDiff !== 0) return rxDiff;
-        // Guard against NaN: only use numeric comparison when both IDs match
-        // the canonical item-N format; fall back to stable string comparison
-        // for non-standard IDs so the sort remains deterministic.
-        const aMatch = a.id.match(/^item-(\d+)$/);
-        const bMatch = b.id.match(/^item-(\d+)$/);
-        if (aMatch && bMatch) {
-          return parseInt(aMatch[1], 10) - parseInt(bMatch[1], 10);
-        }
-        return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-      });
+      .sort(compareItemsByReactionsThenId);
     if (candidates.length > 0) {
       const item = candidates[0];
       let rationale: string;
@@ -645,17 +653,7 @@ export function formatPlanningContext(
     const statusItems = items
       .filter((i) => i.status === status)
       .filter((i) => i !== currentItem)
-      .sort((a, b) => {
-        const rxDiff = b.reactions - a.reactions;
-        if (rxDiff !== 0) return rxDiff;
-        // Numeric comparison for canonical item-N IDs (mirrors pickNextItemWithRationale)
-        // so items appear in the same priority order in the planning prompt as they would
-        // be selected — prevents item-10 from appearing before item-2 in display.
-        const aMatch = a.id.match(/^item-(\d+)$/);
-        const bMatch = b.id.match(/^item-(\d+)$/);
-        if (aMatch && bMatch) return parseInt(aMatch[1], 10) - parseInt(bMatch[1], 10);
-        return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-      });
+      .sort(compareItemsByReactionsThenId);
     if (statusItems.length === 0) continue;
 
     lines.push(`\n### ${status}`);

@@ -11,7 +11,7 @@ const mockReadFileSync = vi.mocked(readFileSync);
 const mockWriteFileSync = vi.mocked(writeFileSync);
 const mockExistsSync = vi.mocked(existsSync);
 
-import { pickNextItem, pickNextItemWithRationale, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, cleanItemBody, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, getProjectItems, truncateWithEllipsis, PLANNING_BODY_PREVIEW_CHARS, ITEM_BODY_LIMIT, PLANNING_CONTEXT_MAX_CHARS, PLANNING_CONTEXT_MAX_ITEMS, STALE_IN_PROGRESS_THRESHOLD_CYCLES, ROADMAP_HEADER, STATUS_BACKLOG, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_DONE, STATUS_COLUMNS, type ProjectItem } from "../src/planning.js";
+import { pickNextItem, pickNextItemWithRationale, formatPlanningContext, parseRoadmap, serializeRoadmap, nextItemId, parseInProgressSinceCycle, cleanItemBody, detectStaleInProgressItems, updateItemStatus, demoteStaleInProgressItems, addLinkedItem, addDraftItem, getProjectItems, truncateWithEllipsis, compareItemsByReactionsThenId, PLANNING_BODY_PREVIEW_CHARS, ITEM_BODY_LIMIT, PLANNING_CONTEXT_MAX_CHARS, PLANNING_CONTEXT_MAX_ITEMS, STALE_IN_PROGRESS_THRESHOLD_CYCLES, ROADMAP_HEADER, STATUS_BACKLOG, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_DONE, STATUS_COLUMNS, type ProjectItem } from "../src/planning.js";
 
 function makeItem(overrides: Partial<ProjectItem> = {}): ProjectItem {
   return {
@@ -75,6 +75,43 @@ describe("planning.ts constants", () => {
     expect(STATUS_COLUMNS).toContain(STATUS_UP_NEXT);
     expect(STATUS_COLUMNS).toContain(STATUS_IN_PROGRESS);
     expect(STATUS_COLUMNS).toContain(STATUS_DONE);
+  });
+});
+
+describe("compareItemsByReactionsThenId", () => {
+  it("sorts higher-reaction item before lower-reaction item", () => {
+    const a = makeItem({ id: "item-1", reactions: 5 });
+    const b = makeItem({ id: "item-2", reactions: 10 });
+    expect(compareItemsByReactionsThenId(a, b)).toBeGreaterThan(0); // b should come first
+    expect(compareItemsByReactionsThenId(b, a)).toBeLessThan(0);
+  });
+
+  it("sorts equal-reaction items by numeric item-N ID ascending", () => {
+    const a = makeItem({ id: "item-2", reactions: 0 });
+    const b = makeItem({ id: "item-10", reactions: 0 });
+    // item-2 < item-10 numerically, so a should come first
+    expect(compareItemsByReactionsThenId(a, b)).toBeLessThan(0);
+    expect(compareItemsByReactionsThenId(b, a)).toBeGreaterThan(0);
+  });
+
+  it("returns 0 for identical items", () => {
+    const a = makeItem({ id: "item-5", reactions: 3 });
+    expect(compareItemsByReactionsThenId(a, a)).toBe(0);
+  });
+
+  it("falls back to lexicographic order for non-standard IDs", () => {
+    const a = makeItem({ id: "custom-a", reactions: 0 });
+    const b = makeItem({ id: "custom-b", reactions: 0 });
+    expect(compareItemsByReactionsThenId(a, b)).toBeLessThan(0);
+    expect(compareItemsByReactionsThenId(b, a)).toBeGreaterThan(0);
+  });
+
+  it("reactions take precedence over ID when reactions differ", () => {
+    const a = makeItem({ id: "item-1", reactions: 0 });
+    const b = makeItem({ id: "item-99", reactions: 1 });
+    // b has more reactions → b before a
+    expect(compareItemsByReactionsThenId(a, b)).toBeGreaterThan(0);
+    expect(compareItemsByReactionsThenId(b, a)).toBeLessThan(0);
   });
 });
 
