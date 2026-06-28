@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
-import { generateRoadmapOutput, generateRoadmapJson, generateRoadmapMarkdown, parseRoadmapFilterFlag, parseFormatFlag, ROADMAP_BODY_PREVIEW_MAX_CHARS, ROADMAP_HELP_TEXT, type RoadmapJsonSummary } from "../src/roadmap.js";
+import { generateRoadmapOutput, generateRoadmapJson, generateRoadmapMarkdown, parseRoadmapFilterFlag, parseFormatFlag, ROADMAP_BODY_PREVIEW_MAX_CHARS, ROADMAP_HELP_TEXT, STATUS_ORDER, type RoadmapJsonSummary } from "../src/roadmap.js";
 import { parseHelpFlag } from "../src/stats.js";
 import * as planning from "../src/planning.js";
-import { parseRoadmap, serializeRoadmap } from "../src/planning.js";
+import { parseRoadmap, serializeRoadmap, STATUS_COLUMNS } from "../src/planning.js";
 
 const SAMPLE_ROADMAP = `# Bloom Evolution Roadmap
 
@@ -1553,5 +1553,19 @@ describe("ROADMAP_HELP_TEXT and parseHelpFlag", () => {
     expect(parseHelpFlag(["node", "roadmap.js", "--help"])).toBe(true);
     expect(parseHelpFlag(["node", "roadmap.js", "-h"])).toBe(true);
     expect(parseHelpFlag(["node", "roadmap.js", "--json"])).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// STATUS_ORDER structural guard
+// ---------------------------------------------------------------------------
+
+describe("STATUS_ORDER", () => {
+  it("is a permutation of STATUS_COLUMNS (every status appears exactly once)", () => {
+    // Guards against STATUS_ORDER omitting or duplicating a status column.
+    // Without this test, STATUS_ORDER could silently drift (e.g., a new status
+    // added to STATUS_COLUMNS but not to STATUS_ORDER) causing incorrect render
+    // order without any test failure.
+    expect([...STATUS_ORDER].sort()).toEqual([...STATUS_COLUMNS].sort());
   });
 });

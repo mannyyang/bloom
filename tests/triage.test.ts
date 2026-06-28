@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach, afterAll, beforeAll, beforeEach } from "vitest";
 import { buildTriagePrompt, parseTriageResponse, triageIssues, PROMPT_BODY_PREVIEW_CHARS, PROMPT_TITLE_PREVIEW_CHARS, BOARD_BODY_PREVIEW_CHARS, TRIAGE_MAX_TURNS, TRIAGE_MAX_BUDGET_USD, TRIAGE_REASON_MAX_CHARS, TRIAGE_ERROR_PREVIEW_CHARS, TRIAGE_ACTION_NAME, TRIAGE_BOARD_STATUS_DONE, TRIAGE_ALREADY_ON_BOARD_COMMENT, TRIAGE_MAX_ISSUE_NUMBER, TRIAGE_STATUS_ORDER, TRIAGE_MAX_DONE_ITEMS } from "../src/triage.js";
+import { STATUS_ORDER } from "../src/roadmap.js";
 import type { CommunityIssue } from "../src/issues.js";
 import { closeIssueWithComment, detectRepo, isValidRepo } from "../src/issues.js";
 import { hasIssueAction, insertIssueAction, initDb, insertCycle } from "../src/db.js";
@@ -140,6 +141,14 @@ describe("triage.ts constants", () => {
     // Guards the delegation: if any status string changes in planning.ts, this
     // test will catch the divergence even if the raw-value pin above still passes.
     expect(TRIAGE_STATUS_ORDER).toEqual([STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, STATUS_DONE]);
+  });
+
+  it("TRIAGE_STATUS_ORDER is the same array instance as STATUS_ORDER from roadmap.ts (referential equality)", () => {
+    // Now that TRIAGE_STATUS_ORDER is simply re-exported from roadmap.ts,
+    // this .toBe() (identity) check guarantees the two are the exact same
+    // object — not just equal values. Any future divergence (e.g., re-introducing
+    // a local copy) will fail this test before it can silently drift.
+    expect(TRIAGE_STATUS_ORDER).toBe(STATUS_ORDER);
   });
 
   it("TRIAGE_MAX_ISSUE_NUMBER is pinned to 1_000_000", () => {
