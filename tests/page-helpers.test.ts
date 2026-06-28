@@ -21,6 +21,7 @@ import {
   GITHUB_REPO_URL,
 } from "../src/page-helpers.js";
 import type { DbStats, JournalEntry, RoadmapSection } from "../src/page-helpers.js";
+import { STATUS_COLUMNS } from "../src/planning.js";
 
 // ---------------------------------------------------------------------------
 // PAGE_STATS_HISTORY_CYCLES / PAGE_RECENT_FAILURES_WINDOW sync pins
@@ -840,5 +841,20 @@ describe("PAGE_STATS_HISTORY_CYCLES / PAGE_RECENT_FAILURES_WINDOW sync guards", 
 
   it("PAGE_RECENT_FAILURES_WINDOW matches RECENT_FAILURES_WINDOW from db.ts", () => {
     expect(PAGE_RECENT_FAILURES_WINDOW).toBe(RECENT_FAILURES_WINDOW);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// STATUS_COLORS completeness guard
+// ---------------------------------------------------------------------------
+
+describe("STATUS_COLORS completeness", () => {
+  it("has an entry for every STATUS_COLUMNS value", () => {
+    // If a new status is added to STATUS_COLUMNS without a corresponding
+    // STATUS_COLORS entry, renderSection silently falls back to #374151 (gray).
+    // This test catches that drift at build time rather than visually at runtime.
+    for (const status of STATUS_COLUMNS) {
+      expect(STATUS_COLORS[status]).toBeDefined();
+    }
   });
 });
