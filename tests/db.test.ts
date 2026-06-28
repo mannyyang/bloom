@@ -320,6 +320,20 @@ describe("db", () => {
       expect(all).toHaveLength(4);
     });
 
+    it("limit=0 is falsy so all rows are returned (not zero)", () => {
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1, improvementsAttempted: 1, improvementsSucceeded: 1,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
+      insertJournalEntry(db, 1, "attempted", "Something");
+      insertJournalEntry(db, 1, "succeeded", "It worked");
+
+      // limit=0 is falsy — the LIMIT clause is omitted, so all rows are returned
+      const result = getJournalEntries(db, 0);
+      expect(result.length).toBeGreaterThan(0);
+      expect(result).toHaveLength(2);
+    });
+
     it("directly persists failureCategory in the inserted row", () => {
       insertCycle(db, makeOutcome({
         cycleNumber: 1, buildVerificationPassed: false, pushSucceeded: false,
