@@ -260,7 +260,7 @@ export function generateStatsJson(
  * @param sinceN - when provided, the header notes that the view starts from
  *   cycle N; mirrors the sinceN parameter of generateStatsTable/generateStatsJson
  */
-export function generateStatsOutput(db: Database.Database, lastN?: number, verbose?: boolean, sinceN?: number): string[] {
+export function generateStatsOutput(db: Database.Database, lastN?: number, verbose?: boolean, sinceN?: number, roadmapPath?: string): string[] {
   const lines: string[] = [];
 
   const latestCycle = getLatestCycleNumber(db);
@@ -307,7 +307,7 @@ export function generateStatsOutput(db: Database.Database, lastN?: number, verbo
 
     // Show pickNextItem selection rationale so planning decisions are auditable
     try {
-      const roadmapContent = readRoadmap();
+      const roadmapContent = readRoadmap(roadmapPath);
       const items = parseRoadmap(roadmapContent);
       const { rationale } = pickNextItemWithRationale(items);
       lines.push("");

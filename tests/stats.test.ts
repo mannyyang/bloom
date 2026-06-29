@@ -1698,9 +1698,10 @@ describe("generateStatsOutput verbose next-item selection block", () => {
   });
 
   it("verbose output includes STATS_NO_ACTIONABLE_ITEMS_MSG when roadmap is absent/empty", () => {
-    // readRoadmap() returns "" when ROADMAP.md is absent → parseRoadmap("") → []
+    // Pass a non-existent path so readRoadmap() returns "" regardless of the
+    // real ROADMAP.md on disk → parseRoadmap("") → []
     // → pickNextItemWithRationale([]) → rationale: null → renders STATS_NO_ACTIONABLE_ITEMS_MSG
-    const output = generateStatsOutput(db, undefined, true);
+    const output = generateStatsOutput(db, undefined, true, undefined, "/nonexistent/ROADMAP.md");
     expect(output.join("\n")).toContain(STATS_NO_ACTIONABLE_ITEMS_MSG);
   });
 
