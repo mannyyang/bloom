@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { generateRoadmapOutput, generateRoadmapJson, generateRoadmapMarkdown, parseRoadmapFilterFlag, parseFormatFlag, ROADMAP_BODY_PREVIEW_MAX_CHARS, ROADMAP_HELP_TEXT, STATUS_ORDER, type RoadmapJsonSummary } from "../src/roadmap.js";
 import { parseHelpFlag } from "../src/stats.js";
 import * as planning from "../src/planning.js";
-import { parseRoadmap, serializeRoadmap, STATUS_COLUMNS } from "../src/planning.js";
+import { parseRoadmap, serializeRoadmap, STATUS_COLUMNS, ITEM_BODY_LIMIT } from "../src/planning.js";
 
 const SAMPLE_ROADMAP = `# Bloom Evolution Roadmap
 
@@ -1709,5 +1709,23 @@ describe("STATUS_ORDER", () => {
     // added to STATUS_COLUMNS but not to STATUS_ORDER) causing incorrect render
     // order without any test failure.
     expect([...STATUS_ORDER].sort()).toEqual([...STATUS_COLUMNS].sort());
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Cross-module invariant: display preview ≤ storage limit
+// ---------------------------------------------------------------------------
+
+describe("ROADMAP_BODY_PREVIEW_MAX_CHARS vs ITEM_BODY_LIMIT invariant", () => {
+  it("ROADMAP_BODY_PREVIEW_MAX_CHARS is strictly less than ITEM_BODY_LIMIT", () => {
+    // A display preview can never exceed the stored content length.
+    // ROADMAP_BODY_PREVIEW_MAX_CHARS (120) is the truncation cap applied when
+    // rendering item bodies in CLI/Markdown output; ITEM_BODY_LIMIT (500) is
+    // the maximum number of characters stored per item body in ROADMAP.md.
+    // If ROADMAP_BODY_PREVIEW_MAX_CHARS were raised above ITEM_BODY_LIMIT the
+    // display logic would attempt to show more characters than are stored,
+    // silently breaking the preview contract. This assertion ensures any
+    // refactor that changes either constant is caught before shipping.
+    expect(ROADMAP_BODY_PREVIEW_MAX_CHARS).toBeLessThan(ITEM_BODY_LIMIT);
   });
 });
