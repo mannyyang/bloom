@@ -5,9 +5,9 @@ import type { CommunityIssue } from "../src/issues.js";
 import { closeIssueWithComment, detectRepo, isValidRepo } from "../src/issues.js";
 import { hasIssueAction, insertIssueAction, initDb, insertCycle } from "../src/db.js";
 import { makeOutcome } from "./helpers.js";
-import { addLinkedItem, STATUS_DONE, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, ITEM_BODY_LIMIT, PLANNING_BODY_PREVIEW_CHARS } from "../src/planning.js";
+import { addLinkedItem, STATUS_DONE, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, ITEM_BODY_LIMIT, PLANNING_BODY_PREVIEW_CHARS, PLANNING_CONTEXT_MAX_CHARS } from "../src/planning.js";
 import type { ProjectItem, ProjectConfig } from "../src/planning.js";
-import { CONTEXT_REASON_PREVIEW_CHARS } from "../src/context.js";
+import { CONTEXT_REASON_PREVIEW_CHARS, CONTEXT_JOURNAL_MAX_CHARS } from "../src/context.js";
 
 vi.mock("../src/issues.js", async (importOriginal) => {
   const actual = await importOriginal() as Record<string, unknown>;
@@ -104,6 +104,16 @@ describe("triage.ts constants", () => {
     // their equality ensures that a bump to one constant does not silently leave
     // the other behind, causing inconsistent preview lengths across modules.
     expect(PLANNING_BODY_PREVIEW_CHARS).toBe(PROMPT_BODY_PREVIEW_CHARS);
+  });
+
+  it("CONTEXT_JOURNAL_MAX_CHARS equals PLANNING_CONTEXT_MAX_CHARS (cross-module equality invariant)", () => {
+    // Both constants guard the maximum character budget for context assembled into
+    // the assessment prompt — CONTEXT_JOURNAL_MAX_CHARS for journal history
+    // (context.ts) and PLANNING_CONTEXT_MAX_CHARS for the planning section
+    // (planning.ts). They are both separately value-pinned to 1200 but no test
+    // catches drift between them. If one is bumped without updating the other,
+    // the two context sections would silently use different budgets.
+    expect(CONTEXT_JOURNAL_MAX_CHARS).toBe(PLANNING_CONTEXT_MAX_CHARS);
   });
 
   it("PROMPT_TITLE_PREVIEW_CHARS is pinned to 120", () => {
