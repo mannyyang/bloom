@@ -5,7 +5,7 @@ import type { CommunityIssue } from "../src/issues.js";
 import { closeIssueWithComment, detectRepo, isValidRepo } from "../src/issues.js";
 import { hasIssueAction, insertIssueAction, initDb, insertCycle } from "../src/db.js";
 import { makeOutcome } from "./helpers.js";
-import { addLinkedItem, STATUS_DONE, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, ITEM_BODY_LIMIT } from "../src/planning.js";
+import { addLinkedItem, STATUS_DONE, STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, ITEM_BODY_LIMIT, PLANNING_BODY_PREVIEW_CHARS } from "../src/planning.js";
 import type { ProjectItem, ProjectConfig } from "../src/planning.js";
 import { CONTEXT_REASON_PREVIEW_CHARS } from "../src/context.js";
 
@@ -96,6 +96,14 @@ describe("triage.ts constants", () => {
     // If PROMPT_BODY_PREVIEW_CHARS ever exceeds ITEM_BODY_LIMIT, triage prompts could
     // reference text beyond what is actually stored, silently corrupting triage context.
     expect(PROMPT_BODY_PREVIEW_CHARS).toBeLessThan(ITEM_BODY_LIMIT);
+  });
+
+  it("PLANNING_BODY_PREVIEW_CHARS equals PROMPT_BODY_PREVIEW_CHARS (cross-module equality invariant)", () => {
+    // Both constants serve the same role — capping body previews in adjacent
+    // context-building modules that feed into the same assessment prompt. Pinning
+    // their equality ensures that a bump to one constant does not silently leave
+    // the other behind, causing inconsistent preview lengths across modules.
+    expect(PLANNING_BODY_PREVIEW_CHARS).toBe(PROMPT_BODY_PREVIEW_CHARS);
   });
 
   it("PROMPT_TITLE_PREVIEW_CHARS is pinned to 120", () => {
