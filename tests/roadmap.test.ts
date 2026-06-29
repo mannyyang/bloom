@@ -1429,6 +1429,23 @@ describe("generateRoadmapMarkdown", () => {
     expect(md).toContain("  Target: reduce median cycle cost by ~20%.");
   });
 
+  it("renders multi-line body with each line indented separately", () => {
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Multi-line item",
+        status: "Backlog",
+        body: "First line\nSecond line",
+        linkedIssueNumber: null,
+        reactions: 0,
+      },
+    ]);
+    const md = generateRoadmapMarkdown(SAMPLE_ROADMAP);
+    expect(md).toContain("  First line");
+    expect(md).toContain("  Second line");
+    spy.mockRestore();
+  });
+
   it("respects ROADMAP_BODY_PREVIEW_MAX_CHARS truncation limit", () => {
     const longBody = "x".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS + 50);
     const roadmap = `# Bloom Evolution Roadmap\n\n## Backlog\n- [ ] Lengthy item\n  ${longBody}\n`;
