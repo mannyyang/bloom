@@ -1475,6 +1475,58 @@ describe("generateRoadmapMarkdown", () => {
     expect(md).not.toContain("An up-next item");
   });
 
+  it("emits status-specific italic fallback for filterStatus='In Progress' on a roadmap with no In Progress items", () => {
+    // Targets the same branch as the Done test above, but for the 'In Progress'
+    // status. Each status hits the `_No ${filterStatus} items on the roadmap._`
+    // path independently; a refactor that hard-coded only 'Done' would be caught.
+    const noInProgressRoadmap = [
+      "# Bloom Evolution Roadmap",
+      "",
+      "## Backlog",
+      "- [ ] A backlog idea",
+      "",
+      "## Up Next",
+      "- [ ] An up-next item",
+      "",
+      "## In Progress",
+      "",
+      "## Done",
+      "- [x] A finished thing",
+      "",
+    ].join("\n");
+    const md = generateRoadmapMarkdown(noInProgressRoadmap, "In Progress");
+    expect(md).toContain("_No In Progress items on the roadmap._");
+    expect(md).not.toContain("_No items on the roadmap yet._");
+    expect(md).not.toContain("A backlog idea");
+    expect(md).not.toContain("A finished thing");
+  });
+
+  it("emits status-specific italic fallback for filterStatus='Up Next' on a roadmap with no Up Next items", () => {
+    // Targets the same branch for the 'Up Next' status, completing coverage of
+    // all four StatusColumn values for the non-empty-roadmap / empty-target path.
+    const noUpNextRoadmap = [
+      "# Bloom Evolution Roadmap",
+      "",
+      "## Backlog",
+      "- [ ] A backlog idea",
+      "",
+      "## Up Next",
+      "",
+      "## In Progress",
+      "- [ ] Active work",
+      "",
+      "## Done",
+      "- [x] A finished thing",
+      "",
+    ].join("\n");
+    const md = generateRoadmapMarkdown(noUpNextRoadmap, "Up Next");
+    expect(md).toContain("_No Up Next items on the roadmap._");
+    expect(md).not.toContain("_No items on the roadmap yet._");
+    expect(md).not.toContain("A backlog idea");
+    expect(md).not.toContain("Active work");
+    expect(md).not.toContain("A finished thing");
+  });
+
   it("emits italic fallback when the roadmap is entirely empty", () => {
     const md = generateRoadmapMarkdown(EMPTY_ROADMAP);
     expect(md).toContain("_No items on the roadmap yet._");
