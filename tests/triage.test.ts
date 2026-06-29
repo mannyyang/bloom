@@ -154,6 +154,10 @@ describe("triage.ts constants", () => {
   it("TRIAGE_MAX_ISSUE_NUMBER is pinned to 1_000_000", () => {
     expect(TRIAGE_MAX_ISSUE_NUMBER).toBe(1_000_000);
   });
+
+  it("TRIAGE_MAX_DONE_ITEMS is pinned to 20", () => {
+    expect(TRIAGE_MAX_DONE_ITEMS).toBe(20);
+  });
 });
 
 describe("buildTriagePrompt", () => {
