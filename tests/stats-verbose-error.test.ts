@@ -59,4 +59,13 @@ describe("generateStatsOutput verbose error path", () => {
     const output = generateStatsOutput(db, undefined, true);
     expect(output[output.length - 1]).toBe("");
   });
+
+  it("forwards roadmapPath to readRoadmap when provided", () => {
+    // generateStatsOutput accepts a roadmapPath param and forwards it directly
+    // to readRoadmap(roadmapPath). Without this assertion, a regression that
+    // drops the argument would silently fall back to the default ROADMAP.md path.
+    mockReadRoadmap.mockReturnValue("");
+    generateStatsOutput(db, undefined, true, undefined, "/custom/path");
+    expect(mockReadRoadmap).toHaveBeenCalledWith("/custom/path");
+  });
 });
