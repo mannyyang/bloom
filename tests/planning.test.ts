@@ -726,6 +726,40 @@ describe("formatPlanningContext", () => {
     // Low reactions last
     expect(lowIdx).toBeGreaterThan(midIdx);
   });
+
+  it("excludes Backlog currentItem from Backlog section listing (identity filter is status-agnostic)", () => {
+    // The filter `items.filter((i) => i !== currentItem)` operates on object identity,
+    // not on status. A Backlog-status currentItem must appear in "Current focus" but
+    // NOT be repeated in the "### Backlog" section.
+    const current = makeItem({ id: "item-0", title: "Backlog Focus", status: "Backlog" });
+    const other = makeItem({ id: "item-1", title: "Other Backlog", status: "Backlog" });
+    const result = formatPlanningContext([current, other], current);
+    expect(result).toContain("**Current focus**: Backlog Focus");
+    expect(result).toContain("Other Backlog");
+    // currentItem must not appear twice — once in Current focus is enough
+    const focusCount = (result.match(/Backlog Focus/g) ?? []).length;
+    expect(focusCount).toBe(1);
+  });
+
+  it("excludes Up Next currentItem from Up Next section listing (identity filter is status-agnostic)", () => {
+    // Same invariant as above but for an Up Next-status currentItem.
+    const current = makeItem({ id: "item-0", title: "Up Next Focus", status: "Up Next" });
+    const other = makeItem({ id: "item-1", title: "Other Up Next", status: "Up Next" });
+    const result = formatPlanningContext([current, other], current);
+    expect(result).toContain("**Current focus**: Up Next Focus");
+    expect(result).toContain("Other Up Next");
+    const focusCount = (result.match(/Up Next Focus/g) ?? []).length;
+    expect(focusCount).toBe(1);
+  });
+
+  it("renders non-empty context when currentItem is Backlog-status and no other items exist", () => {
+    // Edge case: a sole Backlog item passed as currentItem → only "Current focus" section,
+    // no "### Backlog" section (because the sole item is filtered out by identity).
+    const current = makeItem({ id: "item-0", title: "Solo Backlog", status: "Backlog" });
+    const result = formatPlanningContext([current], current);
+    expect(result).toContain("**Current focus**: Solo Backlog");
+    expect(result).not.toContain("### Backlog");
+  });
 });
 
 describe("parseRoadmap", () => {
