@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { generateRoadmapOutput, generateRoadmapJson, generateRoadmapMarkdown, parseRoadmapFilterFlag, parseFormatFlag, ROADMAP_BODY_PREVIEW_MAX_CHARS, ROADMAP_HELP_TEXT, STATUS_ORDER, type RoadmapJsonSummary } from "../src/roadmap.js";
 import { parseHelpFlag } from "../src/stats.js";
 import * as planning from "../src/planning.js";
-import { parseRoadmap, serializeRoadmap, STATUS_COLUMNS, ITEM_BODY_LIMIT } from "../src/planning.js";
+import { parseRoadmap, serializeRoadmap, STATUS_COLUMNS, ITEM_BODY_LIMIT, PLANNING_BODY_PREVIEW_CHARS } from "../src/planning.js";
 
 const SAMPLE_ROADMAP = `# Bloom Evolution Roadmap
 
@@ -1727,5 +1727,14 @@ describe("ROADMAP_BODY_PREVIEW_MAX_CHARS vs ITEM_BODY_LIMIT invariant", () => {
     // silently breaking the preview contract. This assertion ensures any
     // refactor that changes either constant is caught before shipping.
     expect(ROADMAP_BODY_PREVIEW_MAX_CHARS).toBeLessThan(ITEM_BODY_LIMIT);
+  });
+
+  it("ROADMAP_BODY_PREVIEW_MAX_CHARS is strictly less than PLANNING_BODY_PREVIEW_CHARS (cross-module invariant)", () => {
+    // Roadmap display (120 chars) intentionally shows a shorter body preview
+    // than the planning context (200 chars). If either constant drifts to
+    // violate this ordering — e.g., ROADMAP_BODY_PREVIEW_MAX_CHARS is raised
+    // or PLANNING_BODY_PREVIEW_CHARS is lowered — this test catches it before
+    // the divergence silently changes UI density or LLM context quality.
+    expect(ROADMAP_BODY_PREVIEW_MAX_CHARS).toBeLessThan(PLANNING_BODY_PREVIEW_CHARS);
   });
 });
