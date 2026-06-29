@@ -1418,6 +1418,33 @@ describe("generateRoadmapMarkdown", () => {
     expect(md).toContain("_No Backlog items on the roadmap._");
   });
 
+  it("emits status-specific italic fallback for filterStatus='Done' on a roadmap with no Done items", () => {
+    // Targets the branch: filterStatus provided + zero matching items in a non-empty roadmap.
+    // SAMPLE_ROADMAP contains active items (Backlog, Up Next, In Progress, Done); we need
+    // a roadmap that has items in active sections but an empty Done column to exercise
+    // `_No Done items on the roadmap._` (vs the generic `_No items on the roadmap yet._`).
+    const noDoneRoadmap = [
+      "# Bloom Evolution Roadmap",
+      "",
+      "## Backlog",
+      "- [ ] A backlog idea",
+      "",
+      "## Up Next",
+      "- [ ] An up-next item",
+      "",
+      "## In Progress",
+      "",
+      "## Done",
+      "",
+    ].join("\n");
+    const md = generateRoadmapMarkdown(noDoneRoadmap, "Done");
+    expect(md).toContain("_No Done items on the roadmap._");
+    expect(md).not.toContain("_No items on the roadmap yet._");
+    // Active items in other sections must not bleed into the filtered output
+    expect(md).not.toContain("A backlog idea");
+    expect(md).not.toContain("An up-next item");
+  });
+
   it("emits italic fallback when the roadmap is entirely empty", () => {
     const md = generateRoadmapMarkdown(EMPTY_ROADMAP);
     expect(md).toContain("_No items on the roadmap yet._");
