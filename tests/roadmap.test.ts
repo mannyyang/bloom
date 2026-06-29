@@ -1246,6 +1246,36 @@ describe("generateRoadmapOutput --filter", () => {
     expect(joined).not.toContain("No items on the roadmap yet.");
   });
 
+  it("shows status-specific message when filterStatus='Done' but roadmap has no Done items (non-empty roadmap)", () => {
+    // Distinct branch from the EMPTY_ROADMAP case: the roadmap has items in
+    // Backlog and Up Next but zero Done items. Filtering by 'Done' should emit
+    // the status-specific "No Done items on the roadmap." message, NOT the
+    // generic "No items on the roadmap yet." that fires when the entire roadmap
+    // is empty. Without this test a refactor could swap the two messages without
+    // any test catching the regression.
+    const noDoneRoadmap = [
+      "# Bloom Evolution Roadmap",
+      "",
+      "## Backlog",
+      "- [ ] A backlog idea",
+      "",
+      "## Up Next",
+      "- [ ] An up-next item",
+      "",
+      "## In Progress",
+      "",
+      "## Done",
+      "",
+    ].join("\n");
+    const output = generateRoadmapOutput(noDoneRoadmap, "Done");
+    const joined = output.join("\n");
+    expect(joined).toContain("No Done items on the roadmap.");
+    expect(joined).not.toContain("No items on the roadmap yet.");
+    // Items from other sections must not bleed through
+    expect(joined).not.toContain("A backlog idea");
+    expect(joined).not.toContain("An up-next item");
+  });
+
   it("shows all items when filterStatus is undefined", () => {
     const output = generateRoadmapOutput(SAMPLE_ROADMAP);
     const joined = output.join("\n");
