@@ -1390,6 +1390,22 @@ describe("generateRoadmapMarkdown", () => {
     expect(md).not.toContain("★");
   });
 
+  it("renders [N ★] badge for items with reactions > 0", () => {
+    const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
+      {
+        id: "item-0",
+        title: "Popular feature",
+        status: "Backlog",
+        body: "",
+        linkedIssueNumber: null,
+        reactions: 7,
+      },
+    ]);
+    const md = generateRoadmapMarkdown(SAMPLE_ROADMAP);
+    expect(md).toContain("[7 ★]");
+    spy.mockRestore();
+  });
+
   it("filters by status when filterStatus is provided", () => {
     const md = generateRoadmapMarkdown(SAMPLE_ROADMAP, "Backlog");
     expect(md).toContain("## Backlog");
