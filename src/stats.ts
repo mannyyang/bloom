@@ -139,7 +139,12 @@ const COL_SUCCEEDED = 9;
 const COL_BUILD = 6;
 const COL_PUSH = 5;
 const COL_DURATION = 10;
-const COL_FAILURES = 16;
+/**
+ * Width of the Failures column in the verbose ASCII table.
+ * Must be >= the length of every ErrorCategory string so no category value
+ * is silently truncated. Exported so tests can assert this invariant.
+ */
+export const COL_FAILURES = 16;
 
 function pad(s: string, width: number, right = false): string {
   return right ? s.padStart(width) : s.padEnd(width);

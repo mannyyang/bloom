@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution, getLastUpdatedCyclePerCategory } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseLastNArg, parseSinceArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG } from "../src/stats.js";
+import { generateStatsOutput, parseLastNArg, parseSinceArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE, ERROR_CATEGORY_LLM_ERROR } from "../src/errors.js";
 import { MAX_MEMORY_CHARS } from "../src/memory.js";
@@ -13,6 +13,36 @@ describe("STATS_MEMORY_PREVIEW_CHARS", () => {
     expect(STATS_MEMORY_PREVIEW_CHARS).toBe(1000);
     expect(STATS_MEMORY_PREVIEW_CHARS).toBeGreaterThan(0);
     expect(STATS_MEMORY_PREVIEW_CHARS).toBeLessThan(MAX_MEMORY_CHARS);
+  });
+});
+
+describe("COL_FAILURES column-width invariants", () => {
+  // All ErrorCategory values — update here when a new category is added.
+  const allCategories = [
+    ERROR_CATEGORY_NONE,
+    ERROR_CATEGORY_BUILD_FAILURE,
+    ERROR_CATEGORY_TEST_FAILURE,
+    ERROR_CATEGORY_LLM_ERROR,
+  ];
+
+  it("COL_FAILURES is a positive integer", () => {
+    expect(COL_FAILURES).toBeGreaterThan(0);
+    expect(Number.isInteger(COL_FAILURES)).toBe(true);
+  });
+
+  it("COL_FAILURES is >= the length of every ErrorCategory string", () => {
+    for (const cat of allCategories) {
+      expect(COL_FAILURES).toBeGreaterThanOrEqual(cat.length);
+    }
+  });
+
+  it("COL_FAILURES >= longest current ErrorCategory (build_failure = 13 chars)", () => {
+    const longestLength = Math.max(...allCategories.map(c => c.length));
+    expect(COL_FAILURES).toBeGreaterThanOrEqual(longestLength);
+  });
+
+  it("COL_FAILURES is 16 — pinned to detect accidental size reduction", () => {
+    expect(COL_FAILURES).toBe(16);
   });
 });
 
