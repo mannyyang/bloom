@@ -1216,6 +1216,16 @@ describe("generateStatsTable", () => {
       expect(table).toContain(ERROR_CATEGORY_BUILD_FAILURE);
       expect(table).toContain(ERROR_CATEGORY_TEST_FAILURE);
     });
+
+    it("shows STATS_NO_DURATION_SYMBOL in verbose data row when durationMs is null", () => {
+      // Use a non-none failureCategory so the em-dash in the data row is
+      // unambiguously from the Duration column, not the Failures column.
+      insertCycle(db, makeOutcome({ cycleNumber: 1, durationMs: null, failureCategory: ERROR_CATEGORY_BUILD_FAILURE }));
+      const table = generateStatsTable(db, undefined, true);
+      const dataRow = table.split("\n")[2]; // header, separator, first data row
+      expect(dataRow).toContain(STATS_NO_DURATION_SYMBOL);
+      expect(dataRow).toContain(ERROR_CATEGORY_BUILD_FAILURE); // confirms Failures column is present
+    });
   });
 });
 
