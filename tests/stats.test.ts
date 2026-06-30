@@ -1226,6 +1226,16 @@ describe("generateStatsTable", () => {
       expect(dataRow).toContain(STATS_NO_DURATION_SYMBOL);
       expect(dataRow).toContain(ERROR_CATEGORY_BUILD_FAILURE); // confirms Failures column is present
     });
+
+    it("renders ERROR_CATEGORY_LLM_ERROR in Failures column", () => {
+      // Covers the llm_error branch in the Failures column rendering path,
+      // which was previously untested in any table-rendering test.
+      insertCycle(db, makeOutcome({ cycleNumber: 1, durationMs: 90000, failureCategory: ERROR_CATEGORY_LLM_ERROR }));
+      const table = generateStatsTable(db, undefined, true);
+      const dataRow = table.split("\n")[2]; // header, separator, first data row
+      expect(dataRow).toContain(ERROR_CATEGORY_LLM_ERROR); // "llm_error" appears in the Failures column
+      expect(dataRow).toContain("1.5 min"); // Duration column renders normally
+    });
   });
 });
 
