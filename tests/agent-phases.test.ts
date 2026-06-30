@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type Database from "better-sqlite3";
 import { runAssessmentPhase, runEvolutionPhase, createDefaultDeps, resolveModel, DEFAULT_BLOOM_MODEL, ASSESSMENT_PREVIEW_CHARS, AGENT_ASSESSMENT_MAX_TURNS, AGENT_ASSESSMENT_MAX_BUDGET_USD, AGENT_EVOLUTION_MAX_TURNS, AGENT_EVOLUTION_MAX_BUDGET_USD, type QueryFn, type PhaseDeps, type SafetyHooks } from "../src/agent-phases.js";
 import { ASSESS_MAX_TURNS, ASSESS_MAX_BUDGET_USD } from "../src/assess.js";
+import { TRIAGE_MAX_BUDGET_USD } from "../src/triage.js";
 import { ERROR_CATEGORY_NONE } from "../src/errors.js";
 import type { PhaseUsage } from "../src/usage.js";
 import type { EvolutionContext } from "../src/context.js";
@@ -622,5 +623,25 @@ describe("resolveModel", () => {
     // Symmetric to the ASSESS_MAX_TURNS pin above — ensures the budget alias
     // in assess.ts never silently drifts from its canonical source in agent-phases.ts.
     expect(ASSESS_MAX_BUDGET_USD).toBe(AGENT_ASSESSMENT_MAX_BUDGET_USD);
+  });
+});
+
+describe("phase limit ordering invariants", () => {
+  it("AGENT_ASSESSMENT_MAX_TURNS < AGENT_EVOLUTION_MAX_TURNS", () => {
+    // Assessment is a read-only audit pass; evolution does the actual work.
+    // If assessment ever exceeds evolution turns, the limits are misconfigured.
+    expect(AGENT_ASSESSMENT_MAX_TURNS).toBeLessThan(AGENT_EVOLUTION_MAX_TURNS);
+  });
+
+  it("AGENT_ASSESSMENT_MAX_BUDGET_USD < AGENT_EVOLUTION_MAX_BUDGET_USD", () => {
+    // Assessment should cost less than a full evolution pass.
+    // A misconfigured budget (assessment >= evolution) is caught here.
+    expect(AGENT_ASSESSMENT_MAX_BUDGET_USD).toBeLessThan(AGENT_EVOLUTION_MAX_BUDGET_USD);
+  });
+
+  it("TRIAGE_MAX_BUDGET_USD < AGENT_ASSESSMENT_MAX_BUDGET_USD", () => {
+    // Triage is the lightest LLM phase (3 turns, $0.50 cap).
+    // It must remain cheaper than assessment ($2.00) by design.
+    expect(TRIAGE_MAX_BUDGET_USD).toBeLessThan(AGENT_ASSESSMENT_MAX_BUDGET_USD);
   });
 });
