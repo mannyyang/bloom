@@ -76,6 +76,14 @@ describe("planning.ts constants", () => {
     expect(STATUS_COLUMNS).toContain(STATUS_IN_PROGRESS);
     expect(STATUS_COLUMNS).toContain(STATUS_DONE);
   });
+
+  it("PLANNING_BODY_PREVIEW_CHARS is strictly less than ITEM_BODY_LIMIT", () => {
+    // formatPlanningContext truncates body to PLANNING_BODY_PREVIEW_CHARS after
+    // storage already caps it at ITEM_BODY_LIMIT. If preview >= storage limit,
+    // the inner truncation could never trigger for valid stored bodies — a silent
+    // correctness regression if either constant is changed carelessly.
+    expect(PLANNING_BODY_PREVIEW_CHARS).toBeLessThan(ITEM_BODY_LIMIT);
+  });
 });
 
 describe("compareItemsByReactionsThenId", () => {
