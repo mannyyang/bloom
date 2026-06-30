@@ -168,7 +168,13 @@ ANTHROPIC_API_KEY=sk-... pnpm run evolve
 ### View Statistics
 
 ```bash
-pnpm stats
+pnpm stats                  # Summary stats (success rate, costs, trends)
+pnpm stats -- --last 10     # Stats for the last 10 cycles only
+pnpm stats -- --since 700   # Stats starting from cycle 700 (inclusive)
+pnpm stats -- --table       # Per-cycle ASCII table
+pnpm stats -- --table --verbose  # Table with failure category column
+pnpm stats -- --json        # Machine-readable JSON (for scripting/CI)
+pnpm stats -- --help        # Print all available flags
 ```
 
 Prints cycle statistics (success rate, test trends, costs, token usage) and the latest strategic context. Useful for answering "how is Bloom doing?" without running a full evolution cycle.
