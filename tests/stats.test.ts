@@ -1789,3 +1789,45 @@ describe("generateStatsOutput verbose next-item selection block", () => {
     expect(output[output.length - 1]).toBe("");
   });
 });
+
+describe("generateStatsOutput text mode when sinceN excludes all existing cycles", () => {
+  // When latestCycle > 0 but sinceN > latestCycle, getCycleStats returns
+  // totalCycles=0. generateStatsOutput should still produce a meaningful header
+  // (it does NOT return early with "No evolution cycles recorded yet." because
+  // the DB is non-empty) but the stats body should reflect a zero-cycle window.
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("does not return early 'No evolution cycles recorded yet.' when latestCycle>0 but sinceN excludes all", () => {
+    for (let i = 1; i <= 5; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    // sinceN=999 is above all 5 existing cycles
+    const output = generateStatsOutput(db, undefined, undefined, 999);
+    const joined = output.join("\n");
+    // Should show the stats header (latestCycle=5 is non-zero)
+    expect(joined).toContain("Bloom Evolution Statistics");
+    expect(joined).not.toBe("No evolution cycles recorded yet.");
+  });
+
+  it("header contains sinceN label when sinceN excludes all cycles", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 3 }));
+    const output = generateStatsOutput(db, undefined, undefined, 999);
+    // windowLabel uses sinceN
+    expect(output[2]).toContain("since cycle 999");
+  });
+
+  it("stats body reports no-data message when sinceN excludes all cycles", () => {
+    // When sinceN filters out all rows, formatCycleStats renders
+    // "No previous cycle data available." (the zero-cycles fallback).
+    for (let i = 1; i <= 3; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    const output = generateStatsOutput(db, undefined, undefined, 100);
+    const joined = output.join("\n");
+    expect(joined).toContain("No previous cycle data available.");
+  });
+});
