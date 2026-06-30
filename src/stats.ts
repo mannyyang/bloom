@@ -222,6 +222,8 @@ export interface StatsJsonOutput {
   generatedAt: string;
   stats: CycleStats;
   learningsStaleness?: CategoryStaleness[];
+  /** Next-item selection rationale from pickNextItemWithRationale (verbose only). null means no actionable items. */
+  nextItemRationale?: string | null;
 }
 
 /**
@@ -232,13 +234,15 @@ export interface StatsJsonOutput {
  * When no cycles exist, latestCycle is 0 and stats contains zero-value fields.
  * When `verbose` is true, includes a `learningsStaleness` array with per-category
  * staleness data (the most recent cycle in which each learning category was updated),
- * achieving output parity with the default and table modes.
+ * and a `nextItemRationale` string from pickNextItemWithRationale (null when no
+ * actionable items exist), achieving full output parity with the text mode.
  */
 export function generateStatsJson(
   db: Database.Database,
   lastN?: number,
   verbose?: boolean,
   sinceN?: number,
+  roadmapPath?: string,
 ): StatsJsonOutput {
   const latestCycle = getLatestCycleNumber(db);
   const stats = getCycleStats(db, lastN, sinceN);
@@ -247,6 +251,14 @@ export function generateStatsJson(
   };
   if (verbose) {
     result.learningsStaleness = getLastUpdatedCyclePerCategory(db);
+    try {
+      const roadmapContent = readRoadmap(roadmapPath);
+      const items = parseRoadmap(roadmapContent);
+      const { rationale } = pickNextItemWithRationale(items);
+      result.nextItemRationale = rationale;
+    } catch (err) {
+      result.nextItemRationale = `unavailable (${errorMessage(err)})`;
+    }
   }
   return result;
 }
@@ -338,7 +350,7 @@ function main() {
 
   try {
     if (jsonMode) {
-      const result = generateStatsJson(db, lastN, verbose, sinceN);
+      const result = generateStatsJson(db, lastN, verbose, sinceN, undefined);
       console.log(JSON.stringify(result, null, 2));
     } else if (tableMode) {
       const table = generateStatsTable(db, lastN, verbose, sinceN);
