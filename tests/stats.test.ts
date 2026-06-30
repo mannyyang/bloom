@@ -1132,6 +1132,35 @@ describe("generateStatsTable", () => {
     expect(firstDataCycle).toBeGreaterThan(lastDataCycle);
   });
 
+  describe("combined lastN + sinceN interaction", () => {
+    it("includes only rows that are both within lastN window AND >= sinceN", () => {
+      // Insert 5 cycles numbered 1..5. With lastN=3, getCycleRows returns the
+      // 3 newest: cycles 5, 4, 3 (newest-first). The subsequent sinceN=4 filter
+      // then drops cycle 3, leaving only cycles 5 and 4 in the output.
+      for (let i = 1; i <= 5; i++) {
+        insertCycle(db, makeOutcome({ cycleNumber: i }));
+      }
+      const table = generateStatsTable(db, 3, false, 4);
+      const lines = table.split("\n").filter(l => l.trim());
+      // header + separator + 2 data rows (cycles 5 and 4)
+      expect(lines.length).toBe(4);
+      // Cycles 5 and 4 must appear; cycles 3, 2, 1 must not
+      expect(table).toContain("5");
+      expect(table).toContain("4");
+      // Cycle 3 was in the lastN window but below sinceN — must be absent
+      const dataRows = lines.slice(2); // skip header and separator
+      expect(dataRows.every(row => !row.trimStart().startsWith("3"))).toBe(true);
+    });
+
+    it("returns empty string when sinceN is higher than all rows in the lastN window", () => {
+      // Cycles 1..5 exist; lastN=2 fetches cycles 5 and 4; sinceN=10 filters both out.
+      for (let i = 1; i <= 5; i++) {
+        insertCycle(db, makeOutcome({ cycleNumber: i }));
+      }
+      expect(generateStatsTable(db, 2, false, 10)).toBe("");
+    });
+  });
+
   describe("verbose mode", () => {
     it("includes Failures column header when verbose=true", () => {
       insertCycle(db, makeOutcome({ cycleNumber: 1 }));
