@@ -110,6 +110,51 @@ describe("generateJournalOutput", () => {
     const parsed = JSON.parse(output);
     expect(parsed).toHaveLength(2);
   });
+
+  it("filters entries by since cycle (returns only entries >= since)", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 10 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 20 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 30 }));
+    insertJournalEntry(db, 10, "attempted", "Entry 10");
+    insertJournalEntry(db, 20, "attempted", "Entry 20");
+    insertJournalEntry(db, 30, "attempted", "Entry 30");
+
+    const output = generateJournalOutput(db, { since: 20 });
+    const parsed = JSON.parse(output) as Array<{ cycleNumber: number }>;
+    expect(parsed).toHaveLength(2);
+    expect(parsed.map((e) => e.cycleNumber).sort((a, b) => a - b)).toEqual([20, 30]);
+  });
+
+  it("since filter with exact boundary includes the since cycle itself", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 5 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 6 }));
+    insertJournalEntry(db, 5, "attempted", "Entry 5");
+    insertJournalEntry(db, 6, "attempted", "Entry 6");
+
+    const output = generateJournalOutput(db, { since: 5 });
+    const parsed = JSON.parse(output) as Array<{ cycleNumber: number }>;
+    expect(parsed).toHaveLength(2);
+  });
+
+  it("since filter with value higher than all cycles returns empty array", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertJournalEntry(db, 1, "attempted", "Entry 1");
+
+    const output = generateJournalOutput(db, { since: 999 });
+    const parsed = JSON.parse(output);
+    expect(parsed).toHaveLength(0);
+  });
+
+  it("since 0 is treated as no filter (returns all entries)", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    insertJournalEntry(db, 1, "attempted", "Entry 1");
+    insertJournalEntry(db, 2, "attempted", "Entry 2");
+
+    const output = generateJournalOutput(db, { since: 0 });
+    const parsed = JSON.parse(output);
+    expect(parsed).toHaveLength(2);
+  });
 });
 
 describe("journal header constants (value-pinning)", () => {
@@ -439,54 +484,89 @@ describe("formatJournalMarkdown", () => {
 describe("parseArgs", () => {
   it("returns json format by default with no limit", () => {
     const result = parseArgs([]);
-    expect(result).toEqual({ format: "json", limit: undefined });
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined });
   });
 
   it("returns md format when --md is passed", () => {
     const result = parseArgs(["--md"]);
-    expect(result).toEqual({ format: "md", limit: undefined });
+    expect(result).toEqual({ format: "md", limit: undefined, since: undefined });
   });
 
   it("parses --limit with a valid number", () => {
     const result = parseArgs(["--limit", "5"]);
-    expect(result).toEqual({ format: "json", limit: 5 });
+    expect(result).toEqual({ format: "json", limit: 5, since: undefined });
   });
 
   it("handles combined --md and --limit", () => {
     const result = parseArgs(["--md", "--limit", "3"]);
-    expect(result).toEqual({ format: "md", limit: 3 });
+    expect(result).toEqual({ format: "md", limit: 3, since: undefined });
   });
 
   it("ignores --limit with NaN value", () => {
     const result = parseArgs(["--limit", "abc"]);
-    expect(result).toEqual({ format: "json", limit: undefined });
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined });
   });
 
   it("ignores --limit with no following argument", () => {
     const result = parseArgs(["--limit"]);
-    expect(result).toEqual({ format: "json", limit: undefined });
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined });
   });
 
   it("treats --limit 0 as undefined (no limit)", () => {
     const result = parseArgs(["--limit", "0"]);
-    expect(result).toEqual({ format: "json", limit: undefined });
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined });
   });
 
   it("handles negative --limit as undefined", () => {
     const result = parseArgs(["--limit", "-1"]);
-    expect(result).toEqual({ format: "json", limit: undefined });
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined });
   });
 
   it("truncates fractional --limit '3.7' to 3 via parseInt", () => {
     // parseInt("3.7", 10) === 3; passes the > 0 && !isNaN guard, so limit is 3
     const result = parseArgs(["--limit", "3.7"]);
-    expect(result).toEqual({ format: "json", limit: 3 });
+    expect(result).toEqual({ format: "json", limit: 3, since: undefined });
   });
 
   it("treats --limit '0.9' as undefined (parseInt → 0, fails > 0 guard)", () => {
     // parseInt("0.9", 10) === 0; 0 > 0 is false, so treated as no limit.
     // Completes the fractional parseInt edge-case matrix alongside the "3.7" case above.
     const result = parseArgs(["--limit", "0.9"]);
-    expect(result).toEqual({ format: "json", limit: undefined });
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined });
+  });
+
+  it("parses --since with a valid cycle number", () => {
+    const result = parseArgs(["--since", "100"]);
+    expect(result).toEqual({ format: "json", limit: undefined, since: 100 });
+  });
+
+  it("treats --since 0 as undefined (cycle numbers start at 1)", () => {
+    const result = parseArgs(["--since", "0"]);
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined });
+  });
+
+  it("treats negative --since as undefined", () => {
+    const result = parseArgs(["--since", "-5"]);
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined });
+  });
+
+  it("ignores --since with NaN value", () => {
+    const result = parseArgs(["--since", "abc"]);
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined });
+  });
+
+  it("ignores --since with no following argument", () => {
+    const result = parseArgs(["--since"]);
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined });
+  });
+
+  it("handles combined --since and --limit", () => {
+    const result = parseArgs(["--since", "50", "--limit", "10"]);
+    expect(result).toEqual({ format: "json", limit: 10, since: 50 });
+  });
+
+  it("handles combined --since, --limit, and --md", () => {
+    const result = parseArgs(["--md", "--since", "200", "--limit", "5"]);
+    expect(result).toEqual({ format: "md", limit: 5, since: 200 });
   });
 });

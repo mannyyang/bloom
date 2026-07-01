@@ -77,15 +77,22 @@ export function formatJournalMarkdown(entries: JournalExportEntry[]): string {
  */
 export function generateJournalOutput(
   db: Database.Database,
-  options: { format?: "json" | "md"; limit?: number } = {},
+  options: { format?: "json" | "md"; limit?: number; since?: number } = {},
 ): string {
-  const { format = "json", limit } = options;
+  const { format = "json", limit, since } = options;
   // Math.floor normalises fractional values (e.g. 3.7 → 3).
   // The explicit `!== undefined` guard makes intent clear: 0 is not a valid
   // limit (pass undefined to mean "no limit"), and `safeLimit > 0` already
   // handles that — no need for a falsy short-circuit.
   const safeLimit = limit !== undefined ? Math.floor(limit) : undefined;
-  const entries = exportJournalJson(db, safeLimit !== undefined && safeLimit > 0 ? safeLimit : undefined);
+  let entries = exportJournalJson(db, safeLimit !== undefined && safeLimit > 0 ? safeLimit : undefined);
+
+  // Apply --since filter: keep only entries whose cycle number is >= since.
+  // Applied after the DB fetch so `limit` still refers to the most-recent N
+  // cycles before filtering (consistent with how pnpm stats --since behaves).
+  if (since !== undefined && since > 0) {
+    entries = entries.filter((e) => e.cycleNumber >= since);
+  }
 
   if (format === "md") {
     return formatJournalMarkdown(entries);
@@ -94,13 +101,21 @@ export function generateJournalOutput(
   return JSON.stringify(entries, null, 2);
 }
 
-export function parseArgs(argv: string[]): { format: "json" | "md"; limit?: number } {
+export function parseArgs(argv: string[]): { format: "json" | "md"; limit?: number; since?: number } {
   const format = argv.includes("--md") ? "md" as const : "json" as const;
   const limitIdx = argv.indexOf("--limit");
   const limit = limitIdx !== -1 && argv[limitIdx + 1]
     ? parseInt(argv[limitIdx + 1], 10)
     : undefined;
-  return { format, limit: limit !== undefined && !isNaN(limit) && limit > 0 ? limit : undefined };
+  const sinceIdx = argv.indexOf("--since");
+  const since = sinceIdx !== -1 && argv[sinceIdx + 1]
+    ? parseInt(argv[sinceIdx + 1], 10)
+    : undefined;
+  return {
+    format,
+    limit: limit !== undefined && !isNaN(limit) && limit > 0 ? limit : undefined,
+    since: since !== undefined && !isNaN(since) && since > 0 ? since : undefined,
+  };
 }
 
 function main() {
