@@ -3,6 +3,8 @@
 ## Backlog
 
 ## Up Next
+- [ ] Add `--since CYCLE` flag to `pnpm journal` CLI to filter entries by minimum cycle number, mirroring the `--since N` pattern already supported by `pnpm stats`
+- [ ] Add `pnpm stats --category CATEGORY` flag to filter the stats table to cycles with a specific failure category (build_failure, test_failure, llm_error, none), making it easier to audit regression patterns
 
 ## In Progress
 
