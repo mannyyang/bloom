@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import type Database from "better-sqlite3";
-import { initDb, insertCycle, insertLearning, getRelevantLearnings, decayLearningRelevance, pruneLowRelevanceLearnings, insertStrategicContext, getLatestStrategicContext, STRATEGIC_CONTEXT_KEEP_LAST, RELEVANT_LEARNINGS_LIMIT } from "../src/db.js";
+import { initDb, insertCycle, insertLearning, getRelevantLearnings, decayLearningRelevance, pruneLowRelevanceLearnings, insertStrategicContext, getLatestStrategicContext, STRATEGIC_CONTEXT_KEEP_LAST, RELEVANT_LEARNINGS_LIMIT, LEARNING_BOOST_AMOUNT } from "../src/db.js";
 import { extractLearnings, storeLearnings, storeStrategicContext, formatMemoryForPrompt, MAX_MEMORY_CHARS, STRATEGIC_CONTEXT_RETENTION_CYCLES, MAX_RELEVANT_LEARNINGS_TO_FETCH, MEMORY_STRATEGIC_CONTEXT_HEADER, MEMORY_KEY_LEARNINGS_HEADER, LEARNING_CATEGORIES, type ExtractedLearnings } from "../src/memory.js";
 import { makeOutcome } from "./helpers.js";
 
@@ -257,6 +257,35 @@ describe("storeLearnings", () => {
 
     expect(result.count).toBe(0);
     expect(getRelevantLearnings(db, 10)).toHaveLength(1);
+  });
+
+  it("boosts relevance of an existing learning when the same content is re-submitted", () => {
+    // Insert a learning and decay it so relevance is below 1.0
+    insertLearning(db, 1, "domain", "Boost target insight");
+    db.prepare("UPDATE learnings SET relevance = 0.7 WHERE content = 'Boost target insight'").run();
+
+    // Re-submit the same content via storeLearnings — it's a duplicate so count stays 0,
+    // but boostLearningRelevance must be called, raising relevance by LEARNING_BOOST_AMOUNT.
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    const result = storeLearnings(db, 2, { learnings: [{ category: "domain", content: "Boost target insight" }] });
+
+    expect(result.count).toBe(0);
+    const [learning] = getRelevantLearnings(db, 10);
+    expect(learning.relevance).toBeCloseTo(0.7 + LEARNING_BOOST_AMOUNT, 10);
+  });
+
+  it("all-duplicates early return skips decay (no relevance change when nothing new)", () => {
+    // Insert an existing learning at a known relevance
+    insertLearning(db, 1, "pattern", "Stable pattern insight");
+    db.prepare("UPDATE learnings SET relevance = 0.8 WHERE content = 'Stable pattern insight'").run();
+
+    // Re-submit same content — all-duplicate path returns early before decay runs
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    storeLearnings(db, 2, { learnings: [{ category: "pattern", content: "Stable pattern insight" }] });
+
+    // Decay must NOT have been applied — only the boost was (0.8 → 0.9)
+    const [learning] = getRelevantLearnings(db, 10);
+    expect(learning.relevance).toBeCloseTo(0.8 + LEARNING_BOOST_AMOUNT, 10);
   });
 
   it("deduplicates learnings within the same batch (same content, same call)", () => {
