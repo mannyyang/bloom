@@ -22,6 +22,7 @@ import {
   insertLearning,
   decayLearningRelevance,
   pruneLowRelevanceLearnings,
+  getCycleRows,
   CYCLE_STATS_HISTORY_LIMIT,
   RELEVANT_LEARNINGS_LIMIT,
   STRATEGIC_CONTEXT_KEEP_LAST,
@@ -1610,6 +1611,69 @@ describe("db", () => {
       insertWithRelevance(db, "mid", 0.3);
       pruneLowRelevanceLearnings(db, 0.5);
       expect(count(db)).toBe(0);
+    });
+  });
+
+  describe("getCycleRows", () => {
+    it("returns empty array when no cycles exist", () => {
+      expect(getCycleRows(db)).toEqual([]);
+    });
+
+    it("returns camelCase row with correct boolean coercion", () => {
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1,
+        improvementsAttempted: 2,
+        improvementsSucceeded: 1,
+        buildVerificationPassed: true,
+        pushSucceeded: true,
+        durationMs: 12000,
+        failureCategory: ERROR_CATEGORY_NONE,
+      }));
+      const rows = getCycleRows(db);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({
+        cycleNumber: 1,
+        attempted: 2,
+        succeeded: 1,
+        buildPassed: true,
+        pushed: true,
+        durationMs: 12000,
+        failureCategory: ERROR_CATEGORY_NONE,
+      });
+    });
+
+    it("coerces buildPassed and pushed to false when DB value is 0", () => {
+      insertCycle(db, makeOutcome({
+        cycleNumber: 1,
+        buildVerificationPassed: false,
+        pushSucceeded: false,
+      }));
+      const rows = getCycleRows(db);
+      expect(rows[0].buildPassed).toBe(false);
+      expect(rows[0].pushed).toBe(false);
+    });
+
+    it("returns rows newest-first", () => {
+      for (let i = 1; i <= 3; i++) {
+        insertCycle(db, makeOutcome({ cycleNumber: i }));
+      }
+      const rows = getCycleRows(db);
+      expect(rows.map(r => r.cycleNumber)).toEqual([3, 2, 1]);
+    });
+
+    it("respects the limit parameter", () => {
+      for (let i = 1; i <= 5; i++) {
+        insertCycle(db, makeOutcome({ cycleNumber: i }));
+      }
+      const rows = getCycleRows(db, 3);
+      expect(rows).toHaveLength(3);
+      expect(rows[0].cycleNumber).toBe(5);
+    });
+
+    it("returns null durationMs when not set", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1, durationMs: null }));
+      const rows = getCycleRows(db);
+      expect(rows[0].durationMs).toBeNull();
     });
   });
 });
