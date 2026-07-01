@@ -23,6 +23,8 @@ import {
   decayLearningRelevance,
   pruneLowRelevanceLearnings,
   getCycleRows,
+  getLastUpdatedCyclePerCategory,
+  getLearningCategoryDistribution,
   CYCLE_STATS_HISTORY_LIMIT,
   RELEVANT_LEARNINGS_LIMIT,
   STRATEGIC_CONTEXT_KEEP_LAST,
@@ -1674,6 +1676,73 @@ describe("db", () => {
       insertCycle(db, makeOutcome({ cycleNumber: 1, durationMs: null }));
       const rows = getCycleRows(db);
       expect(rows[0].durationMs).toBeNull();
+    });
+  });
+
+  describe("getLastUpdatedCyclePerCategory", () => {
+    it("returns empty array when learnings table is empty", () => {
+      expect(getLastUpdatedCyclePerCategory(db)).toEqual([]);
+    });
+
+    it("returns the most-recent cycle number per category", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+      insertLearning(db, 1, "pattern", "first pattern");
+      insertLearning(db, 2, "pattern", "second pattern");
+      insertLearning(db, 1, "process", "process insight");
+
+      const rows = getLastUpdatedCyclePerCategory(db);
+      const byCategory = Object.fromEntries(rows.map(r => [r.category, r.lastCycle]));
+      expect(byCategory["pattern"]).toBe(2);
+      expect(byCategory["process"]).toBe(1);
+    });
+
+    it("orders results by lastCycle descending (most recent first)", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertCycle(db, makeOutcome({ cycleNumber: 5 }));
+      insertLearning(db, 1, "process", "older learning");
+      insertLearning(db, 5, "pattern", "newer learning");
+
+      const rows = getLastUpdatedCyclePerCategory(db);
+      expect(rows[0].lastCycle).toBeGreaterThanOrEqual(rows[rows.length - 1].lastCycle);
+    });
+
+    it("handles a single category correctly", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 3 }));
+      insertLearning(db, 3, "domain", "domain fact");
+      const rows = getLastUpdatedCyclePerCategory(db);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toEqual({ category: "domain", lastCycle: 3 });
+    });
+  });
+
+  describe("getLearningCategoryDistribution", () => {
+    it("returns empty object when learnings table is empty", () => {
+      expect(getLearningCategoryDistribution(db)).toEqual({});
+    });
+
+    it("returns correct count per category", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertLearning(db, 1, "pattern", "p1");
+      insertLearning(db, 1, "pattern", "p2");
+      insertLearning(db, 1, "process", "proc1");
+
+      const dist = getLearningCategoryDistribution(db);
+      expect(dist["pattern"]).toBe(2);
+      expect(dist["process"]).toBe(1);
+    });
+
+    it("counts each category independently", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+      insertLearning(db, 1, "domain", "d1");
+      insertLearning(db, 2, "domain", "d2");
+      insertLearning(db, 1, "anti-pattern", "a1");
+
+      const dist = getLearningCategoryDistribution(db);
+      expect(dist["domain"]).toBe(2);
+      expect(dist["anti-pattern"]).toBe(1);
+      expect(Object.keys(dist)).toHaveLength(2);
     });
   });
 });
