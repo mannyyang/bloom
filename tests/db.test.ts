@@ -22,6 +22,7 @@ import {
   insertLearning,
   decayLearningRelevance,
   pruneLowRelevanceLearnings,
+  boostLearningRelevance,
   getCycleRows,
   getLastUpdatedCyclePerCategory,
   getLearningCategoryDistribution,
@@ -1614,6 +1615,55 @@ describe("db", () => {
       insertWithRelevance(db, "mid", 0.3);
       pruneLowRelevanceLearnings(db, 0.5);
       expect(count(db)).toBe(0);
+    });
+  });
+
+  describe("boostLearningRelevance", () => {
+    function getRelevance(db: Database.Database, content: string): number {
+      const row = db.prepare("SELECT relevance FROM learnings WHERE LOWER(TRIM(content)) = LOWER(TRIM(?))").get(content) as { relevance: number };
+      return row.relevance;
+    }
+
+    it("is a no-op when no learning matches the content", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertLearning(db, 1, "domain", "existing insight");
+      boostLearningRelevance(db, "nonexistent learning");
+      expect(getRelevance(db, "existing insight")).toBeCloseTo(1.0, 10);
+    });
+
+    it("boosts relevance by 0.1 for a decayed entry", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertLearning(db, 1, "pattern", "use interfaces");
+      db.prepare("UPDATE learnings SET relevance = 0.5 WHERE content = 'use interfaces'").run();
+      boostLearningRelevance(db, "use interfaces");
+      expect(getRelevance(db, "use interfaces")).toBeCloseTo(0.6, 10);
+    });
+
+    it("caps boosted relevance at 1.0", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertLearning(db, 1, "pattern", "cap test");
+      // default relevance is 1.0; boost should not exceed 1.0
+      boostLearningRelevance(db, "cap test");
+      expect(getRelevance(db, "cap test")).toBeCloseTo(1.0, 10);
+    });
+
+    it("boosts only the matching row when multiple learnings exist", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertLearning(db, 1, "domain", "target learning");
+      insertLearning(db, 1, "domain", "other learning");
+      db.prepare("UPDATE learnings SET relevance = 0.4 WHERE content = 'target learning'").run();
+      db.prepare("UPDATE learnings SET relevance = 0.4 WHERE content = 'other learning'").run();
+      boostLearningRelevance(db, "target learning");
+      expect(getRelevance(db, "target learning")).toBeCloseTo(0.5, 10);
+      expect(getRelevance(db, "other learning")).toBeCloseTo(0.4, 10);
+    });
+
+    it("matches case-insensitively (mirrors the dedup query in storeLearnings)", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertLearning(db, 1, "process", "Run Tests First");
+      db.prepare("UPDATE learnings SET relevance = 0.3 WHERE content = 'Run Tests First'").run();
+      boostLearningRelevance(db, "run tests first");
+      expect(getRelevance(db, "Run Tests First")).toBeCloseTo(0.4, 10);
     });
   });
 
