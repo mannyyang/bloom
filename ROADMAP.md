@@ -3,12 +3,14 @@
 ## Backlog
 
 ## Up Next
-- [ ] Add `--since CYCLE` flag to `pnpm journal` CLI to filter entries by minimum cycle number, mirroring the `--since N` pattern already supported by `pnpm stats`
-- [ ] Add `pnpm stats --category CATEGORY` flag to filter the stats table to cycles with a specific failure category (build_failure, test_failure, llm_error, none), making it easier to audit regression patterns
 
 ## In Progress
+- [ ] Add `--since CYCLE` flag to `pnpm journal` CLI to filter entries by minimum cycle number, mirroring the `--since N` pattern already supported by `pnpm stats`
+  [since: 729]
 
 ## Done
+- [x] Add `pnpm stats --category CATEGORY` flag to filter the stats table to cycles with a specific failure category (build_failure, test_failure, llm_error, none), making it easier to audit regression patterns
+  Completed in cycle 729: 1/1 improvements succeeded.
 - [x] Expose `pickNextItem` selection rationale in `pnpm stats --verbose` output (e.g. "resumed In Progress item X" vs "promoted Backlog item Y") to make cycle-to-cycle planning decisions auditable
   Completed in cycle 653: 2/2 improvements succeeded.
 - [x] Add `--help` flag to `pnpm roadmap` CLI to print available flags and usage, mirroring the pattern established by `pnpm stats --help`
