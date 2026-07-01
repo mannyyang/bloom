@@ -25,6 +25,7 @@ import {
   getCycleRows,
   getLastUpdatedCyclePerCategory,
   getLearningCategoryDistribution,
+  getRelevantLearnings,
   CYCLE_STATS_HISTORY_LIMIT,
   RELEVANT_LEARNINGS_LIMIT,
   STRATEGIC_CONTEXT_KEEP_LAST,
@@ -1743,6 +1744,69 @@ describe("db", () => {
       expect(dist["domain"]).toBe(2);
       expect(dist["anti-pattern"]).toBe(1);
       expect(Object.keys(dist)).toHaveLength(2);
+    });
+  });
+
+  describe("getRelevantLearnings", () => {
+    it("returns empty array when learnings table is empty", () => {
+      expect(getRelevantLearnings(db)).toEqual([]);
+    });
+
+    it("returns all items ordered by relevance descending", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertLearning(db, 1, "pattern", "low relevance item");
+      insertLearning(db, 1, "pattern", "high relevance item");
+      db.prepare("UPDATE learnings SET relevance = 0.3 WHERE content = 'low relevance item'").run();
+      db.prepare("UPDATE learnings SET relevance = 0.9 WHERE content = 'high relevance item'").run();
+
+      const results = getRelevantLearnings(db);
+      expect(results[0].content).toBe("high relevance item");
+      expect(results[1].content).toBe("low relevance item");
+    });
+
+    it("filters by category when category is supplied", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertLearning(db, 1, "pattern", "a pattern");
+      insertLearning(db, 1, "process", "a process");
+
+      const results = getRelevantLearnings(db, 25, "pattern");
+      expect(results).toHaveLength(1);
+      expect(results[0].category).toBe("pattern");
+    });
+
+    it("caps results at maxItems", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      for (let i = 1; i <= 5; i++) {
+        insertLearning(db, 1, "domain", `insight ${i}`);
+      }
+      const results = getRelevantLearnings(db, 3);
+      expect(results).toHaveLength(3);
+    });
+
+    it("category filter and maxItems work together", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      for (let i = 1; i <= 4; i++) {
+        insertLearning(db, 1, "pattern", `pattern ${i}`);
+      }
+      insertLearning(db, 1, "process", "process learning");
+
+      const results = getRelevantLearnings(db, 2, "pattern");
+      expect(results).toHaveLength(2);
+      expect(results.every(r => r.category === "pattern")).toBe(true);
+    });
+
+    it("returns Learning objects with all required fields", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertLearning(db, 1, "domain", "a domain fact");
+
+      const results = getRelevantLearnings(db);
+      expect(results).toHaveLength(1);
+      const r = results[0];
+      expect(typeof r.id).toBe("number");
+      expect(r.cycleNumber).toBe(1);
+      expect(r.category).toBe("domain");
+      expect(r.content).toBe("a domain fact");
+      expect(typeof r.relevance).toBe("number");
     });
   });
 });
