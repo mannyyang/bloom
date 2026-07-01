@@ -32,6 +32,7 @@ import {
   STRATEGIC_CONTEXT_KEEP_LAST,
   DECAY_DEFAULT_RATE,
   PRUNE_MIN_RELEVANCE,
+  LEARNING_BOOST_AMOUNT,
   MS_PER_MINUTE,
   TOKEN_DISPLAY_THRESHOLD,
   RECENT_FAILURES_WINDOW,
@@ -131,6 +132,9 @@ describe("db constants (value-pinning)", () => {
   });
   it("JOURNAL_SECTIONS_PER_CYCLE is 6", () => {
     expect(JOURNAL_SECTIONS_PER_CYCLE).toBe(6);
+  });
+  it("LEARNING_BOOST_AMOUNT is 0.1", () => {
+    expect(LEARNING_BOOST_AMOUNT).toBe(0.1);
   });
 });
 

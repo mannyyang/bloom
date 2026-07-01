@@ -819,14 +819,22 @@ export function decayLearningRelevance(
 }
 
 /**
+ * Amount by which a learning's relevance is boosted when the same content is
+ * submitted again in a later cycle. Named constant so callers and tests can
+ * reference the exact delta without encoding SQL internals.
+ */
+export const LEARNING_BOOST_AMOUNT = 0.1;
+
+/**
  * Boost the relevance of an existing learning that has been seen again.
- * Resets relevance to MIN(1.0, relevance + 0.1) so frequently-reappearing
- * patterns surface in prompts even after many cycles of decay.
- * No-op when no learning matches the given content (case-insensitive trim).
+ * Resets relevance to MIN(1.0, relevance + LEARNING_BOOST_AMOUNT) so
+ * frequently-reappearing patterns surface in prompts even after many cycles
+ * of decay. No-op when no learning matches the given content
+ * (case-insensitive trim).
  */
 export function boostLearningRelevance(db: Database.Database, content: string): void {
   db.prepare(
-    "UPDATE learnings SET relevance = MIN(1.0, relevance + 0.1) WHERE LOWER(TRIM(content)) = LOWER(TRIM(?))",
+    `UPDATE learnings SET relevance = MIN(1.0, relevance + ${LEARNING_BOOST_AMOUNT}) WHERE LOWER(TRIM(content)) = LOWER(TRIM(?))`,
   ).run(content);
 }
 
