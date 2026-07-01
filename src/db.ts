@@ -817,6 +817,18 @@ export function decayLearningRelevance(
 }
 
 /**
+ * Boost the relevance of an existing learning that has been seen again.
+ * Resets relevance to MIN(1.0, relevance + 0.1) so frequently-reappearing
+ * patterns surface in prompts even after many cycles of decay.
+ * No-op when no learning matches the given content (case-insensitive trim).
+ */
+export function boostLearningRelevance(db: Database.Database, content: string): void {
+  db.prepare(
+    "UPDATE learnings SET relevance = MIN(1.0, relevance + 0.1) WHERE LOWER(TRIM(content)) = LOWER(TRIM(?))",
+  ).run(content);
+}
+
+/**
  * Remove learnings whose relevance has decayed below the given threshold.
  * Prevents unbounded table growth: after ~60 cycles at the default 0.95 decay
  * factor, relevance drops below 0.05 and the entry no longer meaningfully

@@ -4,6 +4,7 @@ import {
   getRelevantLearnings,
   decayLearningRelevance,
   pruneLowRelevanceLearnings,
+  boostLearningRelevance,
   insertStrategicContext,
   getLatestStrategicContext,
   pruneStrategicContext,
@@ -108,7 +109,12 @@ export function storeLearnings(
       if (seen.has(key)) return false;
       seen.add(key);
       try {
-        return !exists.get(content);
+        const isDuplicate = !!exists.get(content);
+        if (isDuplicate) {
+          boostLearningRelevance(db, content);
+          return false;
+        }
+        return true;
       } catch (err) {
         // Transient IO error (disk full, WAL corruption, locked DB) — treat
         // as new learning and skip dedup to keep the evolution cycle alive.
