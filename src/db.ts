@@ -714,12 +714,14 @@ export function formatCycleStats(stats: CycleStats): string {
   lines.push(`- **Recent failures** (last ${RECENT_FAILURES_WINDOW}): ${stats.recentFailures}`);
   if (stats.recentFailures > 0 && Object.keys(stats.failureCategoryBreakdown).length > 0) {
     const breakdown = Object.entries(stats.failureCategoryBreakdown)
+      .sort(([catA, cntA], [catB, cntB]) => cntB - cntA || catA.localeCompare(catB))
       .map(([cat, count]) => `${count} ${cat}`)
       .join(", ");
     lines.push(`- **Failure breakdown** (across all ${stats.totalCycles} tracked cycles): ${breakdown}`);
   }
   if (Object.keys(stats.learningCategoryDistribution).length > 0) {
     const dist = Object.entries(stats.learningCategoryDistribution)
+      .sort(([catA, cntA], [catB, cntB]) => cntB - cntA || catA.localeCompare(catB))
       .map(([cat, count]) => `${count} ${cat}`)
       .join(", ");
     lines.push(`- **Learnings by category**: ${dist}`);
