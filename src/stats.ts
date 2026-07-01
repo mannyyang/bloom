@@ -84,6 +84,20 @@ export function parseSinceArg(argv: string[]): number | undefined {
 }
 
 /**
+ * Parse `--category CATEGORY` from an argv array, returning the category
+ * string (e.g. "build_failure", "test_failure", "llm_error", "none") or
+ * undefined when the flag is absent or its value is missing.
+ * The value is not validated against known ErrorCategory constants so that
+ * callers can filter by any category string, including future additions.
+ */
+export function parseCategoryArg(argv: string[]): string | undefined {
+  const idx = argv.indexOf("--category");
+  if (idx === -1) return undefined;
+  const val = argv[idx + 1];
+  return val && !val.startsWith("--") ? val : undefined;
+}
+
+/**
  * Parse `--json` from an argv array, returning true when the flag is present.
  * Mirrors the pattern of parseLastNArg for consistency.
  */
@@ -124,12 +138,13 @@ export const STATS_HELP_TEXT = `\
 Usage: pnpm stats [options]
 
 Options:
-  --last <N>      Show stats for the last N cycles only
-  --since <N>     Show stats starting from cycle number N (inclusive)
-  --json          Output raw stats as JSON (for scripting/CI)
-  --table         Output per-cycle data as an ASCII table
-  --verbose       Include extra detail (staleness data or Failures column)
-  --help, -h      Print this help message and exit
+  --last <N>            Show stats for the last N cycles only
+  --since <N>           Show stats starting from cycle number N (inclusive)
+  --category <CAT>      Filter to cycles matching failure_category (e.g. build_failure, none)
+  --json                Output raw stats as JSON (for scripting/CI)
+  --table               Output per-cycle data as an ASCII table
+  --verbose             Include extra detail (staleness data or Failures column)
+  --help, -h            Print this help message and exit
 `;
 
 /** Column widths for the ASCII stats table. */
@@ -157,14 +172,18 @@ function pad(s: string, width: number, right = false): string {
  * When `verbose` is true, appends a Failures column showing each row's
  * failure_category (rendered as "—" when the category is "none" or absent).
  */
-export function generateStatsTable(db: Database.Database, lastN?: number, verbose?: boolean, sinceN?: number): string {
-  // When sinceN is provided without an explicit lastN, fetch all rows so the
-  // JS filter can apply correctly. The default CYCLE_STATS_HISTORY_LIMIT cap
-  // would otherwise silently drop cycles older than the 20-row window.
-  const effectiveLimit = sinceN !== undefined && lastN === undefined ? Number.MAX_SAFE_INTEGER : lastN;
+export function generateStatsTable(db: Database.Database, lastN?: number, verbose?: boolean, sinceN?: number, categoryFilter?: string): string {
+  // When sinceN or categoryFilter is provided without an explicit lastN, fetch
+  // all rows so JS filters can apply correctly. The default
+  // CYCLE_STATS_HISTORY_LIMIT cap would otherwise silently drop cycles older
+  // than the 20-row window.
+  const effectiveLimit = (sinceN !== undefined || categoryFilter !== undefined) && lastN === undefined ? Number.MAX_SAFE_INTEGER : lastN;
   let rows = getCycleRows(db, effectiveLimit);
   if (sinceN !== undefined) {
     rows = rows.filter((r: CycleRow) => r.cycleNumber >= sinceN);
+  }
+  if (categoryFilter !== undefined) {
+    rows = rows.filter((r: CycleRow) => (r.failureCategory ?? ERROR_CATEGORY_NONE) === categoryFilter);
   }
   if (rows.length === 0) return "";
 
@@ -224,6 +243,8 @@ export interface StatsJsonOutput {
   latestCycle: number;
   window: number | null;
   since: number | null;
+  /** Category filter applied to this output, or null when no filter was used. */
+  category: string | null;
   generatedAt: string;
   stats: CycleStats;
   learningsStaleness?: CategoryStaleness[];
@@ -248,11 +269,12 @@ export function generateStatsJson(
   verbose?: boolean,
   sinceN?: number,
   roadmapPath?: string,
+  categoryFilter?: string,
 ): StatsJsonOutput {
   const latestCycle = getLatestCycleNumber(db);
-  const stats = getCycleStats(db, lastN, sinceN);
+  const stats = getCycleStats(db, lastN, sinceN, categoryFilter);
   const result: StatsJsonOutput = {
-    latestCycle, window: lastN ?? null, since: sinceN ?? null, generatedAt: new Date().toISOString(), stats,
+    latestCycle, window: lastN ?? null, since: sinceN ?? null, category: categoryFilter ?? null, generatedAt: new Date().toISOString(), stats,
   };
   if (verbose) {
     result.learningsStaleness = getLastUpdatedCyclePerCategory(db);
@@ -277,7 +299,7 @@ export function generateStatsJson(
  * @param sinceN - when provided, the header notes that the view starts from
  *   cycle N; mirrors the sinceN parameter of generateStatsTable/generateStatsJson
  */
-export function generateStatsOutput(db: Database.Database, lastN?: number, verbose?: boolean, sinceN?: number, roadmapPath?: string): string[] {
+export function generateStatsOutput(db: Database.Database, lastN?: number, verbose?: boolean, sinceN?: number, roadmapPath?: string, categoryFilter?: string): string[] {
   const lines: string[] = [];
 
   const latestCycle = getLatestCycleNumber(db);
@@ -286,15 +308,14 @@ export function generateStatsOutput(db: Database.Database, lastN?: number, verbo
     return lines;
   }
 
-  const stats = getCycleStats(db, lastN, sinceN);
+  const stats = getCycleStats(db, lastN, sinceN, categoryFilter);
   const formatted = formatCycleStats(stats);
 
-  let windowLabel = "";
-  if (sinceN !== undefined) {
-    windowLabel = ` (since cycle ${sinceN})`;
-  } else if (lastN !== undefined) {
-    windowLabel = ` (last ${lastN} cycles)`;
-  }
+  const windowParts: string[] = [];
+  if (sinceN !== undefined) windowParts.push(`since cycle ${sinceN}`);
+  if (lastN !== undefined) windowParts.push(`last ${lastN} cycles`);
+  if (categoryFilter !== undefined) windowParts.push(`category: ${categoryFilter}`);
+  const windowLabel = windowParts.length > 0 ? ` (${windowParts.join(", ")})` : "";
 
   lines.push("");
   lines.push(CYCLE_SUMMARY_SEPARATOR);
@@ -348,6 +369,7 @@ function main() {
   }
   const lastN = parseLastNArg(process.argv);
   const sinceN = parseSinceArg(process.argv);
+  const categoryFilter = parseCategoryArg(process.argv);
   const jsonMode = parseJsonFlag(process.argv);
   const tableMode = parseTableFlag(process.argv);
   const verbose = parseVerboseFlag(process.argv);
@@ -355,13 +377,13 @@ function main() {
 
   try {
     if (jsonMode) {
-      const result = generateStatsJson(db, lastN, verbose, sinceN, undefined);
+      const result = generateStatsJson(db, lastN, verbose, sinceN, undefined, categoryFilter);
       console.log(JSON.stringify(result, null, 2));
     } else if (tableMode) {
-      const table = generateStatsTable(db, lastN, verbose, sinceN);
+      const table = generateStatsTable(db, lastN, verbose, sinceN, categoryFilter);
       console.log(table || "No evolution cycles recorded yet.");
     } else {
-      const output = generateStatsOutput(db, lastN, verbose, sinceN);
+      const output = generateStatsOutput(db, lastN, verbose, sinceN, undefined, categoryFilter);
       for (const line of output) {
         console.log(line);
       }

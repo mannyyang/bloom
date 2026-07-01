@@ -530,10 +530,22 @@ export function getLearningCategoryDistribution(db: Database.Database): Record<s
  * Compute aggregate success metrics over the last N cycles.
  * Answers the question: "How are you measuring success?" (community issue #3).
  * @param sinceN - when provided, only cycles with cycle_number >= sinceN are included
+ * @param categoryFilter - when provided, only cycles with failure_category equal to
+ *   this value are included (e.g. "build_failure", "none")
  */
-export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS_HISTORY_LIMIT, sinceN?: number): CycleStats {
-  const whereClause = sinceN !== undefined ? "WHERE cycle_number >= ?" : "";
-  const params: unknown[] = sinceN !== undefined ? [sinceN, limit] : [limit];
+export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS_HISTORY_LIMIT, sinceN?: number, categoryFilter?: string): CycleStats {
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+  if (sinceN !== undefined) {
+    conditions.push("cycle_number >= ?");
+    params.push(sinceN);
+  }
+  if (categoryFilter !== undefined) {
+    conditions.push("failure_category = ?");
+    params.push(categoryFilter);
+  }
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  params.push(limit);
   const rawRows: unknown[] = db.prepare(`
     SELECT
       cycle_number, preflight_passed, improvements_attempted, improvements_succeeded,

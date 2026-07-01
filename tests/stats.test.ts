@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution, getLastUpdatedCyclePerCategory } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseLastNArg, parseSinceArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES } from "../src/stats.js";
+import { generateStatsOutput, parseLastNArg, parseSinceArg, parseCategoryArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE, ERROR_CATEGORY_LLM_ERROR } from "../src/errors.js";
 import { MAX_MEMORY_CHARS } from "../src/memory.js";
@@ -64,12 +64,13 @@ describe("STATS_HELP_TEXT", () => {
       `Usage: pnpm stats [options]\n` +
       `\n` +
       `Options:\n` +
-      `  --last <N>      Show stats for the last N cycles only\n` +
-      `  --since <N>     Show stats starting from cycle number N (inclusive)\n` +
-      `  --json          Output raw stats as JSON (for scripting/CI)\n` +
-      `  --table         Output per-cycle data as an ASCII table\n` +
-      `  --verbose       Include extra detail (staleness data or Failures column)\n` +
-      `  --help, -h      Print this help message and exit\n`,
+      `  --last <N>            Show stats for the last N cycles only\n` +
+      `  --since <N>           Show stats starting from cycle number N (inclusive)\n` +
+      `  --category <CAT>      Filter to cycles matching failure_category (e.g. build_failure, none)\n` +
+      `  --json                Output raw stats as JSON (for scripting/CI)\n` +
+      `  --table               Output per-cycle data as an ASCII table\n` +
+      `  --verbose             Include extra detail (staleness data or Failures column)\n` +
+      `  --help, -h            Print this help message and exit\n`,
     );
   });
 });
@@ -1445,12 +1446,13 @@ describe("combined --since M and --last N flags", () => {
     expect(stats.totalCycles).toBe(3);
   });
 
-  it("generateStatsOutput header uses sinceN label when both flags present", () => {
+  it("generateStatsOutput header includes both sinceN and lastN labels when both flags present", () => {
     insertCycle(db, makeOutcome({ cycleNumber: 10 }));
     insertCycle(db, makeOutcome({ cycleNumber: 20 }));
-    // When both are provided sinceN wins the label (see windowLabel logic)
+    // When both are provided both labels appear in the window string
     const output = generateStatsOutput(db, 5, undefined, 10);
-    expect(output[2]).toBe("  Bloom Evolution Statistics (since cycle 10)");
+    expect(output[2]).toContain("since cycle 10");
+    expect(output[2]).toContain("last 5 cycles");
   });
 
   it("generateStatsJson window and since fields are both set when both flags present", () => {
@@ -1829,5 +1831,130 @@ describe("generateStatsOutput text mode when sinceN excludes all existing cycles
     const output = generateStatsOutput(db, undefined, undefined, 100);
     const joined = output.join("\n");
     expect(joined).toContain("No previous cycle data available.");
+  });
+});
+
+describe("parseCategoryArg", () => {
+  it("returns undefined when --category is absent", () => {
+    expect(parseCategoryArg(["node", "stats.js", "--table"])).toBeUndefined();
+  });
+  it("returns the value after --category", () => {
+    expect(parseCategoryArg(["node", "stats.js", "--category", "build_failure"])).toBe("build_failure");
+  });
+  it("returns undefined when --category has no value", () => {
+    expect(parseCategoryArg(["node", "stats.js", "--category"])).toBeUndefined();
+  });
+  it("returns undefined when --category is followed by another flag", () => {
+    expect(parseCategoryArg(["node", "stats.js", "--category", "--json"])).toBeUndefined();
+  });
+  it("returns 'none' for --category none", () => {
+    expect(parseCategoryArg(["node", "stats.js", "--category", "none"])).toBe("none");
+  });
+  it("returns 'test_failure' for --category test_failure", () => {
+    expect(parseCategoryArg(["node", "stats.js", "--category", "test_failure"])).toBe("test_failure");
+  });
+});
+
+describe("generateStatsTable with --category filter", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("returns only cycles matching the given category", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1, failureCategory: ERROR_CATEGORY_BUILD_FAILURE, buildVerificationPassed: false }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2, failureCategory: ERROR_CATEGORY_TEST_FAILURE, buildVerificationPassed: false }));
+    insertCycle(db, makeOutcome({ cycleNumber: 3, failureCategory: ERROR_CATEGORY_BUILD_FAILURE, buildVerificationPassed: false }));
+    const table = generateStatsTable(db, undefined, false, undefined, ERROR_CATEGORY_BUILD_FAILURE);
+    expect(table).toContain("1");
+    expect(table).toContain("3");
+    // cycle 2 (test_failure) should not appear
+    expect(table).not.toMatch(/^\s*2\s/m);
+  });
+
+  it("returns empty string when no cycles match the category filter", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1, failureCategory: ERROR_CATEGORY_BUILD_FAILURE }));
+    const table = generateStatsTable(db, undefined, false, undefined, ERROR_CATEGORY_LLM_ERROR);
+    expect(table).toBe("");
+  });
+
+  it("--category none returns only cycles with failure_category = none", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1, failureCategory: ERROR_CATEGORY_NONE }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2, failureCategory: ERROR_CATEGORY_BUILD_FAILURE }));
+    const table = generateStatsTable(db, undefined, false, undefined, ERROR_CATEGORY_NONE);
+    expect(table).toContain("1");
+    expect(table).not.toMatch(/^\s*2\s/m);
+  });
+
+  it("can combine --category with --last N", () => {
+    for (let i = 1; i <= 5; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i, failureCategory: i % 2 === 0 ? ERROR_CATEGORY_BUILD_FAILURE : ERROR_CATEGORY_NONE }));
+    }
+    // lastN=10 (all), category=build_failure → cycles 2 and 4
+    const table = generateStatsTable(db, 10, false, undefined, ERROR_CATEGORY_BUILD_FAILURE);
+    expect(table).toContain("2");
+    expect(table).toContain("4");
+    expect(table).not.toMatch(/^\s*1\s/m);
+    expect(table).not.toMatch(/^\s*3\s/m);
+    expect(table).not.toMatch(/^\s*5\s/m);
+  });
+});
+
+describe("generateStatsJson with --category filter", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("sets category field in output to the filter value", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1, failureCategory: ERROR_CATEGORY_BUILD_FAILURE }));
+    const result = generateStatsJson(db, undefined, false, undefined, undefined, ERROR_CATEGORY_BUILD_FAILURE);
+    expect(result.category).toBe(ERROR_CATEGORY_BUILD_FAILURE);
+  });
+
+  it("sets category field to null when no filter is given", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    const result = generateStatsJson(db, undefined, false, undefined, undefined, undefined);
+    expect(result.category).toBeNull();
+  });
+
+  it("stats reflect only matching cycles", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1, failureCategory: ERROR_CATEGORY_BUILD_FAILURE, buildVerificationPassed: false, pushSucceeded: false }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2, failureCategory: ERROR_CATEGORY_NONE, buildVerificationPassed: true, pushSucceeded: true }));
+    // Filter to build_failure — only cycle 1 counted
+    const result = generateStatsJson(db, undefined, false, undefined, undefined, ERROR_CATEGORY_BUILD_FAILURE);
+    expect(result.stats.totalCycles).toBe(1);
+  });
+});
+
+describe("generateStatsOutput with --category filter", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("includes category label in the window header", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1, failureCategory: ERROR_CATEGORY_BUILD_FAILURE }));
+    const output = generateStatsOutput(db, undefined, undefined, undefined, undefined, ERROR_CATEGORY_BUILD_FAILURE);
+    expect(output[2]).toContain("category: build_failure");
+  });
+
+  it("can combine sinceN and categoryFilter labels in header", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1, failureCategory: ERROR_CATEGORY_BUILD_FAILURE }));
+    const output = generateStatsOutput(db, undefined, undefined, 1, undefined, ERROR_CATEGORY_BUILD_FAILURE);
+    expect(output[2]).toContain("since cycle 1");
+    expect(output[2]).toContain("category: build_failure");
+  });
+
+  it("stats reflect only category-filtered cycles", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1, failureCategory: ERROR_CATEGORY_BUILD_FAILURE, buildVerificationPassed: false }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2, failureCategory: ERROR_CATEGORY_NONE, buildVerificationPassed: true, pushSucceeded: true }));
+    const output = generateStatsOutput(db, undefined, undefined, undefined, undefined, ERROR_CATEGORY_BUILD_FAILURE);
+    // Only 1 cycle should be counted — the formatted stats mention the cycle count
+    const joined = output.join("\n");
+    expect(joined).toContain("Cycles tracked**: 1");
   });
 });
