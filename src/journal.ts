@@ -24,7 +24,7 @@ import {
   JOURNAL_LEARNINGS_HEADER,
   JOURNAL_STRATEGIC_CONTEXT_HEADER,
 } from "./db.js";
-import { parseHelpFlag } from "./stats.js";
+import { parseHelpFlag, parseIntArg } from "./stats.js";
 
 export {
   JOURNAL_ATTEMPTED_HEADER,
@@ -116,18 +116,10 @@ export function generateJournalOutput(
 
 export function parseArgs(argv: string[]): { format: "json" | "md"; limit?: number; since?: number } {
   const format = argv.includes("--md") ? "md" as const : "json" as const;
-  const limitIdx = argv.indexOf("--limit");
-  const limit = limitIdx !== -1 && argv[limitIdx + 1]
-    ? parseInt(argv[limitIdx + 1], 10)
-    : undefined;
-  const sinceIdx = argv.indexOf("--since");
-  const since = sinceIdx !== -1 && argv[sinceIdx + 1]
-    ? parseInt(argv[sinceIdx + 1], 10)
-    : undefined;
   return {
     format,
-    limit: limit !== undefined && !isNaN(limit) && limit > 0 ? limit : undefined,
-    since: since !== undefined && !isNaN(since) && since > 0 ? since : undefined,
+    limit: parseIntArg(argv, "--limit"),
+    since: parseIntArg(argv, "--since"),
   };
 }
 

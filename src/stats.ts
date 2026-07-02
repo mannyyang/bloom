@@ -57,8 +57,10 @@ export const STATS_NO_ACTIONABLE_ITEMS_MSG = "No actionable items on the roadmap
  * Shared implementation for flag-followed-by-integer argv parsing.
  * Returns the positive integer after `flag`, or undefined when the flag is
  * absent, its value is missing, or the value is not a positive integer.
+ * Exported so other CLI modules (e.g. journal.ts) can reuse this logic
+ * without duplicating the indexOf → parseInt → validate pattern.
  */
-function parseIntArg(argv: string[], flag: string): number | undefined {
+export function parseIntArg(argv: string[], flag: string): number | undefined {
   const idx = argv.indexOf(flag);
   if (idx === -1) return undefined;
   const val = parseInt(argv[idx + 1] ?? "", 10);
