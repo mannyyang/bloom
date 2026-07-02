@@ -101,14 +101,11 @@ export function generateJournalOutput(
   // limit (pass undefined to mean "no limit"), and `safeLimit > 0` already
   // handles that — no need for a falsy short-circuit.
   const safeLimit = limit !== undefined ? Math.floor(limit) : undefined;
-  let entries = exportJournalJson(db, safeLimit !== undefined && safeLimit > 0 ? safeLimit : undefined);
-
-  // Apply --since filter: keep only entries whose cycle number is >= since.
-  // Applied after the DB fetch so `limit` still refers to the most-recent N
-  // cycles before filtering (consistent with how pnpm stats --since behaves).
-  if (since !== undefined && since > 0) {
-    entries = entries.filter((e) => e.cycleNumber >= since);
-  }
+  // Pass `since` into exportJournalJson so the SQL WHERE clause filters before
+  // LIMIT is applied — `--limit 5 --since 700` now returns the 5 most-recent
+  // entries that are >= cycle 700, not the 5 most-recent entries overall.
+  const safeSince = since !== undefined && since > 0 ? since : undefined;
+  const entries = exportJournalJson(db, safeLimit !== undefined && safeLimit > 0 ? safeLimit : undefined, safeSince);
 
   if (format === "md") {
     return formatJournalMarkdown(entries);

@@ -413,16 +413,25 @@ export interface JournalRow {
   content: string;
 }
 
-export function getJournalEntries(db: Database.Database, limit?: number): JournalRow[] {
+export function getJournalEntries(db: Database.Database, limit?: number, sinceN?: number): JournalRow[] {
+  const conditions: string[] = [];
+  const params: (number)[] = [];
+  if (sinceN !== undefined && sinceN > 0) {
+    conditions.push("c.cycle_number >= ?");
+    params.push(sinceN);
+  }
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  if (limit) params.push(limit);
   const sql = `
     SELECT c.cycle_number as cycleNumber, c.started_at as startedAt, j.section, j.content
     FROM journal_entries j
     JOIN cycles c ON c.cycle_number = j.cycle_number
+    ${whereClause}
     ORDER BY c.cycle_number DESC, j.id ASC
     ${limit ? `LIMIT ?` : ""}
   `;
   const journalSchema: RowSchema = { cycleNumber: "number", startedAt: "string", section: "string", content: "string" };
-  const raw = limit ? db.prepare(sql).all(limit) : db.prepare(sql).all();
+  const raw = db.prepare(sql).all(...params);
   return validateRows<JournalRow>(raw, journalSchema, "getJournalEntries");
 }
 
@@ -436,9 +445,9 @@ export interface JournalExportEntry {
   strategic_context: string;
 }
 
-export function exportJournalJson(db: Database.Database, maxCycles?: number): JournalExportEntry[] {
+export function exportJournalJson(db: Database.Database, maxCycles?: number, sinceN?: number): JournalExportEntry[] {
   const rowLimit = maxCycles ? maxCycles * JOURNAL_SECTIONS_PER_CYCLE : undefined;
-  const rows = getJournalEntries(db, rowLimit);
+  const rows = getJournalEntries(db, rowLimit, sinceN);
   const grouped = new Map<number, { date: string; sections: Map<string, string> }>();
 
   for (const row of rows) {

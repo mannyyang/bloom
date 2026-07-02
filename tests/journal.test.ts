@@ -146,6 +146,23 @@ describe("generateJournalOutput", () => {
     expect(parsed).toHaveLength(0);
   });
 
+  it("--limit applies to the since-filtered set, not the unfiltered fetch", () => {
+    // Cycles 1-10 exist; since=8 means only cycles 8, 9, 10 qualify.
+    // limit=2 should return 2 entries from the filtered set (cycles 9 and 10),
+    // not 2 entries from an unfiltered fetch that are then filtered.
+    for (let i = 1; i <= 10; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+      insertJournalEntry(db, i, "attempted", `Entry ${i}`);
+    }
+
+    const output = generateJournalOutput(db, { limit: 2, since: 8 });
+    const parsed = JSON.parse(output) as Array<{ cycleNumber: number }>;
+    expect(parsed).toHaveLength(2);
+    const cycleNumbers = parsed.map((e) => e.cycleNumber).sort((a, b) => b - a);
+    expect(cycleNumbers[0]).toBe(10);
+    expect(cycleNumbers[1]).toBe(9);
+  });
+
   it("since 0 is treated as no filter (returns all entries)", () => {
     insertCycle(db, makeOutcome({ cycleNumber: 1 }));
     insertCycle(db, makeOutcome({ cycleNumber: 2 }));

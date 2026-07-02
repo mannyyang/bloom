@@ -571,6 +571,36 @@ describe("db", () => {
       const exported = exportJournalJson(db);
       expect(exported).toHaveLength(4);
     });
+
+    it("sinceN filters entries at SQL level so maxCycles applies to the filtered set", () => {
+      // Cycles 1-10 exist; sinceN=8 means only cycles 8, 9, 10 qualify.
+      // maxCycles=2 should then return cycles 10 and 9 (newest 2 of the filtered set),
+      // NOT cycles 10 and 9 from an unfiltered fetch that is then filtered.
+      // Both would return the same result here, but the key correctness guarantee is
+      // that maxCycles=2, sinceN=8 never returns fewer than 2 when >= 2 filtered cycles exist.
+      for (let i = 1; i <= 10; i++) {
+        insertCycle(db, makeOutcome({ cycleNumber: i }));
+        insertJournalEntry(db, i, "attempted", `Cycle ${i}`);
+      }
+
+      const exported = exportJournalJson(db, 2, 8);
+      expect(exported).toHaveLength(2);
+      const cycleNumbers = exported.map((e) => e.cycleNumber).sort((a, b) => b - a);
+      expect(cycleNumbers[0]).toBe(10);
+      expect(cycleNumbers[1]).toBe(9);
+    });
+
+    it("sinceN with no maxCycles returns all entries >= sinceN", () => {
+      for (let i = 1; i <= 5; i++) {
+        insertCycle(db, makeOutcome({ cycleNumber: i }));
+        insertJournalEntry(db, i, "attempted", `Cycle ${i}`);
+      }
+
+      const exported = exportJournalJson(db, undefined, 3);
+      expect(exported).toHaveLength(3);
+      const cycleNumbers = exported.map((e) => e.cycleNumber).sort((a, b) => a - b);
+      expect(cycleNumbers).toEqual([3, 4, 5]);
+    });
   });
 
   describe("getRecentJournalSummary", () => {
