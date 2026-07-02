@@ -2,6 +2,10 @@
 
 ## Backlog
 
+- [ ] Add `pnpm journal --search <term>` full-text filter so users can find entries by keyword without piping through grep
+- [ ] Add `pnpm stats --export csv` to write cycle-metrics (cycle number, succeeded/attempted, build pass, duration) as a CSV file, parallel to the existing JSON format
+- [ ] Surface `--format csv` support in `pnpm roadmap` CLI, enabling consumers of the roadmap data to import it directly into spreadsheets
+
 ## Up Next
 
 ## In Progress
