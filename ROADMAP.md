@@ -1,14 +1,17 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
+- [ ] Add `pnpm journal --cycle N` drill-down command to print the full entry for a specific cycle number, enabling quick per-cycle inspection without scrolling through all entries
+- [ ] Push `--since` filter into SQL inside `exportJournalJson` so that `--limit` applies to the already-filtered set (currently `--limit 5 --since 700` may return fewer than 5 results because filtering happens after the DB fetch)
+- [ ] Add `pnpm journal --help` flag to print available flags and usage, mirroring the `--help` pattern established by `pnpm stats` and `pnpm roadmap`
 
 ## Up Next
 
 ## In Progress
-- [ ] Add `--since CYCLE` flag to `pnpm journal` CLI to filter entries by minimum cycle number, mirroring the `--since N` pattern already supported by `pnpm stats`
-  [since: 729]
 
 ## Done
+- [x] Add `--since CYCLE` flag to `pnpm journal` CLI to filter entries by minimum cycle number, mirroring the `--since N` pattern already supported by `pnpm stats`
+  Completed in cycle 730: 1/1 improvements succeeded.
 - [x] Add `pnpm stats --category CATEGORY` flag to filter the stats table to cycles with a specific failure category (build_failure, test_failure, llm_error, none), making it easier to audit regression patterns
   Completed in cycle 729: 1/1 improvements succeeded.
 - [x] Expose `pickNextItem` selection rationale in `pnpm stats --verbose` output (e.g. "resumed In Progress item X" vs "promoted Backlog item Y") to make cycle-to-cycle planning decisions auditable
