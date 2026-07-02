@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { generateRoadmapOutput, generateRoadmapJson, generateRoadmapMarkdown, parseRoadmapFilterFlag, parseFormatFlag, ROADMAP_BODY_PREVIEW_MAX_CHARS, ROADMAP_HELP_TEXT, STATUS_ORDER, type RoadmapJsonSummary } from "../src/roadmap.js";
+import { generateRoadmapOutput, generateRoadmapJson, generateRoadmapMarkdown, generateRoadmapCsv, parseRoadmapFilterFlag, parseFormatFlag, ROADMAP_BODY_PREVIEW_MAX_CHARS, ROADMAP_HELP_TEXT, STATUS_ORDER, type RoadmapJsonSummary } from "../src/roadmap.js";
 import { parseHelpFlag } from "../src/stats.js";
 import * as planning from "../src/planning.js";
 import { parseRoadmap, serializeRoadmap, STATUS_COLUMNS, ITEM_BODY_LIMIT, PLANNING_BODY_PREVIEW_CHARS } from "../src/planning.js";
@@ -1709,6 +1709,95 @@ describe("STATUS_ORDER", () => {
     // added to STATUS_COLUMNS but not to STATUS_ORDER) causing incorrect render
     // order without any test failure.
     expect([...STATUS_ORDER].sort()).toEqual([...STATUS_COLUMNS].sort());
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateRoadmapCsv
+// ---------------------------------------------------------------------------
+
+describe("generateRoadmapCsv", () => {
+  it("returns header-only output for an empty roadmap", () => {
+    const output = generateRoadmapCsv(EMPTY_ROADMAP);
+    expect(output.trim()).toBe("title,status,linkedIssueNumber,reactions,sinceCycle,body");
+  });
+
+  it("includes the CSV header row as the first line", () => {
+    const output = generateRoadmapCsv(SAMPLE_ROADMAP);
+    const firstLine = output.split("\n")[0];
+    expect(firstLine).toBe("title,status,linkedIssueNumber,reactions,sinceCycle,body");
+  });
+
+  it("produces one data row per roadmap item", () => {
+    const output = generateRoadmapCsv(SAMPLE_ROADMAP);
+    // SAMPLE_ROADMAP has 5 items; header + 5 data rows + trailing newline
+    const lines = output.trimEnd().split("\n");
+    expect(lines).toHaveLength(6); // 1 header + 5 items
+  });
+
+  it("includes item title in each row", () => {
+    const output = generateRoadmapCsv(SAMPLE_ROADMAP);
+    expect(output).toContain("Improve prompt efficiency");
+    expect(output).toContain("Write more tests");
+    expect(output).toContain("Track token usage");
+  });
+
+  it("includes item status in each row", () => {
+    const output = generateRoadmapCsv(SAMPLE_ROADMAP);
+    expect(output).toContain("Backlog");
+    expect(output).toContain("In Progress");
+    expect(output).toContain("Done");
+  });
+
+  it("includes linkedIssueNumber when present", () => {
+    const output = generateRoadmapCsv(SAMPLE_ROADMAP);
+    expect(output).toContain("4"); // Track token usage (#4)
+    expect(output).toContain("8"); // Write more tests (#8)
+  });
+
+  it("applies filterStatus to limit output rows", () => {
+    const output = generateRoadmapCsv(SAMPLE_ROADMAP, "Done");
+    const lines = output.trimEnd().split("\n");
+    expect(lines).toHaveLength(2); // header + 1 Done item
+    expect(output).toContain("Track token usage");
+    expect(output).not.toContain("Write more tests");
+  });
+
+  it("quotes fields containing commas per RFC 4180", () => {
+    const roadmap = `# Bloom Evolution Roadmap\n\n## Backlog\n- [ ] Fix bug, add test\n`;
+    const output = generateRoadmapCsv(roadmap);
+    expect(output).toContain('"Fix bug, add test"');
+  });
+
+  it("output always ends with a trailing newline", () => {
+    expect(generateRoadmapCsv(EMPTY_ROADMAP)).toMatch(/\n$/);
+    expect(generateRoadmapCsv(SAMPLE_ROADMAP)).toMatch(/\n$/);
+  });
+
+  it("ROADMAP_HELP_TEXT lists --format csv", () => {
+    expect(ROADMAP_HELP_TEXT).toContain("--format csv");
+  });
+});
+
+describe("parseFormatFlag --format csv", () => {
+  it("returns 'csv' when --format csv is passed", () => {
+    expect(parseFormatFlag(["--format", "csv"])).toBe("csv");
+  });
+
+  it("still returns 'md' when --format md is passed", () => {
+    expect(parseFormatFlag(["--format", "md"])).toBe("md");
+  });
+
+  it("returns undefined for unknown format values", () => {
+    expect(parseFormatFlag(["--format", "xml"])).toBeUndefined();
+  });
+
+  it("returns undefined when --format flag is absent", () => {
+    expect(parseFormatFlag([])).toBeUndefined();
+  });
+
+  it("returns undefined when --format has no following argument", () => {
+    expect(parseFormatFlag(["--format"])).toBeUndefined();
   });
 });
 

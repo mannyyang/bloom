@@ -40,6 +40,7 @@ Usage: pnpm roadmap [options]
 Options:
   --filter <status>  Show only items with the given status (e.g. Backlog, "In Progress", Done)
   --format md        Output roadmap as GitHub-flavoured Markdown
+  --format csv       Output roadmap as RFC 4180 CSV
   --json             Output roadmap as JSON (for scripting/CI)
   --help, -h         Print this help message and exit
 `;
@@ -76,17 +77,55 @@ export function parseRoadmapFilterFlag(argv: string[]): StatusColumn | undefined
 }
 
 /**
- * Parse `--format <value>` from an argv array. Currently the only recognised
- * value is `"md"` (GitHub-flavoured Markdown). Returns `"md"` when the flag is
- * present with that value, or `undefined` otherwise.
+ * Parse `--format <value>` from an argv array. Recognised values are `"md"`
+ * (GitHub-flavoured Markdown) and `"csv"` (RFC 4180 CSV). Returns the matched
+ * format string, or `undefined` when the flag is absent or the value is unknown.
  *
- * Example:
+ * Examples:
  *   --format md  → "md"
+ *   --format csv → "csv"
  */
-export function parseFormatFlag(argv: string[]): "md" | undefined {
+export function parseFormatFlag(argv: string[]): "md" | "csv" | undefined {
   const idx = argv.indexOf("--format");
   if (idx === -1) return undefined;
-  return argv[idx + 1] === "md" ? "md" : undefined;
+  const val = argv[idx + 1];
+  if (val === "md" || val === "csv") return val;
+  return undefined;
+}
+
+/**
+ * Wrap a single CSV field value per RFC 4180.
+ * Reuses the same quoting logic as journal.ts's csvQuoteField.
+ */
+function csvQuoteField(value: string | null | undefined): string {
+  const s = value ?? "";
+  if (s.includes(",") || s.includes('"') || s.includes("\n") || s.includes("\r")) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+
+/**
+ * Serialize roadmap items as RFC 4180 CSV.
+ * Columns: title, status, linkedIssueNumber, reactions, sinceCycle, body
+ * The first row is a fixed header. An empty items array produces header-only output.
+ * When `filterStatus` is provided, only items with that status are included.
+ */
+export function generateRoadmapCsv(content: string, filterStatus?: StatusColumn): string {
+  const { items } = generateRoadmapJson(content, filterStatus);
+  const HEADER = "title,status,linkedIssueNumber,reactions,sinceCycle,body";
+  const lines: string[] = [HEADER];
+  for (const item of items) {
+    lines.push([
+      csvQuoteField(item.title),
+      csvQuoteField(item.status ?? ""),
+      csvQuoteField(item.linkedIssueNumber != null ? String(item.linkedIssueNumber) : ""),
+      csvQuoteField(String(item.reactions)),
+      csvQuoteField(item.sinceCycle != null ? String(item.sinceCycle) : ""),
+      csvQuoteField(item.body),
+    ].join(","));
+  }
+  return lines.join("\n") + "\n";
 }
 
 /**
@@ -360,6 +399,8 @@ function main() {
     console.log(JSON.stringify(result, null, 2));
   } else if (formatFlag === "md") {
     console.log(generateRoadmapMarkdown(content, filterStatus));
+  } else if (formatFlag === "csv") {
+    process.stdout.write(generateRoadmapCsv(content, filterStatus));
   } else {
     const output = generateRoadmapOutput(content, filterStatus);
     for (const line of output) {
