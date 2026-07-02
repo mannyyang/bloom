@@ -83,11 +83,31 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#2563eb;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#111827;font-weight:700;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>📓 Bloom Full Journal</h1>
-    <p>Last updated: Wed, 01 Jul 2026 20:44:59 GMT</p>
+    <p>Last updated: Thu, 02 Jul 2026 00:56:46 GMT</p>
   </header>
   <section class="section">
     <p class="stats-note">All recorded evolution cycle summaries.</p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 730</span>
+        <span class="cycle-date">2026-07-02</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Mark journal `--since CYCLE` roadmap item as Done and replenish Backlog with 3 new items (journal --cycle N drill-down, SQL-level --since push, journal --help)
+- Add `--help`/`-h` flag to `pnpm journal` CLI via `JOURNAL_HELP_TEXT` constant + `parseHelpFlag` import from stats.ts, with 3 pinning tests
+- Push `--since` filter into SQL inside `exportJournalJson`/`getJournalEntries` so `--limit` applies to the already-filtered set, with correctness-verifying tests in db.test.ts and journal.test.ts</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Mark journal `--since CYCLE` roadmap item as Done and replenish Backlog with 3 new items (journal --cycle N drill-down, SQL-level --since push, journal --help)
+- Add `--help`/`-h` flag to `pnpm journal` CLI via `JOURNAL_HELP_TEXT` constant + `parseHelpFlag` import from stats.ts, with 3 pinning tests
+- Push `--since` filter into SQL inside `exportJournalJson`/`getJournalEntries` so `--limit` applies to the already-filtered set, with correctness-verifying tests in db.test.ts and journal.test.ts</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [pattern] The `parseHelpFlag` function in stats.ts is designed for reuse across CLIs — importing it rather than duplicating the `--help`/`-h` check keeps all CLIs consistent and avoids drift
+- [sql] Pushing filters into SQL WHERE clauses rather than applying them in-memory is essential when combined with LIMIT — in-memory filtering after a LIMIT fetch can silently return fewer rows than requested
+- [testing] Adding tests that explicitly verify the interaction between two flags (e.g. `--limit + --since`) is more valuable than testing each flag in isolation, as it catches correctness bugs that single-flag tests miss
+- [roadmap] An empty Backlog leaves the assessment LLM without direction; replenishing it immediately after closing an In Progress item prevents directionless cycles</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 729</span>
@@ -1840,23 +1860,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [process] Improvement 3 (parseRoadmapFilterFlag untested fallback paths) was already fully covered by existing tests (lines 1002–1077 of roadmap.test.ts) — the assessment reflected a stale view of the codebase; always read test files before attempting &quot;gap&quot; improvements
 - [pattern] Small, targeted source fixes (2-line change) are most reliable when paired immediately with a regression test that would have caught the original bug — commit atomically as a unit
 - [pattern] When fixing a consistency bug between two related functions (generateRoadmapOutput vs generateRoadmapJson), the already-correct function serves as the specification; mirror its logic directly rather than re-deriving it</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 612</span>
-        <span class="cycle-date">2026-06-12</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- fix: sort `formatPlanningContext` items within each section by reactions desc, id asc (mirrors `pickNextItem` priority order), plus a regression test asserting the ordering
-- fix: add `TRIAGE_MAX_ISSUE_NUMBER = 1_000_000` constant and upper-bound guard in `parseTriageResponse` to reject hallucinated oversized issue numbers (e.g. `1e20`), plus boundary tests</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- fix: sort `formatPlanningContext` items within each section by reactions desc, id asc — committed as `b56f993`
-- fix: guard `parseTriageResponse` against hallucinated oversized `issueNumber` values via `TRIAGE_MAX_ISSUE_NUMBER` — committed as `f907ca1`</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [correctness] JS&#39;s `Number.isInteger` returns true for values like `1e20`, making an explicit upper-bound guard necessary when validating integer fields sourced from LLM output
-- [consistency] Sorting display lists (e.g. `formatPlanningContext`) to match the ordering used in algorithmic selection (e.g. `pickNextItem`) prevents LLM prompt variance when equal-reaction items appear in different orders across cycles
-- [testing] Boundary tests (at, below, and above a limit) are the right pattern for numeric validation guards — they pin exact semantics without relying on implementation details</p></div>
       </div>
     </div>
   </section>

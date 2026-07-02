@@ -83,26 +83,47 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Wed, 01 Jul 2026 20:44:59 GMT</p>
+    <p>Last updated: Thu, 02 Jul 2026 00:56:46 GMT</p>
   </header>
   
-
-
   <section class="section">
-    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
+    <h2><span class="badge" style="background:#6b7280">Backlog</span></h2>
     <ul>
       <li class="item">
         <span class="check">⬜</span>
         <div class="item-body">
-          <span class="item-title">Add `--since CYCLE` flag to `pnpm journal` CLI to filter entries by minimum cycle number, mirroring the `--since N` pattern already supported by `pnpm stats`</span>
+          <span class="item-title">Push `--since` filter into SQL inside `exportJournalJson` so that `--limit` applies to the already-filtered set (currently `--limit 5 --since 700` may return fewer than 5 results because filtering happens after the DB fetch)</span>
+          
+        </div>
+      </li>
+      <li class="item">
+        <span class="check">⬜</span>
+        <div class="item-body">
+          <span class="item-title">Add `pnpm journal --help` flag to print available flags and usage, mirroring the `--help` pattern established by `pnpm stats` and `pnpm roadmap`</span>
           
         </div>
       </li></ul>
   </section>
 
+
+
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `pnpm journal --cycle N` drill-down command to print the full entry for a specific cycle number, enabling quick per-cycle inspection without scrolling through all entries</span>
+          <p class="item-desc">Completed in cycle 730: 3/3 improvements succeeded.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `--since CYCLE` flag to `pnpm journal` CLI to filter entries by minimum cycle number, mirroring the `--since N` pattern already supported by `pnpm stats`</span>
+          <p class="item-desc">Completed in cycle 730: 1/1 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -364,10 +385,10 @@
       <tbody>
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
-        <tr><td>Avg improvements / cycle</td><td><strong>1.7</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>92%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>7.5 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$50.05</strong></td></tr>
+        <tr><td>Avg improvements / cycle</td><td><strong>1.6</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>91%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>7.4 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$49.21</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -377,6 +398,26 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 730</span>
+        <span class="cycle-date">2026-07-02</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Mark journal `--since CYCLE` roadmap item as Done and replenish Backlog with 3 new items (journal --cycle N drill-down, SQL-level --since push, journal --help)
+- Add `--help`/`-h` flag to `pnpm journal` CLI via `JOURNAL_HELP_TEXT` constant + `parseHelpFlag` import from stats.ts, with 3 pinning tests
+- Push `--since` filter into SQL inside `exportJournalJson`/`getJournalEntries` so `--limit` applies to the already-filtered set, with correctness-verifying tests in db.test.ts and journal.test.ts</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Mark journal `--since CYCLE` roadmap item as Done and replenish Backlog with 3 new items (journal --cycle N drill-down, SQL-level --since push, journal --help)
+- Add `--help`/`-h` flag to `pnpm journal` CLI via `JOURNAL_HELP_TEXT` constant + `parseHelpFlag` import from stats.ts, with 3 pinning tests
+- Push `--since` filter into SQL inside `exportJournalJson`/`getJournalEntries` so `--limit` applies to the already-filtered set, with correctness-verifying tests in db.test.ts and journal.test.ts</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [pattern] The `parseHelpFlag` function in stats.ts is designed for reuse across CLIs — importing it rather than duplicating the `--help`/`-h` check keeps all CLIs consistent and avoids drift
+- [sql] Pushing filters into SQL WHERE clauses rather than applying them in-memory is essential when combined with LIMIT — in-memory filtering after a LIMIT fetch can silently return fewer rows than requested
+- [testing] Adding tests that explicitly verify the interaction between two flags (e.g. `--limit + --since`) is more valuable than testing each flag in isolation, as it catches correctness bugs that single-flag tests miss
+- [roadmap] An empty Backlog leaves the assessment LLM without direction; replenishing it immediately after closing an In Progress item prevents directionless cycles</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 729</span>
@@ -446,25 +487,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The `better-sqlite3` `:memory:` DB pattern used in existing tests makes adding pure DB query tests trivially easy — no filesystem cleanup, no mocks, and full schema from `initDb`.
 - [testing] SQLite stores booleans as INTEGER (0/1), so explicit coercion tests (`=== 1` pattern) are worth pinning to catch future schema changes that might return `true`/`false` instead.
 - [codebase] All three functions (`getCycleRows`, `getLastUpdatedCyclePerCategory`, `getLearningCategoryDistribution`, `getRelevantLearnings`) were fully exported but had zero test coverage despite being exercised by the stats CLI path — a reminder that integration-path coverage doesn&#39;t substitute for unit tests.</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 722</span>
-        <span class="cycle-date">2026-06-30</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Test: add verbose table test rendering `ERROR_CATEGORY_LLM_ERROR` in the Failures column (previously uncovered branch)
-- Feat: export `COL_FAILURES` from `stats.ts` and add cross-module invariant tests pinning column width ≥ all `ErrorCategory` lengths
-- Test: add `generateStatsOutput` text-mode tests for the edge case where `sinceN` is higher than all existing cycle numbers</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Test: `ERROR_CATEGORY_LLM_ERROR` rendered correctly in verbose table Failures column — 1 test added, all 3625→3629 passing
-- Feat: `COL_FAILURES` exported; 4 invariant tests assert it is a positive integer, ≥ every ErrorCategory length, ≥ longest current category (13), and exactly 16 — all 3629→3629 passing
-- Test: `generateStatsOutput` when `sinceN` excludes all cycles — 3 tests document that the header still appears, carries sinceN label, and stats body shows the zero-cycles fallback message &quot;No previous cycle data available.&quot; — all 3629→3632 passing</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test-writing] A failing test is the fastest way to learn the exact fallback text a function emits — the initial test used &quot;Cycles tracked&quot; but the actual output was &quot;No previous cycle data available.&quot;; running the test and reading the diff is faster than reading `formatCycleStats` deeply
-- [exports] Exporting a previously private constant for testability is a zero-risk, zero-behavior-change improvement — the TypeScript compiler and test suite both validate the change with no friction
-- [coverage] ErrorCategory string constants are the clearest invariant surface: every time a new category is added, the COL_FAILURES invariant test will fail if the column is too narrow, providing an early-warning regression net</p></div>
       </div>
     </div>
   </section>
