@@ -449,7 +449,7 @@ export interface JournalExportEntry {
 }
 
 export function exportJournalJson(db: Database.Database, maxCycles?: number, sinceN?: number, cycleN?: number): JournalExportEntry[] {
-  const rowLimit = maxCycles ? maxCycles * JOURNAL_SECTIONS_PER_CYCLE : undefined;
+  const rowLimit = maxCycles !== undefined ? maxCycles * JOURNAL_SECTIONS_PER_CYCLE : undefined;
   const rows = getJournalEntries(db, rowLimit, sinceN, cycleN);
   const grouped = new Map<number, { date: string; sections: Map<string, string> }>();
 
@@ -477,7 +477,7 @@ export function exportJournalJson(db: Database.Database, maxCycles?: number, sin
   }
 
   // entries are already in descending cycle order from getJournalEntries (ORDER BY DESC)
-  return maxCycles ? entries.slice(0, maxCycles) : entries;
+  return maxCycles !== undefined ? entries.slice(0, maxCycles) : entries;
 }
 
 export interface CycleStats {
