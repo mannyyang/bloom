@@ -817,6 +817,25 @@ describe("generateJournalOutput --search filter", () => {
     const parsed = JSON.parse(output);
     expect(parsed).toHaveLength(3);
   });
+
+  it("search with --format csv and zero matches still emits header row", () => {
+    // When no entries match, generateJournalCsv([]) should produce header-only
+    // output — not an empty string. This pins the contract that the CSV header
+    // is always present regardless of the search result.
+    const output = generateJournalOutput(db, { format: "csv", search: "nonexistentxyzzy" });
+    expect(output).toBe("cycleNumber,date,attempted,succeeded,failed,learnings,strategic_context\n");
+  });
+
+  it("search with --format csv and matching entries includes those entries", () => {
+    const output = generateJournalOutput(db, { format: "csv", search: "csv" });
+    // Header row always present
+    expect(output).toContain("cycleNumber,date,attempted,succeeded,failed,learnings,strategic_context");
+    // Cycle 2 has "CSV" in its fields
+    expect(output).toContain("Add CSV export feature");
+    // Cycle 1 (parser) and cycle 3 (coverage) should not appear
+    expect(output).not.toContain("Refactor the parser module");
+    expect(output).not.toContain("Improve test coverage");
+  });
 });
 
 describe("parseArgs --search", () => {
