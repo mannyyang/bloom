@@ -46,6 +46,7 @@ Options:
   --md              Output journal as Markdown instead of JSON
   --limit <N>       Limit output to the most recent N entries
   --since <CYCLE>   Show only entries from cycle CYCLE onwards (inclusive)
+  --cycle <N>       Show the journal entry for exactly one specific cycle
   --help, -h        Print this help message and exit
 `;
 
@@ -93,9 +94,9 @@ export function formatJournalMarkdown(entries: JournalExportEntry[]): string {
  */
 export function generateJournalOutput(
   db: Database.Database,
-  options: { format?: "json" | "md"; limit?: number; since?: number } = {},
+  options: { format?: "json" | "md"; limit?: number; since?: number; cycle?: number } = {},
 ): string {
-  const { format = "json", limit, since } = options;
+  const { format = "json", limit, since, cycle } = options;
   // Math.floor normalises fractional values (e.g. 3.7 → 3).
   // The explicit `!== undefined` guard makes intent clear: 0 is not a valid
   // limit (pass undefined to mean "no limit"), and `safeLimit > 0` already
@@ -105,7 +106,9 @@ export function generateJournalOutput(
   // LIMIT is applied — `--limit 5 --since 700` now returns the 5 most-recent
   // entries that are >= cycle 700, not the 5 most-recent entries overall.
   const safeSince = since !== undefined && since > 0 ? since : undefined;
-  const entries = exportJournalJson(db, safeLimit !== undefined && safeLimit > 0 ? safeLimit : undefined, safeSince);
+  // --cycle N takes precedence over --since: it pins to exactly one cycle.
+  const safeCycle = cycle !== undefined && cycle > 0 ? cycle : undefined;
+  const entries = exportJournalJson(db, safeLimit !== undefined && safeLimit > 0 ? safeLimit : undefined, safeSince, safeCycle);
 
   if (format === "md") {
     return formatJournalMarkdown(entries);
@@ -114,12 +117,13 @@ export function generateJournalOutput(
   return JSON.stringify(entries, null, 2);
 }
 
-export function parseArgs(argv: string[]): { format: "json" | "md"; limit?: number; since?: number } {
+export function parseArgs(argv: string[]): { format: "json" | "md"; limit?: number; since?: number; cycle?: number } {
   const format = argv.includes("--md") ? "md" as const : "json" as const;
   return {
     format,
     limit: parseIntArg(argv, "--limit"),
     since: parseIntArg(argv, "--since"),
+    cycle: parseIntArg(argv, "--cycle"),
   };
 }
 

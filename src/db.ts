@@ -413,10 +413,13 @@ export interface JournalRow {
   content: string;
 }
 
-export function getJournalEntries(db: Database.Database, limit?: number, sinceN?: number): JournalRow[] {
+export function getJournalEntries(db: Database.Database, limit?: number, sinceN?: number, cycleN?: number): JournalRow[] {
   const conditions: string[] = [];
   const params: (number)[] = [];
-  if (sinceN !== undefined && sinceN > 0) {
+  if (cycleN !== undefined && cycleN > 0) {
+    conditions.push("c.cycle_number = ?");
+    params.push(cycleN);
+  } else if (sinceN !== undefined && sinceN > 0) {
     conditions.push("c.cycle_number >= ?");
     params.push(sinceN);
   }
@@ -445,9 +448,9 @@ export interface JournalExportEntry {
   strategic_context: string;
 }
 
-export function exportJournalJson(db: Database.Database, maxCycles?: number, sinceN?: number): JournalExportEntry[] {
+export function exportJournalJson(db: Database.Database, maxCycles?: number, sinceN?: number, cycleN?: number): JournalExportEntry[] {
   const rowLimit = maxCycles ? maxCycles * JOURNAL_SECTIONS_PER_CYCLE : undefined;
-  const rows = getJournalEntries(db, rowLimit, sinceN);
+  const rows = getJournalEntries(db, rowLimit, sinceN, cycleN);
   const grouped = new Map<number, { date: string; sections: Map<string, string> }>();
 
   for (const row of rows) {

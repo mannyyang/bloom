@@ -173,6 +173,52 @@ describe("generateJournalOutput", () => {
     const parsed = JSON.parse(output);
     expect(parsed).toHaveLength(2);
   });
+
+  it("--cycle N returns exactly the entry for that cycle", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 10 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 20 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 30 }));
+    insertJournalEntry(db, 10, "attempted", "Entry 10");
+    insertJournalEntry(db, 20, "attempted", "Entry 20");
+    insertJournalEntry(db, 30, "attempted", "Entry 30");
+
+    const output = generateJournalOutput(db, { cycle: 20 });
+    const parsed = JSON.parse(output) as Array<{ cycleNumber: number }>;
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].cycleNumber).toBe(20);
+  });
+
+  it("--cycle N returns empty array when that cycle does not exist", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertJournalEntry(db, 1, "attempted", "Entry 1");
+
+    const output = generateJournalOutput(db, { cycle: 999 });
+    const parsed = JSON.parse(output);
+    expect(parsed).toHaveLength(0);
+  });
+
+  it("--cycle 0 is treated as no filter (returns all entries)", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    insertJournalEntry(db, 1, "attempted", "Entry 1");
+    insertJournalEntry(db, 2, "attempted", "Entry 2");
+
+    const output = generateJournalOutput(db, { cycle: 0 });
+    const parsed = JSON.parse(output);
+    expect(parsed).toHaveLength(2);
+  });
+
+  it("--cycle N with format md returns Markdown for exactly that cycle", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 5 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 10 }));
+    insertJournalEntry(db, 5, "attempted", "Cycle 5 work");
+    insertJournalEntry(db, 10, "attempted", "Cycle 10 work");
+
+    const output = generateJournalOutput(db, { format: "md", cycle: 5 });
+    expect(output).toContain("## Cycle 5");
+    expect(output).toContain("Cycle 5 work");
+    expect(output).not.toContain("## Cycle 10");
+  });
 });
 
 describe("JOURNAL_HELP_TEXT (value-pinning)", () => {
@@ -180,10 +226,11 @@ describe("JOURNAL_HELP_TEXT (value-pinning)", () => {
     expect(JOURNAL_HELP_TEXT).toContain("Usage: pnpm journal");
   });
 
-  it("lists --md, --limit, --since, and --help flags", () => {
+  it("lists --md, --limit, --since, --cycle, and --help flags", () => {
     expect(JOURNAL_HELP_TEXT).toContain("--md");
     expect(JOURNAL_HELP_TEXT).toContain("--limit");
     expect(JOURNAL_HELP_TEXT).toContain("--since");
+    expect(JOURNAL_HELP_TEXT).toContain("--cycle");
     expect(JOURNAL_HELP_TEXT).toContain("--help");
   });
 
@@ -519,89 +566,119 @@ describe("formatJournalMarkdown", () => {
 describe("parseArgs", () => {
   it("returns json format by default with no limit", () => {
     const result = parseArgs([]);
-    expect(result).toEqual({ format: "json", limit: undefined, since: undefined });
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined, cycle: undefined });
   });
 
   it("returns md format when --md is passed", () => {
     const result = parseArgs(["--md"]);
-    expect(result).toEqual({ format: "md", limit: undefined, since: undefined });
+    expect(result).toEqual({ format: "md", limit: undefined, since: undefined, cycle: undefined });
   });
 
   it("parses --limit with a valid number", () => {
     const result = parseArgs(["--limit", "5"]);
-    expect(result).toEqual({ format: "json", limit: 5, since: undefined });
+    expect(result).toEqual({ format: "json", limit: 5, since: undefined, cycle: undefined });
   });
 
   it("handles combined --md and --limit", () => {
     const result = parseArgs(["--md", "--limit", "3"]);
-    expect(result).toEqual({ format: "md", limit: 3, since: undefined });
+    expect(result).toEqual({ format: "md", limit: 3, since: undefined, cycle: undefined });
   });
 
   it("ignores --limit with NaN value", () => {
     const result = parseArgs(["--limit", "abc"]);
-    expect(result).toEqual({ format: "json", limit: undefined, since: undefined });
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined, cycle: undefined });
   });
 
   it("ignores --limit with no following argument", () => {
     const result = parseArgs(["--limit"]);
-    expect(result).toEqual({ format: "json", limit: undefined, since: undefined });
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined, cycle: undefined });
   });
 
   it("treats --limit 0 as undefined (no limit)", () => {
     const result = parseArgs(["--limit", "0"]);
-    expect(result).toEqual({ format: "json", limit: undefined, since: undefined });
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined, cycle: undefined });
   });
 
   it("handles negative --limit as undefined", () => {
     const result = parseArgs(["--limit", "-1"]);
-    expect(result).toEqual({ format: "json", limit: undefined, since: undefined });
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined, cycle: undefined });
   });
 
   it("truncates fractional --limit '3.7' to 3 via parseInt", () => {
     // parseInt("3.7", 10) === 3; passes the > 0 && !isNaN guard, so limit is 3
     const result = parseArgs(["--limit", "3.7"]);
-    expect(result).toEqual({ format: "json", limit: 3, since: undefined });
+    expect(result).toEqual({ format: "json", limit: 3, since: undefined, cycle: undefined });
   });
 
   it("treats --limit '0.9' as undefined (parseInt → 0, fails > 0 guard)", () => {
     // parseInt("0.9", 10) === 0; 0 > 0 is false, so treated as no limit.
     // Completes the fractional parseInt edge-case matrix alongside the "3.7" case above.
     const result = parseArgs(["--limit", "0.9"]);
-    expect(result).toEqual({ format: "json", limit: undefined, since: undefined });
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined, cycle: undefined });
   });
 
   it("parses --since with a valid cycle number", () => {
     const result = parseArgs(["--since", "100"]);
-    expect(result).toEqual({ format: "json", limit: undefined, since: 100 });
+    expect(result).toEqual({ format: "json", limit: undefined, since: 100, cycle: undefined });
   });
 
   it("treats --since 0 as undefined (cycle numbers start at 1)", () => {
     const result = parseArgs(["--since", "0"]);
-    expect(result).toEqual({ format: "json", limit: undefined, since: undefined });
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined, cycle: undefined });
   });
 
   it("treats negative --since as undefined", () => {
     const result = parseArgs(["--since", "-5"]);
-    expect(result).toEqual({ format: "json", limit: undefined, since: undefined });
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined, cycle: undefined });
   });
 
   it("ignores --since with NaN value", () => {
     const result = parseArgs(["--since", "abc"]);
-    expect(result).toEqual({ format: "json", limit: undefined, since: undefined });
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined, cycle: undefined });
   });
 
   it("ignores --since with no following argument", () => {
     const result = parseArgs(["--since"]);
-    expect(result).toEqual({ format: "json", limit: undefined, since: undefined });
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined, cycle: undefined });
   });
 
   it("handles combined --since and --limit", () => {
     const result = parseArgs(["--since", "50", "--limit", "10"]);
-    expect(result).toEqual({ format: "json", limit: 10, since: 50 });
+    expect(result).toEqual({ format: "json", limit: 10, since: 50, cycle: undefined });
   });
 
   it("handles combined --since, --limit, and --md", () => {
     const result = parseArgs(["--md", "--since", "200", "--limit", "5"]);
-    expect(result).toEqual({ format: "md", limit: 5, since: 200 });
+    expect(result).toEqual({ format: "md", limit: 5, since: 200, cycle: undefined });
+  });
+
+  it("parses --cycle with a valid cycle number", () => {
+    const result = parseArgs(["--cycle", "731"]);
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined, cycle: 731 });
+  });
+
+  it("treats --cycle 0 as undefined", () => {
+    const result = parseArgs(["--cycle", "0"]);
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined, cycle: undefined });
+  });
+
+  it("treats negative --cycle as undefined", () => {
+    const result = parseArgs(["--cycle", "-3"]);
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined, cycle: undefined });
+  });
+
+  it("ignores --cycle with NaN value", () => {
+    const result = parseArgs(["--cycle", "abc"]);
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined, cycle: undefined });
+  });
+
+  it("ignores --cycle with no following argument", () => {
+    const result = parseArgs(["--cycle"]);
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined, cycle: undefined });
+  });
+
+  it("handles combined --cycle and --md", () => {
+    const result = parseArgs(["--md", "--cycle", "42"]);
+    expect(result).toEqual({ format: "md", limit: undefined, since: undefined, cycle: 42 });
   });
 });
