@@ -1,14 +1,15 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
+- [ ] Add `pnpm journal --format csv` export option so journal data can be imported into spreadsheets without manual JSON parsing, following the existing `--md` flag pattern
 
 ## Up Next
 
 ## In Progress
-- [ ] Push `--since` filter into SQL inside `exportJournalJson` so that `--limit` applies to the already-filtered set (currently `--limit 5 --since 700` may return fewer than 5 results because filtering happens after the DB fetch)
-  [since: 731]
 
 ## Done
+- [x] Push `--since` filter into SQL inside `exportJournalJson` so that `--limit` applies to the already-filtered set (currently `--limit 5 --since 700` may return fewer than 5 results because filtering happens after the DB fetch)
+  Completed: `getJournalEntries` applies `WHERE c.cycle_number >= ?` before `LIMIT ?`; tested in db.test.ts and journal.test.ts.
 - [x] Add `pnpm journal --help` flag to print available flags and usage, mirroring the `--help` pattern established by `pnpm stats` and `pnpm roadmap`
   Completed in cycle 731: 3/3 improvements succeeded.
 - [x] Add `pnpm journal --cycle N` drill-down command to print the full entry for a specific cycle number, enabling quick per-cycle inspection without scrolling through all entries
