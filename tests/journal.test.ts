@@ -208,6 +208,24 @@ describe("generateJournalOutput", () => {
     expect(parsed).toHaveLength(2);
   });
 
+  it("format md with since filter omits cycles before since boundary", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 5 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 15 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 25 }));
+    insertJournalEntry(db, 5, "attempted", "Cycle 5 work");
+    insertJournalEntry(db, 15, "attempted", "Cycle 15 work");
+    insertJournalEntry(db, 25, "attempted", "Cycle 25 work");
+
+    const output = generateJournalOutput(db, { format: "md", since: 15 });
+    expect(output).toContain("## Cycle 15");
+    expect(output).toContain("## Cycle 25");
+    expect(output).not.toContain("## Cycle 5");
+    // Both qualifying cycles have their content
+    expect(output).toContain("Cycle 15 work");
+    expect(output).toContain("Cycle 25 work");
+    expect(output).not.toContain("Cycle 5 work");
+  });
+
   it("--cycle N with format md returns Markdown for exactly that cycle", () => {
     insertCycle(db, makeOutcome({ cycleNumber: 5 }));
     insertCycle(db, makeOutcome({ cycleNumber: 10 }));
