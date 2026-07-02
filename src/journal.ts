@@ -48,6 +48,7 @@ Options:
   --limit <N>       Limit output to the most recent N entries
   --since <CYCLE>   Show only entries from cycle CYCLE onwards (inclusive)
   --cycle <N>       Show the journal entry for exactly one specific cycle
+  --search <term>   Filter entries by case-insensitive keyword search across all text fields
   --help, -h        Print this help message and exit
 `;
 
@@ -126,14 +127,27 @@ export function generateJournalCsv(entries: JournalExportEntry[]): string {
 }
 
 /**
+ * Filter journal entries by a case-insensitive search term across all text fields.
+ * Returns the entries that contain the term in any of: attempted, succeeded, failed,
+ * learnings, or strategic_context.
+ */
+function filterEntriesBySearch(entries: JournalExportEntry[], term: string): JournalExportEntry[] {
+  const lower = term.toLowerCase();
+  return entries.filter((entry) =>
+    [entry.attempted, entry.succeeded, entry.failed, entry.learnings, entry.strategic_context]
+      .some((field) => field != null && field.toLowerCase().includes(lower)),
+  );
+}
+
+/**
  * Core journal export logic, accepting a db parameter for testability.
  * Returns the string that would be printed to stdout.
  */
 export function generateJournalOutput(
   db: Database.Database,
-  options: { format?: "json" | "md" | "csv"; limit?: number; since?: number; cycle?: number } = {},
+  options: { format?: "json" | "md" | "csv"; limit?: number; since?: number; cycle?: number; search?: string } = {},
 ): string {
-  const { format = "json", limit, since, cycle } = options;
+  const { format = "json", limit, since, cycle, search } = options;
   // Math.floor normalises fractional values (e.g. 3.7 → 3).
   // The explicit `!== undefined` guard makes intent clear: 0 is not a valid
   // limit (pass undefined to mean "no limit"), and `safeLimit > 0` already
@@ -145,7 +159,12 @@ export function generateJournalOutput(
   const safeSince = since !== undefined && since > 0 ? since : undefined;
   // --cycle N takes precedence over --since: it pins to exactly one cycle.
   const safeCycle = cycle !== undefined && cycle > 0 ? cycle : undefined;
-  const entries = exportJournalJson(db, safeLimit !== undefined && safeLimit > 0 ? safeLimit : undefined, safeSince, safeCycle);
+  let entries = exportJournalJson(db, safeLimit !== undefined && safeLimit > 0 ? safeLimit : undefined, safeSince, safeCycle);
+
+  // Apply --search filter post-fetch (pure JS, no schema changes needed).
+  if (search && search.trim().length > 0) {
+    entries = filterEntriesBySearch(entries, search.trim());
+  }
 
   if (format === "md") {
     return formatJournalMarkdown(entries);
@@ -158,7 +177,7 @@ export function generateJournalOutput(
   return JSON.stringify(entries, null, 2);
 }
 
-export function parseArgs(argv: string[]): { format: "json" | "md" | "csv"; limit?: number; since?: number; cycle?: number } {
+export function parseArgs(argv: string[]): { format: "json" | "md" | "csv"; limit?: number; since?: number; cycle?: number; search?: string } {
   let format: "json" | "md" | "csv" = "json";
   // --format <fmt> takes precedence; unknown values fall back to "json"
   const formatFlagIdx = argv.indexOf("--format");
@@ -171,11 +190,18 @@ export function parseArgs(argv: string[]): { format: "json" | "md" | "csv"; limi
     // Legacy shorthand kept for backward compatibility
     format = "md";
   }
+  // --search <term>: capture the raw string value following the flag.
+  let search: string | undefined;
+  const searchIdx = argv.indexOf("--search");
+  if (searchIdx !== -1 && argv[searchIdx + 1] && !argv[searchIdx + 1].startsWith("--")) {
+    search = argv[searchIdx + 1];
+  }
   return {
     format,
     limit: parseIntArg(argv, "--limit"),
     since: parseIntArg(argv, "--since"),
     cycle: parseIntArg(argv, "--cycle"),
+    search,
   };
 }
 

@@ -742,6 +742,115 @@ describe("parseArgs", () => {
   });
 });
 
+describe("generateJournalOutput --search filter", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 3 }));
+    insertJournalEntry(db, 1, "attempted", "Refactor the parser module");
+    insertJournalEntry(db, 1, "succeeded", "Parser fully refactored");
+    insertJournalEntry(db, 2, "attempted", "Add CSV export feature");
+    insertJournalEntry(db, 2, "learnings", "CSV quoting is tricky");
+    insertJournalEntry(db, 3, "attempted", "Improve test coverage");
+    insertJournalEntry(db, 3, "strategic_context", "Focus on refactoring and coverage");
+  });
+
+  it("returns all entries when search is empty string", () => {
+    const output = generateJournalOutput(db, { search: "" });
+    const parsed = JSON.parse(output);
+    expect(parsed).toHaveLength(3);
+  });
+
+  it("returns only matching entries for a term in attempted field", () => {
+    const output = generateJournalOutput(db, { search: "parser" });
+    const parsed = JSON.parse(output) as Array<{ cycleNumber: number }>;
+    expect(parsed.map((e) => e.cycleNumber).sort((a, b) => a - b)).toEqual([1]);
+  });
+
+  it("matches case-insensitively", () => {
+    const output = generateJournalOutput(db, { search: "CSV" });
+    const parsed = JSON.parse(output) as Array<{ cycleNumber: number }>;
+    expect(parsed.map((e) => e.cycleNumber).sort((a, b) => a - b)).toEqual([2]);
+  });
+
+  it("matches term found in learnings field", () => {
+    const output = generateJournalOutput(db, { search: "quoting" });
+    const parsed = JSON.parse(output) as Array<{ cycleNumber: number }>;
+    expect(parsed.map((e) => e.cycleNumber)).toEqual(expect.arrayContaining([2]));
+    expect(parsed).toHaveLength(1);
+  });
+
+  it("matches term found in strategic_context field", () => {
+    const output = generateJournalOutput(db, { search: "refactoring" });
+    const parsed = JSON.parse(output) as Array<{ cycleNumber: number }>;
+    // cycle 3 has 'refactoring' in strategic_context
+    // cycle 1 has 'Refactor' in attempted but NOT 'refactoring' (no suffix)
+    expect(parsed.map((e) => e.cycleNumber)).toEqual([3]);
+  });
+
+  it("returns empty array when no entries match the search term", () => {
+    const output = generateJournalOutput(db, { search: "nonexistentxyzzy" });
+    const parsed = JSON.parse(output);
+    expect(parsed).toHaveLength(0);
+  });
+
+  it("search works with --format md (only matching entries rendered)", () => {
+    const output = generateJournalOutput(db, { format: "md", search: "csv" });
+    expect(output).toContain("## Cycle 2");
+    expect(output).not.toContain("## Cycle 1");
+    expect(output).not.toContain("## Cycle 3");
+  });
+
+  it("search combines with --limit (limit applied before search filter)", () => {
+    // Cycles 1-3 exist; limit 2 returns cycles 3 and 2 (most recent); then
+    // search 'parser' should match none of those two (cycle 1 is excluded by limit).
+    const output = generateJournalOutput(db, { search: "parser", limit: 2 });
+    const parsed = JSON.parse(output);
+    expect(parsed).toHaveLength(0);
+  });
+
+  it("whitespace-only search is ignored (returns all entries)", () => {
+    const output = generateJournalOutput(db, { search: "   " });
+    const parsed = JSON.parse(output);
+    expect(parsed).toHaveLength(3);
+  });
+});
+
+describe("parseArgs --search", () => {
+  it("parses --search with a term", () => {
+    const result = parseArgs(["--search", "keyword"]);
+    expect(result.search).toBe("keyword");
+  });
+
+  it("search is undefined when flag is absent", () => {
+    const result = parseArgs([]);
+    expect(result.search).toBeUndefined();
+  });
+
+  it("search is undefined when --search has no following argument", () => {
+    const result = parseArgs(["--search"]);
+    expect(result.search).toBeUndefined();
+  });
+
+  it("search is undefined when --search is followed by another flag", () => {
+    const result = parseArgs(["--search", "--limit"]);
+    expect(result.search).toBeUndefined();
+  });
+
+  it("combines --search with --format csv", () => {
+    const result = parseArgs(["--format", "csv", "--search", "refactor"]);
+    expect(result.format).toBe("csv");
+    expect(result.search).toBe("refactor");
+  });
+
+  it("JOURNAL_HELP_TEXT lists --search flag", () => {
+    expect(JOURNAL_HELP_TEXT).toContain("--search");
+  });
+});
+
 describe("generateJournalCsv", () => {
   it("empty array returns header-only line", () => {
     const output = generateJournalCsv([]);
