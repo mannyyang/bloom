@@ -24,6 +24,7 @@ import {
   type ProjectItem,
 } from "./planning.js";
 import { parseJsonFlag, parseHelpFlag } from "./stats.js";
+import { csvQuoteField } from "./csv.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "./db.js";
 import { errorMessage } from "./errors.js";
 
@@ -91,18 +92,6 @@ export function parseFormatFlag(argv: string[]): "md" | "csv" | undefined {
   const val = argv[idx + 1];
   if (val === "md" || val === "csv") return val;
   return undefined;
-}
-
-/**
- * Wrap a single CSV field value per RFC 4180.
- * Reuses the same quoting logic as journal.ts's csvQuoteField.
- */
-function csvQuoteField(value: string | null | undefined): string {
-  const s = value ?? "";
-  if (s.includes(",") || s.includes('"') || s.includes("\n") || s.includes("\r")) {
-    return '"' + s.replace(/"/g, '""') + '"';
-  }
-  return s;
 }
 
 /**

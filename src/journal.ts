@@ -25,6 +25,7 @@ import {
   JOURNAL_STRATEGIC_CONTEXT_HEADER,
 } from "./db.js";
 import { parseHelpFlag, parseIntArg } from "./stats.js";
+import { csvQuoteField } from "./csv.js";
 
 export {
   JOURNAL_ATTEMPTED_HEADER,
@@ -88,20 +89,6 @@ export function formatJournalMarkdown(entries: JournalExportEntry[]): string {
   }
 
   return lines.join("\n");
-}
-
-/**
- * Wrap a single CSV field value per RFC 4180:
- * - Fields containing commas, double-quotes, CR, or LF are wrapped in double-quotes.
- * - Any double-quote within the field is escaped by doubling it ("").
- * - null / undefined are treated as an empty string.
- */
-function csvQuoteField(value: string | null | undefined): string {
-  const s = value ?? "";
-  if (s.includes(",") || s.includes('"') || s.includes("\n") || s.includes("\r")) {
-    return '"' + s.replace(/"/g, '""') + '"';
-  }
-  return s;
 }
 
 /**
