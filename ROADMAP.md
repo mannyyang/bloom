@@ -1,14 +1,16 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Push `--since` filter into SQL inside `exportJournalJson` so that `--limit` applies to the already-filtered set (currently `--limit 5 --since 700` may return fewer than 5 results because filtering happens after the DB fetch)
-- [ ] Add `pnpm journal --help` flag to print available flags and usage, mirroring the `--help` pattern established by `pnpm stats` and `pnpm roadmap`
 
 ## Up Next
 
 ## In Progress
+- [ ] Push `--since` filter into SQL inside `exportJournalJson` so that `--limit` applies to the already-filtered set (currently `--limit 5 --since 700` may return fewer than 5 results because filtering happens after the DB fetch)
+  [since: 731]
 
 ## Done
+- [x] Add `pnpm journal --help` flag to print available flags and usage, mirroring the `--help` pattern established by `pnpm stats` and `pnpm roadmap`
+  Completed in cycle 731: 3/3 improvements succeeded.
 - [x] Add `pnpm journal --cycle N` drill-down command to print the full entry for a specific cycle number, enabling quick per-cycle inspection without scrolling through all entries
   Completed in cycle 730: 3/3 improvements succeeded.
 - [x] Add `--since CYCLE` flag to `pnpm journal` CLI to filter entries by minimum cycle number, mirroring the `--since N` pattern already supported by `pnpm stats`
