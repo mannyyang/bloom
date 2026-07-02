@@ -601,6 +601,40 @@ describe("db", () => {
       const cycleNumbers = exported.map((e) => e.cycleNumber).sort((a, b) => a - b);
       expect(cycleNumbers).toEqual([3, 4, 5]);
     });
+
+    it("cycleN returns only the single matching cycle", () => {
+      for (let i = 1; i <= 5; i++) {
+        insertCycle(db, makeOutcome({ cycleNumber: i }));
+        insertJournalEntry(db, i, "attempted", `Cycle ${i} work`);
+      }
+
+      const exported = exportJournalJson(db, undefined, undefined, 3);
+      expect(exported).toHaveLength(1);
+      expect(exported[0].cycleNumber).toBe(3);
+      expect(exported[0].attempted).toBe("Cycle 3 work");
+    });
+
+    it("cycleN returns empty array when cycle does not exist", () => {
+      for (let i = 1; i <= 3; i++) {
+        insertCycle(db, makeOutcome({ cycleNumber: i }));
+        insertJournalEntry(db, i, "attempted", `Cycle ${i} work`);
+      }
+
+      const exported = exportJournalJson(db, undefined, undefined, 99);
+      expect(exported).toHaveLength(0);
+    });
+
+    it("cycleN takes precedence over sinceN when both are provided", () => {
+      for (let i = 1; i <= 5; i++) {
+        insertCycle(db, makeOutcome({ cycleNumber: i }));
+        insertJournalEntry(db, i, "attempted", `Cycle ${i} work`);
+      }
+
+      // sinceN=1 would return all 5 cycles; cycleN=4 should win and return only cycle 4
+      const exported = exportJournalJson(db, undefined, 1, 4);
+      expect(exported).toHaveLength(1);
+      expect(exported[0].cycleNumber).toBe(4);
+    });
   });
 
   describe("getRecentJournalSummary", () => {
