@@ -83,15 +83,44 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Thu, 02 Jul 2026 10:44:45 GMT</p>
+    <p>Last updated: Thu, 02 Jul 2026 17:51:27 GMT</p>
   </header>
   
+  <section class="section">
+    <h2><span class="badge" style="background:#6b7280">Backlog</span></h2>
+    <ul>
+      <li class="item">
+        <span class="check">⬜</span>
+        <div class="item-body">
+          <span class="item-title">Surface `--format csv` support in `pnpm roadmap` CLI, enabling consumers of the roadmap data to import it directly into spreadsheets</span>
+          
+        </div>
+      </li></ul>
+  </section>
 
 
+  <section class="section">
+    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
+    <ul>
+      <li class="item">
+        <span class="check">⬜</span>
+        <div class="item-body">
+          <span class="item-title">Add `pnpm journal --search &lt;term&gt;` full-text filter so users can find entries by keyword without piping through grep</span>
+          
+        </div>
+      </li></ul>
+  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `pnpm stats --export csv` to write cycle-metrics (cycle number, succeeded/attempted, build pass, duration) as a CSV file, parallel to the existing JSON format</span>
+          <p class="item-desc">Completed in cycle 734: 2/2 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -390,8 +419,8 @@
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
         <tr><td>Avg improvements / cycle</td><td><strong>1.7</strong></td></tr>
         <tr><td>Improvement conversion rate</td><td><strong>94%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>7.4 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$48.63</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>7.6 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$49.11</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -401,6 +430,40 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 734</span>
+        <span class="cycle-date">2026-07-02</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `pnpm journal --search &lt;term&gt;` full-text keyword filter across all journal text fields
+- Add `--format csv` to `pnpm roadmap` for RFC 4180 CSV export</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `pnpm journal --search &lt;term&gt;` full-text keyword filter — case-insensitive substring match across attempted, succeeded, failed, learnings, strategic_context; help text and parseArgs updated; 15 new tests added; all 3736 tests pass
+- Add `--format csv` to `pnpm roadmap` — generateRoadmapCsv() serialises items with columns title/status/linkedIssueNumber/reactions/sinceCycle/body; parseFormatFlag extended to &quot;md&quot;|&quot;csv&quot;|undefined; help text updated; 10 new tests added; all 3751 tests pass</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Test assertions must reflect exact substring semantics — &quot;Refactor&quot; does not contain &quot;refactoring&quot;, so initial test expectation was wrong and required correction before the suite passed
+- [reuse] The csvQuoteField pattern from journal.ts was straightforward to replicate locally in roadmap.ts; a shared utility module would reduce future duplication if more CSV exporters are added
+- [architecture] Post-fetch JS filtering (as used by --search and --since) keeps SQLite queries simple at the cost of fetching slightly more rows; acceptable for journal sizes typical of this project</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 733</span>
+        <span class="cycle-date">2026-07-02</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Implement `pnpm journal --format csv` export: add `generateJournalCsv()` with RFC 4180 quoting, extend `generateJournalOutput()` to dispatch `format: &quot;csv&quot;`, update `parseArgs()` to recognise `--format &lt;fmt&gt;`, update `JOURNAL_HELP_TEXT`, and add 15 new tests
+- Add 3 backlog items to ROADMAP.md to anchor the evolution loop&#39;s direction</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- feat(journal): implement --format csv export — `generateJournalCsv()` written with full RFC 4180 quoting (commas, double-quotes, newlines, nulls), `parseArgs` extended with `--format` flag, 15 new tests added, all 3721 tests pass
+- chore(roadmap): add three backlog items (`pnpm journal --search`, `pnpm stats --export csv`, `pnpm roadmap --format csv`) so the assessment loop has anchored direction instead of improvising</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [bug-fix] ROADMAP &quot;Done&quot; entries can be false positives — always verify the corresponding source code before trusting the roadmap status; the CSV feature was claimed complete in cycle 732 but had zero implementation
+- [testing] Coupling implementation and tests in a single commit is correct when the tests are additive (they don&#39;t break anything until the implementation exists); splitting them would cause a failed build in between
+- [tooling] The Edit tool requires re-reading a file that was externally modified (e.g. by a linter or git hook) before it will accept edits — always re-read if an edit is rejected with the &quot;modified since read&quot; error</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 732</span>
@@ -456,40 +519,6 @@
 - [sql] Pushing filters into SQL WHERE clauses rather than applying them in-memory is essential when combined with LIMIT — in-memory filtering after a LIMIT fetch can silently return fewer rows than requested
 - [testing] Adding tests that explicitly verify the interaction between two flags (e.g. `--limit + --since`) is more valuable than testing each flag in isolation, as it catches correctness bugs that single-flag tests miss
 - [roadmap] An empty Backlog leaves the assessment LLM without direction; replenishing it immediately after closing an In Progress item prevents directionless cycles</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 729</span>
-        <span class="cycle-date">2026-07-01</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Implement `pnpm stats --category CATEGORY` filter for all three output modes (table, JSON, text)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- `pnpm stats --category CATEGORY` filter: added `parseCategoryArg()` in `stats.ts`, extended `getCycleStats()` in `db.ts` with a `categoryFilter` SQL WHERE clause, threaded the filter through `generateStatsTable`, `generateStatsJson`, and `generateStatsOutput`; added `category` field to `StatsJsonOutput`; updated `STATS_HELP_TEXT`; added 18 new tests; 3686 tests passing, committed and pushed</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Pinned exact-string tests (like `STATS_HELP_TEXT`) require updates when the constant changes — always grep for existing pins before modifying exported strings
-- [testing] When asserting on `formatCycleStats` output, use the actual rendered label text (&quot;Cycles tracked&quot;) rather than guessing (&quot;Total cycles:&quot;)
-- [design] The existing `windowLabel` logic used an if/else priority (sinceN &gt; lastN); replacing it with a multi-part join that shows all active filters is more informative but requires updating any tests that pinned the old single-label behavior
-- [db] Threading a new SQL filter parameter through `getCycleStats` requires careful WHERE clause construction — building `conditions[]` and `params[]` incrementally is clean and avoids fragile string concatenation</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 726</span>
-        <span class="cycle-date">2026-07-01</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Export `LEARNING_BOOST_AMOUNT = 0.1` constant from `db.ts`, use it in `boostLearningRelevance` SQL template, and add a value-pinning test in `db.test.ts`
-- Add integration test: `storeLearnings` calls `boostLearningRelevance` for duplicate content and the stored relevance actually increases (verifying the call is not a no-op at the DB level)
-- Add integration test: when all learnings are duplicates, `storeLearnings` returns early and skips `decayLearningRelevance`/`pruneLowRelevanceLearnings`, leaving existing relevance unchanged except for the boost</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Export `LEARNING_BOOST_AMOUNT` constant and add value-pinning test (3657 → 3658 tests, build clean)
-- Add `storeLearnings` boost-on-duplicate and all-duplicates skip-decay integration tests (3658 → 3659 tests, build clean)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Integration tests should query the DB directly to assert side-effects (like relevance changes) — asserting only return values like `count: 0` leaves entire code paths unverifiable
-- [code-quality] Every numeric threshold that callers or tests might need should be an exported named constant; magic numbers in SQL strings are especially easy to miss during code review
-- [testing] The all-duplicates early-return path in `storeLearnings` is a distinct control flow branch that needs its own pin test — the &quot;no new rows&quot; assertion does not cover whether decay was skipped</p></div>
       </div>
     </div>
   </section>

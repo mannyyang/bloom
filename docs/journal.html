@@ -83,11 +83,45 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#2563eb;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#111827;font-weight:700;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>📓 Bloom Full Journal</h1>
-    <p>Last updated: Thu, 02 Jul 2026 10:44:45 GMT</p>
+    <p>Last updated: Thu, 02 Jul 2026 17:51:27 GMT</p>
   </header>
   <section class="section">
     <p class="stats-note">All recorded evolution cycle summaries.</p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 734</span>
+        <span class="cycle-date">2026-07-02</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `pnpm journal --search &lt;term&gt;` full-text keyword filter across all journal text fields
+- Add `--format csv` to `pnpm roadmap` for RFC 4180 CSV export</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `pnpm journal --search &lt;term&gt;` full-text keyword filter — case-insensitive substring match across attempted, succeeded, failed, learnings, strategic_context; help text and parseArgs updated; 15 new tests added; all 3736 tests pass
+- Add `--format csv` to `pnpm roadmap` — generateRoadmapCsv() serialises items with columns title/status/linkedIssueNumber/reactions/sinceCycle/body; parseFormatFlag extended to &quot;md&quot;|&quot;csv&quot;|undefined; help text updated; 10 new tests added; all 3751 tests pass</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Test assertions must reflect exact substring semantics — &quot;Refactor&quot; does not contain &quot;refactoring&quot;, so initial test expectation was wrong and required correction before the suite passed
+- [reuse] The csvQuoteField pattern from journal.ts was straightforward to replicate locally in roadmap.ts; a shared utility module would reduce future duplication if more CSV exporters are added
+- [architecture] Post-fetch JS filtering (as used by --search and --since) keeps SQLite queries simple at the cost of fetching slightly more rows; acceptable for journal sizes typical of this project</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 733</span>
+        <span class="cycle-date">2026-07-02</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Implement `pnpm journal --format csv` export: add `generateJournalCsv()` with RFC 4180 quoting, extend `generateJournalOutput()` to dispatch `format: &quot;csv&quot;`, update `parseArgs()` to recognise `--format &lt;fmt&gt;`, update `JOURNAL_HELP_TEXT`, and add 15 new tests
+- Add 3 backlog items to ROADMAP.md to anchor the evolution loop&#39;s direction</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- feat(journal): implement --format csv export — `generateJournalCsv()` written with full RFC 4180 quoting (commas, double-quotes, newlines, nulls), `parseArgs` extended with `--format` flag, 15 new tests added, all 3721 tests pass
+- chore(roadmap): add three backlog items (`pnpm journal --search`, `pnpm stats --export csv`, `pnpm roadmap --format csv`) so the assessment loop has anchored direction instead of improvising</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [bug-fix] ROADMAP &quot;Done&quot; entries can be false positives — always verify the corresponding source code before trusting the roadmap status; the CSV feature was claimed complete in cycle 732 but had zero implementation
+- [testing] Coupling implementation and tests in a single commit is correct when the tests are additive (they don&#39;t break anything until the implementation exists); splitting them would cause a failed build in between
+- [tooling] The Edit tool requires re-reading a file that was externally modified (e.g. by a linter or git hook) before it will accept edits — always re-read if an edit is rejected with the &quot;modified since read&quot; error</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 732</span>
@@ -1829,41 +1863,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment-accuracy] Assessments can describe gaps that were already closed in a prior cycle; always read the actual file before writing new tests to avoid duplicating existing coverage
 - [test-coupling] Behavioral tests that pin exact counts (e.g. `checkoutCount === 3`) become blockers when intentionally changing the behavior they pin — updating both implementation and tests atomically in one commit avoids a red intermediate state
 - [refactoring] Combining logically coupled improvements (guard + observability log) into a single commit is appropriate when both touch the same loop body and neither stands alone cleanly</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 617</span>
-        <span class="cycle-date">2026-06-13</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Inject file manifest into assessment prompt (add `fileManifest?` to `AssessmentContext`, `buildFileManifest()` helper, wire into `agent-phases.ts` and `assess.ts`, add 8 tests)
-- Add `pnpm stats --table` flag (add `getCycleRows()` to db.ts, `parseTableFlag` + `generateStatsTable` to stats.ts, wire into `main()`, add 14 tests)
-- ASSESS_MAX_TURNS value-pin test — skipped; the pin for `AGENT_ASSESSMENT_MAX_TURNS = 30` already exists in `agent-phases.test.ts` (lines 593–595), so no work was needed</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Inject file manifest into assessment prompt — build + 3107 tests pass; committed 95a4f24
-- Add `pnpm stats --table` flag — build + 3107 tests pass; committed 2b5fdaf</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment] Pre-existing value-pin tests (e.g. AGENT_ASSESSMENT_MAX_TURNS pinned in agent-phases.test.ts) can make assessment-identified gaps obsolete by the time they reach the evolution phase; always grep before implementing &quot;missing&quot; tests
-- [code-quality] Mock files need to be updated in sync with the real module&#39;s exports — adding `buildFileManifest` to `evolve.ts` required a matching mock entry in `assess.test.ts` to keep `vi.resetAllMocks()` from leaving the function undefined between tests
-- [architecture] Placing `buildFileManifest` in `evolve.ts` keeps all assessment-prompt-building logic co-located; the function&#39;s `cwd` parameter enables clean unit testing without touching the real filesystem</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 616</span>
-        <span class="cycle-date">2026-06-13</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add two Backlog items to ROADMAP.md to give future evolution cycles guided direction (roadmap was completely empty)
-- Raise AGENT_ASSESSMENT_MAX_TURNS from 20 to 30 to address recurring assessment phase no-output failures</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add two Backlog roadmap items: (1) inject file manifest into assessment prompt to reduce Glob overhead, (2) `pnpm stats --table` flag for per-cycle ASCII table view
-- Raise AGENT_ASSESSMENT_MAX_TURNS from 20 to 30; updated value-pin test accordingly</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [pattern] An empty roadmap causes pickNextItem to return null every cycle, leaving evolution directionless — proactively seeding the roadmap prevents aimless drift
-- [anti-pattern] Assessment turn limit of 20 is too low for a ~6000-line codebase; the LLM exhausts turns on file reads before writing its final text response, triggering the no-output fallback
-- [process] When a value-pin test guards a constant, raising the constant requires updating both the source file and the test description/expectation together</p></div>
       </div>
     </div>
   </section>

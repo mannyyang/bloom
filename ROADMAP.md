@@ -1,16 +1,17 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-
-- [ ] Add `pnpm journal --search <term>` full-text filter so users can find entries by keyword without piping through grep
-- [ ] Add `pnpm stats --export csv` to write cycle-metrics (cycle number, succeeded/attempted, build pass, duration) as a CSV file, parallel to the existing JSON format
 - [ ] Surface `--format csv` support in `pnpm roadmap` CLI, enabling consumers of the roadmap data to import it directly into spreadsheets
 
 ## Up Next
 
 ## In Progress
+- [ ] Add `pnpm journal --search <term>` full-text filter so users can find entries by keyword without piping through grep
+  [since: 734]
 
 ## Done
+- [x] Add `pnpm stats --export csv` to write cycle-metrics (cycle number, succeeded/attempted, build pass, duration) as a CSV file, parallel to the existing JSON format
+  Completed in cycle 734: 2/2 improvements succeeded.
 - [x] Add `pnpm journal --format csv` export option so journal data can be imported into spreadsheets without manual JSON parsing, following the existing `--md` flag pattern
   Completed in cycle 732: 3/3 improvements succeeded.
 - [x] Push `--since` filter into SQL inside `exportJournalJson` so that `--limit` applies to the already-filtered set (currently `--limit 5 --since 700` may return fewer than 5 results because filtering happens after the DB fetch)
