@@ -40,6 +40,7 @@ Usage: pnpm roadmap [options]
 
 Options:
   --filter <status>  Show only items with the given status (e.g. Backlog, "In Progress", Done)
+  --search <term>    Filter items by case-insensitive keyword search across title and body
   --format md        Output roadmap as GitHub-flavoured Markdown
   --format csv       Output roadmap as RFC 4180 CSV
   --json             Output roadmap as JSON (for scripting/CI)
@@ -95,13 +96,42 @@ export function parseFormatFlag(argv: string[]): "md" | "csv" | undefined {
 }
 
 /**
+ * Parse `--search <term>` from an argv array. Returns the search string if
+ * present and non-empty, or undefined when the flag is absent or has no value.
+ *
+ * Examples:
+ *   --search csv   → "csv"
+ *   (absent)       → undefined
+ */
+export function parseRoadmapSearchFlag(argv: string[]): string | undefined {
+  const idx = argv.indexOf("--search");
+  if (idx === -1) return undefined;
+  const val = argv[idx + 1];
+  if (!val || val.startsWith("--")) return undefined;
+  return val;
+}
+
+/**
+ * Filter roadmap items by a case-insensitive search term across title and body.
+ * Returns only items where title or body contains the term.
+ */
+function filterItemsBySearch<T extends { title: string; body?: string | null }>(items: T[], term: string): T[] {
+  const lower = term.toLowerCase();
+  return items.filter(
+    (item) =>
+      item.title.toLowerCase().includes(lower) ||
+      (item.body != null && item.body.toLowerCase().includes(lower)),
+  );
+}
+
+/**
  * Serialize roadmap items as RFC 4180 CSV.
  * Columns: title, status, linkedIssueNumber, reactions, sinceCycle, body
  * The first row is a fixed header. An empty items array produces header-only output.
  * When `filterStatus` is provided, only items with that status are included.
  */
-export function generateRoadmapCsv(content: string, filterStatus?: StatusColumn): string {
-  const { items } = generateRoadmapJson(content, filterStatus);
+export function generateRoadmapCsv(content: string, filterStatus?: StatusColumn, search?: string): string {
+  const { items } = generateRoadmapJson(content, filterStatus, undefined, search);
   const HEADER = "title,status,linkedIssueNumber,reactions,sinceCycle,body";
   const lines: string[] = [HEADER];
   for (const item of items) {
@@ -135,8 +165,12 @@ export function generateRoadmapCsv(content: string, filterStatus?: StatusColumn)
  * Storage metadata ([since: N] annotations and …[truncated] markers) are
  * stripped from item bodies — matching the behaviour of generateRoadmapOutput.
  */
-export function generateRoadmapMarkdown(content: string, filterStatus?: StatusColumn): string {
-  const items = parseRoadmap(content);
+export function generateRoadmapMarkdown(content: string, filterStatus?: StatusColumn, search?: string): string {
+  let items = parseRoadmap(content);
+  // Apply --search filter post-parse (pure JS, no schema changes needed).
+  if (search && search.trim().length > 0) {
+    items = filterItemsBySearch(items, search.trim());
+  }
   const lines: string[] = [];
 
   lines.push("# Bloom Evolution Roadmap");
@@ -199,8 +233,12 @@ export function generateRoadmapMarkdown(content: string, filterStatus?: StatusCo
  * Returns the lines that would be printed to the console.
  * When `filterStatus` is provided, only items with that status are shown.
  */
-export function generateRoadmapOutput(content: string, filterStatus?: StatusColumn): string[] {
-  const items = parseRoadmap(content);
+export function generateRoadmapOutput(content: string, filterStatus?: StatusColumn, search?: string): string[] {
+  let items = parseRoadmap(content);
+  // Apply --search filter post-parse (pure JS, no schema changes needed).
+  if (search && search.trim().length > 0) {
+    items = filterItemsBySearch(items, search.trim());
+  }
   const lines: string[] = [];
 
   lines.push("");
@@ -326,7 +364,7 @@ export interface RoadmapJsonSummary {
  * the output and the summary reflects the filtered subset — matching the
  * behaviour of `generateRoadmapOutput` with a filterStatus argument.
  */
-export function generateRoadmapJson(content: string, filterStatus?: StatusColumn, currentCycle?: number): { items: RoadmapJsonItem[]; summary: RoadmapJsonSummary } {
+export function generateRoadmapJson(content: string, filterStatus?: StatusColumn, currentCycle?: number, search?: string): { items: RoadmapJsonItem[]; summary: RoadmapJsonSummary } {
   const items = parseRoadmap(content);
   let cleanItems: RoadmapJsonItem[] = items.map((item) => {
     const sinceCycle =
@@ -340,6 +378,11 @@ export function generateRoadmapJson(content: string, filterStatus?: StatusColumn
   // Apply status filter before sorting/summary, mirroring generateRoadmapOutput.
   if (filterStatus !== undefined) {
     cleanItems = cleanItems.filter((item) => item.status === filterStatus);
+  }
+
+  // Apply --search filter post-clean (pure JS, no schema changes needed).
+  if (search && search.trim().length > 0) {
+    cleanItems = filterItemsBySearch(cleanItems, search.trim());
   }
 
   // Sort items by STATUS_ORDER so JSON output matches CLI display order.
@@ -382,16 +425,17 @@ function main() {
   const jsonMode = parseJsonFlag(process.argv);
   const formatFlag = parseFormatFlag(process.argv);
   const filterStatus = parseRoadmapFilterFlag(process.argv);
+  const search = parseRoadmapSearchFlag(process.argv);
 
   if (jsonMode) {
-    const result = generateRoadmapJson(content, filterStatus);
+    const result = generateRoadmapJson(content, filterStatus, undefined, search);
     console.log(JSON.stringify(result, null, 2));
   } else if (formatFlag === "md") {
-    console.log(generateRoadmapMarkdown(content, filterStatus));
+    console.log(generateRoadmapMarkdown(content, filterStatus, search));
   } else if (formatFlag === "csv") {
-    process.stdout.write(generateRoadmapCsv(content, filterStatus));
+    process.stdout.write(generateRoadmapCsv(content, filterStatus, search));
   } else {
-    const output = generateRoadmapOutput(content, filterStatus);
+    const output = generateRoadmapOutput(content, filterStatus, search);
     for (const line of output) {
       console.log(line);
     }
