@@ -83,7 +83,7 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Thu, 02 Jul 2026 17:51:27 GMT</p>
+    <p>Last updated: Thu, 02 Jul 2026 21:09:47 GMT</p>
   </header>
   
   <section class="section">
@@ -99,21 +99,17 @@
   </section>
 
 
-  <section class="section">
-    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Add `pnpm journal --search &lt;term&gt;` full-text filter so users can find entries by keyword without piping through grep</span>
-          
-        </div>
-      </li></ul>
-  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `pnpm journal --search &lt;term&gt;` full-text filter so users can find entries by keyword without piping through grep</span>
+          <p class="item-desc">Completed in cycle 735: 3/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -419,8 +415,8 @@
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
         <tr><td>Avg improvements / cycle</td><td><strong>1.7</strong></td></tr>
         <tr><td>Improvement conversion rate</td><td><strong>94%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>7.6 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$49.11</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>7.3 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$46.23</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -430,6 +426,25 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 735</span>
+        <span class="cycle-date">2026-07-02</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Deduplicate `csvQuoteField` by extracting it from `journal.ts` and `roadmap.ts` into a shared `src/csv.ts` utility module
+- Add `--search &lt;term&gt;` flag to `pnpm roadmap` CLI, filtering items case-insensitively across title and body in all four output modes (default, --json, --format md, --format csv)
+- Add test coverage for `--search` combined with `--format csv` in the journal CLI (zero-match header-row contract + matching-entries content check)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Deduplicate `csvQuoteField` → `src/csv.ts` (3751 tests pass, committed 488e95b)
+- Add `--search` to `pnpm roadmap` CLI (3751 tests pass, committed 2d72473)
+- Add `--search` + `--format csv` journal tests (3753 tests pass, committed a93ab17)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [refactoring] Copy-paste with a comment saying &quot;reuses logic from X&quot; is a code smell that can be mechanically fixed by extracting to a shared module — the comment itself is the evidence the abstraction is missing
+- [feature parity] When two CLIs share a data model, adding a filter feature to one creates an implicit gap in the other; tracking these symmetry gaps explicitly during assessment prevents them from accumulating
+- [testing] RFC 4180 CSV has a subtle contract: an empty result set must still emit the header row — this boundary condition is easy to miss when writing format tests and worth pinning explicitly</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 734</span>
@@ -499,26 +514,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [code-quality] `parseIntArg` was private despite being a natural shared utility; exporting it and importing it in `journal.ts` reduces duplication without any interface change
 - [feature-design] `--cycle N` takes precedence over `--since` in `getJournalEntries` by using `else if` — explicit precedence avoids ambiguous combined usage
 - [testing] Pinned `parseArgs` return shapes needed updating to include `cycle: undefined` — existing tests that used `toEqual` with a 3-field object would have failed without updating all of them, catching a common drift issue</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 730</span>
-        <span class="cycle-date">2026-07-02</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Mark journal `--since CYCLE` roadmap item as Done and replenish Backlog with 3 new items (journal --cycle N drill-down, SQL-level --since push, journal --help)
-- Add `--help`/`-h` flag to `pnpm journal` CLI via `JOURNAL_HELP_TEXT` constant + `parseHelpFlag` import from stats.ts, with 3 pinning tests
-- Push `--since` filter into SQL inside `exportJournalJson`/`getJournalEntries` so `--limit` applies to the already-filtered set, with correctness-verifying tests in db.test.ts and journal.test.ts</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Mark journal `--since CYCLE` roadmap item as Done and replenish Backlog with 3 new items (journal --cycle N drill-down, SQL-level --since push, journal --help)
-- Add `--help`/`-h` flag to `pnpm journal` CLI via `JOURNAL_HELP_TEXT` constant + `parseHelpFlag` import from stats.ts, with 3 pinning tests
-- Push `--since` filter into SQL inside `exportJournalJson`/`getJournalEntries` so `--limit` applies to the already-filtered set, with correctness-verifying tests in db.test.ts and journal.test.ts</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [pattern] The `parseHelpFlag` function in stats.ts is designed for reuse across CLIs — importing it rather than duplicating the `--help`/`-h` check keeps all CLIs consistent and avoids drift
-- [sql] Pushing filters into SQL WHERE clauses rather than applying them in-memory is essential when combined with LIMIT — in-memory filtering after a LIMIT fetch can silently return fewer rows than requested
-- [testing] Adding tests that explicitly verify the interaction between two flags (e.g. `--limit + --since`) is more valuable than testing each flag in isolation, as it catches correctness bugs that single-flag tests miss
-- [roadmap] An empty Backlog leaves the assessment LLM without direction; replenishing it immediately after closing an In Progress item prevents directionless cycles</p></div>
       </div>
     </div>
   </section>

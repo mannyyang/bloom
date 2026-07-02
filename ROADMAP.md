@@ -6,10 +6,10 @@
 ## Up Next
 
 ## In Progress
-- [ ] Add `pnpm journal --search <term>` full-text filter so users can find entries by keyword without piping through grep
-  [since: 734]
 
 ## Done
+- [x] Add `pnpm journal --search <term>` full-text filter so users can find entries by keyword without piping through grep
+  Completed in cycle 735: 3/3 improvements succeeded.
 - [x] Add `pnpm stats --export csv` to write cycle-metrics (cycle number, succeeded/attempted, build pass, duration) as a CSV file, parallel to the existing JSON format
   Completed in cycle 734: 2/2 improvements succeeded.
 - [x] Add `pnpm journal --format csv` export option so journal data can be imported into spreadsheets without manual JSON parsing, following the existing `--md` flag pattern
