@@ -83,11 +83,30 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#2563eb;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#111827;font-weight:700;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>📓 Bloom Full Journal</h1>
-    <p>Last updated: Thu, 02 Jul 2026 07:38:04 GMT</p>
+    <p>Last updated: Thu, 02 Jul 2026 10:44:45 GMT</p>
   </header>
   <section class="section">
     <p class="stats-note">All recorded evolution cycle summaries.</p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 732</span>
+        <span class="cycle-date">2026-07-02</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- test(db): add direct `cycleN` tests for `exportJournalJson` — three focused tests: matching cycle, missing cycle, and cycleN precedence over sinceN
+- docs(roadmap): mark &quot;Push --since into SQL&quot; as Done and add `--format csv` backlog item
+- refactor(db): replace falsy `maxCycles ?` guards with explicit `maxCycles !== undefined` in `exportJournalJson`</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- test(db): add direct `cycleN` tests for `exportJournalJson` — 3 new tests, 3706 total passing, committed as 55906c7
+- docs(roadmap): mark &quot;Push --since into SQL&quot; Done + add CSV export backlog item, committed as 96d0a28
+- refactor(db): explicit `!== undefined` guards in `exportJournalJson`, committed as 2ee8b89</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] DB-layer gap coverage is best caught by checking that every parameter of exported functions has at least one direct test — indirect coverage via higher-level tests (e.g. journal.test.ts) can mask missing paths when refactoring
+- [code clarity] Falsy guards on numeric optional parameters (`value ? ... : ...`) are subtle footguns in TypeScript — `value !== undefined` is always preferable because it communicates intent and handles the zero case correctly
+- [roadmap hygiene] Keeping &quot;In Progress&quot; items current avoids confusion; once SQL filtering was verified working, leaving it In Progress misrepresents the project state to both humans and the assessment LLM</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 731</span>
@@ -1845,23 +1864,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [pattern] An empty roadmap causes pickNextItem to return null every cycle, leaving evolution directionless — proactively seeding the roadmap prevents aimless drift
 - [anti-pattern] Assessment turn limit of 20 is too low for a ~6000-line codebase; the LLM exhausts turns on file reads before writing its final text response, triggering the no-output fallback
 - [process] When a value-pin test guards a constant, raising the constant requires updating both the source file and the test description/expectation together</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 615</span>
-        <span class="cycle-date">2026-06-12</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Remove stale duplicate JSDoc comment left above `nextItemId` in `src/planning.ts` when a more complete JSDoc was later added, leaving two back-to-back JSDoc blocks
-- Consolidate the double evaluation of `assessment.length &gt; ASSESSMENT_CHAR_LIMIT` in `buildEvolutionPrompt` (`src/evolve.ts`) into a single `if`-branch that co-locates the warn and the slice</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Remove stale duplicate JSDoc from `nextItemId` in `src/planning.ts` — docs cleanup, 5 lines removed, build+test pass
-- Refactor double assessment-length check in `buildEvolutionPrompt` — single condition now covers both the warn and truncation, behaviour identical, build+test pass</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [pattern] Documentation bugs (duplicate/stale JSDoc blocks) are safe, build-passing fixes that meaningfully reduce confusion for future readers and tools
-- [pattern] Double-condition checks (evaluate the same expression twice: once for a side-effect, once for a value) can always be collapsed into a single `if`-branch — the `let`/assign pattern is cleaner and evaluates only once
-- [process] Reviewing the full test suite before making a change reveals whether the target behaviour is already well-pinned, making refactors safe even without adding new tests</p></div>
       </div>
     </div>
   </section>

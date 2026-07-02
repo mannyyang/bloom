@@ -83,26 +83,29 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Thu, 02 Jul 2026 07:38:04 GMT</p>
+    <p>Last updated: Thu, 02 Jul 2026 10:44:45 GMT</p>
   </header>
   
 
 
-  <section class="section">
-    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Push `--since` filter into SQL inside `exportJournalJson` so that `--limit` applies to the already-filtered set (currently `--limit 5 --since 700` may return fewer than 5 results because filtering happens after the DB fetch)</span>
-          
-        </div>
-      </li></ul>
-  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `pnpm journal --format csv` export option so journal data can be imported into spreadsheets without manual JSON parsing, following the existing `--md` flag pattern</span>
+          <p class="item-desc">Completed in cycle 732: 3/3 improvements succeeded.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Push `--since` filter into SQL inside `exportJournalJson` so that `--limit` applies to the already-filtered set (currently `--limit 5 --since 700` may return fewer than 5 results because filtering happens after the DB fetch)</span>
+          <p class="item-desc">Completed: `getJournalEntries` applies `WHERE c.cycle_number &gt;= ?` before `LIMIT ?`; tested in db.test.ts and journal.test.ts.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -387,8 +390,8 @@
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
         <tr><td>Avg improvements / cycle</td><td><strong>1.7</strong></td></tr>
         <tr><td>Improvement conversion rate</td><td><strong>94%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>7.3 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$49.14</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>7.4 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$48.63</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -398,6 +401,25 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 732</span>
+        <span class="cycle-date">2026-07-02</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- test(db): add direct `cycleN` tests for `exportJournalJson` — three focused tests: matching cycle, missing cycle, and cycleN precedence over sinceN
+- docs(roadmap): mark &quot;Push --since into SQL&quot; as Done and add `--format csv` backlog item
+- refactor(db): replace falsy `maxCycles ?` guards with explicit `maxCycles !== undefined` in `exportJournalJson`</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- test(db): add direct `cycleN` tests for `exportJournalJson` — 3 new tests, 3706 total passing, committed as 55906c7
+- docs(roadmap): mark &quot;Push --since into SQL&quot; Done + add CSV export backlog item, committed as 96d0a28
+- refactor(db): explicit `!== undefined` guards in `exportJournalJson`, committed as 2ee8b89</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] DB-layer gap coverage is best caught by checking that every parameter of exported functions has at least one direct test — indirect coverage via higher-level tests (e.g. journal.test.ts) can mask missing paths when refactoring
+- [code clarity] Falsy guards on numeric optional parameters (`value ? ... : ...`) are subtle footguns in TypeScript — `value !== undefined` is always preferable because it communicates intent and handles the zero case correctly
+- [roadmap hygiene] Keeping &quot;In Progress&quot; items current avoids confusion; once SQL filtering was verified working, leaving it In Progress misrepresents the project state to both humans and the assessment LLM</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 731</span>
@@ -468,25 +490,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Integration tests should query the DB directly to assert side-effects (like relevance changes) — asserting only return values like `count: 0` leaves entire code paths unverifiable
 - [code-quality] Every numeric threshold that callers or tests might need should be an exported named constant; magic numbers in SQL strings are especially easy to miss during code review
 - [testing] The all-duplicates early-return path in `storeLearnings` is a distinct control flow branch that needs its own pin test — the &quot;no new rows&quot; assertion does not cover whether decay was skipped</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 725</span>
-        <span class="cycle-date">2026-07-01</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- feat: Add `boostLearningRelevance` to `db.ts` and call it in `storeLearnings` (memory.ts) when a duplicate learning is detected, so frequently-reappearing patterns stay visible rather than decaying away
-- fix: Sort `failureCategoryBreakdown` and `learningCategoryDistribution` by count descending (then alphabetically) in `formatCycleStats` for deterministic output
-- test: Add 5 unit tests for `boostLearningRelevance` covering no-op, +0.1 boost, 1.0 cap, single-row precision, and case-insensitive matching</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- feat: Add `boostLearningRelevance` to `db.ts` and wire it into `memory.ts` dedup filter (3656 tests pass, committed as `1c4c712`)
-- fix: Deterministic sort in `formatCycleStats` for both breakdown maps (committed as `f991921`)
-- test: Unit tests for `boostLearningRelevance` in `db.test.ts` (5 new tests, committed as `a6acf58`)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [correctness] Object.entries() ordering is insertion-order in V8 but SQLite GROUP BY can return rows in any order across platforms — always sort before rendering in prompts or formatted output
-- [pattern] Boost-on-duplicate is a lightweight alternative to re-insertion for keeping high-signal recurring patterns visible; MIN(1.0, val + delta) avoids unbounded growth without extra pruning logic
-- [process] Bundling the new DB function tests alongside the feature commit keeps the test file in sync and avoids a stale-test window between the implementation commit and its coverage</p></div>
       </div>
     </div>
   </section>
