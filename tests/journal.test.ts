@@ -3,6 +3,7 @@ import Database from "better-sqlite3";
 import { initDb, insertCycle, insertJournalEntry } from "../src/db.js";
 import {
   generateJournalOutput,
+  generateJournalCsv,
   formatJournalMarkdown,
   parseArgs,
   JOURNAL_ATTEMPTED_HEADER,
@@ -12,6 +13,7 @@ import {
   JOURNAL_STRATEGIC_CONTEXT_HEADER,
   JOURNAL_HELP_TEXT,
 } from "../src/journal.js";
+import type { JournalExportEntry } from "../src/db.js";
 import { makeOutcome } from "./helpers.js";
 
 describe("generateJournalOutput", () => {
@@ -226,6 +228,14 @@ describe("generateJournalOutput", () => {
     expect(output).not.toContain("Cycle 5 work");
   });
 
+  it("returns CSV when format is csv", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertJournalEntry(db, 1, "attempted", "Some work");
+    const output = generateJournalOutput(db, { format: "csv" });
+    expect(output).toContain("cycleNumber,date,attempted");
+    expect(output).toContain("Some work");
+  });
+
   it("--cycle N with format md returns Markdown for exactly that cycle", () => {
     insertCycle(db, makeOutcome({ cycleNumber: 5 }));
     insertCycle(db, makeOutcome({ cycleNumber: 10 }));
@@ -244,8 +254,9 @@ describe("JOURNAL_HELP_TEXT (value-pinning)", () => {
     expect(JOURNAL_HELP_TEXT).toContain("Usage: pnpm journal");
   });
 
-  it("lists --md, --limit, --since, --cycle, and --help flags", () => {
+  it("lists --md, --format, --limit, --since, --cycle, and --help flags", () => {
     expect(JOURNAL_HELP_TEXT).toContain("--md");
+    expect(JOURNAL_HELP_TEXT).toContain("--format");
     expect(JOURNAL_HELP_TEXT).toContain("--limit");
     expect(JOURNAL_HELP_TEXT).toContain("--since");
     expect(JOURNAL_HELP_TEXT).toContain("--cycle");
@@ -699,4 +710,132 @@ describe("parseArgs", () => {
     const result = parseArgs(["--md", "--cycle", "42"]);
     expect(result).toEqual({ format: "md", limit: undefined, since: undefined, cycle: 42 });
   });
+
+  it("--format csv returns csv format", () => {
+    const result = parseArgs(["--format", "csv"]);
+    expect(result).toEqual({ format: "csv", limit: undefined, since: undefined, cycle: undefined });
+  });
+
+  it("--format md returns md format (alternative to --md)", () => {
+    const result = parseArgs(["--format", "md"]);
+    expect(result).toEqual({ format: "md", limit: undefined, since: undefined, cycle: undefined });
+  });
+
+  it("--format csv combined with --limit returns csv format and limit", () => {
+    const result = parseArgs(["--format", "csv", "--limit", "5"]);
+    expect(result).toEqual({ format: "csv", limit: 5, since: undefined, cycle: undefined });
+  });
+
+  it("unknown --format value falls back to json", () => {
+    const result = parseArgs(["--format", "xml"]);
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined, cycle: undefined });
+  });
+
+  it("--format without a following argument falls back to json", () => {
+    const result = parseArgs(["--format"]);
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined, cycle: undefined });
+  });
+
+  it("--format csv combined with --since and --limit", () => {
+    const result = parseArgs(["--format", "csv", "--since", "700", "--limit", "10"]);
+    expect(result).toEqual({ format: "csv", limit: 10, since: 700, cycle: undefined });
+  });
+});
+
+describe("generateJournalCsv", () => {
+  it("empty array returns header-only line", () => {
+    const output = generateJournalCsv([]);
+    expect(output).toBe("cycleNumber,date,attempted,succeeded,failed,learnings,strategic_context\n");
+  });
+
+  it("single entry is correctly serialised (no special chars)", () => {
+    const entries: JournalExportEntry[] = [{
+      cycleNumber: 1,
+      date: "2025-01-01",
+      attempted: "Add feature",
+      succeeded: "Feature added",
+      failed: "None",
+      learnings: "Learned",
+      strategic_context: "Stay focused",
+    }];
+    const lines = generateJournalCsv(entries).trimEnd().split("\n");
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toBe("cycleNumber,date,attempted,succeeded,failed,learnings,strategic_context");
+    expect(lines[1]).toBe("1,2025-01-01,Add feature,Feature added,None,Learned,Stay focused");
+  });
+
+  it("multiple entries produce one row per entry plus header", () => {
+    const entries: JournalExportEntry[] = [
+      { cycleNumber: 1, date: "2025-01-01", attempted: "A", succeeded: "B", failed: "C", learnings: "D", strategic_context: "E" },
+      { cycleNumber: 2, date: "2025-01-02", attempted: "F", succeeded: "G", failed: "H", learnings: "I", strategic_context: "J" },
+    ];
+    const lines = generateJournalCsv(entries).trimEnd().split("\n");
+    expect(lines).toHaveLength(3);
+    expect(lines[2]).toBe("2,2025-01-02,F,G,H,I,J");
+  });
+
+  it("fields with commas are RFC 4180 quoted", () => {
+    const entries: JournalExportEntry[] = [{
+      cycleNumber: 1,
+      date: "2025-01-01",
+      attempted: "Fix bug, add test",
+      succeeded: "",
+      failed: "",
+      learnings: "",
+      strategic_context: "",
+    }];
+    const output = generateJournalCsv(entries);
+    expect(output).toContain('"Fix bug, add test"');
+  });
+
+  it("fields with double-quotes are RFC 4180 escaped (doubled)", () => {
+    const entries: JournalExportEntry[] = [{
+      cycleNumber: 1,
+      date: "2025-01-01",
+      attempted: 'He said "hello"',
+      succeeded: "",
+      failed: "",
+      learnings: "",
+      strategic_context: "",
+    }];
+    const output = generateJournalCsv(entries);
+    expect(output).toContain('"He said ""hello"""');
+  });
+
+  it("fields with newlines are RFC 4180 quoted", () => {
+    const entries: JournalExportEntry[] = [{
+      cycleNumber: 1,
+      date: "2025-01-01",
+      attempted: "First step\nSecond step",
+      succeeded: "",
+      failed: "",
+      learnings: "",
+      strategic_context: "",
+    }];
+    const output = generateJournalCsv(entries);
+    expect(output).toContain('"First step\nSecond step"');
+  });
+
+  it("null fields are treated as empty string", () => {
+    const entries = [{
+      cycleNumber: 1,
+      date: "2025-01-01",
+      attempted: null,
+      succeeded: null,
+      failed: null,
+      learnings: null,
+      strategic_context: null,
+    }] as unknown as JournalExportEntry[];
+    const lines = generateJournalCsv(entries).trimEnd().split("\n");
+    expect(lines[1]).toBe("1,2025-01-01,,,,,");
+  });
+
+  it("output always ends with a trailing newline", () => {
+    expect(generateJournalCsv([])).toMatch(/\n$/);
+    const entries: JournalExportEntry[] = [
+      { cycleNumber: 1, date: "2025-01-01", attempted: "x", succeeded: "", failed: "", learnings: "", strategic_context: "" },
+    ];
+    expect(generateJournalCsv(entries)).toMatch(/\n$/);
+  });
+
 });

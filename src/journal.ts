@@ -43,7 +43,8 @@ export const JOURNAL_HELP_TEXT = `\
 Usage: pnpm journal [options]
 
 Options:
-  --md              Output journal as Markdown instead of JSON
+  --format <fmt>    Output format: json (default), md, or csv
+  --md              Shorthand for --format md
   --limit <N>       Limit output to the most recent N entries
   --since <CYCLE>   Show only entries from cycle CYCLE onwards (inclusive)
   --cycle <N>       Show the journal entry for exactly one specific cycle
@@ -89,12 +90,48 @@ export function formatJournalMarkdown(entries: JournalExportEntry[]): string {
 }
 
 /**
+ * Wrap a single CSV field value per RFC 4180:
+ * - Fields containing commas, double-quotes, CR, or LF are wrapped in double-quotes.
+ * - Any double-quote within the field is escaped by doubling it ("").
+ * - null / undefined are treated as an empty string.
+ */
+function csvQuoteField(value: string | null | undefined): string {
+  const s = value ?? "";
+  if (s.includes(",") || s.includes('"') || s.includes("\n") || s.includes("\r")) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+
+/**
+ * Serialize journal entries as RFC 4180 CSV.
+ * The first row is a fixed header; subsequent rows are one entry each.
+ * An empty entries array produces a header-only output (still RFC 4180 valid).
+ */
+export function generateJournalCsv(entries: JournalExportEntry[]): string {
+  const HEADER = "cycleNumber,date,attempted,succeeded,failed,learnings,strategic_context";
+  const lines: string[] = [HEADER];
+  for (const entry of entries) {
+    lines.push([
+      csvQuoteField(String(entry.cycleNumber)),
+      csvQuoteField(entry.date),
+      csvQuoteField(entry.attempted),
+      csvQuoteField(entry.succeeded),
+      csvQuoteField(entry.failed),
+      csvQuoteField(entry.learnings),
+      csvQuoteField(entry.strategic_context),
+    ].join(","));
+  }
+  return lines.join("\n") + "\n";
+}
+
+/**
  * Core journal export logic, accepting a db parameter for testability.
  * Returns the string that would be printed to stdout.
  */
 export function generateJournalOutput(
   db: Database.Database,
-  options: { format?: "json" | "md"; limit?: number; since?: number; cycle?: number } = {},
+  options: { format?: "json" | "md" | "csv"; limit?: number; since?: number; cycle?: number } = {},
 ): string {
   const { format = "json", limit, since, cycle } = options;
   // Math.floor normalises fractional values (e.g. 3.7 → 3).
@@ -114,11 +151,26 @@ export function generateJournalOutput(
     return formatJournalMarkdown(entries);
   }
 
+  if (format === "csv") {
+    return generateJournalCsv(entries);
+  }
+
   return JSON.stringify(entries, null, 2);
 }
 
-export function parseArgs(argv: string[]): { format: "json" | "md"; limit?: number; since?: number; cycle?: number } {
-  const format = argv.includes("--md") ? "md" as const : "json" as const;
+export function parseArgs(argv: string[]): { format: "json" | "md" | "csv"; limit?: number; since?: number; cycle?: number } {
+  let format: "json" | "md" | "csv" = "json";
+  // --format <fmt> takes precedence; unknown values fall back to "json"
+  const formatFlagIdx = argv.indexOf("--format");
+  if (formatFlagIdx !== -1 && argv[formatFlagIdx + 1]) {
+    const val = argv[formatFlagIdx + 1];
+    if (val === "csv" || val === "md") {
+      format = val;
+    }
+  } else if (argv.includes("--md")) {
+    // Legacy shorthand kept for backward compatibility
+    format = "md";
+  }
   return {
     format,
     limit: parseIntArg(argv, "--limit"),
