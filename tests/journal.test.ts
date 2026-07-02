@@ -10,6 +10,7 @@ import {
   JOURNAL_FAILED_HEADER,
   JOURNAL_LEARNINGS_HEADER,
   JOURNAL_STRATEGIC_CONTEXT_HEADER,
+  JOURNAL_HELP_TEXT,
 } from "../src/journal.js";
 import { makeOutcome } from "./helpers.js";
 
@@ -154,6 +155,23 @@ describe("generateJournalOutput", () => {
     const output = generateJournalOutput(db, { since: 0 });
     const parsed = JSON.parse(output);
     expect(parsed).toHaveLength(2);
+  });
+});
+
+describe("JOURNAL_HELP_TEXT (value-pinning)", () => {
+  it("contains 'Usage: pnpm journal'", () => {
+    expect(JOURNAL_HELP_TEXT).toContain("Usage: pnpm journal");
+  });
+
+  it("lists --md, --limit, --since, and --help flags", () => {
+    expect(JOURNAL_HELP_TEXT).toContain("--md");
+    expect(JOURNAL_HELP_TEXT).toContain("--limit");
+    expect(JOURNAL_HELP_TEXT).toContain("--since");
+    expect(JOURNAL_HELP_TEXT).toContain("--help");
+  });
+
+  it("ends with a newline (stdout.write-safe)", () => {
+    expect(JOURNAL_HELP_TEXT.endsWith("\n")).toBe(true);
   });
 });
 

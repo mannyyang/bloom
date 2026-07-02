@@ -24,6 +24,7 @@ import {
   JOURNAL_LEARNINGS_HEADER,
   JOURNAL_STRATEGIC_CONTEXT_HEADER,
 } from "./db.js";
+import { parseHelpFlag } from "./stats.js";
 
 export {
   JOURNAL_ATTEMPTED_HEADER,
@@ -32,6 +33,21 @@ export {
   JOURNAL_LEARNINGS_HEADER,
   JOURNAL_STRATEGIC_CONTEXT_HEADER,
 };
+
+/**
+ * Usage text printed when `pnpm journal --help` is invoked.
+ * Lists every supported flag with a short description, mirroring the
+ * convention used by `pnpm stats --help` and `pnpm roadmap --help`.
+ */
+export const JOURNAL_HELP_TEXT = `\
+Usage: pnpm journal [options]
+
+Options:
+  --md              Output journal as Markdown instead of JSON
+  --limit <N>       Limit output to the most recent N entries
+  --since <CYCLE>   Show only entries from cycle CYCLE onwards (inclusive)
+  --help, -h        Print this help message and exit
+`;
 
 /**
  * Append a Markdown section (header + content + blank line) to `lines`
@@ -119,6 +135,11 @@ export function parseArgs(argv: string[]): { format: "json" | "md"; limit?: numb
 }
 
 function main() {
+  if (parseHelpFlag(process.argv)) {
+    process.stdout.write(JOURNAL_HELP_TEXT);
+    return;
+  }
+
   const db = initDb();
 
   try {
