@@ -1868,6 +1868,17 @@ describe("parseSearchArg", () => {
   it("returns undefined when --search has no following value", () => {
     expect(parseSearchArg(["node", "stats.js", "--search"])).toBeUndefined();
   });
+  it("returns undefined when --search is followed by an empty string (falsy val guard)", () => {
+    // argv.indexOf("--search") finds it; argv[idx+1] === "" which is falsy,
+    // so !val is true and the function returns undefined.
+    expect(parseSearchArg(["node", "stats.js", "--search", ""])).toBeUndefined();
+  });
+  it("returns whitespace-only string as-is (trimming is caller's responsibility)", () => {
+    // " " is truthy and doesn't start with "--", so the function returns it.
+    // Callers like filterBySearchTerm trim internally, so the whitespace-only
+    // search term correctly produces a no-op filter (all items returned).
+    expect(parseSearchArg(["node", "stats.js", "--search", " "])).toBe(" ");
+  });
 });
 
 describe("generateStatsTable with --category filter", () => {
