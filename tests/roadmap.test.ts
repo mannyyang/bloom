@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { generateRoadmapOutput, generateRoadmapJson, generateRoadmapMarkdown, generateRoadmapCsv, parseRoadmapFilterFlag, parseFormatFlag, ROADMAP_BODY_PREVIEW_MAX_CHARS, ROADMAP_HELP_TEXT, STATUS_ORDER, type RoadmapJsonSummary } from "../src/roadmap.js";
+import { generateRoadmapOutput, generateRoadmapJson, generateRoadmapMarkdown, generateRoadmapCsv, parseRoadmapFilterFlag, parseFormatFlag, parseRoadmapSearchFlag, ROADMAP_BODY_PREVIEW_MAX_CHARS, ROADMAP_HELP_TEXT, STATUS_ORDER, type RoadmapJsonSummary } from "../src/roadmap.js";
 import { parseHelpFlag } from "../src/stats.js";
 import * as planning from "../src/planning.js";
 import { parseRoadmap, serializeRoadmap, STATUS_COLUMNS, ITEM_BODY_LIMIT, PLANNING_BODY_PREVIEW_CHARS } from "../src/planning.js";
@@ -1825,5 +1825,229 @@ describe("ROADMAP_BODY_PREVIEW_MAX_CHARS vs ITEM_BODY_LIMIT invariant", () => {
     // or PLANNING_BODY_PREVIEW_CHARS is lowered — this test catches it before
     // the divergence silently changes UI density or LLM context quality.
     expect(ROADMAP_BODY_PREVIEW_MAX_CHARS).toBeLessThan(PLANNING_BODY_PREVIEW_CHARS);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// parseRoadmapSearchFlag
+// ---------------------------------------------------------------------------
+
+describe("parseRoadmapSearchFlag", () => {
+  it("returns the search term when --search <term> is present", () => {
+    expect(parseRoadmapSearchFlag(["--search", "csv"])).toBe("csv");
+  });
+
+  it("returns undefined when --search flag is absent", () => {
+    expect(parseRoadmapSearchFlag(["--json"])).toBeUndefined();
+  });
+
+  it("returns undefined when --search has no following argument", () => {
+    expect(parseRoadmapSearchFlag(["--search"])).toBeUndefined();
+  });
+
+  it("returns undefined when --search value starts with --", () => {
+    expect(parseRoadmapSearchFlag(["--search", "--json"])).toBeUndefined();
+  });
+
+  it("preserves the raw term casing (lowercasing happens at filter time)", () => {
+    expect(parseRoadmapSearchFlag(["--search", "CSV"])).toBe("CSV");
+  });
+
+  it("returns the term when combined with other flags", () => {
+    expect(parseRoadmapSearchFlag(["--json", "--search", "refactor", "--filter", "Backlog"])).toBe("refactor");
+  });
+
+  it("ROADMAP_HELP_TEXT lists the --search flag", () => {
+    expect(ROADMAP_HELP_TEXT).toContain("--search");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateRoadmapOutput --search
+// ---------------------------------------------------------------------------
+
+describe("generateRoadmapOutput --search filter", () => {
+  it("returns only items whose title matches the search term", () => {
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP, undefined, "token").join("\n");
+    expect(output).toContain("Track token usage");
+    expect(output).not.toContain("Write more tests");
+    expect(output).not.toContain("Improve prompt efficiency");
+  });
+
+  it("search is case-insensitive", () => {
+    const lower = generateRoadmapOutput(SAMPLE_ROADMAP, undefined, "track").join("\n");
+    const upper = generateRoadmapOutput(SAMPLE_ROADMAP, undefined, "TRACK").join("\n");
+    expect(lower).toContain("Track token usage");
+    expect(upper).toContain("Track token usage");
+  });
+
+  it("returns only items whose body matches the search term", () => {
+    // "cycle 75" appears in the body of "Track token usage" only
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP, undefined, "cycle 75").join("\n");
+    expect(output).toContain("Track token usage");
+    expect(output).not.toContain("Write more tests");
+  });
+
+  it("shows 'No items on the roadmap yet.' when search matches nothing", () => {
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP, undefined, "nonexistentxyzzy").join("\n");
+    expect(output).toContain("No items on the roadmap yet.");
+  });
+
+  it("empty-string search passes all items through", () => {
+    const filtered = generateRoadmapOutput(SAMPLE_ROADMAP, undefined, "").join("\n");
+    const unfiltered = generateRoadmapOutput(SAMPLE_ROADMAP).join("\n");
+    expect(filtered).toBe(unfiltered);
+  });
+
+  it("whitespace-only search is ignored and all items are returned", () => {
+    const filtered = generateRoadmapOutput(SAMPLE_ROADMAP, undefined, "   ").join("\n");
+    const unfiltered = generateRoadmapOutput(SAMPLE_ROADMAP).join("\n");
+    expect(filtered).toBe(unfiltered);
+  });
+
+  it("combines --search with --filter status", () => {
+    // Only Backlog items containing "prompt"
+    const output = generateRoadmapOutput(SAMPLE_ROADMAP, "Backlog", "prompt").join("\n");
+    expect(output).toContain("Improve prompt efficiency");
+    expect(output).not.toContain("Track conversion rate");
+    expect(output).not.toContain("Write more tests");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateRoadmapJson --search
+// ---------------------------------------------------------------------------
+
+describe("generateRoadmapJson --search filter", () => {
+  it("filters items by title match", () => {
+    const { items } = generateRoadmapJson(SAMPLE_ROADMAP, undefined, undefined, "token");
+    expect(items.map(i => i.title)).toContain("Track token usage");
+    expect(items.map(i => i.title)).not.toContain("Write more tests");
+  });
+
+  it("search is case-insensitive", () => {
+    const { items: lower } = generateRoadmapJson(SAMPLE_ROADMAP, undefined, undefined, "track");
+    const { items: upper } = generateRoadmapJson(SAMPLE_ROADMAP, undefined, undefined, "TRACK");
+    expect(lower.map(i => i.title)).toContain("Track token usage");
+    expect(upper.map(i => i.title)).toContain("Track token usage");
+  });
+
+  it("filters items by body content", () => {
+    const { items } = generateRoadmapJson(SAMPLE_ROADMAP, undefined, undefined, "cycle 75");
+    expect(items).toHaveLength(1);
+    expect(items[0].title).toBe("Track token usage");
+  });
+
+  it("summary reflects filtered count", () => {
+    const { summary } = generateRoadmapJson(SAMPLE_ROADMAP, undefined, undefined, "token");
+    expect(summary.total).toBe(1);
+  });
+
+  it("returns empty items array and zero total when nothing matches", () => {
+    const { items, summary } = generateRoadmapJson(SAMPLE_ROADMAP, undefined, undefined, "nonexistentxyzzy");
+    expect(items).toHaveLength(0);
+    expect(summary.total).toBe(0);
+  });
+
+  it("empty search returns all items", () => {
+    const { items: all } = generateRoadmapJson(SAMPLE_ROADMAP);
+    const { items: searched } = generateRoadmapJson(SAMPLE_ROADMAP, undefined, undefined, "");
+    expect(searched).toHaveLength(all.length);
+  });
+
+  it("whitespace-only search returns all items", () => {
+    const { items: all } = generateRoadmapJson(SAMPLE_ROADMAP);
+    const { items: searched } = generateRoadmapJson(SAMPLE_ROADMAP, undefined, undefined, "   ");
+    expect(searched).toHaveLength(all.length);
+  });
+
+  it("combines with filterStatus", () => {
+    const { items } = generateRoadmapJson(SAMPLE_ROADMAP, "Backlog", undefined, "prompt");
+    expect(items).toHaveLength(1);
+    expect(items[0].title).toBe("Improve prompt efficiency");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateRoadmapMarkdown --search
+// ---------------------------------------------------------------------------
+
+describe("generateRoadmapMarkdown --search filter", () => {
+  it("includes only items matching the search term", () => {
+    const md = generateRoadmapMarkdown(SAMPLE_ROADMAP, undefined, "token");
+    expect(md).toContain("Track token usage");
+    expect(md).not.toContain("Write more tests");
+  });
+
+  it("search is case-insensitive", () => {
+    const md = generateRoadmapMarkdown(SAMPLE_ROADMAP, undefined, "TOKEN");
+    expect(md).toContain("Track token usage");
+  });
+
+  it("shows empty-roadmap message when no items match", () => {
+    const md = generateRoadmapMarkdown(SAMPLE_ROADMAP, undefined, "nonexistentxyzzy");
+    expect(md).toContain("_No items on the roadmap yet._");
+  });
+
+  it("empty search returns all items", () => {
+    const all = generateRoadmapMarkdown(SAMPLE_ROADMAP);
+    const searched = generateRoadmapMarkdown(SAMPLE_ROADMAP, undefined, "");
+    expect(searched).toBe(all);
+  });
+
+  it("whitespace-only search is ignored", () => {
+    const all = generateRoadmapMarkdown(SAMPLE_ROADMAP);
+    const searched = generateRoadmapMarkdown(SAMPLE_ROADMAP, undefined, "   ");
+    expect(searched).toBe(all);
+  });
+
+  it("combines --search with --filter status", () => {
+    const md = generateRoadmapMarkdown(SAMPLE_ROADMAP, "Backlog", "prompt");
+    expect(md).toContain("Improve prompt efficiency");
+    expect(md).not.toContain("Track conversion rate");
+    expect(md).not.toContain("Write more tests");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateRoadmapCsv --search
+// ---------------------------------------------------------------------------
+
+describe("generateRoadmapCsv --search filter", () => {
+  it("includes only rows matching the search term", () => {
+    const csv = generateRoadmapCsv(SAMPLE_ROADMAP, undefined, "token");
+    expect(csv).toContain("Track token usage");
+    expect(csv).not.toContain("Write more tests");
+  });
+
+  it("search is case-insensitive", () => {
+    const csv = generateRoadmapCsv(SAMPLE_ROADMAP, undefined, "TOKEN");
+    expect(csv).toContain("Track token usage");
+  });
+
+  it("zero matches still emits header row", () => {
+    const csv = generateRoadmapCsv(SAMPLE_ROADMAP, undefined, "nonexistentxyzzy");
+    const lines = csv.trimEnd().split("\n");
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toBe("title,status,linkedIssueNumber,reactions,sinceCycle,body");
+  });
+
+  it("output always ends with trailing newline even when filtered", () => {
+    const csv = generateRoadmapCsv(SAMPLE_ROADMAP, undefined, "token");
+    expect(csv).toMatch(/\n$/);
+  });
+
+  it("empty search returns all rows", () => {
+    const all = generateRoadmapCsv(SAMPLE_ROADMAP);
+    const searched = generateRoadmapCsv(SAMPLE_ROADMAP, undefined, "");
+    expect(searched).toBe(all);
+  });
+
+  it("combines --search with --filter status", () => {
+    const csv = generateRoadmapCsv(SAMPLE_ROADMAP, "Backlog", "prompt");
+    const lines = csv.trimEnd().split("\n");
+    expect(lines).toHaveLength(2); // header + 1 matching Backlog item
+    expect(csv).toContain("Improve prompt efficiency");
+    expect(csv).not.toContain("Track conversion rate");
   });
 });
