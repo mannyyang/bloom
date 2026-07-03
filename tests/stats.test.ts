@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution, getLastUpdatedCyclePerCategory } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseLastNArg, parseSinceArg, parseCategoryArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES } from "../src/stats.js";
+import { generateStatsOutput, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE, ERROR_CATEGORY_LLM_ERROR } from "../src/errors.js";
 import { MAX_MEMORY_CHARS } from "../src/memory.js";
@@ -1852,6 +1852,21 @@ describe("parseCategoryArg", () => {
   });
   it("returns 'test_failure' for --category test_failure", () => {
     expect(parseCategoryArg(["node", "stats.js", "--category", "test_failure"])).toBe("test_failure");
+  });
+});
+
+describe("parseSearchArg", () => {
+  it("returns undefined when --search flag is absent", () => {
+    expect(parseSearchArg(["node", "stats.js", "--table"])).toBeUndefined();
+  });
+  it("returns the search term when --search has a valid value", () => {
+    expect(parseSearchArg(["node", "stats.js", "--search", "hello"])).toBe("hello");
+  });
+  it("returns undefined when --search is followed by another flag (starts with --)", () => {
+    expect(parseSearchArg(["node", "stats.js", "--search", "--json"])).toBeUndefined();
+  });
+  it("returns undefined when --search has no following value", () => {
+    expect(parseSearchArg(["node", "stats.js", "--search"])).toBeUndefined();
   });
 });
 
