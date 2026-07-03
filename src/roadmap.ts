@@ -23,7 +23,7 @@ import {
   type StatusColumn,
   type ProjectItem,
 } from "./planning.js";
-import { parseJsonFlag, parseHelpFlag } from "./stats.js";
+import { parseJsonFlag, parseHelpFlag, parseSearchArg } from "./stats.js";
 import { csvQuoteField, filterBySearchTerm } from "./csv.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "./db.js";
 import { errorMessage } from "./errors.js";
@@ -102,13 +102,12 @@ export function parseFormatFlag(argv: string[]): "md" | "csv" | undefined {
  * Examples:
  *   --search csv   → "csv"
  *   (absent)       → undefined
+ *
+ * Delegates to the shared parseSearchArg utility from stats.ts so the
+ * identical flag-parsing logic is not duplicated across CLI modules.
  */
 export function parseRoadmapSearchFlag(argv: string[]): string | undefined {
-  const idx = argv.indexOf("--search");
-  if (idx === -1) return undefined;
-  const val = argv[idx + 1];
-  if (!val || val.startsWith("--")) return undefined;
-  return val;
+  return parseSearchArg(argv);
 }
 
 /**

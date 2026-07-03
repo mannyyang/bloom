@@ -100,6 +100,22 @@ export function parseCategoryArg(argv: string[]): string | undefined {
 }
 
 /**
+ * Parse `--search <term>` from an argv array, returning the search string when
+ * present and non-empty, or undefined when the flag is absent, its value is
+ * missing, or the value starts with `--` (i.e. is another flag rather than
+ * a search term).
+ * Exported so journal.ts and roadmap.ts can share this logic without each
+ * duplicating the same indexOf → guard → return pattern.
+ */
+export function parseSearchArg(argv: string[]): string | undefined {
+  const idx = argv.indexOf("--search");
+  if (idx === -1) return undefined;
+  const val = argv[idx + 1];
+  if (!val || val.startsWith("--")) return undefined;
+  return val;
+}
+
+/**
  * Parse `--json` from an argv array, returning true when the flag is present.
  * Mirrors the pattern of parseLastNArg for consistency.
  */

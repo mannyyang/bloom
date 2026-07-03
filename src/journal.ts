@@ -24,7 +24,7 @@ import {
   JOURNAL_LEARNINGS_HEADER,
   JOURNAL_STRATEGIC_CONTEXT_HEADER,
 } from "./db.js";
-import { parseHelpFlag, parseIntArg } from "./stats.js";
+import { parseHelpFlag, parseIntArg, parseSearchArg } from "./stats.js";
 import { csvQuoteField, filterBySearchTerm } from "./csv.js";
 
 export {
@@ -166,18 +166,12 @@ export function parseArgs(argv: string[]): { format: "json" | "md" | "csv"; limi
     // Legacy shorthand kept for backward compatibility
     format = "md";
   }
-  // --search <term>: capture the raw string value following the flag.
-  let search: string | undefined;
-  const searchIdx = argv.indexOf("--search");
-  if (searchIdx !== -1 && argv[searchIdx + 1] && !argv[searchIdx + 1].startsWith("--")) {
-    search = argv[searchIdx + 1];
-  }
   return {
     format,
     limit: parseIntArg(argv, "--limit"),
     since: parseIntArg(argv, "--since"),
     cycle: parseIntArg(argv, "--cycle"),
-    search,
+    search: parseSearchArg(argv),
   };
 }
 
