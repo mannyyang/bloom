@@ -36,10 +36,10 @@ export interface ExtractedLearnings {
 export function extractLearnings(learningsText: string): ExtractedLearnings {
   if (!learningsText || !learningsText.trim()) return { learnings: [] };
 
-  learningsText = learningsText.replace(/\r\n/g, "\n");
+  const normalized = learningsText.replace(/\r\n/g, "\n");
 
   const result: ExtractedLearnings = { learnings: [] };
-  for (const line of learningsText.split("\n")) {
+  for (const line of normalized.split("\n")) {
     const trimmed = line.trim();
     if (!trimmed || !/^[-*\d]/.test(trimmed)) continue;
 
