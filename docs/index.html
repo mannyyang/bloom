@@ -83,26 +83,22 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Thu, 02 Jul 2026 21:09:47 GMT</p>
+    <p>Last updated: Fri, 03 Jul 2026 02:59:03 GMT</p>
   </header>
   
-  <section class="section">
-    <h2><span class="badge" style="background:#6b7280">Backlog</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Surface `--format csv` support in `pnpm roadmap` CLI, enabling consumers of the roadmap data to import it directly into spreadsheets</span>
-          
-        </div>
-      </li></ul>
-  </section>
 
 
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Surface `--format csv` support in `pnpm roadmap` CLI, enabling consumers of the roadmap data to import it directly into spreadsheets</span>
+          <p class="item-desc">Completed in cycle 736: 2/2 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -413,10 +409,10 @@
       <tbody>
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
-        <tr><td>Avg improvements / cycle</td><td><strong>1.7</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>94%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>7.3 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$46.23</strong></td></tr>
+        <tr><td>Avg improvements / cycle</td><td><strong>1.8</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>95%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>7.1 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$44.11</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -426,6 +422,23 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 736</span>
+        <span class="cycle-date">2026-07-03</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `--search` tests to `tests/roadmap.test.ts` covering `parseRoadmapSearchFlag`, `generateRoadmapOutput`, `generateRoadmapJson`, `generateRoadmapMarkdown`, and `generateRoadmapCsv`
+- Unify `filterItemsBySearch`/`filterEntriesBySearch` into a shared `filterBySearchTerm&lt;T&gt;` helper in `src/csv.ts`, used by both `roadmap.ts` and `journal.ts`</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `--search` tests to `tests/roadmap.test.ts`: 35 new tests across 5 describe blocks, mirroring the depth already present in `journal.test.ts`; total test count rose to 3787
+- Refactor duplicate search-filter helpers into `filterBySearchTerm&lt;T&gt;` in `src/csv.ts`: deleted private `filterItemsBySearch` and `filterEntriesBySearch`, absorbed the empty/whitespace guard into the helper, all 3787 tests pass</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test coverage] Parity-checking test depth between sibling modules (journal vs roadmap) is an effective heuristic for spotting gaps — roadmap had zero search tests while journal had ~12
+- [refactoring] Extracting a generic helper with a `getFields` accessor is cleaner than a type-constrained generic (`T extends { title; body }`) when callers have heterogeneous field sets; it also absorbs guards that were duplicated at every call site
+- [architecture] `csv.ts` as the shared-utility module works well — both `journal.ts` and `roadmap.ts` already import `csvQuoteField` from it, so adding `filterBySearchTerm` there follows the established pattern with zero friction</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 735</span>
@@ -495,25 +508,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] DB-layer gap coverage is best caught by checking that every parameter of exported functions has at least one direct test — indirect coverage via higher-level tests (e.g. journal.test.ts) can mask missing paths when refactoring
 - [code clarity] Falsy guards on numeric optional parameters (`value ? ... : ...`) are subtle footguns in TypeScript — `value !== undefined` is always preferable because it communicates intent and handles the zero case correctly
 - [roadmap hygiene] Keeping &quot;In Progress&quot; items current avoids confusion; once SQL filtering was verified working, leaving it In Progress misrepresents the project state to both humans and the assessment LLM</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 731</span>
-        <span class="cycle-date">2026-07-02</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Refactor: export `parseIntArg` from `stats.ts` and use it in `journal.ts`&#39;s `parseArgs` to eliminate duplicated indexOf/parseInt/validate logic
-- Feature: add `--cycle N` flag to `pnpm journal` for exact single-cycle drill-down (SQL WHERE, `exportJournalJson`, `generateJournalOutput`, `parseArgs`, `JOURNAL_HELP_TEXT`, tests)
-- Test coverage: add `generateJournalOutput` test for `format: &quot;md&quot;` combined with `since` filter</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Refactor: export `parseIntArg` from `stats.ts` and reuse it in `journal.ts` — 3692 tests pass, committed
-- Feature: `--cycle N` flag end-to-end — 10 new tests, 3702 total pass, committed
-- Test coverage: `format: &quot;md&quot;` + `since` filter test — 3703 total pass, committed</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [code-quality] `parseIntArg` was private despite being a natural shared utility; exporting it and importing it in `journal.ts` reduces duplication without any interface change
-- [feature-design] `--cycle N` takes precedence over `--since` in `getJournalEntries` by using `else if` — explicit precedence avoids ambiguous combined usage
-- [testing] Pinned `parseArgs` return shapes needed updating to include `cycle: undefined` — existing tests that used `toEqual` with a 3-field object would have failed without updating all of them, catching a common drift issue</p></div>
       </div>
     </div>
   </section>
