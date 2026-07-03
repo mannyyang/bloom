@@ -248,6 +248,13 @@ describe("buildFileManifest", () => {
     expect(result).toContain("tests/evolve.test.ts");
   });
 
+  it("includes scripts/ .ts files when run from the project root", () => {
+    const result = buildFileManifest();
+    // scripts/ contains generate-pages.ts and other build-time scripts.
+    // The agent needs to see these files to understand the full codebase.
+    expect(result).toContain("scripts/generate-pages.ts");
+  });
+
   it("only contains .ts files (no .js, .json, or other extensions)", () => {
     const result = buildFileManifest();
     if (result.length === 0) return; // empty is acceptable (e.g., missing dirs)

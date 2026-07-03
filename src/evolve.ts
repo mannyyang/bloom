@@ -24,7 +24,7 @@ export interface AssessmentContext {
  * Paths are relative to cwd (e.g. "src/evolve.ts", "tests/evolve.test.ts").
  */
 export function buildFileManifest(cwd: string = process.cwd()): string {
-  const dirs = ["src", "tests"];
+  const dirs = ["src", "tests", "scripts"];
   const files: string[] = [];
 
   for (const dir of dirs) {
