@@ -24,7 +24,7 @@ import {
   type ProjectItem,
 } from "./planning.js";
 import { parseJsonFlag, parseHelpFlag } from "./stats.js";
-import { csvQuoteField } from "./csv.js";
+import { csvQuoteField, filterBySearchTerm } from "./csv.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "./db.js";
 import { errorMessage } from "./errors.js";
 
@@ -112,19 +112,6 @@ export function parseRoadmapSearchFlag(argv: string[]): string | undefined {
 }
 
 /**
- * Filter roadmap items by a case-insensitive search term across title and body.
- * Returns only items where title or body contains the term.
- */
-function filterItemsBySearch<T extends { title: string; body?: string | null }>(items: T[], term: string): T[] {
-  const lower = term.toLowerCase();
-  return items.filter(
-    (item) =>
-      item.title.toLowerCase().includes(lower) ||
-      (item.body != null && item.body.toLowerCase().includes(lower)),
-  );
-}
-
-/**
  * Serialize roadmap items as RFC 4180 CSV.
  * Columns: title, status, linkedIssueNumber, reactions, sinceCycle, body
  * The first row is a fixed header. An empty items array produces header-only output.
@@ -167,10 +154,8 @@ export function generateRoadmapCsv(content: string, filterStatus?: StatusColumn,
  */
 export function generateRoadmapMarkdown(content: string, filterStatus?: StatusColumn, search?: string): string {
   let items = parseRoadmap(content);
-  // Apply --search filter post-parse (pure JS, no schema changes needed).
-  if (search && search.trim().length > 0) {
-    items = filterItemsBySearch(items, search.trim());
-  }
+  // Apply --search filter post-parse via shared csv.ts helper.
+  items = filterBySearchTerm(items, search ?? "", (i) => [i.title, i.body]);
   const lines: string[] = [];
 
   lines.push("# Bloom Evolution Roadmap");
@@ -235,10 +220,8 @@ export function generateRoadmapMarkdown(content: string, filterStatus?: StatusCo
  */
 export function generateRoadmapOutput(content: string, filterStatus?: StatusColumn, search?: string): string[] {
   let items = parseRoadmap(content);
-  // Apply --search filter post-parse (pure JS, no schema changes needed).
-  if (search && search.trim().length > 0) {
-    items = filterItemsBySearch(items, search.trim());
-  }
+  // Apply --search filter post-parse via shared csv.ts helper.
+  items = filterBySearchTerm(items, search ?? "", (i) => [i.title, i.body]);
   const lines: string[] = [];
 
   lines.push("");
@@ -380,10 +363,8 @@ export function generateRoadmapJson(content: string, filterStatus?: StatusColumn
     cleanItems = cleanItems.filter((item) => item.status === filterStatus);
   }
 
-  // Apply --search filter post-clean (pure JS, no schema changes needed).
-  if (search && search.trim().length > 0) {
-    cleanItems = filterItemsBySearch(cleanItems, search.trim());
-  }
+  // Apply --search filter post-clean via shared csv.ts helper.
+  cleanItems = filterBySearchTerm(cleanItems, search ?? "", (i) => [i.title, i.body]);
 
   // Sort items by STATUS_ORDER so JSON output matches CLI display order.
   // Items with an unrecognised/null status are placed last.

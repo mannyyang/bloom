@@ -25,7 +25,7 @@ import {
   JOURNAL_STRATEGIC_CONTEXT_HEADER,
 } from "./db.js";
 import { parseHelpFlag, parseIntArg } from "./stats.js";
-import { csvQuoteField } from "./csv.js";
+import { csvQuoteField, filterBySearchTerm } from "./csv.js";
 
 export {
   JOURNAL_ATTEMPTED_HEADER,
@@ -114,19 +114,6 @@ export function generateJournalCsv(entries: JournalExportEntry[]): string {
 }
 
 /**
- * Filter journal entries by a case-insensitive search term across all text fields.
- * Returns the entries that contain the term in any of: attempted, succeeded, failed,
- * learnings, or strategic_context.
- */
-function filterEntriesBySearch(entries: JournalExportEntry[], term: string): JournalExportEntry[] {
-  const lower = term.toLowerCase();
-  return entries.filter((entry) =>
-    [entry.attempted, entry.succeeded, entry.failed, entry.learnings, entry.strategic_context]
-      .some((field) => field != null && field.toLowerCase().includes(lower)),
-  );
-}
-
-/**
  * Core journal export logic, accepting a db parameter for testability.
  * Returns the string that would be printed to stdout.
  */
@@ -148,10 +135,12 @@ export function generateJournalOutput(
   const safeCycle = cycle !== undefined && cycle > 0 ? cycle : undefined;
   let entries = exportJournalJson(db, safeLimit !== undefined && safeLimit > 0 ? safeLimit : undefined, safeSince, safeCycle);
 
-  // Apply --search filter post-fetch (pure JS, no schema changes needed).
-  if (search && search.trim().length > 0) {
-    entries = filterEntriesBySearch(entries, search.trim());
-  }
+  // Apply --search filter post-fetch via shared csv.ts helper.
+  entries = filterBySearchTerm(
+    entries,
+    search ?? "",
+    (e) => [e.attempted, e.succeeded, e.failed, e.learnings, e.strategic_context],
+  );
 
   if (format === "md") {
     return formatJournalMarkdown(entries);
