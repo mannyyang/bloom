@@ -568,6 +568,17 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // names appear as suffixes (e.g. NODE_ENV=production) or inside grep/echo arguments.
   { pattern: /(?:^|[;&|]\s*)BASH_ENV\s*=/, category: "env-var-injection" },
   { pattern: /(?:^|[;&|]\s*)ENV\s*=/, category: "env-var-injection" },
+  // GIT_SSH_COMMAND / GIT_SSH replace git's SSH transport with an arbitrary command, redirecting
+  // all git fetch/push traffic to an attacker-controlled binary outside PreToolUse inspection.
+  // GIT_EXEC_PATH overrides git's own executable directory, replacing git sub-commands entirely.
+  // GIT_TEMPLATE_DIR injects hooks into every newly cloned repository.
+  // GIT_ASKPASS hijacks credential prompts to exfiltrate secrets or inject credentials.
+  // All are anchored to command-start boundaries to avoid false positives on variable reads.
+  { pattern: /(?:^|[;&|]\s*)GIT_SSH_COMMAND\s*=/, category: "env-var-injection" },
+  { pattern: /(?:^|[;&|]\s*)GIT_SSH\s*=/, category: "env-var-injection" },
+  { pattern: /(?:^|[;&|]\s*)GIT_EXEC_PATH\s*=/, category: "env-var-injection" },
+  { pattern: /(?:^|[;&|]\s*)GIT_TEMPLATE_DIR\s*=/, category: "env-var-injection" },
+  { pattern: /(?:^|[;&|]\s*)GIT_ASKPASS\s*=/, category: "env-var-injection" },
   // Kernel-module loading — `insmod` and `modprobe` load native code directly into ring-0.
   // A loaded module persists across reboots, can intercept any syscall, and cannot be
   // observed or blocked by userspace hook interception. Neither has legitimate use in Bloom.

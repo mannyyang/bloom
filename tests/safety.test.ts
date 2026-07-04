@@ -2399,8 +2399,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 178 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(178);
+  it("has exactly 183 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(183);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2628,6 +2628,12 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       // env-var-injection (shell startup)
       "BASH_ENV=/tmp/evil.sh bash script.sh",
       "ENV=/tmp/evil.sh sh script.sh",
+      // env-var-injection (git transport/exec hijacking)
+      "GIT_SSH_COMMAND='ssh -i /tmp/evil' git fetch",
+      "GIT_SSH=/tmp/evil-ssh git clone git@github.com:victim/repo",
+      "GIT_EXEC_PATH=/tmp/evil git status",
+      "GIT_TEMPLATE_DIR=/tmp/evil git clone https://example.com/repo",
+      "GIT_ASKPASS=/tmp/steal-creds git fetch",
       // kernel-module-loading
       "insmod evil.ko",
       "modprobe evil_module",
@@ -2732,6 +2738,11 @@ describe("category: env-var-injection", () => {
     ["PYTHONSTARTUP assignment", "PYTHONSTARTUP=/tmp/evil.py python3"],
     ["BASH_ENV assignment", "BASH_ENV=/tmp/evil.sh bash script.sh"],
     ["ENV assignment (POSIX sh)", "ENV=/tmp/evil.sh sh script.sh"],
+    ["GIT_SSH_COMMAND assignment", "GIT_SSH_COMMAND='ssh -i /tmp/evil' git fetch"],
+    ["GIT_SSH assignment", "GIT_SSH=/tmp/evil-ssh git clone git@github.com:victim/repo"],
+    ["GIT_EXEC_PATH assignment", "GIT_EXEC_PATH=/tmp/evil git status"],
+    ["GIT_TEMPLATE_DIR assignment", "GIT_TEMPLATE_DIR=/tmp/evil git clone https://example.com/repo"],
+    ["GIT_ASKPASS assignment", "GIT_ASKPASS=/tmp/steal-creds git fetch"],
   ])("blocks %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("env-var-injection");
   });
@@ -2786,6 +2797,28 @@ describe("category: env-var-injection", () => {
   });
   it("does not flag grep searching for PERL5LIB= in Makefile", () => {
     expect(isDangerousCommand("grep 'PERL5LIB=' Makefile")).toBeNull();
+  });
+  // GIT_* transport/exec hijacking
+  it("blocks GIT_SSH_COMMAND= (SSH transport replacement)", () => {
+    expect(isDangerousCommand("GIT_SSH_COMMAND='ssh -i /tmp/evil' git fetch")).toBe("env-var-injection");
+  });
+  it("blocks GIT_SSH= (legacy SSH transport replacement)", () => {
+    expect(isDangerousCommand("GIT_SSH=/tmp/evil-ssh git clone git@github.com:victim/repo")).toBe("env-var-injection");
+  });
+  it("blocks GIT_EXEC_PATH= (git executable directory override)", () => {
+    expect(isDangerousCommand("GIT_EXEC_PATH=/tmp/evil git status")).toBe("env-var-injection");
+  });
+  it("blocks GIT_TEMPLATE_DIR= (hook injection via clone template)", () => {
+    expect(isDangerousCommand("GIT_TEMPLATE_DIR=/tmp/evil git clone https://example.com/repo")).toBe("env-var-injection");
+  });
+  it("blocks GIT_ASKPASS= (credential prompt hijacking)", () => {
+    expect(isDangerousCommand("GIT_ASKPASS=/tmp/steal-creds git fetch")).toBe("env-var-injection");
+  });
+  it("does not flag echo $GIT_SSH_COMMAND (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $GIT_SSH_COMMAND")).toBeNull();
+  });
+  it("does not flag echo $GIT_EXEC_PATH (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $GIT_EXEC_PATH")).toBeNull();
   });
 });
 
