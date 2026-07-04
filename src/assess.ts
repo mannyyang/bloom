@@ -31,7 +31,20 @@ import {
 import { extractResultText, formatDurationSec } from "./usage.js";
 import { resolveModel, AGENT_ASSESSMENT_MAX_TURNS, AGENT_ASSESSMENT_MAX_BUDGET_USD } from "./agent-phases.js";
 import { CONTEXT_JOURNAL_MAX_CHARS, CONTEXT_JOURNAL_MAX_CYCLES } from "./context.js";
-import { parseVerboseFlag } from "./stats.js";
+import { parseVerboseFlag, parseHelpFlag } from "./stats.js";
+
+/**
+ * Usage text printed when `pnpm assess --help` is invoked.
+ * Lists every supported flag with a short description, mirroring
+ * the STATS_HELP_TEXT convention from stats.ts.
+ */
+export const ASSESS_HELP_TEXT = `\
+Usage: pnpm assess [options]
+
+Options:
+  --verbose             Print the fully-built assessment prompt and exit (no LLM call)
+  --help, -h            Print this help message and exit
+`;
 
 /**
  * Re-export the canonical assessment limits so callers that import from
@@ -42,6 +55,12 @@ export const ASSESS_MAX_TURNS = AGENT_ASSESSMENT_MAX_TURNS;
 export const ASSESS_MAX_BUDGET_USD = AGENT_ASSESSMENT_MAX_BUDGET_USD;
 
 export async function main() {
+  // --help: print usage text and exit immediately (no DB, no LLM call).
+  if (parseHelpFlag(process.argv)) {
+    process.stdout.write(ASSESS_HELP_TEXT);
+    return;
+  }
+
   const startTime = Date.now();
   console.log("\n========================================");
   console.log("  Bloom Assessment (read-only)");

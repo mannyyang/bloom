@@ -52,6 +52,7 @@ vi.mock("../src/usage.js", () => ({
 
 vi.mock("../src/stats.js", () => ({
   parseVerboseFlag: vi.fn().mockReturnValue(false),
+  parseHelpFlag: vi.fn().mockReturnValue(false),
 }));
 
 vi.mock("../src/agent-phases.js", () => ({
@@ -77,8 +78,8 @@ import { errorMessage } from "../src/errors.js";
 import { ensureProject, readRoadmap, parseRoadmap, formatPlanningContext, pickNextItem, STATUS_DONE } from "../src/planning.js";
 import { formatMemoryForPrompt, MAX_MEMORY_CHARS } from "../src/memory.js";
 import { resolveModel } from "../src/agent-phases.js";
-import { parseVerboseFlag } from "../src/stats.js";
-import { main, ASSESS_MAX_TURNS, ASSESS_MAX_BUDGET_USD } from "../src/assess.js";
+import { parseVerboseFlag, parseHelpFlag } from "../src/stats.js";
+import { main, ASSESS_MAX_TURNS, ASSESS_MAX_BUDGET_USD, ASSESS_HELP_TEXT } from "../src/assess.js";
 import { CONTEXT_JOURNAL_MAX_CHARS, CONTEXT_JOURNAL_MAX_CYCLES } from "../src/context.js";
 
 const mockQuery = vi.mocked(query);
@@ -101,6 +102,7 @@ const mockGetCycleStats = vi.mocked(getCycleStats);
 const mockResolveModel = vi.mocked(resolveModel);
 const mockErrorMessage = vi.mocked(errorMessage);
 const mockParseVerboseFlag = vi.mocked(parseVerboseFlag);
+const mockParseHelpFlag = vi.mocked(parseHelpFlag);
 
 // Helper: create an async generator that yields the provided messages.
 // Cast to `never` is required because the SDK's Query type extends AsyncGenerator
@@ -153,6 +155,7 @@ describe("assess.ts main()", () => {
     mockResolveModel.mockReturnValue("claude-opus-4-5");
     mockErrorMessage.mockImplementation((e: unknown) => String(e));
     mockParseVerboseFlag.mockReturnValue(false);
+    mockParseHelpFlag.mockReturnValue(false);
   });
 
   it("calls buildAssessmentPrompt with cycleCount one above the latest cycle", async () => {
@@ -600,5 +603,39 @@ describe("assess.ts main()", () => {
 
     const call = mockBuildAssessmentPrompt.mock.calls[0][0];
     expect(call.planningContext).toContain("⚠ Roadmap empty — please propose new backlog items.");
+  });
+
+  it("--help: prints ASSESS_HELP_TEXT and does NOT call query", async () => {
+    // Core contract: when --help is set, main() prints usage and exits before
+    // building any prompt or invoking the LLM (zero cost, offline-safe).
+    mockParseHelpFlag.mockReturnValue(true);
+    const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+    await main();
+
+    expect(stdoutSpy).toHaveBeenCalledWith(ASSESS_HELP_TEXT);
+    expect(mockQuery).not.toHaveBeenCalled();
+
+    stdoutSpy.mockRestore();
+  });
+
+  it("--help: exits before building the assessment prompt", async () => {
+    // Regression guard: --help must short-circuit before buildAssessmentPrompt
+    // is called, so no context loading or LLM work is done.
+    mockParseHelpFlag.mockReturnValue(true);
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+    await main();
+
+    expect(mockBuildAssessmentPrompt).not.toHaveBeenCalled();
+
+    vi.restoreAllMocks();
+  });
+
+  it("ASSESS_HELP_TEXT contains --verbose and --help flags", () => {
+    // Value-pinning: the help text must document the two supported flags so
+    // users can discover them without reading source.
+    expect(ASSESS_HELP_TEXT).toContain("--verbose");
+    expect(ASSESS_HELP_TEXT).toContain("--help");
   });
 });
