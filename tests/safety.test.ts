@@ -2065,12 +2065,12 @@ describe("buildProtectedFilePatterns", () => {
   }
 
   describe("structural count pin", () => {
-    it("returns exactly 17 patterns (no-append mode)", () => {
-      expect(buildProtectedFilePatterns("X.md")).toHaveLength(17);
+    it("returns exactly 18 patterns (no-append mode)", () => {
+      expect(buildProtectedFilePatterns("X.md")).toHaveLength(18);
     });
 
-    it("returns exactly 17 patterns (allowAppend mode)", () => {
-      expect(buildProtectedFilePatterns("X.md", { allowAppend: true })).toHaveLength(17);
+    it("returns exactly 18 patterns (allowAppend mode)", () => {
+      expect(buildProtectedFilePatterns("X.md", { allowAppend: true })).toHaveLength(18);
     });
   });
 

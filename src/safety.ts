@@ -657,6 +657,10 @@ export function buildProtectedFilePatterns(filename: string, opts?: { allowAppen
     new RegExp(`git\\s+restore\\s+.*${escaped}`),
     // shred — securely overwrites and deletes files; bypasses all other rm/unlink guards
     new RegExp(`\\bshred\\s+.*${escaped}`),
+    // install(1) — Unix install utility copies a source file to a destination; `install SRC DEST`
+    // silently overwrites the destination without any -m/--mode flag, bypassing the DANGEROUS_PATTERNS
+    // guard which only fires when permission flags are present.
+    new RegExp(`\\binstall\\s+(?:.*\\s)?(?:\\S*/)?${escaped}(?:\\s|$|;|&|\\|)`),
   ];
   return patterns;
 }
