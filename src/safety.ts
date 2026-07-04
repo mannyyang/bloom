@@ -254,6 +254,13 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /git\s+tag\s+(?:-d|--delete)\b/, category: "git-ref-destruction" },
   // Git ref destruction — switch -C force-creates or resets an existing branch to HEAD (ref destruction)
   { pattern: /git\s+switch\s+(?:.*\s)?-C\b/, category: "git-ref-destruction" },
+  // Git internals tampering — git config core.hooksPath redirects the hooks directory to an
+  // attacker-controlled path, causing every subsequent git hook (pre-commit, post-commit,
+  // pre-push, etc.) to execute attacker-controlled code entirely outside PreToolUse inspection.
+  // core.gitProxy redirects the git protocol proxy, enabling SSRF/exfiltration via git operations.
+  // Both are direct side-channel bypasses identical in threat model to tmux send-keys.
+  { pattern: /git\s+config\b.*\bcore\.hooksPath\b/, category: "git-internals-tampering" },
+  { pattern: /git\s+config\b.*\bcore\.gitProxy\b/, category: "git-internals-tampering" },
   // Git internals tampering — rm targeting the .git directory destroys all history, refs,
   // and config with no recovery path. Matches: rm .git, rm -rf .git, rm -rf .git/, rm -rf .git/*
   // The end-of-argument anchor requires whitespace, space/tab after /*, or end-of-string to avoid

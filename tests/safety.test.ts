@@ -361,6 +361,10 @@ describe("blockDangerousCommands", () => {
     ["install -m 777 (world-writable)", "install -m 777 src dst"],
     ["install -m 755 to system path", "install -m 755 dist/index.js /usr/local/bin/bloom"],
     ["install -Dm 644 (combined flags)", "install -Dm 644 bloom.service /etc/systemd/system/"],
+    // Git internals tampering — git config hook/proxy path injection
+    ["git config core.hooksPath injection", "git config core.hooksPath /tmp/evil"],
+    ["git config core.hooksPath with --global", "git config --global core.hooksPath /tmp/evil"],
+    ["git config core.gitProxy injection", "git config core.gitProxy /tmp/evil-proxy"],
     // Git internals tampering — rm targeting .git directory
     ["rm -rf .git", "rm -rf .git"],
     ["rm -rf .git/", "rm -rf .git/"],
@@ -885,6 +889,8 @@ describe("isDangerousCommand", () => {
     ["git switch -C", "git switch -C existing-branch", "git-ref-destruction"],
     ["git tag -d", "git tag -d v1.0.0", "git-ref-destruction"],
     ["git tag --delete", "git tag --delete v1.0.0", "git-ref-destruction"],
+    ["git config core.hooksPath injection", "git config core.hooksPath /tmp/evil", "git-internals-tampering"],
+    ["git config core.gitProxy injection", "git config core.gitProxy /tmp/evil-proxy", "git-internals-tampering"],
     ["chmod .git/", "chmod 777 .git/config", "git-internals-tampering"],
     ["dd of=/dev/", "dd if=/dev/zero of=/dev/sda", "disk-destruction"],
     // disk-destruction chained commands — anchored patterns must fire after ;, &&, |
@@ -2391,8 +2397,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 175 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(175);
+  it("has exactly 177 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(177);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2481,6 +2487,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "git tag -d v1.0.0",
       "git switch -C existing-branch",
       // git-internals-tampering
+      "git config core.hooksPath /tmp/evil",
+      "git config core.gitProxy /tmp/evil-proxy",
       "rm -rf .git",
       "chmod 777 .git/config",
       "chown root .git/",
@@ -3280,6 +3288,21 @@ describe("category: git-internals-tampering", () => {
   });
   it("blocks chmod on .git/config", () => {
     expect(isDangerousCommand("chmod 777 .git/config")).toBe("git-internals-tampering");
+  });
+  it("blocks git config core.hooksPath (hook injection)", () => {
+    expect(isDangerousCommand("git config core.hooksPath /tmp/evil")).toBe("git-internals-tampering");
+  });
+  it("blocks git config --global core.hooksPath", () => {
+    expect(isDangerousCommand("git config --global core.hooksPath /tmp/evil")).toBe("git-internals-tampering");
+  });
+  it("blocks git config core.gitProxy (proxy injection)", () => {
+    expect(isDangerousCommand("git config core.gitProxy /tmp/evil-proxy")).toBe("git-internals-tampering");
+  });
+  it("allows git config user.email (safe key)", () => {
+    expect(isDangerousCommand("git config user.email foo@bar.com")).toBeNull();
+  });
+  it("allows git config --list (read-only)", () => {
+    expect(isDangerousCommand("git config --list")).toBeNull();
   });
   it("allows chmod on non-.git paths", () => {
     expect(isDangerousCommand("chmod +x dist/index.js")).toBeNull();
