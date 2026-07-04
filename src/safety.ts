@@ -76,10 +76,11 @@ export function isDangerousRm(command: string): boolean {
   // all wipe entire trees. Intentionally allows specific subdirectory paths like ./dist or ./build.
   const hasRootPath   = /(?:^|\s)\/(?:\s|$|\*)/.test(rest);
   const hasHomePath   = /(?:^|\s)~\/?(?:\s|$|\*)/.test(rest);
-  const hasCurrentDir = /(?:^|\s)\.(?:\/\*{0,2})?(?:\s|$)/.test(rest);
+  const hasCurrentDir = /(?:^|\s)\.(?:\/(?:\*{1,2}\/)*\*{0,2})?(?:\s|$)/.test(rest);
   // Matches .., ../, ../* and ../** — glob variants bypass the plain ../ guard.
+  // The (?:\/(?:\*{1,2}\/)*\*{0,2})? group also catches deep globs like ../**/* and ../**/**/*.
   // Intentionally allows ../specific-dir (sibling directory paths stay permitted).
-  const hasParentDir  = /(?:^|\s)\.\.(?:\/\*{0,2})?(?:\s|$)/.test(rest);
+  const hasParentDir  = /(?:^|\s)\.\.(?:\/(?:\*{1,2}\/)*\*{0,2})?(?:\s|$)/.test(rest);
   const hasDangerousPath = hasRootPath || hasHomePath || hasCurrentDir || hasParentDir;
 
   // Critical system directories — no legitimate use in Bloom's context

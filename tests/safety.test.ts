@@ -752,12 +752,15 @@ describe("isDangerousRm", () => {
     ["rm -rf ./ (dot-slash)", "rm -rf ./"],
     ["rm -rf ./* (glob all files in cwd)", "rm -rf ./*"],
     ["rm -rf ./** (recursive glob all files in cwd)", "rm -rf ./**"],
+    ["rm -rf ./**/* (deep glob in cwd)", "rm -rf ./**/*"],
+    ["rm -rf ./**/**/* (deeper glob in cwd)", "rm -rf ./**/**/*"],
     ["rm -rf . at end of compound command", "rm -rf ./dist && rm -rf ."],
     // Parent directory — wipes the entire parent of the project tree
     ["rm -rf .. (bare double-dot)", "rm -rf .."],
     ["rm -rf ../ (double-dot-slash)", "rm -rf ../"],
     ["rm -rf ../* (parent glob all files)", "rm -rf ../*"],
     ["rm -rf ../** (parent recursive glob)", "rm -rf ../**"],
+    ["rm -rf ../**/* (deep glob in parent dir)", "rm -rf ../**/*"],
     // Critical system directories
     ["rm -rf /etc", "rm -rf /etc"],
     ["rm -rf /usr", "rm -rf /usr"],
