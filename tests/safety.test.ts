@@ -365,6 +365,7 @@ describe("blockDangerousCommands", () => {
     ["git config core.hooksPath injection", "git config core.hooksPath /tmp/evil"],
     ["git config core.hooksPath with --global", "git config --global core.hooksPath /tmp/evil"],
     ["git config core.gitProxy injection", "git config core.gitProxy /tmp/evil-proxy"],
+    ["git config core.sshCommand injection", "git config core.sshCommand 'evil-ssh-wrapper %h %p'"],
     // Git internals tampering — rm targeting .git directory
     ["rm -rf .git", "rm -rf .git"],
     ["rm -rf .git/", "rm -rf .git/"],
@@ -891,6 +892,7 @@ describe("isDangerousCommand", () => {
     ["git tag --delete", "git tag --delete v1.0.0", "git-ref-destruction"],
     ["git config core.hooksPath injection", "git config core.hooksPath /tmp/evil", "git-internals-tampering"],
     ["git config core.gitProxy injection", "git config core.gitProxy /tmp/evil-proxy", "git-internals-tampering"],
+    ["git config core.sshCommand injection", "git config core.sshCommand 'evil-ssh-wrapper %h %p'", "git-internals-tampering"],
     ["chmod .git/", "chmod 777 .git/config", "git-internals-tampering"],
     ["dd of=/dev/", "dd if=/dev/zero of=/dev/sda", "disk-destruction"],
     // disk-destruction chained commands — anchored patterns must fire after ;, &&, |
@@ -2397,8 +2399,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 177 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(177);
+  it("has exactly 178 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(178);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2489,6 +2491,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       // git-internals-tampering
       "git config core.hooksPath /tmp/evil",
       "git config core.gitProxy /tmp/evil-proxy",
+      "git config core.sshCommand 'evil-ssh-wrapper %h %p'",
       "rm -rf .git",
       "chmod 777 .git/config",
       "chown root .git/",
@@ -3297,6 +3300,12 @@ describe("category: git-internals-tampering", () => {
   });
   it("blocks git config core.gitProxy (proxy injection)", () => {
     expect(isDangerousCommand("git config core.gitProxy /tmp/evil-proxy")).toBe("git-internals-tampering");
+  });
+  it("blocks git config core.sshCommand (SSH command injection)", () => {
+    expect(isDangerousCommand("git config core.sshCommand 'evil-ssh-wrapper %h %p'")).toBe("git-internals-tampering");
+  });
+  it("blocks git config --global core.sshCommand", () => {
+    expect(isDangerousCommand("git config --global core.sshCommand 'evil-ssh-wrapper'")).toBe("git-internals-tampering");
   });
   it("allows git config user.email (safe key)", () => {
     expect(isDangerousCommand("git config user.email foo@bar.com")).toBeNull();

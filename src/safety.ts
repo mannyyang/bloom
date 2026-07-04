@@ -261,6 +261,9 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // Both are direct side-channel bypasses identical in threat model to tmux send-keys.
   { pattern: /git\s+config\b.*\bcore\.hooksPath\b/, category: "git-internals-tampering" },
   { pattern: /git\s+config\b.*\bcore\.gitProxy\b/, category: "git-internals-tampering" },
+  // core.sshCommand is the per-repo config-file equivalent of GIT_SSH_COMMAND: it persists
+  // across sessions and causes every git fetch/push to execute an arbitrary command.
+  { pattern: /git\s+config\b.*\bcore\.sshCommand\b/, category: "git-internals-tampering" },
   // Git internals tampering — rm targeting the .git directory destroys all history, refs,
   // and config with no recovery path. Matches: rm .git, rm -rf .git, rm -rf .git/, rm -rf .git/*
   // The end-of-argument anchor requires whitespace, space/tab after /*, or end-of-string to avoid
