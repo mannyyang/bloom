@@ -549,6 +549,15 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /(?:^|[;&|]\s*)RUBYOPT\s*=/, category: "env-var-injection" },
   { pattern: /(?:^|[;&|]\s*)RUBYLIB\s*=/, category: "env-var-injection" },
   { pattern: /(?:^|[;&|]\s*)PYTHONSTARTUP\s*=/, category: "env-var-injection" },
+  // Shell startup injection — BASH_ENV and ENV:
+  // BASH_ENV=/tmp/evil.sh causes bash to source the file before every non-interactive script
+  // execution, silently hijacking every subsequent bash invocation in the pipeline entirely
+  // outside PreToolUse inspection. ENV=/tmp/evil.sh is the POSIX sh equivalent (sourced by
+  // sh/dash/ash on startup). Identical threat model to LD_PRELOAD and PYTHONPATH above.
+  // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives when these
+  // names appear as suffixes (e.g. NODE_ENV=production) or inside grep/echo arguments.
+  { pattern: /(?:^|[;&|]\s*)BASH_ENV\s*=/, category: "env-var-injection" },
+  { pattern: /(?:^|[;&|]\s*)ENV\s*=/, category: "env-var-injection" },
   // Kernel-module loading — `insmod` and `modprobe` load native code directly into ring-0.
   // A loaded module persists across reboots, can intercept any syscall, and cannot be
   // observed or blocked by userspace hook interception. Neither has legitimate use in Bloom.

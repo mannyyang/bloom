@@ -1019,6 +1019,8 @@ describe("isDangerousCommand", () => {
     ["PYTHONSTARTUP env-var injection", "PYTHONSTARTUP=/tmp/evil.py python3", "env-var-injection"],
     ["LD_LIBRARY_PATH env-var injection", "LD_LIBRARY_PATH=/tmp/evil_libs command", "env-var-injection"],
     ["PERL5LIB env-var injection", "PERL5LIB=/tmp/evil perl script.pl", "env-var-injection"],
+    ["BASH_ENV env-var injection", "BASH_ENV=/tmp/evil.sh bash script.sh", "env-var-injection"],
+    ["ENV env-var injection (POSIX sh)", "ENV=/tmp/evil.sh sh script.sh", "env-var-injection"],
     // process-substitution-execution
     ["process substitution bash", "tee >(bash)", "process-substitution-execution"],
     ["process substitution sh", "cmd > >(sh -c 'id')", "process-substitution-execution"],
@@ -1154,6 +1156,9 @@ describe("isDangerousCommand", () => {
     ["echo $RUBYLIB (safe — read, not set)", "echo $RUBYLIB"],
     ["echo $PYTHONSTARTUP (safe — read, not set)", "echo $PYTHONSTARTUP"],
     ["echo $PERL5LIB (safe — read, not set)", "echo $PERL5LIB"],
+    ["echo $BASH_ENV (safe — read, not set)", "echo $BASH_ENV"],
+    ["echo $ENV (safe — read, not set)", "echo $ENV"],
+    ["NODE_ENV=production (safe — ENV suffix, not bare ENV)", "NODE_ENV=production pnpm build"],
     // safe dnf/yum: bare upgrade/update without a named package is allowed
     ["bare dnf upgrade (no package)", "dnf upgrade"],
     ["bare yum update (no package)", "yum update"],
@@ -2386,8 +2391,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 173 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(173);
+  it("has exactly 175 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(175);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2609,6 +2614,9 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "RUBYOPT=-r/tmp/evil ruby app.rb",
       "RUBYLIB=/tmp/evil ruby app.rb",
       "PYTHONSTARTUP=/tmp/evil.py python3",
+      // env-var-injection (shell startup)
+      "BASH_ENV=/tmp/evil.sh bash script.sh",
+      "ENV=/tmp/evil.sh sh script.sh",
       // kernel-module-loading
       "insmod evil.ko",
       "modprobe evil_module",
@@ -2711,10 +2719,21 @@ describe("category: env-var-injection", () => {
     ["RUBYOPT assignment", "RUBYOPT=-r/tmp/evil ruby app.rb"],
     ["RUBYLIB assignment", "RUBYLIB=/tmp/evil ruby app.rb"],
     ["PYTHONSTARTUP assignment", "PYTHONSTARTUP=/tmp/evil.py python3"],
+    ["BASH_ENV assignment", "BASH_ENV=/tmp/evil.sh bash script.sh"],
+    ["ENV assignment (POSIX sh)", "ENV=/tmp/evil.sh sh script.sh"],
   ])("blocks %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("env-var-injection");
   });
 
+  it("does not flag echo $BASH_ENV (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $BASH_ENV")).toBeNull();
+  });
+  it("does not flag echo $ENV (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $ENV")).toBeNull();
+  });
+  it("does not flag NODE_ENV=production (ENV is a suffix, not bare ENV)", () => {
+    expect(isDangerousCommand("NODE_ENV=production pnpm build")).toBeNull();
+  });
   it("does not flag echo $PYTHONPATH (read, not assignment)", () => {
     expect(isDangerousCommand("echo $PYTHONPATH")).toBeNull();
   });
