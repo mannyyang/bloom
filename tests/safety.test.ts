@@ -1427,6 +1427,16 @@ describe("category: persistence (screen/tmux multiplexer)", () => {
   it("blocks tmux new-session after && (chained)", () => {
     expect(isDangerousCommand("true && tmux new-session -d -s evil")).toBe("persistence");
   });
+  // tmux send-keys — injects arbitrary shell commands into an existing pane, bypassing PreToolUse
+  it("blocks tmux send-keys injection", () => {
+    expect(isDangerousCommand("tmux send-keys -t mysession 'ls /tmp' Enter")).toBe("persistence");
+  });
+  it("blocks tmux send (short form) injection", () => {
+    expect(isDangerousCommand("tmux send -t 0 'ls /tmp' Enter")).toBe("persistence");
+  });
+  it("blocks tmux send-keys after semicolon (chained)", () => {
+    expect(isDangerousCommand("echo setup; tmux send-keys -t evil 'evil cmd' Enter")).toBe("persistence");
+  });
 });
 
 describe("category: awk-code-execution", () => {
@@ -2374,8 +2384,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 172 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(172);
+  it("has exactly 173 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(173);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2615,6 +2625,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       // persistence (multiplexer detach)
       "screen -dm bash evil.sh",
       "tmux new-session -d -s evil",
+      // persistence (tmux send-keys injection)
+      "tmux send-keys -t mysession 'ls /tmp' Enter",
     ];
 
     expect(PROBES).toHaveLength(DANGEROUS_PATTERNS.length);

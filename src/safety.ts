@@ -597,6 +597,9 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // names appear as grep/echo arguments (e.g. grep 'screen -dm' README.md).
   { pattern: /(?:^|[;&|]\s*)screen\b(?=.*-[a-zA-Z]*d)(?=.*-[a-zA-Z]*m)/, category: "persistence" },
   { pattern: /(?:^|[;&|]\s*)tmux\b.*\bnew(?:-session)?\b.*(?:-[a-zA-Z]*d[a-zA-Z]*\b|--detach\b)/, category: "persistence" },
+  // tmux send-keys — injects arbitrary shell commands into an existing pane; these execute outside
+  // the Bash tool and are never seen by PreToolUse hooks, bypassing all safety checks entirely.
+  { pattern: /(?:^|[;&|]\s*)tmux\b.*\bsend(?:-keys)?\b/, category: "persistence" },
 ];
 
 /**
