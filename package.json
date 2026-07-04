@@ -9,6 +9,7 @@
     "evolve": "tsx src/index.ts",
     "assess": "tsx src/assess.ts",
     "stats": "tsx src/stats.ts",
+    "memory": "tsx scripts/memory.ts",
     "journal": "tsx src/journal.ts",
     "roadmap": "tsx src/roadmap.ts",
     "generate-pages": "tsx scripts/generate-pages.ts"
