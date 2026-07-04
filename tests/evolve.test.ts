@@ -255,6 +255,20 @@ describe("buildFileManifest", () => {
     expect(result).toContain("scripts/generate-pages.ts");
   });
 
+  it("includes scripts/export-journal.ts in the file manifest", () => {
+    // Sentinel: if this file is renamed or deleted, CI fails immediately rather
+    // than silently dropping it from the agent's codebase view.
+    const result = buildFileManifest();
+    expect(result).toContain("scripts/export-journal.ts");
+  });
+
+  it("includes scripts/export-roadmap.ts in the file manifest", () => {
+    // Sentinel: if this file is renamed or deleted, CI fails immediately rather
+    // than silently dropping it from the agent's codebase view.
+    const result = buildFileManifest();
+    expect(result).toContain("scripts/export-roadmap.ts");
+  });
+
   it("only contains .ts files (no .js, .json, or other extensions)", () => {
     const result = buildFileManifest();
     if (result.length === 0) return; // empty is acceptable (e.g., missing dirs)
