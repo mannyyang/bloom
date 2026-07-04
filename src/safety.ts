@@ -648,6 +648,12 @@ export function buildProtectedFilePatterns(filename: string, opts?: { allowAppen
     new RegExp(`\\bunlink\\s+.*${escaped}`),
     new RegExp(`(?:^|[;&|]\\s*|\\s)ln\\s+.*${escaped}`),
     new RegExp(`git\\s+checkout\\s+.*--\\s+.*${escaped}`),
+    // git checkout without -- separator: `git checkout IDENTITY.md` or `git checkout HEAD IDENTITY.md`
+    // The with-`--` form above only catches `git checkout -- FILE` / `git checkout REF -- FILE`.
+    // Valid git syntax allows omitting `--` when the filename is unambiguous, so this second
+    // pattern closes the gap.  (?:\\S+\\s+)* consumes any number of ref/flag tokens before the
+    // (optionally path-prefixed) protected filename.
+    new RegExp(`git\\s+checkout\\s+(?:\\S+\\s+)*(?:\\S*/)?${escaped}(?:\\s|$|;|&|\\|)`),
     new RegExp(`git\\s+restore\\s+.*${escaped}`),
     // shred — securely overwrites and deletes files; bypasses all other rm/unlink guards
     new RegExp(`\\bshred\\s+.*${escaped}`),

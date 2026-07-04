@@ -504,6 +504,8 @@ describe("blockDangerousCommands", () => {
     ["dd if=/dev/zero of=IDENTITY.md", "dd if=/dev/zero of=IDENTITY.md"],
     ["git checkout -- IDENTITY.md", "git checkout -- IDENTITY.md"],
     ["git checkout HEAD -- IDENTITY.md", "git checkout HEAD -- IDENTITY.md"],
+    ["git checkout IDENTITY.md (no --)", "git checkout IDENTITY.md"],
+    ["git checkout HEAD IDENTITY.md (no --)", "git checkout HEAD IDENTITY.md"],
     ["git restore IDENTITY.md", "git restore IDENTITY.md"],
     ["git restore --source=HEAD~1 IDENTITY.md", "git restore --source=HEAD~1 IDENTITY.md"],
     ["ln -sf to IDENTITY.md", "ln -sf evil.md IDENTITY.md"],
@@ -2062,12 +2064,12 @@ describe("buildProtectedFilePatterns", () => {
   }
 
   describe("structural count pin", () => {
-    it("returns exactly 16 patterns (no-append mode)", () => {
-      expect(buildProtectedFilePatterns("X.md")).toHaveLength(16);
+    it("returns exactly 17 patterns (no-append mode)", () => {
+      expect(buildProtectedFilePatterns("X.md")).toHaveLength(17);
     });
 
-    it("returns exactly 16 patterns (allowAppend mode)", () => {
-      expect(buildProtectedFilePatterns("X.md", { allowAppend: true })).toHaveLength(16);
+    it("returns exactly 17 patterns (allowAppend mode)", () => {
+      expect(buildProtectedFilePatterns("X.md", { allowAppend: true })).toHaveLength(17);
     });
   });
 
@@ -2101,6 +2103,8 @@ describe("buildProtectedFilePatterns", () => {
       ["rm", "rm IDENTITY.md"],
       ["unlink", "unlink IDENTITY.md"],
       ["git checkout --", "git checkout -- IDENTITY.md"],
+      ["git checkout (no --)", "git checkout IDENTITY.md"],
+      ["git checkout HEAD (no --)", "git checkout HEAD IDENTITY.md"],
       ["git restore", "git restore IDENTITY.md"],
       ["perl -pi -e", "perl -pi -e 's/a/b/' IDENTITY.md"],
       ["perl -i (standalone flag)", "perl -i -p -e 's/a/b/' IDENTITY.md"],
