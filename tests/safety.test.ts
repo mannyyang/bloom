@@ -2122,6 +2122,8 @@ describe("buildProtectedFilePatterns", () => {
       ["perl -i.bak (with backup suffix)", "perl -i.bak -p -e 's/a/b/' IDENTITY.md"],
       ["shred", "shred IDENTITY.md"],
       ["shred -zuf (secure delete flags)", "shred -zuf IDENTITY.md"],
+      ["install SRC DEST (bare, no -m flag)", "install /tmp/evil IDENTITY.md"],
+      ["install with path prefix", "install /tmp/evil path/to/IDENTITY.md"],
     ])("blocks %s", (_desc, command) => {
       expect(matchesAny(patterns, command)).toBe(true);
     });
