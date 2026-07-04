@@ -749,6 +749,7 @@ describe("isDangerousRm", () => {
     ["rm --no-preserve-root /", "rm -rf --no-preserve-root /"],
     ["rm --no-preserve-root on any path", "rm -rf --no-preserve-root /some/path"],
     ["rm --no-preserve-root without other flags", "rm --no-preserve-root /"],
+    ["rm --no-preserve-root unconditional (innocuous path, no -r/-f)", "rm --no-preserve-root /tmp/file"],
     // Current directory — wipes the entire project tree
     ["rm -rf . (bare dot)", "rm -rf ."],
     ["rm -rf ./ (dot-slash)", "rm -rf ./"],
