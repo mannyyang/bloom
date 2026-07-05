@@ -693,6 +693,17 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // `deno run` command, bypassing the existing `deno run https://` guard entirely.
   // Completes the runtime-cache injection cluster: bun, node, python, perl, ruby are all covered.
   { pattern: /(?:^|[;&|]\s*)DENO_DIR\s*=/, category: "env-var-injection" },
+  // GOPATH env-var injection — GOPATH=/tmp/evil redirects the entire Go workspace (source,
+  // binaries, and cached packages) to an attacker-controlled directory. All `go get`, `go build`,
+  // and `go install` commands resolve packages relative to GOPATH, so an attacker-supplied path
+  // causes every subsequent Go invocation to load malicious code. Follows the same injection
+  // vector as JAVA_HOME / GEM_HOME already blocked in this cluster.
+  { pattern: /(?:^|[;&|]\s*)GOPATH\s*=/, category: "env-var-injection" },
+  // GOROOT env-var injection — GOROOT=/tmp/evil_go replaces the Go toolchain directory itself.
+  // Setting this before any `go` invocation causes the runtime and standard library to be loaded
+  // from the attacker-supplied path, giving full control over every Go program's execution
+  // environment. Completes the Go toolchain env-var cluster alongside GOPATH.
+  { pattern: /(?:^|[;&|]\s*)GOROOT\s*=/, category: "env-var-injection" },
 ];
 
 /**
