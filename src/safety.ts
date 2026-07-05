@@ -674,6 +674,19 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // _JAVA_OPTIONS=-agentpath:/tmp/evil.so triggers the same native-agent load as JAVA_TOOL_OPTIONS.
   // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives.
   { pattern: /(?:^|[;&|]\s*)_JAVA_OPTIONS\s*=/, category: "env-var-injection" },
+  // JAVA_HOME env-var injection — JAVA_HOME=/tmp/evil_jdk replaces the entire JDK installation
+  // directory, causing java, javac, and jar to all resolve to attacker-controlled binaries. This is
+  // distinct from JAVA_TOOL_OPTIONS (agent loading) and covers the full JDK directory hijack vector.
+  // Present on all GitHub Actions runners (ubuntu-latest, macos-latest, windows-latest).
+  { pattern: /(?:^|[;&|]\s*)JAVA_HOME\s*=/, category: "env-var-injection" },
+  // GEM_HOME env-var injection — GEM_HOME=/tmp/evil redirects Ruby's gem installation directory to
+  // an attacker-controlled path, prepending it to the gem load path. Identical threat model to
+  // PERL5LIB and RUBYLIB (already blocked): any subsequent `gem` or `ruby` invocation loads evil gems.
+  { pattern: /(?:^|[;&|]\s*)GEM_HOME\s*=/, category: "env-var-injection" },
+  // GEM_PATH env-var injection — GEM_PATH=/tmp/evil:$GEM_PATH prepends attacker-controlled gem
+  // directories to Ruby's gem search path. Parallel to GEM_HOME but governs the full search path
+  // list rather than the single installation root; both vectors must be blocked independently.
+  { pattern: /(?:^|[;&|]\s*)GEM_PATH\s*=/, category: "env-var-injection" },
 ];
 
 /**

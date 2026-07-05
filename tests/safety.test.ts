@@ -2400,7 +2400,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
   });
 
   it("has exactly 197 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(197);
+    expect(DANGEROUS_PATTERNS).toHaveLength(200);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2669,6 +2669,10 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "NODE_OPTIONS=--require /tmp/evil.js node app.js",
       "JAVA_TOOL_OPTIONS=-agentpath:/tmp/evil.so java Main",
       "_JAVA_OPTIONS=-agentpath:/tmp/evil.so java Main",
+      // env-var-injection (JDK directory + Ruby gem path hijacking)
+      "JAVA_HOME=/tmp/evil_jdk java Main",
+      "GEM_HOME=/tmp/evil gem exec ruby app.rb",
+      "GEM_PATH=/tmp/evil:$GEM_PATH ruby app.rb",
     ];
 
     expect(PROBES).toHaveLength(DANGEROUS_PATTERNS.length);
