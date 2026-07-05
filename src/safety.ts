@@ -525,6 +525,12 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // appear inside grep/echo arguments (e.g. grep 'LD_PRELOAD=' Makefile or echo "LD_PRELOAD=...").
   { pattern: /(?:^|[;&|]\s*)LD_PRELOAD\s*=/, category: "env-var-injection" },
   { pattern: /(?:^|[;&|]\s*)LD_LIBRARY_PATH\s*=/, category: "env-var-injection" },
+  // DYLD_INSERT_LIBRARIES / DYLD_LIBRARY_PATH — macOS equivalents of LD_PRELOAD and LD_LIBRARY_PATH.
+  // DYLD_INSERT_LIBRARIES=/tmp/evil.dylib injects an attacker-controlled dylib into every subsequent
+  // process on macOS, identical threat model to LD_PRELOAD on Linux. DYLD_LIBRARY_PATH prepends an
+  // attacker-controlled directory to the macOS dynamic linker search path (mirror of LD_LIBRARY_PATH).
+  // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives.
+  { pattern: /(?:^|[;&|]\s*)DYLD_INSERT_LIBRARIES\s*=/, category: "env-var-injection" },
   // Persistent service installation — `systemctl enable/start/restart/daemon-reload` can install
   // a backdoor service that persists across reboots, well beyond the session boundary.
   // Read-only subcommands (status, is-active, is-enabled) are intentionally left unblocked.
