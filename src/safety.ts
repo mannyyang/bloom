@@ -264,6 +264,11 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // core.sshCommand is the per-repo config-file equivalent of GIT_SSH_COMMAND: it persists
   // across sessions and causes every git fetch/push to execute an arbitrary command.
   { pattern: /git\s+config\b.*\bcore\.sshCommand\b/, category: "git-internals-tampering" },
+  // core.editor and core.pager both execute arbitrary commands: core.editor is invoked on every
+  // interactive commit/rebase/tag, core.pager is piped every paged git output. Both persist across
+  // sessions and share the same threat model as core.hooksPath.
+  { pattern: /git\s+config\b.*\bcore\.editor\b/, category: "git-internals-tampering" },
+  { pattern: /git\s+config\b.*\bcore\.pager\b/, category: "git-internals-tampering" },
   // Git internals tampering — rm targeting the .git directory destroys all history, refs,
   // and config with no recovery path. Matches: rm .git, rm -rf .git, rm -rf .git/, rm -rf .git/*
   // The end-of-argument anchor requires whitespace, space/tab after /*, or end-of-string to avoid

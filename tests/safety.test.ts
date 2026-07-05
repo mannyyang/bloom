@@ -2399,8 +2399,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 183 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(183);
+  it("has exactly 185 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(185);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2492,6 +2492,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "git config core.hooksPath /tmp/evil",
       "git config core.gitProxy /tmp/evil-proxy",
       "git config core.sshCommand 'evil-ssh-wrapper %h %p'",
+      "git config core.editor /tmp/evil-editor",
+      "git config core.pager /tmp/evil-pager",
       "rm -rf .git",
       "chmod 777 .git/config",
       "chown root .git/",
@@ -3339,6 +3341,18 @@ describe("category: git-internals-tampering", () => {
   });
   it("blocks git config --global core.sshCommand", () => {
     expect(isDangerousCommand("git config --global core.sshCommand 'evil-ssh-wrapper'")).toBe("git-internals-tampering");
+  });
+  it("blocks git config core.editor (arbitrary command on every interactive commit)", () => {
+    expect(isDangerousCommand("git config core.editor /tmp/evil-editor")).toBe("git-internals-tampering");
+  });
+  it("blocks git config --global core.editor", () => {
+    expect(isDangerousCommand("git config --global core.editor /tmp/evil-editor")).toBe("git-internals-tampering");
+  });
+  it("blocks git config core.pager (arbitrary command on every paged output)", () => {
+    expect(isDangerousCommand("git config core.pager /tmp/evil-pager")).toBe("git-internals-tampering");
+  });
+  it("blocks git config --global core.pager", () => {
+    expect(isDangerousCommand("git config --global core.pager /tmp/evil-pager")).toBe("git-internals-tampering");
   });
   it("allows git config user.email (safe key)", () => {
     expect(isDangerousCommand("git config user.email foo@bar.com")).toBeNull();
