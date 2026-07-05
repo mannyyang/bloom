@@ -2399,8 +2399,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 190 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(190);
+  it("has exactly 192 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(192);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2661,6 +2661,9 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "tmux new-session -d -s evil",
       // persistence (tmux send-keys injection)
       "tmux send-keys -t mysession 'ls /tmp' Enter",
+      // env-var-injection (node/JVM startup injection)
+      "NODE_OPTIONS=--require /tmp/evil.js node app.js",
+      "JAVA_TOOL_OPTIONS=-agentpath:/tmp/evil.so java Main",
     ];
 
     expect(PROBES).toHaveLength(DANGEROUS_PATTERNS.length);

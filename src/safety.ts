@@ -644,6 +644,18 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // tmux send-keys — injects arbitrary shell commands into an existing pane; these execute outside
   // the Bash tool and are never seen by PreToolUse hooks, bypassing all safety checks entirely.
   { pattern: /(?:^|[;&|]\s*)tmux\b.*\bsend(?:-keys)?\b/, category: "persistence" },
+  // NODE_OPTIONS env-var injection — NODE_OPTIONS=--require /tmp/evil.js causes every
+  // subsequent `node` invocation to load attacker-controlled code, identical threat model
+  // to PYTHONPATH and PERL5LIB already in the env-var-injection cluster.
+  // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives when
+  // NODE_OPTIONS appears inside grep/echo arguments (e.g. echo "NODE_OPTIONS=--max-old-space-size").
+  { pattern: /(?:^|[;&|]\s*)NODE_OPTIONS\s*=/, category: "env-var-injection" },
+  // JAVA_TOOL_OPTIONS env-var injection — JAVA_TOOL_OPTIONS=-agentpath:/tmp/evil.so causes
+  // every JVM invocation to load an attacker-controlled native agent, identical threat model
+  // to LD_PRELOAD already in the env-var-injection cluster. Also covers the widely used
+  // JVM-level alternative _JAVA_OPTIONS via a separate pattern if needed.
+  // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives.
+  { pattern: /(?:^|[;&|]\s*)JAVA_TOOL_OPTIONS\s*=/, category: "env-var-injection" },
 ];
 
 /**
