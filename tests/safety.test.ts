@@ -2399,8 +2399,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 196 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(196);
+  it("has exactly 197 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(197);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2668,6 +2668,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       // env-var-injection (node/JVM startup injection)
       "NODE_OPTIONS=--require /tmp/evil.js node app.js",
       "JAVA_TOOL_OPTIONS=-agentpath:/tmp/evil.so java Main",
+      "_JAVA_OPTIONS=-agentpath:/tmp/evil.so java Main",
     ];
 
     expect(PROBES).toHaveLength(DANGEROUS_PATTERNS.length);

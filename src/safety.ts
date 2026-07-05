@@ -669,6 +669,11 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // JVM-level alternative _JAVA_OPTIONS via a separate pattern if needed.
   // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives.
   { pattern: /(?:^|[;&|]\s*)JAVA_TOOL_OPTIONS\s*=/, category: "env-var-injection" },
+  // _JAVA_OPTIONS — the widely-used undocumented JVM env-var alternative to JAVA_TOOL_OPTIONS.
+  // Accepted by OpenJDK and exploited as a CI-environment fallback: setting
+  // _JAVA_OPTIONS=-agentpath:/tmp/evil.so triggers the same native-agent load as JAVA_TOOL_OPTIONS.
+  // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives.
+  { pattern: /(?:^|[;&|]\s*)_JAVA_OPTIONS\s*=/, category: "env-var-injection" },
 ];
 
 /**
