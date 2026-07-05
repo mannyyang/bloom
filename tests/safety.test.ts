@@ -2400,7 +2400,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
   });
 
   it("has exactly 197 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(207);
+    expect(DANGEROUS_PATTERNS).toHaveLength(210);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2685,6 +2685,10 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "PHP_INI_SCAN_DIR=/tmp/evil php app.php",
       // env-var-injection (zsh startup file hijacking)
       "ZDOTDIR=/tmp/evil zsh",
+      // env-var-injection (build tool config/agent hijacking)
+      "MAVEN_OPTS=-javaagent:/tmp/evil.jar mvn package",
+      "GRADLE_USER_HOME=/tmp/evil gradle build",
+      "COMPOSER_HOME=/tmp/evil composer install",
     ];
 
     expect(PROBES).toHaveLength(DANGEROUS_PATTERNS.length);
@@ -2865,6 +2869,22 @@ describe("category: env-var-injection", () => {
   });
   it("does not flag echo $ZDOTDIR (read, not assignment)", () => {
     expect(isDangerousCommand("echo $ZDOTDIR")).toBeNull();
+  });
+  // MAVEN_OPTS / GRADLE_USER_HOME / COMPOSER_HOME tests
+  it("blocks MAVEN_OPTS= (JVM agent injection via Maven build)", () => {
+    expect(isDangerousCommand("MAVEN_OPTS=-javaagent:/tmp/evil.jar mvn package")).toBe("env-var-injection");
+  });
+  it("blocks GRADLE_USER_HOME= (Gradle init-script injection)", () => {
+    expect(isDangerousCommand("GRADLE_USER_HOME=/tmp/evil gradle build")).toBe("env-var-injection");
+  });
+  it("blocks COMPOSER_HOME= (Composer plugin injection)", () => {
+    expect(isDangerousCommand("COMPOSER_HOME=/tmp/evil composer install")).toBe("env-var-injection");
+  });
+  it("does not flag GRADLE_USER_HOME_BACKUP= (safe suffix)", () => {
+    expect(isDangerousCommand("GRADLE_USER_HOME_BACKUP=/tmp/ok gradle build")).toBeNull();
+  });
+  it("does not flag echo $MAVEN_OPTS (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $MAVEN_OPTS")).toBeNull();
   });
 });
 

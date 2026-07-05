@@ -727,6 +727,20 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // to prevent false positives; the \s*= anchor also avoids matching suffixed names like
   // ZDOTDIR_BACKUP which have no injection risk.
   { pattern: /(?:^|[;&|]\s*)ZDOTDIR\s*=/, category: "env-var-injection" },
+  // MAVEN_OPTS env-var injection — MAVEN_OPTS=-javaagent:/tmp/evil.jar silently injects a
+  // JVM agent into every Maven build invocation, giving an attacker full control over the JVM
+  // process including bytecode rewriting and credential exfiltration. Identical threat model
+  // to JAVA_TOOL_OPTIONS and _JAVA_OPTIONS already blocked in this cluster.
+  { pattern: /(?:^|[;&|]\s*)MAVEN_OPTS\s*=/, category: "env-var-injection" },
+  // GRADLE_USER_HOME env-var injection — GRADLE_USER_HOME=/tmp/evil redirects Gradle's home
+  // directory (registry index, init scripts, plugins, caches) to an attacker-controlled path.
+  // init.gradle / init.gradle.kts files placed there execute automatically for every Gradle
+  // build, enabling arbitrary code execution without any pipeline change.
+  { pattern: /(?:^|[;&|]\s*)GRADLE_USER_HOME\s*=/, category: "env-var-injection" },
+  // COMPOSER_HOME env-var injection — COMPOSER_HOME=/tmp/evil redirects Composer's global
+  // config and plugin directory to an attacker-controlled path. Malicious plugins placed
+  // there are loaded before any `composer install` or `composer update` run.
+  { pattern: /(?:^|[;&|]\s*)COMPOSER_HOME\s*=/, category: "env-var-injection" },
 ];
 
 /**
