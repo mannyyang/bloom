@@ -2399,8 +2399,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 195 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(195);
+  it("has exactly 196 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(196);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2613,6 +2613,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "LD_PRELOAD=/tmp/evil.so command",
       "LD_LIBRARY_PATH=/tmp/evil_libs:$LD_LIBRARY_PATH command",
       "DYLD_INSERT_LIBRARIES=/tmp/evil.dylib command",
+      "DYLD_LIBRARY_PATH=/tmp/evil_libs command",
       // persistence (systemctl)
       "systemctl enable evil.service",
       // data-exfiltration-server

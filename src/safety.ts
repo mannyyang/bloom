@@ -531,6 +531,7 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // attacker-controlled directory to the macOS dynamic linker search path (mirror of LD_LIBRARY_PATH).
   // Anchored to command-start boundaries (^, ;, &, |) to prevent false positives.
   { pattern: /(?:^|[;&|]\s*)DYLD_INSERT_LIBRARIES\s*=/, category: "env-var-injection" },
+  { pattern: /(?:^|[;&|]\s*)DYLD_LIBRARY_PATH\s*=/, category: "env-var-injection" },
   // Persistent service installation — `systemctl enable/start/restart/daemon-reload` can install
   // a backdoor service that persists across reboots, well beyond the session boundary.
   // Read-only subcommands (status, is-active, is-enabled) are intentionally left unblocked.
