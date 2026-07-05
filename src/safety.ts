@@ -720,6 +720,13 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // directive injection as PHPRC but through supplementary config files. Completes the PHP
   // config-injection cluster alongside PHPRC.
   { pattern: /(?:^|[;&|]\s*)PHP_INI_SCAN_DIR\s*=/, category: "env-var-injection" },
+  // ZDOTDIR env-var injection — ZDOTDIR=/tmp/evil causes zsh to source all startup files
+  // (~/.zshenv, ~/.zprofile, ~/.zshrc, ~/.zlogin) from the attacker-controlled path instead
+  // of ~/. This is the zsh-equivalent of BASH_ENV (already blocked) and completes the
+  // shell-startup-file injection cluster. Anchored to command-start boundaries (^, ;, &, |)
+  // to prevent false positives; the \s*= anchor also avoids matching suffixed names like
+  // ZDOTDIR_BACKUP which have no injection risk.
+  { pattern: /(?:^|[;&|]\s*)ZDOTDIR\s*=/, category: "env-var-injection" },
 ];
 
 /**

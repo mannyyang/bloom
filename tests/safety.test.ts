@@ -2400,7 +2400,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
   });
 
   it("has exactly 197 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(206);
+    expect(DANGEROUS_PATTERNS).toHaveLength(207);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2683,6 +2683,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       // env-var-injection (PHP config hijacking)
       "PHPRC=/tmp/evil php app.php",
       "PHP_INI_SCAN_DIR=/tmp/evil php app.php",
+      // env-var-injection (zsh startup file hijacking)
+      "ZDOTDIR=/tmp/evil zsh",
     ];
 
     expect(PROBES).toHaveLength(DANGEROUS_PATTERNS.length);
@@ -2853,6 +2855,16 @@ describe("category: env-var-injection", () => {
   });
   it("does not flag echo $GIT_EXEC_PATH (read, not assignment)", () => {
     expect(isDangerousCommand("echo $GIT_EXEC_PATH")).toBeNull();
+  });
+  // ZDOTDIR tests
+  it("blocks ZDOTDIR= (zsh startup file hijacking)", () => {
+    expect(isDangerousCommand("ZDOTDIR=/tmp/evil zsh")).toBe("env-var-injection");
+  });
+  it("does not flag ZDOTDIR_BACKUP= (safe suffix, not bare ZDOTDIR)", () => {
+    expect(isDangerousCommand("ZDOTDIR_BACKUP=/tmp/ok zsh")).toBeNull();
+  });
+  it("does not flag echo $ZDOTDIR (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $ZDOTDIR")).toBeNull();
   });
 });
 
