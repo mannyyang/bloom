@@ -2399,8 +2399,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 192 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(192);
+  it("has exactly 194 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(194);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2494,6 +2494,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "git config core.sshCommand 'evil-ssh-wrapper %h %p'",
       "git config core.editor /tmp/evil-editor",
       "git config core.pager /tmp/evil-pager",
+      "git config include.path /tmp/evil.gitconfig",
+      "git config includeIf.gitdir:/repo/.path /tmp/evil.gitconfig",
       "rm -rf .git",
       "chmod 777 .git/config",
       "chown root .git/",

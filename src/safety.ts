@@ -269,6 +269,12 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // sessions and share the same threat model as core.hooksPath.
   { pattern: /git\s+config\b.*\bcore\.editor\b/, category: "git-internals-tampering" },
   { pattern: /git\s+config\b.*\bcore\.pager\b/, category: "git-internals-tampering" },
+  // Git internals tampering — git config include.path loads an external gitconfig file that
+  // can set any key transitively, including core.hooksPath — defeating all git-internals-tampering
+  // guards in a single command. includeIf.*.path is the conditional-include variant with the same
+  // capability. Both bypass the per-key patterns above at the config-file level.
+  { pattern: /git\s+config\b.*\binclude\.path\b/, category: "git-internals-tampering" },
+  { pattern: /git\s+config\b.*\bincludeIf\.\S+\.path\b/, category: "git-internals-tampering" },
   // Git internals tampering — rm targeting the .git directory destroys all history, refs,
   // and config with no recovery path. Matches: rm .git, rm -rf .git, rm -rf .git/, rm -rf .git/*
   // The end-of-argument anchor requires whitespace, space/tab after /*, or end-of-string to avoid
