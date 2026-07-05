@@ -704,6 +704,12 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // from the attacker-supplied path, giving full control over every Go program's execution
   // environment. Completes the Go toolchain env-var cluster alongside GOPATH.
   { pattern: /(?:^|[;&|]\s*)GOROOT\s*=/, category: "env-var-injection" },
+  // CARGO_HOME env-var injection — CARGO_HOME=/tmp/evil redirects Cargo's registry index, crate
+  // cache, and installed binaries to an attacker-controlled directory. All `cargo build`,
+  // `cargo install`, and `cargo fetch` commands resolve crates from this path, so a pre-populated
+  // attacker directory causes malicious crates to be loaded silently. Completes the Go+Rust
+  // language-tool env-var cluster.
+  { pattern: /(?:^|[;&|]\s*)CARGO_HOME\s*=/, category: "env-var-injection" },
 ];
 
 /**
