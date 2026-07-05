@@ -584,6 +584,15 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   { pattern: /(?:^|[;&|]\s*)GIT_EXEC_PATH\s*=/, category: "env-var-injection" },
   { pattern: /(?:^|[;&|]\s*)GIT_TEMPLATE_DIR\s*=/, category: "env-var-injection" },
   { pattern: /(?:^|[;&|]\s*)GIT_ASKPASS\s*=/, category: "env-var-injection" },
+  // GIT_CONFIG / GIT_CONFIG_GLOBAL redirect git's entire config file to an attacker-controlled
+  // path, transitively enabling every per-key bypass at once (hooksPath, sshCommand, etc.).
+  // GIT_CONFIG_COUNT + GIT_CONFIG_KEY_n + GIT_CONFIG_VALUE_n is git's env-var config-injection
+  // mechanism that sets arbitrary key-value pairs without touching any file on disk.
+  { pattern: /(?:^|[;&|]\s*)GIT_CONFIG\s*=/, category: "env-var-injection" },
+  { pattern: /(?:^|[;&|]\s*)GIT_CONFIG_GLOBAL\s*=/, category: "env-var-injection" },
+  { pattern: /(?:^|[;&|]\s*)GIT_CONFIG_COUNT\s*=/, category: "env-var-injection" },
+  { pattern: /(?:^|[;&|]\s*)GIT_CONFIG_KEY_\d+\s*=/, category: "env-var-injection" },
+  { pattern: /(?:^|[;&|]\s*)GIT_CONFIG_VALUE_\d+\s*=/, category: "env-var-injection" },
   // Kernel-module loading — `insmod` and `modprobe` load native code directly into ring-0.
   // A loaded module persists across reboots, can intercept any syscall, and cannot be
   // observed or blocked by userspace hook interception. Neither has legitimate use in Bloom.

@@ -2399,8 +2399,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
     }
   });
 
-  it("has exactly 185 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(185);
+  it("has exactly 190 entries (absolute count pin)", () => {
+    expect(DANGEROUS_PATTERNS).toHaveLength(190);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2636,6 +2636,11 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "GIT_EXEC_PATH=/tmp/evil git status",
       "GIT_TEMPLATE_DIR=/tmp/evil git clone https://example.com/repo",
       "GIT_ASKPASS=/tmp/steal-creds git fetch",
+      "GIT_CONFIG=/tmp/evil.gitconfig git push",
+      "GIT_CONFIG_GLOBAL=/tmp/evil.gitconfig git fetch",
+      "GIT_CONFIG_COUNT=1 git status",
+      "GIT_CONFIG_KEY_0=core.hooksPath git status",
+      "GIT_CONFIG_VALUE_0=/tmp/evil git status",
       // kernel-module-loading
       "insmod evil.ko",
       "modprobe evil_module",
@@ -2745,6 +2750,11 @@ describe("category: env-var-injection", () => {
     ["GIT_EXEC_PATH assignment", "GIT_EXEC_PATH=/tmp/evil git status"],
     ["GIT_TEMPLATE_DIR assignment", "GIT_TEMPLATE_DIR=/tmp/evil git clone https://example.com/repo"],
     ["GIT_ASKPASS assignment", "GIT_ASKPASS=/tmp/steal-creds git fetch"],
+    ["GIT_CONFIG assignment (full config redirect)", "GIT_CONFIG=/tmp/evil.gitconfig git push"],
+    ["GIT_CONFIG_GLOBAL assignment", "GIT_CONFIG_GLOBAL=/tmp/evil.gitconfig git fetch"],
+    ["GIT_CONFIG_COUNT assignment (env-var config injection)", "GIT_CONFIG_COUNT=1 git status"],
+    ["GIT_CONFIG_KEY_0 assignment", "GIT_CONFIG_KEY_0=core.hooksPath git status"],
+    ["GIT_CONFIG_VALUE_0 assignment", "GIT_CONFIG_VALUE_0=/tmp/evil git status"],
   ])("blocks %s", (_desc, command) => {
     expect(isDangerousCommand(command)).toBe("env-var-injection");
   });
