@@ -710,6 +710,16 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // attacker directory causes malicious crates to be loaded silently. Completes the Go+Rust
   // language-tool env-var cluster.
   { pattern: /(?:^|[;&|]\s*)CARGO_HOME\s*=/, category: "env-var-injection" },
+  // PHPRC env-var injection — PHPRC=/tmp/evil overrides the path to PHP's php.ini configuration
+  // file. An attacker-supplied php.ini can enable dangerous directives such as `auto_prepend_file`
+  // or `extension`, causing arbitrary code execution before any PHP script runs. Parallel to
+  // PYTHONPATH/PERL5LIB already blocked in this cluster.
+  { pattern: /(?:^|[;&|]\s*)PHPRC\s*=/, category: "env-var-injection" },
+  // PHP_INI_SCAN_DIR env-var injection — PHP_INI_SCAN_DIR=/tmp/evil causes PHP to load additional
+  // .ini files from the attacker-controlled directory at startup, enabling the same malicious
+  // directive injection as PHPRC but through supplementary config files. Completes the PHP
+  // config-injection cluster alongside PHPRC.
+  { pattern: /(?:^|[;&|]\s*)PHP_INI_SCAN_DIR\s*=/, category: "env-var-injection" },
 ];
 
 /**

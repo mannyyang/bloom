@@ -2400,7 +2400,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
   });
 
   it("has exactly 197 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(204);
+    expect(DANGEROUS_PATTERNS).toHaveLength(206);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2680,6 +2680,9 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "GOROOT=/tmp/evil_go go run main.go",
       // env-var-injection (Rust Cargo registry hijacking)
       "CARGO_HOME=/tmp/evil cargo build",
+      // env-var-injection (PHP config hijacking)
+      "PHPRC=/tmp/evil php app.php",
+      "PHP_INI_SCAN_DIR=/tmp/evil php app.php",
     ];
 
     expect(PROBES).toHaveLength(DANGEROUS_PATTERNS.length);
