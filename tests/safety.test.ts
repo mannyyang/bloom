@@ -2400,7 +2400,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
   });
 
   it("has exactly 197 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(200);
+    expect(DANGEROUS_PATTERNS).toHaveLength(201);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2673,6 +2673,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "JAVA_HOME=/tmp/evil_jdk java Main",
       "GEM_HOME=/tmp/evil gem exec ruby app.rb",
       "GEM_PATH=/tmp/evil:$GEM_PATH ruby app.rb",
+      // env-var-injection (Deno module cache hijacking)
+      "DENO_DIR=/tmp/evil deno run app.ts",
     ];
 
     expect(PROBES).toHaveLength(DANGEROUS_PATTERNS.length);

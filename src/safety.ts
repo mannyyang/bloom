@@ -687,6 +687,12 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // directories to Ruby's gem search path. Parallel to GEM_HOME but governs the full search path
   // list rather than the single installation root; both vectors must be blocked independently.
   { pattern: /(?:^|[;&|]\s*)GEM_PATH\s*=/, category: "env-var-injection" },
+  // DENO_DIR env-var injection — DENO_DIR=/tmp/evil redirects Deno's entire module cache to an
+  // attacker-controlled directory. Since Deno resolves remote imports through its cache, an attacker
+  // can pre-populate the directory with malicious module files that are loaded by any subsequent
+  // `deno run` command, bypassing the existing `deno run https://` guard entirely.
+  // Completes the runtime-cache injection cluster: bun, node, python, perl, ruby are all covered.
+  { pattern: /(?:^|[;&|]\s*)DENO_DIR\s*=/, category: "env-var-injection" },
 ];
 
 /**
