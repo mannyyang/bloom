@@ -1,6 +1,9 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
+- [ ] Add `NVM_DIR` env-var injection pattern — `NVM_DIR=/tmp/evil` redirects Node Version Manager's install root; any `nvm use` or `nvm exec` call then resolves node/npm binaries from the attacker-controlled path. Completes the Node toolchain cluster alongside NODE_OPTIONS, NPM_CONFIG_PREFIX, and PNPM_HOME already blocked.
+- [ ] Surface DANGEROUS_PATTERNS count in `pnpm stats --verbose` output for safety audit visibility — makes it easy to confirm that each evolution cycle's pattern additions are reflected in the live count without reading source.
+- [ ] Add `pnpm stats --since N` flag for filtering the stats table to cycles ≥ N, mirroring the `--since` flag already present in `pnpm journal` so both CLIs have a consistent filtering interface.
 
 ## Up Next
 
