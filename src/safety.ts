@@ -752,6 +752,17 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // activation; an attacker-supplied path causes conda and all activated tools to load
   // malicious binaries. conda is pre-installed on GitHub Actions ubuntu-latest and macos-latest.
   { pattern: /(?:^|[;&|]\s*)CONDA_PREFIX\s*=/, category: "env-var-injection" },
+  // BUNDLE_PATH env-var injection — BUNDLE_PATH=/tmp/evil redirects Bundler's gem installation
+  // root to an attacker-controlled directory. Any subsequent `bundle exec` or `bundle install`
+  // resolves gems from that path, silently loading attacker-supplied code. Completes the Ruby
+  // package-manager env-var cluster alongside GEM_HOME and GEM_PATH already blocked above.
+  { pattern: /(?:^|[;&|]\s*)BUNDLE_PATH\s*=/, category: "env-var-injection" },
+  // NPM_CONFIG_PREFIX env-var injection — NPM_CONFIG_PREFIX=/tmp/evil redirects npm's global
+  // prefix directory. `npm install -g` installs executables into <prefix>/bin which is then
+  // prepended to PATH, causing every subsequent command lookup to pass through the
+  // attacker-controlled directory. Completes the Node.js package-manager env-var cluster
+  // alongside NODE_PATH and NODE_OPTIONS already blocked in this list.
+  { pattern: /(?:^|[;&|]\s*)NPM_CONFIG_PREFIX\s*=/, category: "env-var-injection" },
   // conda install <pkg> — pulls arbitrary code from public conda channels (conda-forge, bioconda,
   // defaults). Every peer runtime — pip, gem, cargo, go, apt, brew — is already blocked.
   // conda is present on all GitHub Actions ubuntu-latest and macos-latest runners.

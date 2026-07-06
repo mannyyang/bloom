@@ -2400,7 +2400,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
   });
 
   it("has exactly 197 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(213);
+    expect(DANGEROUS_PATTERNS).toHaveLength(215);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2692,6 +2692,9 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       // env-var-injection (Python virtual environment + conda environment hijacking)
       "VIRTUAL_ENV=/tmp/evil pip install requests",
       "CONDA_PREFIX=/tmp/evil conda run python app.py",
+      // env-var-injection (Ruby Bundler + npm global prefix hijacking)
+      "BUNDLE_PATH=/tmp/evil bundle exec rspec",
+      "NPM_CONFIG_PREFIX=/tmp/evil npm install -g malicious",
       // untrusted-package-installation (conda channel)
       "conda install numpy",
     ];
@@ -2890,6 +2893,25 @@ describe("category: env-var-injection", () => {
   });
   it("does not flag echo $MAVEN_OPTS (read, not assignment)", () => {
     expect(isDangerousCommand("echo $MAVEN_OPTS")).toBeNull();
+  });
+  // BUNDLE_PATH / NPM_CONFIG_PREFIX tests
+  it("blocks BUNDLE_PATH= (Bundler gem root hijacking)", () => {
+    expect(isDangerousCommand("BUNDLE_PATH=/tmp/evil bundle exec rspec")).toBe("env-var-injection");
+  });
+  it("does not flag BUNDLE_PATH_BACKUP= (safe suffix)", () => {
+    expect(isDangerousCommand("BUNDLE_PATH_BACKUP=/tmp/ok bundle exec rspec")).toBeNull();
+  });
+  it("does not flag echo $BUNDLE_PATH (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $BUNDLE_PATH")).toBeNull();
+  });
+  it("blocks NPM_CONFIG_PREFIX= (npm global prefix hijacking)", () => {
+    expect(isDangerousCommand("NPM_CONFIG_PREFIX=/tmp/evil npm install -g malicious")).toBe("env-var-injection");
+  });
+  it("does not flag NPM_CONFIG_PREFIX_OVERRIDE= (safe suffix)", () => {
+    expect(isDangerousCommand("NPM_CONFIG_PREFIX_OVERRIDE=/tmp/ok npm install -g pkg")).toBeNull();
+  });
+  it("does not flag echo $NPM_CONFIG_PREFIX (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $NPM_CONFIG_PREFIX")).toBeNull();
   });
 });
 
