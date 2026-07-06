@@ -1,15 +1,16 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Add `pnpm stats --since N` flag for filtering the stats table to cycles ≥ N, mirroring the `--since` flag already present in `pnpm journal` so both CLIs have a consistent filtering interface.
 
 ## Up Next
 
 ## In Progress
-- [ ] Add `NVM_DIR` env-var injection pattern — `NVM_DIR=/tmp/evil` redirects Node Version Manager's install root; any `nvm use` or `nvm exec` call then resolves node/npm binaries from the attacker-controlled path. Completes the Node toolchain cluster alongside NODE_OPTIONS, NPM_CONFIG_PREFIX, and PNPM_HOME already blocked.
-  [since: 757]
 
 ## Done
+- [x] Add `NVM_DIR` env-var injection pattern — `NVM_DIR=/tmp/evil` redirects Node Version Manager's install root; any `nvm use` or `nvm exec` call then resolves node/npm binaries from the attacker-controlled path. Completes the Node toolchain cluster alongside NODE_OPTIONS, NPM_CONFIG_PREFIX, and PNPM_HOME already blocked.
+  Completed in cycle 758: pattern live at safety.ts line 780, all 218 probe tests pass.
+- [x] Add `pnpm stats --since N` flag for filtering the stats table to cycles ≥ N, mirroring the `--since` flag already present in `pnpm journal` so both CLIs have a consistent filtering interface.
+  Completed in cycle 758: `parseSinceArg`, `generateStatsTable`, `generateStatsOutput`, and `generateStatsJson` all accept `sinceN` in stats.ts.
 - [x] Surface DANGEROUS_PATTERNS count in `pnpm stats --verbose` output for safety audit visibility — makes it easy to confirm that each evolution cycle's pattern additions are reflected in the live count without reading source.
   Completed in cycle 757: 2/2 improvements succeeded.
 - [x] Surface `--format csv` support in `pnpm roadmap` CLI, enabling consumers of the roadmap data to import it directly into spreadsheets
