@@ -2400,7 +2400,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
   });
 
   it("has exactly 197 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(218);
+    expect(DANGEROUS_PATTERNS).toHaveLength(220);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2698,6 +2698,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "RUSTUP_HOME=/tmp/evil rustup update",
       "PNPM_HOME=/tmp/evil pnpm install -g malicious",
       "NVM_DIR=/tmp/evil nvm use 18",
+      "VOLTA_HOME=/tmp/evil volta run node app.js",
+      "BUN_INSTALL=/tmp/evil bun install -g malicious",
       // untrusted-package-installation (conda channel)
       "conda install numpy",
     ];
@@ -2942,6 +2944,24 @@ describe("category: env-var-injection", () => {
   });
   it("does not flag echo $NVM_DIR (read, not assignment)", () => {
     expect(isDangerousCommand("echo $NVM_DIR")).toBeNull();
+  });
+  it("blocks VOLTA_HOME= (Volta toolchain root hijacking)", () => {
+    expect(isDangerousCommand("VOLTA_HOME=/tmp/evil volta run node app.js")).toBe("env-var-injection");
+  });
+  it("does not flag VOLTA_HOME_BACKUP= (safe suffix)", () => {
+    expect(isDangerousCommand("VOLTA_HOME_BACKUP=/safe volta run node")).toBeNull();
+  });
+  it("does not flag echo $VOLTA_HOME (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $VOLTA_HOME")).toBeNull();
+  });
+  it("blocks BUN_INSTALL= (Bun global install root hijacking)", () => {
+    expect(isDangerousCommand("BUN_INSTALL=/tmp/evil bun install -g malicious")).toBe("env-var-injection");
+  });
+  it("does not flag BUN_INSTALL_DIR= (safe suffix)", () => {
+    expect(isDangerousCommand("BUN_INSTALL_DIR=/safe bun install")).toBeNull();
+  });
+  it("does not flag echo $BUN_INSTALL (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $BUN_INSTALL")).toBeNull();
   });
 });
 

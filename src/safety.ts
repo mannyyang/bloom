@@ -778,6 +778,14 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // the attacker-controlled path. Completes the Node toolchain env-var cluster alongside
   // NODE_OPTIONS, NPM_CONFIG_PREFIX, and PNPM_HOME already blocked in this list.
   { pattern: /(?:^|[;&|]\s*)NVM_DIR\s*=/, category: "env-var-injection" },
+  // VOLTA_HOME env-var injection — VOLTA_HOME=/tmp/evil redirects Volta's entire Node/npm/yarn
+  // toolchain directory. Every `node`, `npm`, and `yarn` call managed by Volta resolves
+  // binaries from the attacker-controlled path. Same cluster as NVM_DIR and NODE_OPTIONS.
+  { pattern: /(?:^|[;&|]\s*)VOLTA_HOME\s*=/, category: "env-var-injection" },
+  // BUN_INSTALL env-var injection — BUN_INSTALL=/tmp/evil redirects Bun's global install root
+  // (bin/, lib/). Any globally installed Bun package or script resolves from the attacker-
+  // controlled path. Follows the same pattern as PNPM_HOME and NPM_CONFIG_PREFIX.
+  { pattern: /(?:^|[;&|]\s*)BUN_INSTALL\s*=/, category: "env-var-injection" },
   // conda install <pkg> — pulls arbitrary code from public conda channels (conda-forge, bioconda,
   // defaults). Every peer runtime — pip, gem, cargo, go, apt, brew — is already blocked.
   // conda is present on all GitHub Actions ubuntu-latest and macos-latest runners.
