@@ -1663,6 +1663,26 @@ describe("category: untrusted-package-installation", () => {
   it("does not flag python3 -m mypy (not pip)", () => {
     expect(isDangerousCommand("python3 -m mypy src/")).toBeNull();
   });
+
+  // conda install negative cases — safe subcommands and read-only contexts
+  it("blocks conda install with a package name", () => {
+    expect(isDangerousCommand("conda install numpy")).toBe("untrusted-package-installation");
+  });
+  it("blocks conda install with -c channel flag before package", () => {
+    expect(isDangerousCommand("conda install -c conda-forge numpy")).toBe("untrusted-package-installation");
+  });
+  it("does not flag bare conda install (no package name follows)", () => {
+    expect(isDangerousCommand("conda install")).toBeNull();
+  });
+  it("does not flag conda list (read-only subcommand)", () => {
+    expect(isDangerousCommand("conda list")).toBeNull();
+  });
+  it("does not flag conda activate (environment switching)", () => {
+    expect(isDangerousCommand("conda activate myenv")).toBeNull();
+  });
+  it("does not flag echo 'conda install numpy' (read-only context)", () => {
+    expect(isDangerousCommand("echo 'conda install numpy'")).toBeNull();
+  });
 });
 
 describe("category: system-package-removal", () => {
