@@ -83,37 +83,29 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Mon, 06 Jul 2026 18:14:51 GMT</p>
+    <p>Last updated: Mon, 06 Jul 2026 21:34:37 GMT</p>
   </header>
   
-  <section class="section">
-    <h2><span class="badge" style="background:#6b7280">Backlog</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Add `pnpm stats --since N` flag for filtering the stats table to cycles ≥ N, mirroring the `--since` flag already present in `pnpm journal` so both CLIs have a consistent filtering interface.</span>
-          
-        </div>
-      </li></ul>
-  </section>
 
 
-  <section class="section">
-    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Add `NVM_DIR` env-var injection pattern — `NVM_DIR=/tmp/evil` redirects Node Version Manager&#39;s install root; any `nvm use` or `nvm exec` call then resolves node/npm binaries from the attacker-controlled path. Completes the Node toolchain cluster alongside NODE_OPTIONS, NPM_CONFIG_PREFIX, and PNPM_HOME already blocked.</span>
-          
-        </div>
-      </li></ul>
-  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `NVM_DIR` env-var injection pattern — `NVM_DIR=/tmp/evil` redirects Node Version Manager&#39;s install root; any `nvm use` or `nvm exec` call then resolves node/npm binaries from the attacker-controlled path. Completes the Node toolchain cluster alongside NODE_OPTIONS, NPM_CONFIG_PREFIX, and PNPM_HOME already blocked.</span>
+          <p class="item-desc">Completed in cycle 758: pattern live at safety.ts line 780, all 218 probe tests pass.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `pnpm stats --since N` flag for filtering the stats table to cycles ≥ N, mirroring the `--since` flag already present in `pnpm journal` so both CLIs have a consistent filtering interface.</span>
+          <p class="item-desc">Completed in cycle 758: 3/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -438,10 +430,10 @@
       <tbody>
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
-        <tr><td>Avg improvements / cycle</td><td><strong>1.7</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>79%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>6 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$35.89</strong></td></tr>
+        <tr><td>Avg improvements / cycle</td><td><strong>1.8</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>83%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.1 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$36.29</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -451,6 +443,26 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 758</span>
+        <span class="cycle-date">2026-07-06</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Update ROADMAP.md: mark NVM_DIR env-var injection pattern and `pnpm stats --since N` as Done (both already implemented but still in In Progress/Backlog)
+- Add VOLTA_HOME and BUN_INSTALL env-var injection patterns to safety.ts, update count pins from 218→220, add probes, and add positive + negative test cases
+- Add negative-case tests for the `conda install` pattern (bare install, safe subcommands, read-only echo context)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Update ROADMAP.md: NVM_DIR moved from In Progress to Done; `--since N` moved from Backlog to Done (build+test passed, committed f393569)
+- Add VOLTA_HOME and BUN_INSTALL patterns: 2 new DANGEROUS_PATTERNS entries, count 218→220, all count pins updated across safety.test.ts and stats.test.ts, 6 new unit tests added (build+test passed, committed 10c33e8)
+- Add conda install negative cases: 6 tests covering bare install, safe subcommands (list/activate), and read-only echo context (build+test passed, committed ac0c9bf)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [safety-patterns] When adding env-var injection probe commands that contain flags like `-e`, always verify the probe doesn&#39;t accidentally match an earlier pattern (e.g. `node -e` triggers inline-code-execution before env-var-injection); use a minimal flag-free probe like `volta run node app.js`
+- [test-maintenance] Count pins for DANGEROUS_PATTERNS exist in three separate test files (safety.test.ts count pin, safety.test.ts PROBES array, stats.test.ts verbose output pins) — all three must be updated atomically when adding new patterns
+- [roadmap-hygiene] Roadmap items can drift from reality when multiple improvements land in the same cycle; explicit verification against source code before marking Done prevents false In Progress entries accumulating
+- [test-coverage] Positive-only tests for regex patterns create a silent regression risk; adding negative cases for safe subcommands (conda list, conda activate) and read-only contexts (echo) provides a CI tripwire for future pattern changes</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 757</span>
@@ -518,23 +530,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The absolute count pin (`toHaveLength(N)`) in the structural integrity test must be updated in sync with DANGEROUS_PATTERNS; it is a separate hardcoded assertion from the PROBES symmetry check, so both need updating when adding patterns.
 - [patterns] The `(?:^|[;&amp;|]\s*)VAR\s*=/env-var-injection` anchor pattern is straightforward to extend; new env-var injection guards follow the same regex structure already established for LD_PRELOAD, PYTHONPATH, GEM_HOME, etc.
 - [patterns] The `(?:^|[;&amp;|]\s*)tool\s+subcommand\s+(?:-\S+\s+)*[a-zA-Z@]/untrusted-package-installation` pattern for `conda install` matches perfectly alongside the existing pip/gem/cargo/go/apt/brew entries with no special-casing needed.</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 753</span>
-        <span class="cycle-date">2026-07-05</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `ZDOTDIR` env-var injection pattern to block zsh startup file hijacking
-- Add `MAVEN_OPTS`, `GRADLE_USER_HOME`, `COMPOSER_HOME` env-var injection patterns for build tool config hijacking</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `ZDOTDIR` env-var injection pattern — blocked `ZDOTDIR=/tmp/evil zsh`, safe-suffix `ZDOTDIR_BACKUP` passes through, count pin bumped to 207; all 3900 tests pass
-- Add `MAVEN_OPTS`, `GRADLE_USER_HOME`, `COMPOSER_HOME` patterns — completes JVM/build-tool env-var injection cluster, 5 targeted tests, count pin bumped to 210; all 3905 tests pass</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The absolute count pin test (`toHaveLength(N)`) is a hard gate: every DANGEROUS_PATTERNS addition requires bumping it in the same edit batch as the new patterns and PROBES entries; forgetting it causes an immediate test failure with a clear message showing the off-by-N discrepancy
-- [safety] The `\s*=` boundary pattern used for env-var injection naturally avoids false positives for suffixed variable names (e.g. `ZDOTDIR_BACKUP=`, `GRADLE_USER_HOME_BACKUP=`) without any additional negative lookahead, since the anchor requires the exact variable name followed immediately by optional whitespace then `=`
-- [process] Running `pnpm build &amp;&amp; pnpm test` in a single command provides the fastest feedback loop; TypeScript compilation errors surface before test execution, avoiding wasted test time on type-unsound changes</p></div>
       </div>
     </div>
   </section>
