@@ -741,6 +741,22 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // config and plugin directory to an attacker-controlled path. Malicious plugins placed
   // there are loaded before any `composer install` or `composer update` run.
   { pattern: /(?:^|[;&|]\s*)COMPOSER_HOME\s*=/, category: "env-var-injection" },
+  // VIRTUAL_ENV env-var injection — VIRTUAL_ENV=/tmp/evil redirects pip and virtualenv tooling
+  // to an attacker-controlled Python virtual environment directory. pip reads VIRTUAL_ENV to
+  // determine where to install packages; an attacker-supplied path causes packages to be
+  // resolved from malicious code. Completes the Python virtual-environment injection cluster
+  // alongside PYTHONPATH and PYTHONSTARTUP already blocked in this cluster.
+  { pattern: /(?:^|[;&|]\s*)VIRTUAL_ENV\s*=/, category: "env-var-injection" },
+  // CONDA_PREFIX env-var injection — CONDA_PREFIX=/tmp/evil redirects the conda environment root
+  // directory. conda mutates PATH and resolves packages relative to CONDA_PREFIX during
+  // activation; an attacker-supplied path causes conda and all activated tools to load
+  // malicious binaries. conda is pre-installed on GitHub Actions ubuntu-latest and macos-latest.
+  { pattern: /(?:^|[;&|]\s*)CONDA_PREFIX\s*=/, category: "env-var-injection" },
+  // conda install <pkg> — pulls arbitrary code from public conda channels (conda-forge, bioconda,
+  // defaults). Every peer runtime — pip, gem, cargo, go, apt, brew — is already blocked.
+  // conda is present on all GitHub Actions ubuntu-latest and macos-latest runners.
+  // bare `conda install` (no package name) is not matched as no [a-zA-Z@] token follows.
+  { pattern: /(?:^|[;&|]\s*)conda\s+install\s+(?:-\S+\s+)*[a-zA-Z@]/, category: "untrusted-package-installation" },
 ];
 
 /**

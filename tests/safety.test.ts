@@ -2400,7 +2400,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
   });
 
   it("has exactly 197 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(210);
+    expect(DANGEROUS_PATTERNS).toHaveLength(213);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2689,6 +2689,11 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "MAVEN_OPTS=-javaagent:/tmp/evil.jar mvn package",
       "GRADLE_USER_HOME=/tmp/evil gradle build",
       "COMPOSER_HOME=/tmp/evil composer install",
+      // env-var-injection (Python virtual environment + conda environment hijacking)
+      "VIRTUAL_ENV=/tmp/evil pip install requests",
+      "CONDA_PREFIX=/tmp/evil conda run python app.py",
+      // untrusted-package-installation (conda channel)
+      "conda install numpy",
     ];
 
     expect(PROBES).toHaveLength(DANGEROUS_PATTERNS.length);
