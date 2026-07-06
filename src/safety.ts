@@ -773,6 +773,11 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // self-injection vector. Completes the Node package-manager cluster alongside NODE_OPTIONS
   // and NPM_CONFIG_PREFIX already blocked in this list.
   { pattern: /(?:^|[;&|]\s*)PNPM_HOME\s*=/, category: "env-var-injection" },
+  // NVM_DIR env-var injection — NVM_DIR=/tmp/evil redirects Node Version Manager's install
+  // root. Any `nvm use` or `nvm exec` call then resolves node, npm, and npx binaries from
+  // the attacker-controlled path. Completes the Node toolchain env-var cluster alongside
+  // NODE_OPTIONS, NPM_CONFIG_PREFIX, and PNPM_HOME already blocked in this list.
+  { pattern: /(?:^|[;&|]\s*)NVM_DIR\s*=/, category: "env-var-injection" },
   // conda install <pkg> — pulls arbitrary code from public conda channels (conda-forge, bioconda,
   // defaults). Every peer runtime — pip, gem, cargo, go, apt, brew — is already blocked.
   // conda is present on all GitHub Actions ubuntu-latest and macos-latest runners.

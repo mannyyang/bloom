@@ -2400,7 +2400,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
   });
 
   it("has exactly 197 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(217);
+    expect(DANGEROUS_PATTERNS).toHaveLength(218);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2697,6 +2697,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "NPM_CONFIG_PREFIX=/tmp/evil npm install -g malicious",
       "RUSTUP_HOME=/tmp/evil rustup update",
       "PNPM_HOME=/tmp/evil pnpm install -g malicious",
+      "NVM_DIR=/tmp/evil nvm use 18",
       // untrusted-package-installation (conda channel)
       "conda install numpy",
     ];
@@ -2932,6 +2933,15 @@ describe("category: env-var-injection", () => {
   });
   it("does not flag echo $PNPM_HOME (read, not assignment)", () => {
     expect(isDangerousCommand("echo $PNPM_HOME")).toBeNull();
+  });
+  it("blocks NVM_DIR= (Node Version Manager root hijacking)", () => {
+    expect(isDangerousCommand("NVM_DIR=/tmp/evil nvm use 18")).toBe("env-var-injection");
+  });
+  it("does not flag NVM_DIR_BACKUP= (safe suffix)", () => {
+    expect(isDangerousCommand("NVM_DIR_BACKUP=/safe nvm use 18")).toBeNull();
+  });
+  it("does not flag echo $NVM_DIR (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $NVM_DIR")).toBeNull();
   });
 });
 
