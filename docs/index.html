@@ -83,15 +83,44 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Fri, 03 Jul 2026 02:59:03 GMT</p>
+    <p>Last updated: Mon, 06 Jul 2026 18:14:51 GMT</p>
   </header>
   
+  <section class="section">
+    <h2><span class="badge" style="background:#6b7280">Backlog</span></h2>
+    <ul>
+      <li class="item">
+        <span class="check">⬜</span>
+        <div class="item-body">
+          <span class="item-title">Add `pnpm stats --since N` flag for filtering the stats table to cycles ≥ N, mirroring the `--since` flag already present in `pnpm journal` so both CLIs have a consistent filtering interface.</span>
+          
+        </div>
+      </li></ul>
+  </section>
 
 
+  <section class="section">
+    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
+    <ul>
+      <li class="item">
+        <span class="check">⬜</span>
+        <div class="item-body">
+          <span class="item-title">Add `NVM_DIR` env-var injection pattern — `NVM_DIR=/tmp/evil` redirects Node Version Manager&#39;s install root; any `nvm use` or `nvm exec` call then resolves node/npm binaries from the attacker-controlled path. Completes the Node toolchain cluster alongside NODE_OPTIONS, NPM_CONFIG_PREFIX, and PNPM_HOME already blocked.</span>
+          
+        </div>
+      </li></ul>
+  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Surface DANGEROUS_PATTERNS count in `pnpm stats --verbose` output for safety audit visibility — makes it easy to confirm that each evolution cycle&#39;s pattern additions are reflected in the live count without reading source.</span>
+          <p class="item-desc">Completed in cycle 757: 2/2 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -409,10 +438,10 @@
       <tbody>
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
-        <tr><td>Avg improvements / cycle</td><td><strong>1.8</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>95%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>7.1 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$44.11</strong></td></tr>
+        <tr><td>Avg improvements / cycle</td><td><strong>1.7</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>79%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$35.89</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -424,90 +453,88 @@
     
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 736</span>
-        <span class="cycle-date">2026-07-03</span>
+        <span class="cycle-badge">Cycle 757</span>
+        <span class="cycle-date">2026-07-06</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `--search` tests to `tests/roadmap.test.ts` covering `parseRoadmapSearchFlag`, `generateRoadmapOutput`, `generateRoadmapJson`, `generateRoadmapMarkdown`, and `generateRoadmapCsv`
-- Unify `filterItemsBySearch`/`filterEntriesBySearch` into a shared `filterBySearchTerm&lt;T&gt;` helper in `src/csv.ts`, used by both `roadmap.ts` and `journal.ts`</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `--search` tests to `tests/roadmap.test.ts`: 35 new tests across 5 describe blocks, mirroring the depth already present in `journal.test.ts`; total test count rose to 3787
-- Refactor duplicate search-filter helpers into `filterBySearchTerm&lt;T&gt;` in `src/csv.ts`: deleted private `filterItemsBySearch` and `filterEntriesBySearch`, absorbed the empty/whitespace guard into the helper, all 3787 tests pass</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `Safety patterns: &lt;N&gt;` line to `generateStatsOutput` verbose block and `dangerousPatternsCount` field to `generateStatsJson` verbose result, importing `DANGEROUS_PATTERNS` from `safety.ts`, with pin tests asserting count is 218
+- Update `STATS_HELP_TEXT` `--verbose` description to mention &quot;safety pattern count&quot; and update the snapshot pin test to match</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- feat(stats): surface DANGEROUS_PATTERNS count in --verbose output — adds `Safety patterns: 218` to text output and `dangerousPatternsCount: 218` to JSON output when `--verbose` is set, with 6 new pin tests (commit 478e710)
+- docs(stats): update --verbose help text to mention safety pattern count — keeps the help string accurate after improvement 1 landed, with snapshot test updated (commit 200af50)</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test coverage] Parity-checking test depth between sibling modules (journal vs roadmap) is an effective heuristic for spotting gaps — roadmap had zero search tests while journal had ~12
-- [refactoring] Extracting a generic helper with a `getFields` accessor is cleaner than a type-constrained generic (`T extends { title; body }`) when callers have heterogeneous field sets; it also absorbs guards that were duplicated at every call site
-- [architecture] `csv.ts` as the shared-utility module works well — both `journal.ts` and `roadmap.ts` already import `csvQuoteField` from it, so adding `filterBySearchTerm` there follows the established pattern with zero friction</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test-accuracy] The assessment estimated 218 patterns but the safety.test.ts pin said 197; actual runtime count (218) took precedence — always verify counts via runtime rather than static analysis or prior-cycle snapshots
+- [grep-tool] The Grep tool&#39;s `count` output_mode showed a number above &quot;Found 0 total occurrences across 0 files&quot; which was confusing; the number shown before the message was the match count but the file count was 0 — likely a display artifact for binary or large files
+- [incremental-approach] Doing the feature (improvement 1) first then the help-text fix (improvement 2) as separate commits keeps each change reviewable and individually revertable</p></div>
       </div>
     </div>
 
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 735</span>
-        <span class="cycle-date">2026-07-02</span>
+        <span class="cycle-badge">Cycle 756</span>
+        <span class="cycle-date">2026-07-06</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Deduplicate `csvQuoteField` by extracting it from `journal.ts` and `roadmap.ts` into a shared `src/csv.ts` utility module
-- Add `--search &lt;term&gt;` flag to `pnpm roadmap` CLI, filtering items case-insensitively across title and body in all four output modes (default, --json, --format md, --format csv)
-- Add test coverage for `--search` combined with `--format csv` in the journal CLI (zero-match header-row contract + matching-entries content check)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Deduplicate `csvQuoteField` → `src/csv.ts` (3751 tests pass, committed 488e95b)
-- Add `--search` to `pnpm roadmap` CLI (3751 tests pass, committed 2d72473)
-- Add `--search` + `--format csv` journal tests (3753 tests pass, committed a93ab17)</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add RUSTUP_HOME + PNPM_HOME env-var injection patterns to safety.ts (length pin 215→217, probes + block/allow tests added)
+- Repopulate ROADMAP.md backlog with three new items (NVM_DIR pattern, DANGEROUS_PATTERNS count in stats --verbose, pnpm stats --since N)
+- Add NVM_DIR env-var injection pattern to safety.ts (length pin 217→218, probes + block/allow tests added)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add RUSTUP_HOME + PNPM_HOME env-var injection patterns — 31 lines added, 3920 tests pass, committed as `209f5db`
+- Repopulate ROADMAP.md backlog with three actionable items — committed as `fae867e`
+- Add NVM_DIR env-var injection pattern — 16 lines added, 3920 tests pass, committed as `7a886a5`</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [refactoring] Copy-paste with a comment saying &quot;reuses logic from X&quot; is a code smell that can be mechanically fixed by extracting to a shared module — the comment itself is the evidence the abstraction is missing
-- [feature parity] When two CLIs share a data model, adding a filter feature to one creates an implicit gap in the other; tracking these symmetry gaps explicitly during assessment prevents them from accumulating
-- [testing] RFC 4180 CSV has a subtle contract: an empty result set must still emit the header row — this boundary condition is easy to miss when writing format tests and worth pinning explicitly</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] vitest&#39;s `--test-pattern` flag requires passing directly via `pnpm test -- tests/foo.test.ts` syntax; the `--test-pattern` / `--testPattern` flags are not supported in this project&#39;s vitest version — run the full suite instead
+- [safety] The Node toolchain cluster (NODE_OPTIONS, NPM_CONFIG_PREFIX, PNPM_HOME, NVM_DIR) and Rust cluster (CARGO_HOME, RUSTUP_HOME) share the same threat model: redirecting a tool&#39;s home directory to an attacker-controlled path propagates to every downstream binary lookup
+- [workflow] Incremental pattern additions (one or two at a time) with immediate probe + block/allow tests keep each commit small, reversible, and independently verifiable</p></div>
       </div>
     </div>
 
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 734</span>
-        <span class="cycle-date">2026-07-02</span>
+        <span class="cycle-badge">Cycle 755</span>
+        <span class="cycle-date">2026-07-06</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `pnpm journal --search &lt;term&gt;` full-text keyword filter across all journal text fields
-- Add `--format csv` to `pnpm roadmap` for RFC 4180 CSV export</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `pnpm journal --search &lt;term&gt;` full-text keyword filter — case-insensitive substring match across attempted, succeeded, failed, learnings, strategic_context; help text and parseArgs updated; 15 new tests added; all 3736 tests pass
-- Add `--format csv` to `pnpm roadmap` — generateRoadmapCsv() serialises items with columns title/status/linkedIssueNumber/reactions/sinceCycle/body; parseFormatFlag extended to &quot;md&quot;|&quot;csv&quot;|undefined; help text updated; 10 new tests added; all 3751 tests pass</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `BUNDLE_PATH` env-var-injection pattern to `DANGEROUS_PATTERNS` in `src/safety.ts` with comment block and unit tests
+- Add `NPM_CONFIG_PREFIX` env-var-injection pattern to `DANGEROUS_PATTERNS` in `src/safety.ts` with comment block and unit tests
+- Add both new command strings to the PROBES sentinel array in `tests/safety.test.ts` (regression guard)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Added `BUNDLE_PATH` and `NPM_CONFIG_PREFIX` patterns to `DANGEROUS_PATTERNS`, updated structural count pin (213→215), added entries to PROBES sentinel array, and added 6 unit tests each (block + safe-suffix false-positive + read-only false-positive); all 3911 tests pass</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Test assertions must reflect exact substring semantics — &quot;Refactor&quot; does not contain &quot;refactoring&quot;, so initial test expectation was wrong and required correction before the suite passed
-- [reuse] The csvQuoteField pattern from journal.ts was straightforward to replicate locally in roadmap.ts; a shared utility module would reduce future duplication if more CSV exporters are added
-- [architecture] Post-fetch JS filtering (as used by --search and --since) keeps SQLite queries simple at the cost of fetching slightly more rows; acceptable for journal sizes typical of this project</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The absolute count pin test description says &quot;197 entries&quot; but the assertion value was 213 — the description has drifted from the actual count and must be updated alongside the assertion value when new patterns are added
+- [safety] The PROBES array length must equal `DANGEROUS_PATTERNS.length`; forgetting to add sentinel entries causes a length mismatch failure before any per-pattern test fires
+- [process] Both the pattern addition and the count pin update must land in the same commit to avoid a broken intermediate state where build passes but tests fail</p></div>
       </div>
     </div>
 
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 733</span>
-        <span class="cycle-date">2026-07-02</span>
+        <span class="cycle-badge">Cycle 754</span>
+        <span class="cycle-date">2026-07-06</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Implement `pnpm journal --format csv` export: add `generateJournalCsv()` with RFC 4180 quoting, extend `generateJournalOutput()` to dispatch `format: &quot;csv&quot;`, update `parseArgs()` to recognise `--format &lt;fmt&gt;`, update `JOURNAL_HELP_TEXT`, and add 15 new tests
-- Add 3 backlog items to ROADMAP.md to anchor the evolution loop&#39;s direction</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- feat(journal): implement --format csv export — `generateJournalCsv()` written with full RFC 4180 quoting (commas, double-quotes, newlines, nulls), `parseArgs` extended with `--format` flag, 15 new tests added, all 3721 tests pass
-- chore(roadmap): add three backlog items (`pnpm journal --search`, `pnpm stats --export csv`, `pnpm roadmap --format csv`) so the assessment loop has anchored direction instead of improvising</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add VIRTUAL_ENV env-var injection guard to DANGEROUS_PATTERNS (safety.ts)
+- Add CONDA_PREFIX env-var injection guard to DANGEROUS_PATTERNS (safety.ts)
+- Block `conda install &lt;pkg&gt;` as untrusted-package-installation (safety.ts)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- All three patterns added to `src/safety.ts`, probes added to `tests/safety.test.ts`, absolute count pin updated 210→213; build and all 3905 tests pass; committed and pushed as `feat(safety): block VIRTUAL_ENV, CONDA_PREFIX injection and conda install`</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [bug-fix] ROADMAP &quot;Done&quot; entries can be false positives — always verify the corresponding source code before trusting the roadmap status; the CSV feature was claimed complete in cycle 732 but had zero implementation
-- [testing] Coupling implementation and tests in a single commit is correct when the tests are additive (they don&#39;t break anything until the implementation exists); splitting them would cause a failed build in between
-- [tooling] The Edit tool requires re-reading a file that was externally modified (e.g. by a linter or git hook) before it will accept edits — always re-read if an edit is rejected with the &quot;modified since read&quot; error</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The absolute count pin (`toHaveLength(N)`) in the structural integrity test must be updated in sync with DANGEROUS_PATTERNS; it is a separate hardcoded assertion from the PROBES symmetry check, so both need updating when adding patterns.
+- [patterns] The `(?:^|[;&amp;|]\s*)VAR\s*=/env-var-injection` anchor pattern is straightforward to extend; new env-var injection guards follow the same regex structure already established for LD_PRELOAD, PYTHONPATH, GEM_HOME, etc.
+- [patterns] The `(?:^|[;&amp;|]\s*)tool\s+subcommand\s+(?:-\S+\s+)*[a-zA-Z@]/untrusted-package-installation` pattern for `conda install` matches perfectly alongside the existing pip/gem/cargo/go/apt/brew entries with no special-casing needed.</p></div>
       </div>
     </div>
 
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 732</span>
-        <span class="cycle-date">2026-07-02</span>
+        <span class="cycle-badge">Cycle 753</span>
+        <span class="cycle-date">2026-07-05</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- test(db): add direct `cycleN` tests for `exportJournalJson` — three focused tests: matching cycle, missing cycle, and cycleN precedence over sinceN
-- docs(roadmap): mark &quot;Push --since into SQL&quot; as Done and add `--format csv` backlog item
-- refactor(db): replace falsy `maxCycles ?` guards with explicit `maxCycles !== undefined` in `exportJournalJson`</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- test(db): add direct `cycleN` tests for `exportJournalJson` — 3 new tests, 3706 total passing, committed as 55906c7
-- docs(roadmap): mark &quot;Push --since into SQL&quot; Done + add CSV export backlog item, committed as 96d0a28
-- refactor(db): explicit `!== undefined` guards in `exportJournalJson`, committed as 2ee8b89</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `ZDOTDIR` env-var injection pattern to block zsh startup file hijacking
+- Add `MAVEN_OPTS`, `GRADLE_USER_HOME`, `COMPOSER_HOME` env-var injection patterns for build tool config hijacking</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `ZDOTDIR` env-var injection pattern — blocked `ZDOTDIR=/tmp/evil zsh`, safe-suffix `ZDOTDIR_BACKUP` passes through, count pin bumped to 207; all 3900 tests pass
+- Add `MAVEN_OPTS`, `GRADLE_USER_HOME`, `COMPOSER_HOME` patterns — completes JVM/build-tool env-var injection cluster, 5 targeted tests, count pin bumped to 210; all 3905 tests pass</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] DB-layer gap coverage is best caught by checking that every parameter of exported functions has at least one direct test — indirect coverage via higher-level tests (e.g. journal.test.ts) can mask missing paths when refactoring
-- [code clarity] Falsy guards on numeric optional parameters (`value ? ... : ...`) are subtle footguns in TypeScript — `value !== undefined` is always preferable because it communicates intent and handles the zero case correctly
-- [roadmap hygiene] Keeping &quot;In Progress&quot; items current avoids confusion; once SQL filtering was verified working, leaving it In Progress misrepresents the project state to both humans and the assessment LLM</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The absolute count pin test (`toHaveLength(N)`) is a hard gate: every DANGEROUS_PATTERNS addition requires bumping it in the same edit batch as the new patterns and PROBES entries; forgetting it causes an immediate test failure with a clear message showing the off-by-N discrepancy
+- [safety] The `\s*=` boundary pattern used for env-var injection naturally avoids false positives for suffixed variable names (e.g. `ZDOTDIR_BACKUP=`, `GRADLE_USER_HOME_BACKUP=`) without any additional negative lookahead, since the anchor requires the exact variable name followed immediately by optional whitespace then `=`
+- [process] Running `pnpm build &amp;&amp; pnpm test` in a single command provides the fastest feedback loop; TypeScript compilation errors surface before test execution, avoiding wasted test time on type-unsound changes</p></div>
       </div>
     </div>
   </section>
