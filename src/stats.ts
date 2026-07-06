@@ -15,6 +15,7 @@ import { initDb, getCycleStats, formatCycleStats, getLatestCycleNumber, getCycle
 import { formatMemoryForPrompt } from "./memory.js";
 import { readRoadmap, parseRoadmap, pickNextItemWithRationale } from "./planning.js";
 import { errorMessage, ERROR_CATEGORY_NONE } from "./errors.js";
+import { DANGEROUS_PATTERNS } from "./safety.js";
 
 /**
  * Number of characters of memory to include in the stats preview.
@@ -268,6 +269,8 @@ export interface StatsJsonOutput {
   learningsStaleness?: CategoryStaleness[];
   /** Next-item selection rationale from pickNextItemWithRationale (verbose only). null means no actionable items. */
   nextItemRationale?: string | null;
+  /** Number of active DANGEROUS_PATTERNS entries (verbose only). Lets operators confirm safety coverage without reading source. */
+  dangerousPatternsCount?: number;
 }
 
 /**
@@ -296,6 +299,7 @@ export function generateStatsJson(
   };
   if (verbose) {
     result.learningsStaleness = getLastUpdatedCyclePerCategory(db);
+    result.dangerousPatternsCount = DANGEROUS_PATTERNS.length;
     try {
       const roadmapContent = readRoadmap(roadmapPath);
       const items = parseRoadmap(roadmapContent);
@@ -360,6 +364,9 @@ export function generateStatsOutput(db: Database.Database, lastN?: number, verbo
         lines.push(`  ${entry.category}: last updated cycle ${entry.lastCycle}`);
       }
     }
+
+    lines.push("");
+    lines.push(`Safety patterns: ${DANGEROUS_PATTERNS.length}`);
 
     // Show pickNextItem selection rationale so planning decisions are auditable
     try {
