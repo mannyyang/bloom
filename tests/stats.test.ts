@@ -69,7 +69,7 @@ describe("STATS_HELP_TEXT", () => {
       `  --category <CAT>      Filter to cycles matching failure_category (e.g. build_failure, none)\n` +
       `  --json                Output raw stats as JSON (for scripting/CI)\n` +
       `  --table               Output per-cycle data as an ASCII table\n` +
-      `  --verbose             Include extra detail (staleness data or Failures column)\n` +
+      `  --verbose             Include extra detail (staleness data, safety pattern count, or Failures column)\n` +
       `  --help, -h            Print this help message and exit\n`,
     );
   });

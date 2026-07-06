@@ -162,7 +162,7 @@ Options:
   --category <CAT>      Filter to cycles matching failure_category (e.g. build_failure, none)
   --json                Output raw stats as JSON (for scripting/CI)
   --table               Output per-cycle data as an ASCII table
-  --verbose             Include extra detail (staleness data or Failures column)
+  --verbose             Include extra detail (staleness data, safety pattern count, or Failures column)
   --help, -h            Print this help message and exit
 `;
 
