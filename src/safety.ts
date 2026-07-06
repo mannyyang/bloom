@@ -763,6 +763,16 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // attacker-controlled directory. Completes the Node.js package-manager env-var cluster
   // alongside NODE_PATH and NODE_OPTIONS already blocked in this list.
   { pattern: /(?:^|[;&|]\s*)NPM_CONFIG_PREFIX\s*=/, category: "env-var-injection" },
+  // RUSTUP_HOME env-var injection — RUSTUP_HOME=/tmp/evil redirects the entire Rust toolchain
+  // directory. rustc, cargo, and rustup all resolve binaries and metadata from this path,
+  // making it the parent-level vector for the whole Rust toolchain. CARGO_HOME is already
+  // blocked; this closes the gap at the toolchain-management level.
+  { pattern: /(?:^|[;&|]\s*)RUSTUP_HOME\s*=/, category: "env-var-injection" },
+  // PNPM_HOME env-var injection — PNPM_HOME=/tmp/evil redirects pnpm's content-addressable
+  // store and global binary directory. Bloom itself uses pnpm, making this a direct
+  // self-injection vector. Completes the Node package-manager cluster alongside NODE_OPTIONS
+  // and NPM_CONFIG_PREFIX already blocked in this list.
+  { pattern: /(?:^|[;&|]\s*)PNPM_HOME\s*=/, category: "env-var-injection" },
   // conda install <pkg> — pulls arbitrary code from public conda channels (conda-forge, bioconda,
   // defaults). Every peer runtime — pip, gem, cargo, go, apt, brew — is already blocked.
   // conda is present on all GitHub Actions ubuntu-latest and macos-latest runners.

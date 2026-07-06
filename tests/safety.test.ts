@@ -2400,7 +2400,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
   });
 
   it("has exactly 197 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(215);
+    expect(DANGEROUS_PATTERNS).toHaveLength(217);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2695,6 +2695,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       // env-var-injection (Ruby Bundler + npm global prefix hijacking)
       "BUNDLE_PATH=/tmp/evil bundle exec rspec",
       "NPM_CONFIG_PREFIX=/tmp/evil npm install -g malicious",
+      "RUSTUP_HOME=/tmp/evil rustup update",
+      "PNPM_HOME=/tmp/evil pnpm install -g malicious",
       // untrusted-package-installation (conda channel)
       "conda install numpy",
     ];
@@ -2912,6 +2914,24 @@ describe("category: env-var-injection", () => {
   });
   it("does not flag echo $NPM_CONFIG_PREFIX (read, not assignment)", () => {
     expect(isDangerousCommand("echo $NPM_CONFIG_PREFIX")).toBeNull();
+  });
+  it("blocks RUSTUP_HOME= (Rust toolchain root hijacking)", () => {
+    expect(isDangerousCommand("RUSTUP_HOME=/tmp/evil rustup update")).toBe("env-var-injection");
+  });
+  it("does not flag RUSTUP_HOME_BACKUP= (safe suffix)", () => {
+    expect(isDangerousCommand("RUSTUP_HOME_BACKUP=/safe rustup update")).toBeNull();
+  });
+  it("does not flag echo $RUSTUP_HOME (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $RUSTUP_HOME")).toBeNull();
+  });
+  it("blocks PNPM_HOME= (pnpm global store hijacking)", () => {
+    expect(isDangerousCommand("PNPM_HOME=/tmp/evil pnpm install -g malicious")).toBe("env-var-injection");
+  });
+  it("does not flag PNPM_HOME_OVERRIDE= (safe suffix)", () => {
+    expect(isDangerousCommand("PNPM_HOME_OVERRIDE=/safe pnpm install -g pkg")).toBeNull();
+  });
+  it("does not flag echo $PNPM_HOME (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $PNPM_HOME")).toBeNull();
   });
 });
 
