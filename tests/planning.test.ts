@@ -121,6 +121,23 @@ describe("compareItemsByReactionsThenId", () => {
     expect(compareItemsByReactionsThenId(a, b)).toBeGreaterThan(0);
     expect(compareItemsByReactionsThenId(b, a)).toBeLessThan(0);
   });
+
+  it("falls back to lexicographic order when one ID is standard item-N and the other is non-standard", () => {
+    // Mixed case: only one of aMatch/bMatch is truthy → falls through to lex comparison.
+    // "custom-z" < "item-1" lexicographically ('c' < 'i'), so nonStandard sorts first.
+    const standard = makeItem({ id: "item-1", reactions: 0 });
+    const nonStandard = makeItem({ id: "custom-z", reactions: 0 });
+    expect(compareItemsByReactionsThenId(standard, nonStandard)).toBeGreaterThan(0);
+    expect(compareItemsByReactionsThenId(nonStandard, standard)).toBeLessThan(0);
+  });
+
+  it("mixed ID lex fallback: non-standard ID that sorts after standard-format string", () => {
+    // "zzz-custom" > "item-5" lexicographically ('z' > 'i'), so standard sorts first.
+    const standard = makeItem({ id: "item-5", reactions: 0 });
+    const nonStandard = makeItem({ id: "zzz-custom", reactions: 0 });
+    expect(compareItemsByReactionsThenId(standard, nonStandard)).toBeLessThan(0);
+    expect(compareItemsByReactionsThenId(nonStandard, standard)).toBeGreaterThan(0);
+  });
 });
 
 describe("pickNextItem", () => {
