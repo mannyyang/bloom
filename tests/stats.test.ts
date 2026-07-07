@@ -2020,6 +2020,17 @@ describe("generateStatsJson with --category filter", () => {
     const result = generateStatsJson(db, undefined, false, undefined, undefined, ERROR_CATEGORY_BUILD_FAILURE);
     expect(result.stats.totalCycles).toBe(1);
   });
+
+  it("stats reflect only cycles satisfying both sinceN AND categoryFilter together", () => {
+    // 4 cycles: odd cycles are build_failure, even are none
+    insertCycle(db, makeOutcome({ cycleNumber: 1, failureCategory: ERROR_CATEGORY_BUILD_FAILURE }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2, failureCategory: ERROR_CATEGORY_NONE }));
+    insertCycle(db, makeOutcome({ cycleNumber: 3, failureCategory: ERROR_CATEGORY_BUILD_FAILURE }));
+    insertCycle(db, makeOutcome({ cycleNumber: 4, failureCategory: ERROR_CATEGORY_NONE }));
+    // sinceN=2 keeps cycles 2,3,4; categoryFilter=build_failure keeps only cycle 3
+    const result = generateStatsJson(db, undefined, false, 2, undefined, ERROR_CATEGORY_BUILD_FAILURE);
+    expect(result.stats.totalCycles).toBe(1);
+  });
 });
 
 describe("generateStatsOutput with --category filter", () => {
