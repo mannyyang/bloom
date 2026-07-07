@@ -794,6 +794,12 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // boundaries (^, ;, &, |) to prevent false positives when PATH appears inside grep/echo
   // arguments (e.g. echo "PATH=/usr/bin" or grep 'PATH=' .envrc).
   { pattern: /(?:^|[;&|]\s*)PATH\s*=/, category: "env-var-injection" },
+  // PYTHONUSERBASE env-var injection — PYTHONUSERBASE=/tmp/evil redirects Python's user
+  // site-packages root (~/.local/lib/python*/site-packages). `pip install --user` installs there
+  // and Python auto-loads from it on every invocation, providing a code-injection vector even
+  // without PYTHONPATH. PYTHONPATH and PYTHONSTARTUP are already blocked; this closes the
+  // remaining gap in the Python env-var cluster.
+  { pattern: /(?:^|[;&|]\s*)PYTHONUSERBASE\s*=/, category: "env-var-injection" },
   // conda install <pkg> — pulls arbitrary code from public conda channels (conda-forge, bioconda,
   // defaults). Every peer runtime — pip, gem, cargo, go, apt, brew — is already blocked.
   // conda is present on all GitHub Actions ubuntu-latest and macos-latest runners.

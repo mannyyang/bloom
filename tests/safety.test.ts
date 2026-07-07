@@ -2420,7 +2420,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
   });
 
   it("has exactly 197 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(221);
+    expect(DANGEROUS_PATTERNS).toHaveLength(222);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2722,6 +2722,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "BUN_INSTALL=/tmp/evil bun install -g malicious",
       // env-var-injection (PATH master binary-search bypass)
       "PATH=/tmp/evil git status",
+      // env-var-injection (Python user site-packages root hijacking)
+      "PYTHONUSERBASE=/tmp/evil python3 app.py",
       // untrusted-package-installation (conda channel)
       "conda install numpy",
     ];
@@ -2994,6 +2996,16 @@ describe("category: env-var-injection", () => {
   });
   it("does not flag grep 'PATH=' .envrc (documentation/search context)", () => {
     expect(isDangerousCommand("grep 'PATH=' .envrc")).toBeNull();
+  });
+  // PYTHONUSERBASE injection tests
+  it("blocks PYTHONUSERBASE= (Python user site-packages root hijacking)", () => {
+    expect(isDangerousCommand("PYTHONUSERBASE=/tmp/evil python3 app.py")).toBe("env-var-injection");
+  });
+  it("does not flag echo $PYTHONUSERBASE (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $PYTHONUSERBASE")).toBeNull();
+  });
+  it("does not flag grep 'PYTHONUSERBASE=' setup.py (documentation/search context)", () => {
+    expect(isDangerousCommand("grep 'PYTHONUSERBASE=' setup.py")).toBeNull();
   });
 });
 
