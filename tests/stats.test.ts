@@ -1268,6 +1268,34 @@ describe("generateStatsTable", () => {
       expect(dataRow).toContain("1.5 min"); // Duration column renders normally
     });
   });
+
+  describe("combined sinceN + categoryFilter", () => {
+    it("returns only rows that satisfy both sinceN and categoryFilter together", () => {
+      // Insert 4 cycles: cycle 1 (none), cycle 2 (build_failure), cycle 3 (none), cycle 4 (build_failure)
+      // With sinceN=2 and categoryFilter=build_failure, only cycles 2 and 4 match sinceN,
+      // and of those only cycle 4 matches the category filter (cycle 2 >= sinceN=2 and has build_failure,
+      // cycle 3 >= sinceN=2 but has none — filtered out by category).
+      // Both cycle 2 and cycle 4 have build_failure and are >= sinceN=2, so both appear.
+      insertCycle(db, makeOutcome({ cycleNumber: 1, failureCategory: ERROR_CATEGORY_NONE }));
+      insertCycle(db, makeOutcome({ cycleNumber: 2, failureCategory: ERROR_CATEGORY_BUILD_FAILURE }));
+      insertCycle(db, makeOutcome({ cycleNumber: 3, failureCategory: ERROR_CATEGORY_NONE }));
+      insertCycle(db, makeOutcome({ cycleNumber: 4, failureCategory: ERROR_CATEGORY_BUILD_FAILURE }));
+      const table = generateStatsTable(db, undefined, false, 2, ERROR_CATEGORY_BUILD_FAILURE);
+      // Cycles 2 and 4 satisfy both sinceN=2 and categoryFilter=build_failure
+      expect(table).toContain("2");
+      expect(table).toContain("4");
+      // Cycle 1 is excluded by sinceN (< 2); cycle 3 is excluded by categoryFilter (none ≠ build_failure)
+      const dataRows = table.split("\n").slice(2); // skip header + separator
+      expect(dataRows.length).toBe(2);
+    });
+
+    it("returns empty string when no rows satisfy both sinceN and categoryFilter", () => {
+      // Cycles 1 and 2 have none category; sinceN=1 keeps both but categoryFilter=build_failure excludes both
+      insertCycle(db, makeOutcome({ cycleNumber: 1, failureCategory: ERROR_CATEGORY_NONE }));
+      insertCycle(db, makeOutcome({ cycleNumber: 2, failureCategory: ERROR_CATEGORY_NONE }));
+      expect(generateStatsTable(db, undefined, false, 1, ERROR_CATEGORY_BUILD_FAILURE)).toBe("");
+    });
+  });
 });
 
 describe("parseVerboseFlag", () => {
