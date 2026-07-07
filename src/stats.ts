@@ -64,8 +64,10 @@ export const STATS_NO_ACTIONABLE_ITEMS_MSG = "No actionable items on the roadmap
 export function parseIntArg(argv: string[], flag: string): number | undefined {
   const idx = argv.indexOf(flag);
   if (idx === -1) return undefined;
-  const val = parseInt(argv[idx + 1] ?? "", 10);
-  return !isNaN(val) && val > 0 ? val : undefined;
+  const raw = argv[idx + 1] ?? "";
+  if (!/^\d+$/.test(raw)) return undefined;
+  const val = parseInt(raw, 10);
+  return val > 0 ? val : undefined;
 }
 
 /**

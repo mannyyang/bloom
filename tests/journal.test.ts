@@ -633,10 +633,11 @@ describe("parseArgs", () => {
     expect(result).toEqual({ format: "json", limit: undefined, since: undefined, cycle: undefined });
   });
 
-  it("truncates fractional --limit '3.7' to 3 via parseInt", () => {
-    // parseInt("3.7", 10) === 3; passes the > 0 && !isNaN guard, so limit is 3
+  it("rejects fractional --limit '3.7' as undefined (non-integer string)", () => {
+    // parseIntArg uses /^\d+$/ to reject non-integer strings before parseInt,
+    // so "3.7" is treated the same as a non-numeric value → limit is undefined.
     const result = parseArgs(["--limit", "3.7"]);
-    expect(result).toEqual({ format: "json", limit: 3, since: undefined, cycle: undefined });
+    expect(result.limit).toBeUndefined();
   });
 
   it("treats --limit '0.9' as undefined (parseInt → 0, fails > 0 guard)", () => {
