@@ -102,6 +102,23 @@ describe("filterBySearchTerm", () => {
     expect(result[0].title).toBe("beta");
   });
 
+  it("skips undefined field values without throwing (pins != null vs !== null)", () => {
+    // The implementation uses `field != null` (loose equality), which treats
+    // both null and undefined as non-matching. A refactor to `!== null` (strict)
+    // would break undefined handling silently — this pin catches that.
+    const mixedItems = [
+      { title: "alpha", body: undefined as string | undefined },
+      { title: "beta", body: "find me" },
+    ];
+    const result = filterBySearchTerm(
+      mixedItems,
+      "find",
+      (i) => [i.title, i.body],
+    );
+    expect(result).toHaveLength(1);
+    expect(result[0].title).toBe("beta");
+  });
+
   it("handles an empty items array", () => {
     expect(filterBySearchTerm([], "csv", getFields)).toEqual([]);
   });
