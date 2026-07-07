@@ -315,6 +315,28 @@ describe("updatePlanningStatus", () => {
     );
   });
 
+  it("promotes to Done when linkedIssueNumber appears as bare digits (no # prefix) in succeeded summary", async () => {
+    vi.mocked(updateItemStatus).mockReturnValue(true);
+    const itemWithLinkedIssue: ProjectItem = {
+      ...currentItem,
+      linkedIssueNumber: 42,
+    };
+    const processed = {
+      improvementsSucceeded: 1,
+      improvementsAttempted: 1,
+      // Note: "42" appears without a "#" prefix — the regex (?<![0-9])42(?![0-9]) must still match
+      succeededSummary: "Resolved 42 by refactoring the parser module.",
+    };
+    await updatePlanningStatus(10, projectConfig, itemWithLinkedIssue, processed);
+
+    expect(updateItemStatus).toHaveBeenCalledWith(
+      projectConfig,
+      "item-1",
+      "Done",
+      expect.stringContaining("cycle 10"),
+    );
+  });
+
   it("promotes to Done when linkedIssueNumber is null (no issue to validate)", async () => {
     vi.mocked(updateItemStatus).mockReturnValue(true);
     const processed = {
