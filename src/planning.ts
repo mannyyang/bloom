@@ -649,7 +649,7 @@ export function formatPlanningContext(
 
   for (const status of STATUS_COLUMNS) {
     if (status === STATUS_DONE) continue;
-    // Filter out currentItem from the In Progress section — it's already rendered above
+    // Filter out currentItem from this status section — it's already rendered in the Current focus block above
     const statusItems = items
       .filter((i) => i.status === status)
       .filter((i) => i !== currentItem)
