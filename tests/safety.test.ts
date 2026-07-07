@@ -3007,6 +3007,20 @@ describe("category: env-var-injection", () => {
   it("does not flag grep 'PYTHONUSERBASE=' setup.py (documentation/search context)", () => {
     expect(isDangerousCommand("grep 'PYTHONUSERBASE=' setup.py")).toBeNull();
   });
+  // Anchoring regression pins for newer env-var additions — confirm that grep/cat in
+  // documentation or config-reading contexts never triggers the command-start-anchored patterns.
+  it("does not flag grep 'NVM_DIR=' .envrc (documentation/search context)", () => {
+    expect(isDangerousCommand("grep 'NVM_DIR=' .envrc")).toBeNull();
+  });
+  it("does not flag grep 'VOLTA_HOME=' .envrc (documentation/search context)", () => {
+    expect(isDangerousCommand("grep 'VOLTA_HOME=' .envrc")).toBeNull();
+  });
+  it("does not flag grep 'BUN_INSTALL=' Makefile (documentation/search context)", () => {
+    expect(isDangerousCommand("grep 'BUN_INSTALL=' Makefile")).toBeNull();
+  });
+  it("does not flag grep 'CONDA_PREFIX=' README.md (documentation/search context)", () => {
+    expect(isDangerousCommand("grep 'CONDA_PREFIX=' README.md")).toBeNull();
+  });
 });
 
 describe("category: env-interpreter-bypass", () => {
