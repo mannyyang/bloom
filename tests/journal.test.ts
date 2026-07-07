@@ -210,6 +210,20 @@ describe("generateJournalOutput", () => {
     expect(parsed).toHaveLength(2);
   });
 
+  it("cycle: undefined is treated as no filter (returns all entries)", () => {
+    // Mirrors the --cycle 0 guard test, but pins the undefined path
+    // that parseIntArg returns when --cycle is absent or invalid.
+    // safeCycle = cycle > 0 ? cycle : undefined → undefined skips the WHERE clause.
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    insertJournalEntry(db, 1, "attempted", "Entry 1");
+    insertJournalEntry(db, 2, "attempted", "Entry 2");
+
+    const output = generateJournalOutput(db, { cycle: undefined });
+    const parsed = JSON.parse(output);
+    expect(parsed).toHaveLength(2);
+  });
+
   it("format md with since filter omits cycles before since boundary", () => {
     insertCycle(db, makeOutcome({ cycleNumber: 5 }));
     insertCycle(db, makeOutcome({ cycleNumber: 15 }));
