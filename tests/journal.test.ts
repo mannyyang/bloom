@@ -741,6 +741,22 @@ describe("parseArgs", () => {
     const result = parseArgs(["--format", "csv", "--since", "700", "--limit", "10"]);
     expect(result).toEqual({ format: "csv", limit: 10, since: 700, cycle: undefined });
   });
+
+  it("--format json explicitly returns json format (falls through csv/md guard)", () => {
+    // The format-parsing branch checks `val === "csv" || val === "md"` only.
+    // "json" falls through to the default, so format stays "json".
+    // This pins the path so a future refactor that adds an explicit "json"
+    // branch (or changes the guard to a switch) won't silently break it.
+    const result = parseArgs(["--format", "json"]);
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined, cycle: undefined });
+  });
+
+  it("--md combined with --format csv: --format wins (json format is default override)", () => {
+    // --md is only checked in the else-if branch; when --format is present,
+    // --md is ignored entirely. So --format csv beats --md.
+    const result = parseArgs(["--md", "--format", "csv"]);
+    expect(result).toEqual({ format: "csv", limit: undefined, since: undefined, cycle: undefined });
+  });
 });
 
 describe("generateJournalOutput --search filter", () => {
