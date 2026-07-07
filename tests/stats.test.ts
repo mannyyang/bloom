@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution, getLastUpdatedCyclePerCategory } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES } from "../src/stats.js";
+import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE, ERROR_CATEGORY_LLM_ERROR } from "../src/errors.js";
 import { MAX_MEMORY_CHARS } from "../src/memory.js";
@@ -1306,6 +1306,44 @@ describe("--verbose flag behaviour", () => {
     const argv = ["node", "stats.js", "--verbose", "--table"];
     expect(parseVerboseFlag(argv)).toBe(true);
     expect(parseTableFlag(argv)).toBe(true);
+  });
+});
+
+describe("parseIntArg", () => {
+  it("returns the integer for a valid positive integer string", () => {
+    expect(parseIntArg(["--flag", "10"], "--flag")).toBe(10);
+    expect(parseIntArg(["--flag", "1"], "--flag")).toBe(1);
+    expect(parseIntArg(["--flag", "999"], "--flag")).toBe(999);
+  });
+
+  it("returns undefined when the flag is absent", () => {
+    expect(parseIntArg(["--other", "5"], "--flag")).toBeUndefined();
+    expect(parseIntArg([], "--flag")).toBeUndefined();
+  });
+
+  it("returns undefined for zero (not a positive integer)", () => {
+    expect(parseIntArg(["--flag", "0"], "--flag")).toBeUndefined();
+  });
+
+  it("returns undefined for negative values", () => {
+    expect(parseIntArg(["--flag", "-1"], "--flag")).toBeUndefined();
+    expect(parseIntArg(["--flag", "-100"], "--flag")).toBeUndefined();
+  });
+
+  it("returns undefined for float strings (rejected by /^\\d+$/ guard)", () => {
+    // "3.7" would parseInt to 3, but the regex guard rejects non-digit chars
+    expect(parseIntArg(["--flag", "3.7"], "--flag")).toBeUndefined();
+    expect(parseIntArg(["--flag", "0.9"], "--flag")).toBeUndefined();
+  });
+
+  it("returns undefined for non-numeric strings", () => {
+    expect(parseIntArg(["--flag", "notanumber"], "--flag")).toBeUndefined();
+    expect(parseIntArg(["--flag", "abc"], "--flag")).toBeUndefined();
+  });
+
+  it("returns undefined when flag is the last argv item (no following value)", () => {
+    expect(parseIntArg(["--flag"], "--flag")).toBeUndefined();
+    expect(parseIntArg(["node", "script.js", "--flag"], "--flag")).toBeUndefined();
   });
 });
 
