@@ -7,6 +7,7 @@ import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE, ERROR_CATEGORY_LLM_ERROR } from "../src/errors.js";
 import { MAX_MEMORY_CHARS } from "../src/memory.js";
 import { makeOutcome } from "./helpers.js";
+import { DANGEROUS_PATTERNS } from "../src/safety.js";
 
 describe("STATS_MEMORY_PREVIEW_CHARS", () => {
   it("is a positive number less than MAX_MEMORY_CHARS", () => {
@@ -2065,10 +2066,10 @@ describe("Safety patterns count in verbose output", () => {
     expect(joined).toContain("Safety patterns:");
   });
 
-  it("generateStatsOutput verbose safety pattern count equals 222 (pinned)", () => {
+  it("generateStatsOutput verbose safety pattern count matches DANGEROUS_PATTERNS.length", () => {
     const output = generateStatsOutput(db, undefined, true, undefined, undefined, undefined);
     const joined = output.join("\n");
-    expect(joined).toContain("Safety patterns: 222");
+    expect(joined).toContain(`Safety patterns: ${DANGEROUS_PATTERNS.length}`);
   });
 
   it("generateStatsOutput non-verbose does NOT include 'Safety patterns:' line", () => {
@@ -2082,9 +2083,9 @@ describe("Safety patterns count in verbose output", () => {
     expect(Object.prototype.hasOwnProperty.call(result, "dangerousPatternsCount")).toBe(true);
   });
 
-  it("generateStatsJson verbose dangerousPatternsCount equals 222 (pinned)", () => {
+  it("generateStatsJson verbose dangerousPatternsCount matches DANGEROUS_PATTERNS.length", () => {
     const result = generateStatsJson(db, undefined, true);
-    expect(result.dangerousPatternsCount).toBe(222);
+    expect(result.dangerousPatternsCount).toBe(DANGEROUS_PATTERNS.length);
   });
 
   it("generateStatsJson non-verbose omits dangerousPatternsCount field", () => {
