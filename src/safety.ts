@@ -786,6 +786,14 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
   // (bin/, lib/). Any globally installed Bun package or script resolves from the attacker-
   // controlled path. Follows the same pattern as PNPM_HOME and NPM_CONFIG_PREFIX.
   { pattern: /(?:^|[;&|]\s*)BUN_INSTALL\s*=/, category: "env-var-injection" },
+  // PATH env-var injection — PATH=/tmp/evil is the master binary-search bypass: every subsequent
+  // command lookup (git, node, pnpm, etc.) resolves from the attacker-controlled directory first,
+  // negating all other DANGEROUS_PATTERNS guards that rely on command names. Every other
+  // command-search env-var in this cluster (NODE_OPTIONS, PYTHONPATH, PERL5LIB, GOPATH,
+  // CARGO_HOME, etc.) is already blocked; PATH is the remaining gap. Anchored to command-start
+  // boundaries (^, ;, &, |) to prevent false positives when PATH appears inside grep/echo
+  // arguments (e.g. echo "PATH=/usr/bin" or grep 'PATH=' .envrc).
+  { pattern: /(?:^|[;&|]\s*)PATH\s*=/, category: "env-var-injection" },
   // conda install <pkg> — pulls arbitrary code from public conda channels (conda-forge, bioconda,
   // defaults). Every peer runtime — pip, gem, cargo, go, apt, brew — is already blocked.
   // conda is present on all GitHub Actions ubuntu-latest and macos-latest runners.

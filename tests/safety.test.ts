@@ -2420,7 +2420,7 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
   });
 
   it("has exactly 197 entries (absolute count pin)", () => {
-    expect(DANGEROUS_PATTERNS).toHaveLength(220);
+    expect(DANGEROUS_PATTERNS).toHaveLength(221);
   });
 
   it("every pattern fires on at least one probe command", () => {
@@ -2720,6 +2720,8 @@ describe("DANGEROUS_PATTERNS structural integrity", () => {
       "NVM_DIR=/tmp/evil nvm use 18",
       "VOLTA_HOME=/tmp/evil volta run node app.js",
       "BUN_INSTALL=/tmp/evil bun install -g malicious",
+      // env-var-injection (PATH master binary-search bypass)
+      "PATH=/tmp/evil git status",
       // untrusted-package-installation (conda channel)
       "conda install numpy",
     ];
@@ -2982,6 +2984,16 @@ describe("category: env-var-injection", () => {
   });
   it("does not flag echo $BUN_INSTALL (read, not assignment)", () => {
     expect(isDangerousCommand("echo $BUN_INSTALL")).toBeNull();
+  });
+  // PATH injection tests
+  it("blocks PATH= (master binary-search bypass)", () => {
+    expect(isDangerousCommand("PATH=/tmp/evil git status")).toBe("env-var-injection");
+  });
+  it("does not flag echo $PATH (read, not assignment)", () => {
+    expect(isDangerousCommand("echo $PATH")).toBeNull();
+  });
+  it("does not flag grep 'PATH=' .envrc (documentation/search context)", () => {
+    expect(isDangerousCommand("grep 'PATH=' .envrc")).toBeNull();
   });
 });
 

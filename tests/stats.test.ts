@@ -2002,7 +2002,7 @@ describe("Safety patterns count in verbose output", () => {
   it("generateStatsOutput verbose safety pattern count equals 197 (pinned)", () => {
     const output = generateStatsOutput(db, undefined, true, undefined, undefined, undefined);
     const joined = output.join("\n");
-    expect(joined).toContain("Safety patterns: 220");
+    expect(joined).toContain("Safety patterns: 221");
   });
 
   it("generateStatsOutput non-verbose does NOT include 'Safety patterns:' line", () => {
@@ -2018,7 +2018,7 @@ describe("Safety patterns count in verbose output", () => {
 
   it("generateStatsJson verbose dangerousPatternsCount equals 197 (pinned)", () => {
     const result = generateStatsJson(db, undefined, true);
-    expect(result.dangerousPatternsCount).toBe(220);
+    expect(result.dangerousPatternsCount).toBe(221);
   });
 
   it("generateStatsJson non-verbose omits dangerousPatternsCount field", () => {
