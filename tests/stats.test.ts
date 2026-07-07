@@ -2037,7 +2037,7 @@ describe("Safety patterns count in verbose output", () => {
     expect(joined).toContain("Safety patterns:");
   });
 
-  it("generateStatsOutput verbose safety pattern count equals 197 (pinned)", () => {
+  it("generateStatsOutput verbose safety pattern count equals 222 (pinned)", () => {
     const output = generateStatsOutput(db, undefined, true, undefined, undefined, undefined);
     const joined = output.join("\n");
     expect(joined).toContain("Safety patterns: 222");
@@ -2054,7 +2054,7 @@ describe("Safety patterns count in verbose output", () => {
     expect(Object.prototype.hasOwnProperty.call(result, "dangerousPatternsCount")).toBe(true);
   });
 
-  it("generateStatsJson verbose dangerousPatternsCount equals 197 (pinned)", () => {
+  it("generateStatsJson verbose dangerousPatternsCount equals 222 (pinned)", () => {
     const result = generateStatsJson(db, undefined, true);
     expect(result.dangerousPatternsCount).toBe(222);
   });
