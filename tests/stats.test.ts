@@ -2053,6 +2053,18 @@ describe("generateStatsOutput with --category filter", () => {
     expect(output[2]).toContain("category: build_failure");
   });
 
+  it("stats count only cycles satisfying both sinceN AND categoryFilter together", () => {
+    // 4 cycles: odd are build_failure, even are none
+    insertCycle(db, makeOutcome({ cycleNumber: 1, failureCategory: ERROR_CATEGORY_BUILD_FAILURE }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2, failureCategory: ERROR_CATEGORY_NONE }));
+    insertCycle(db, makeOutcome({ cycleNumber: 3, failureCategory: ERROR_CATEGORY_BUILD_FAILURE }));
+    insertCycle(db, makeOutcome({ cycleNumber: 4, failureCategory: ERROR_CATEGORY_NONE }));
+    // sinceN=2 keeps cycles 2,3,4; categoryFilter=build_failure keeps only cycle 3 → 1 total
+    const output = generateStatsOutput(db, undefined, undefined, 2, undefined, ERROR_CATEGORY_BUILD_FAILURE);
+    const joined = output.join("\n");
+    expect(joined).toContain("Cycles tracked**: 1");
+  });
+
   it("stats reflect only category-filtered cycles", () => {
     insertCycle(db, makeOutcome({ cycleNumber: 1, failureCategory: ERROR_CATEGORY_BUILD_FAILURE, buildVerificationPassed: false }));
     insertCycle(db, makeOutcome({ cycleNumber: 2, failureCategory: ERROR_CATEGORY_NONE, buildVerificationPassed: true, pushSucceeded: true }));
