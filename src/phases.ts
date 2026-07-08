@@ -40,8 +40,43 @@ export function runBuildVerificationPhase(
 
 /**
  * Update the roadmap planning status based on evolution results (best-effort).
- * When an item transitions to "Done" and has a linked GitHub issue, the issue
- * is closed with a completion comment as proof of resolution.
+ *
+ * Determines the new status for the current roadmap item and, if the status
+ * changes, commits the updated ROADMAP.md and optionally closes a linked
+ * GitHub issue.  Any error thrown during this process is caught and logged so
+ * the overall cycle can still complete.
+ *
+ * ## Status promotion logic
+ *
+ * The item is promoted to "Done" **only** when **both** of the following are
+ * true:
+ *   (a) `processed.improvementsSucceeded > 0` — at least one improvement
+ *       actually landed in this cycle; and
+ *   (b) if `currentItem.linkedIssueNumber` is set, the stringified issue
+ *       number appears in `processed.succeededSummary` (using word-boundary
+ *       anchors so "#4123" does not spuriously match issue #123).
+ *
+ * If either condition fails the item status is set to "Up Next" instead,
+ * and a `console.warn` is emitted explaining why the promotion was skipped.
+ *
+ * ## Side-effects on status change
+ *
+ * When `updateItemStatus` returns `true` (item found and updated):
+ *   1. `commitRoadmap(cycleCount)` is called to persist the updated
+ *      ROADMAP.md to git on any status change (Done *or* Up Next).
+ *   2. If the new status is "Done" **and** `linkedIssueNumber` is not null,
+ *      `closeIssueWithComment` is called to close the GitHub issue and post a
+ *      completion comment as proof of resolution.
+ *
+ * If `updateItemStatus` returns `false` (item ID not found in the roadmap)
+ * the roadmap commit and issue-close are both skipped and an error is logged.
+ *
+ * ## Best-effort semantics
+ *
+ * The entire function body is wrapped in a `try/catch`.  Errors from any of
+ * the steps above (roadmap commit, issue API call, etc.) are caught and
+ * logged via `console.error` but are **not** re-thrown, so the caller
+ * (the evolution cycle) continues regardless.
  */
 export async function updatePlanningStatus(
   cycleCount: number,
