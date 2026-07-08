@@ -365,6 +365,49 @@ STRATEGIC_CONTEXT: Focus on testing`;
       consoleSpy.mockRestore();
     });
 
+    it("logs error and returns learningsStored=0 when db.transaction factory throws (DB locked simulation)", () => {
+      // Tests the rollback path where db.transaction() itself throws before
+      // any write even starts (e.g. SQLITE_BUSY / DB locked at connection level).
+      // Distinct from existing tests where individual writes inside the transaction
+      // throw: here the transaction wrapper is never created at all.
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      // Temporarily replace db.transaction with a stub whose returned
+      // function throws when called (simulating SQLITE_BUSY at execution
+      // time rather than at transaction setup time, since db.transaction()
+      // itself is called outside the try/catch but doWrites() is inside it).
+      const originalTransaction = db.transaction.bind(db);
+      (db as unknown as Record<string, unknown>).transaction = () => {
+        return () => { throw new Error("SQLITE_BUSY: database is locked"); };
+      };
+
+      const result = `ATTEMPTED: - Feature A
+SUCCEEDED: - Feature A
+FAILED: nothing
+LEARNINGS: - [pattern] A learning
+STRATEGIC_CONTEXT: Focus on testing`;
+
+      const processed = processEvolutionResult(db, 1, result);
+
+      // Parsed sections are always available (pure computation before the transaction)
+      expect(processed.journalSections.attempted).toBe("- Feature A");
+      expect(processed.improvementsAttempted).toBe(1);
+      expect(processed.improvementsSucceeded).toBe(1);
+
+      // Transaction never ran — nothing stored
+      expect(processed.learningsStored).toBe(0);
+      expect(processed.strategicContextStored).toBe(false);
+
+      // Non-fatal error must be logged
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Failed to persist evolution data"),
+      );
+
+      // Restore
+      (db as unknown as Record<string, unknown>).transaction = originalTransaction;
+      consoleSpy.mockRestore();
+    });
+
     it("logs console.warn and returns correct learningsStored when storeLearnings returns dedupSkipped > 0", async () => {
       const memoryModule = await import("../src/memory.js");
       const storeSpy = vi.spyOn(memoryModule, "storeLearnings").mockReturnValue({ count: 1, dedupSkipped: 2 });
