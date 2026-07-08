@@ -14,7 +14,13 @@ export function parseTimeoutEnv(envValue: string | undefined, defaultMs: number)
   return Number.isFinite(parsed) && rounded > 0 ? rounded : defaultMs;
 }
 
-/** Timeout for `pnpm build && pnpm test` (2 minutes). Override with BLOOM_BUILD_TIMEOUT_MS. */
+/**
+ * Timeout for `pnpm build && pnpm test` (2 minutes). Override with BLOOM_BUILD_TIMEOUT_MS.
+ * Load-time snapshot: this value is captured once when the module is first imported.
+ * Internal functions (e.g. runBuildAndTest) intentionally re-read process.env at
+ * call time so tests can override the timeout via process.env without requiring
+ * module re-initialisation. This constant exists for external consumers only.
+ */
 export const BUILD_TIMEOUT_MS = parseTimeoutEnv(process.env.BLOOM_BUILD_TIMEOUT_MS, 120_000);
 /** Timeout for git add/commit/tag operations (30 seconds). Override with BLOOM_GIT_OP_TIMEOUT_MS. */
 export const GIT_OP_TIMEOUT_MS = parseTimeoutEnv(process.env.BLOOM_GIT_OP_TIMEOUT_MS, 30_000);
