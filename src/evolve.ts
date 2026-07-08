@@ -53,12 +53,12 @@ export function buildFileManifest(cwd: string = process.cwd()): string {
  */
 export function buildAssessmentPrompt(ctx: AssessmentContext): string {
   const manifestSection = ctx.fileManifest
-    ? `\nFile index (pre-built — no need to Glob src/ or tests/):\n${ctx.fileManifest}\n`
+    ? `\nFile index (pre-built — no need to Glob src/, tests/, or scripts/):\n${ctx.fileManifest}\n`
     : "";
 
   return `This is evolution cycle ${ctx.cycleCount}.
 
-Read src/ and tests/, then list top 1-3 improvements (bugs, roadmap items, test gaps, clarity, new capabilities) — for each: what/why/difficulty. Keep your assessment under ${ASSESSMENT_CHAR_LIMIT} characters — it is passed directly into the implementation prompt.
+Read src/, tests/, and scripts/, then list top 1-3 improvements (bugs, roadmap items, test gaps, clarity, new capabilities) — for each: what/why/difficulty. Keep your assessment under ${ASSESSMENT_CHAR_LIMIT} characters — it is passed directly into the implementation prompt.
 
 Recent journal entries:
 ${truncateWithEllipsis(ctx.journalSummary, CONTEXT_JOURNAL_MAX_CHARS)}
