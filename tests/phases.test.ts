@@ -446,6 +446,39 @@ describe("updatePlanningStatus", () => {
       updatePlanningStatus(10, projectConfig, currentItem, processed),
     ).resolves.not.toThrow();
   });
+
+  it("swallows closeIssueWithComment rejection (non-fatal) and logs the error", async () => {
+    // Pins the resilience path in phases.ts: if closeIssueWithComment rejects,
+    // the outer try/catch must swallow it and log via console.error rather than
+    // re-throwing — the evolution cycle must continue regardless.
+    vi.mocked(updateItemStatus).mockReturnValue(true);
+    vi.mocked(closeIssueWithComment).mockRejectedValue(new Error("GitHub API timeout"));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    const itemWithLinkedIssue: ProjectItem = {
+      ...currentItem,
+      linkedIssueNumber: 33,
+    };
+    const processed = {
+      improvementsSucceeded: 1,
+      improvementsAttempted: 1,
+      succeededSummary: "Fixed issue #33: resolved the problem.",
+    };
+
+    // Must resolve without throwing even though closeIssueWithComment rejects
+    await expect(
+      updatePlanningStatus(10, projectConfig, itemWithLinkedIssue, processed),
+    ).resolves.not.toThrow();
+
+    // The non-fatal error must be logged
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("non-fatal"),
+    );
+
+    logSpy.mockRestore();
+    errorSpy.mockRestore();
+  });
 });
 
 describe("pushChangesPhase", () => {
