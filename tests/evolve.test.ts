@@ -36,6 +36,27 @@ describe("buildAssessmentPrompt", () => {
     expect(prompt).toContain("roadmap");
   });
 
+  it("instructs LLM to read scripts/ in addition to src/ and tests/", () => {
+    // buildFileManifest includes scripts/ in its directory list — the prompt
+    // must mention it so the LLM knows to review that directory too.
+    const prompt = buildAssessmentPrompt({
+      journalSummary: "",
+      cycleCount: 1,
+    });
+    expect(prompt).toContain("scripts/");
+  });
+
+  it("fileManifest header tells LLM not to Glob scripts/ either", () => {
+    // The manifest header must cover all three dirs so the LLM does not make
+    // redundant Glob calls for any directory already included in the manifest.
+    const prompt = buildAssessmentPrompt({
+      journalSummary: "",
+      cycleCount: 1,
+      fileManifest: "src/evolve.ts\nscripts/memory.ts",
+    });
+    expect(prompt).toContain("scripts/");
+  });
+
   it("always includes 'Recent journal entries:' header even with empty summary", () => {
     const prompt = buildAssessmentPrompt({
       journalSummary: "",
