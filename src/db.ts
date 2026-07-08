@@ -705,7 +705,26 @@ export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS
 }
 
 /**
- * Format cycle stats as a human-readable string for inclusion in prompts.
+ * Format cycle stats as a human-readable Markdown bullet list for inclusion in prompts.
+ *
+ * Output structure (one bullet per line):
+ *   - Cycles tracked, success rate, avg improvements/cycle — always present when totalCycles > 0.
+ *   - Conversion rate — only included when avgConversionRate is non-null (i.e. at least one
+ *     cycle had ≥1 improvement attempt).
+ *   - Test count trend — only included when testCountTrend is non-null (requires ≥1 cycle
+ *     with both test_count_before and test_count_after recorded).
+ *   - Avg cycle duration — only included when avgDurationMinutes is non-null.
+ *   - Cost block — only included when totalCostUsd > 0 or any token count > 0. Token counts
+ *     are abbreviated to "Nk" format when they reach TOKEN_DISPLAY_THRESHOLD (1 000); values
+ *     below the threshold are shown as plain integers. Cost and token parts are each omitted
+ *     individually when they are zero, joined by " · " when both are present.
+ *   - Recent failures count — always present when totalCycles > 0.
+ *   - Failure category breakdown — only included when recentFailures > 0 AND the breakdown
+ *     map is non-empty; sorted by count descending then category name ascending.
+ *   - Learnings by category — only included when the distribution map is non-empty;
+ *     sorted by count descending then category name ascending.
+ *
+ * Returns "No previous cycle data available." when totalCycles === 0.
  */
 export function formatCycleStats(stats: CycleStats): string {
   if (stats.totalCycles === 0) return "No previous cycle data available.";
