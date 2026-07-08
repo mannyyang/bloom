@@ -1191,6 +1191,33 @@ describe("generateStatsTable", () => {
       }
       expect(generateStatsTable(db, 2, false, 10)).toBe("");
     });
+
+    it("works correctly with sparse high-numbered cycles: lastN window may include cycles below sinceN", () => {
+      // Sparse cycle numbers: 1, 5, 100, 700. With lastN=3, getCycleRows returns
+      // the 3 newest: [700, 100, 5] (newest-first). The sinceN=10 filter then drops
+      // cycle 5, leaving only [700, 100]. This demonstrates the asymmetry: a user
+      // expecting "the 3 newest cycles at or after cycle 10" gets 2 rows, not 3,
+      // because cycle 5 consumed one of the lastN slots but falls below sinceN.
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertCycle(db, makeOutcome({ cycleNumber: 5 }));
+      insertCycle(db, makeOutcome({ cycleNumber: 100 }));
+      insertCycle(db, makeOutcome({ cycleNumber: 700 }));
+      const table = generateStatsTable(db, 3, false, 10);
+      const lines = table.split("\n").filter(l => l.trim());
+      // header + separator + 2 data rows (cycles 700 and 100)
+      expect(lines.length).toBe(4);
+      // Cycles 700 and 100 must appear
+      const dataRows = lines.slice(2);
+      expect(dataRows[0].trimStart()).toMatch(/^700/);
+      expect(dataRows[1].trimStart()).toMatch(/^100/);
+      // Cycle 5 was in the lastN=3 window but below sinceN=10 — must be absent.
+      // The right-padded cycle column for cycle 5 is "     5" (padStart(6)),
+      // distinct from cycle 100 ("   100") and cycle 700 ("   700").
+      expect(table).not.toContain("     5");
+      // Cycle 1 was outside the lastN=3 window entirely — must also be absent.
+      // "     1" (5 spaces + "1") won't match "   100" (3 spaces + "100").
+      expect(table).not.toContain("     1");
+    });
   });
 
   describe("verbose mode", () => {
