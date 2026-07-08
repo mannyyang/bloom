@@ -22,11 +22,29 @@ export function parseTimeoutEnv(envValue: string | undefined, defaultMs: number)
  * module re-initialisation. This constant exists for external consumers only.
  */
 export const BUILD_TIMEOUT_MS = parseTimeoutEnv(process.env.BLOOM_BUILD_TIMEOUT_MS, 120_000);
-/** Timeout for git add/commit/tag operations (30 seconds). Override with BLOOM_GIT_OP_TIMEOUT_MS. */
+/**
+ * Timeout for git add/commit/tag operations (30 seconds). Override with BLOOM_GIT_OP_TIMEOUT_MS.
+ * Load-time snapshot: this value is captured once when the module is first imported.
+ * Internal functions (e.g. commitDb, createSafetyTag) intentionally re-read process.env at
+ * call time so tests can override the timeout via process.env without requiring
+ * module re-initialisation. This constant exists for external consumers only.
+ */
 export const GIT_OP_TIMEOUT_MS = parseTimeoutEnv(process.env.BLOOM_GIT_OP_TIMEOUT_MS, 30_000);
-/** Timeout for git push operations (60 seconds). Override with BLOOM_GIT_PUSH_TIMEOUT_MS. */
+/**
+ * Timeout for git push operations (60 seconds). Override with BLOOM_GIT_PUSH_TIMEOUT_MS.
+ * Load-time snapshot: this value is captured once when the module is first imported.
+ * Internal functions (e.g. pushChanges, pushTags) intentionally re-read process.env at
+ * call time so tests can override the timeout via process.env without requiring
+ * module re-initialisation. This constant exists for external consumers only.
+ */
 export const GIT_PUSH_TIMEOUT_MS = parseTimeoutEnv(process.env.BLOOM_GIT_PUSH_TIMEOUT_MS, 60_000);
-/** Timeout for git checkout/clean/reset operations (10 seconds). Override with BLOOM_GIT_REVERT_TIMEOUT_MS. */
+/**
+ * Timeout for git checkout/clean/reset operations (10 seconds). Override with BLOOM_GIT_REVERT_TIMEOUT_MS.
+ * Load-time snapshot: this value is captured once when the module is first imported.
+ * Internal functions (e.g. revertUncommitted, hardResetTo) intentionally re-read process.env at
+ * call time so tests can override the timeout via process.env without requiring
+ * module re-initialisation. This constant exists for external consumers only.
+ */
 export const GIT_REVERT_TIMEOUT_MS = parseTimeoutEnv(process.env.BLOOM_GIT_REVERT_TIMEOUT_MS, 10_000);
 
 /** Default maximum number of build verification attempts before hard-resetting to the safety tag. */
