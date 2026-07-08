@@ -703,6 +703,49 @@ describe("lifecycle helpers", () => {
       errorSpy.mockRestore();
     });
 
+    it("returns passed=true and calls revertUncommitted exactly once when maxAttempts=2 and 2nd attempt succeeds", () => {
+      // Boundary case: maxAttempts=2, attempt 1 fails, attempt 2 passes.
+      // revertUncommitted must be called exactly once (between attempts 1 and 2),
+      // verifyBuild must be called exactly twice (two execSync calls),
+      // hardResetTo must never be called (no reset needed when a retry succeeds),
+      // and the function must return passed=true.
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      mockedExecSync
+        .mockImplementationOnce(() => { throw new Error("attempt 1 failed"); })
+        .mockReturnValueOnce("Tests  522 passed\n");
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+
+      const result = runBuildVerification(42, 2);
+      expect(result.passed).toBe(true);
+      expect(result.output).toBe("Tests  522 passed\n");
+
+      // verifyBuild uses execSync — exactly two calls (one fail, one pass)
+      expect(mockedExecSync).toHaveBeenCalledTimes(2);
+
+      // revertUncommitted uses git checkout + git clean; each called exactly once
+      const checkoutCalls = mockedExecFileSync.mock.calls.filter(
+        (args) => args[0] === "git" && Array.isArray(args[1]) && (args[1] as string[])[0] === "checkout",
+      );
+      expect(checkoutCalls).toHaveLength(1);
+
+      const cleanCalls = mockedExecFileSync.mock.calls.filter(
+        (args) => args[0] === "git" && Array.isArray(args[1]) && (args[1] as string[])[0] === "clean",
+      );
+      expect(cleanCalls).toHaveLength(1);
+
+      // hardResetTo must NOT be called when a retry eventually passes
+      const resetCalls = mockedExecFileSync.mock.calls.filter(
+        (args) => args[0] === "git" && Array.isArray(args[1]) && (args[1] as string[])[0] === "reset",
+      );
+      expect(resetCalls).toHaveLength(0);
+
+      // Error logged for attempt 1 failure with correct attempt/maxAttempts label
+      expect(errorSpy).toHaveBeenCalledWith("Build verification failed (attempt 1/2)");
+      expect(errorSpy).toHaveBeenCalledTimes(1);
+
+      errorSpy.mockRestore();
+    });
+
     it("calls revertUncommitted exactly once and hard-resets when maxAttempts=2 and both attempts fail", () => {
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       mockedExecSync.mockImplementation(() => { throw new Error("build failed"); });
