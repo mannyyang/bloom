@@ -38,7 +38,8 @@ export function buildFileManifest(cwd: string = process.cwd()): string {
         }
       }
     } catch {
-      // Directory missing or unreadable — skip silently
+      // Directory missing or unreadable — warn to aid debugging misconfigured paths
+      console.warn(`[evolve] buildFileManifest: could not read dir '${dir}'`);
     }
   }
 
