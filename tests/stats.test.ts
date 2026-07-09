@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution, getLastUpdatedCyclePerCategory } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, generateStatsJson, generateStatsTable, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES } from "../src/stats.js";
+import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, parseTrendArg, generateStatsJson, generateStatsTable, generateStatsTrend, renderTrendBar, TREND_BAR_CHARS, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE, ERROR_CATEGORY_LLM_ERROR } from "../src/errors.js";
 import { MAX_MEMORY_CHARS } from "../src/memory.js";
@@ -68,6 +68,7 @@ describe("STATS_HELP_TEXT", () => {
       `  --last <N>            Show stats for the last N cycles only\n` +
       `  --since <N>           Show stats starting from cycle number N (inclusive)\n` +
       `  --category <CAT>      Filter to cycles matching failure_category (e.g. build_failure, none)\n` +
+      `  --trend <N>           Show an ASCII success-rate bar for the last N cycles\n` +
       `  --json                Output raw stats as JSON (for scripting/CI)\n` +
       `  --table               Output per-cycle data as an ASCII table\n` +
       `  --verbose             Include extra detail (staleness data, safety pattern count, or Failures column)\n` +
@@ -2171,5 +2172,123 @@ describe("Safety patterns count in verbose output", () => {
   it("generateStatsJson non-verbose omits dangerousPatternsCount field", () => {
     const result = generateStatsJson(db, undefined, false);
     expect(Object.prototype.hasOwnProperty.call(result, "dangerousPatternsCount")).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// parseTrendArg
+// ---------------------------------------------------------------------------
+
+describe("parseTrendArg", () => {
+  it("returns the positive integer after --trend", () => {
+    expect(parseTrendArg(["node", "stats.js", "--trend", "10"])).toBe(10);
+  });
+
+  it("returns undefined when --trend is absent", () => {
+    expect(parseTrendArg(["node", "stats.js", "--table"])).toBeUndefined();
+  });
+
+  it("returns undefined when --trend has no value", () => {
+    expect(parseTrendArg(["node", "stats.js", "--trend"])).toBeUndefined();
+  });
+
+  it("returns undefined when --trend value is 0", () => {
+    expect(parseTrendArg(["node", "stats.js", "--trend", "0"])).toBeUndefined();
+  });
+
+  it("returns undefined when --trend value is not a number", () => {
+    expect(parseTrendArg(["node", "stats.js", "--trend", "abc"])).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// renderTrendBar
+// ---------------------------------------------------------------------------
+
+describe("renderTrendBar", () => {
+  it("returns empty string for empty rows array", () => {
+    expect(renderTrendBar([])).toBe("");
+  });
+
+  it("renders full block for a successful cycle", () => {
+    const rows = [{ cycleNumber: 1, attempted: 1, succeeded: 1, buildPassed: true, pushed: true, durationMs: null, failureCategory: null }];
+    expect(renderTrendBar(rows)).toContain(TREND_BAR_CHARS[3]); // "█"
+  });
+
+  it("renders low block for a failed cycle", () => {
+    const rows = [{ cycleNumber: 1, attempted: 0, succeeded: 0, buildPassed: false, pushed: false, durationMs: null, failureCategory: null }];
+    expect(renderTrendBar(rows)).toContain(TREND_BAR_CHARS[0]); // "▁"
+  });
+
+  it("includes a trailing percentage", () => {
+    const rows = [
+      { cycleNumber: 1, attempted: 1, succeeded: 1, buildPassed: true, pushed: true, durationMs: null, failureCategory: null },
+      { cycleNumber: 2, attempted: 1, succeeded: 1, buildPassed: true, pushed: true, durationMs: null, failureCategory: null },
+    ];
+    expect(renderTrendBar(rows)).toContain("100%");
+  });
+
+  it("computes 50% for one success and one failure", () => {
+    const rows = [
+      { cycleNumber: 1, attempted: 1, succeeded: 1, buildPassed: true, pushed: true, durationMs: null, failureCategory: null },
+      { cycleNumber: 2, attempted: 0, succeeded: 0, buildPassed: false, pushed: false, durationMs: null, failureCategory: null },
+    ];
+    expect(renderTrendBar(rows)).toContain("50%");
+  });
+
+  it("renders oldest cycle first (reverse of input order)", () => {
+    // Input is newest-first (as returned by getCycleRows). After .reverse(), oldest is leftmost.
+    const rows = [
+      { cycleNumber: 3, attempted: 1, succeeded: 1, buildPassed: false, pushed: false, durationMs: null, failureCategory: null }, // newest
+      { cycleNumber: 2, attempted: 1, succeeded: 1, buildPassed: true, pushed: true, durationMs: null, failureCategory: null },
+      { cycleNumber: 1, attempted: 1, succeeded: 1, buildPassed: true, pushed: true, durationMs: null, failureCategory: null },  // oldest
+    ];
+    const bar = renderTrendBar(rows);
+    // oldest(1)=█, middle(2)=█, newest(3)=▁ → "██▁"
+    expect(bar.startsWith(`${TREND_BAR_CHARS[3]}${TREND_BAR_CHARS[3]}${TREND_BAR_CHARS[0]}`)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateStatsTrend
+// ---------------------------------------------------------------------------
+
+describe("generateStatsTrend", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("returns 'No evolution cycles recorded yet.' when DB is empty", () => {
+    expect(generateStatsTrend(db, 10)).toBe("No evolution cycles recorded yet.");
+  });
+
+  it("returns trend line containing 'Trend (last N):' prefix", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true, pushSucceeded: true }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2, buildVerificationPassed: false, pushSucceeded: false }));
+    const result = generateStatsTrend(db, 5);
+    expect(result).toContain("Trend (last 2):");
+  });
+
+  it("clamps to available cycles when trendN exceeds row count", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true, pushSucceeded: true }));
+    const result = generateStatsTrend(db, 100);
+    expect(result).toContain("Trend (last 1):");
+  });
+
+  it("includes the percentage in the output", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true, pushSucceeded: true }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2, buildVerificationPassed: true, pushSucceeded: true }));
+    const result = generateStatsTrend(db, 10);
+    expect(result).toContain("100%");
+  });
+
+  it("includes bar characters in the output", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true, pushSucceeded: true }));
+    const result = generateStatsTrend(db, 5);
+    // At least one of the bar chars must appear
+    const hasBarChar = TREND_BAR_CHARS.some(c => result.includes(c));
+    expect(hasBarChar).toBe(true);
   });
 });

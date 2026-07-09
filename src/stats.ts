@@ -119,6 +119,15 @@ export function parseSearchArg(argv: string[]): string | undefined {
 }
 
 /**
+ * Parse `--trend N` from an argv array, returning N as a positive integer or
+ * undefined when the flag is absent, missing a value, or the value is invalid.
+ * N controls how many of the most-recent cycles are rendered in the trend bar.
+ */
+export function parseTrendArg(argv: string[]): number | undefined {
+  return parseIntArg(argv, "--trend");
+}
+
+/**
  * Parse `--json` from an argv array, returning true when the flag is present.
  * Mirrors the pattern of parseLastNArg for consistency.
  */
@@ -162,6 +171,7 @@ Options:
   --last <N>            Show stats for the last N cycles only
   --since <N>           Show stats starting from cycle number N (inclusive)
   --category <CAT>      Filter to cycles matching failure_category (e.g. build_failure, none)
+  --trend <N>           Show an ASCII success-rate bar for the last N cycles
   --json                Output raw stats as JSON (for scripting/CI)
   --table               Output per-cycle data as an ASCII table
   --verbose             Include extra detail (staleness data, safety pattern count, or Failures column)
@@ -253,6 +263,43 @@ export function generateStatsTable(db: Database.Database, lastN?: number, verbos
   });
 
   return [header, separator, ...dataRows].join("\n");
+}
+
+/**
+ * Unicode block characters used in the trend bar, ordered from empty to full.
+ * ▁ = least success, █ = full success.
+ * Exported so tests can assert bar output without hard-coding the characters.
+ */
+export const TREND_BAR_CHARS = ["▁", "▃", "▅", "█"] as const;
+
+/**
+ * Render a compact ASCII trend bar from an array of CycleRows.
+ * Each cycle maps to one symbol: █ for success (buildPassed && pushed), ▁ otherwise.
+ * Rows are displayed oldest-first (left = oldest, right = most recent).
+ * Returns a string of the form `▁█▁██  60%` for use in generateStatsTrend.
+ * Returns an empty string when rows is empty.
+ */
+export function renderTrendBar(rows: CycleRow[]): string {
+  if (rows.length === 0) return "";
+  const segments = [...rows].reverse().map(r =>
+    r.buildPassed && r.pushed ? TREND_BAR_CHARS[3] : TREND_BAR_CHARS[0],
+  );
+  const successCount = rows.filter(r => r.buildPassed && r.pushed).length;
+  const pct = Math.round((successCount / rows.length) * 100);
+  return `${segments.join("")}  ${pct}%`;
+}
+
+/**
+ * Generate a single-line trend summary showing the success rate of the last N cycles
+ * as an ASCII bar plus a trailing percentage.
+ * Returns "No evolution cycles recorded yet." when the database is empty.
+ * The actual row count shown may be less than trendN when fewer cycles exist.
+ */
+export function generateStatsTrend(db: Database.Database, trendN: number): string {
+  const rows = getCycleRows(db, trendN);
+  if (rows.length === 0) return "No evolution cycles recorded yet.";
+  const bar = renderTrendBar(rows);
+  return `Trend (last ${rows.length}): ${bar}`;
 }
 
 /**
@@ -397,13 +444,16 @@ function main() {
   const lastN = parseLastNArg(process.argv);
   const sinceN = parseSinceArg(process.argv);
   const categoryFilter = parseCategoryArg(process.argv);
+  const trendN = parseTrendArg(process.argv);
   const jsonMode = parseJsonFlag(process.argv);
   const tableMode = parseTableFlag(process.argv);
   const verbose = parseVerboseFlag(process.argv);
   const db = initDb();
 
   try {
-    if (jsonMode) {
+    if (trendN !== undefined) {
+      console.log(generateStatsTrend(db, trendN));
+    } else if (jsonMode) {
       const result = generateStatsJson(db, lastN, verbose, sinceN, undefined, categoryFilter);
       console.log(JSON.stringify(result, null, 2));
     } else if (tableMode) {
