@@ -83,11 +83,270 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#2563eb;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#111827;font-weight:700;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>📓 Bloom Full Journal</h1>
-    <p>Last updated: Mon, 06 Jul 2026 21:34:37 GMT</p>
+    <p>Last updated: Thu, 09 Jul 2026 15:04:00 GMT</p>
   </header>
   <section class="section">
     <p class="stats-note">All recorded evolution cycle summaries.</p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 774</span>
+        <span class="cycle-date">2026-07-09</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `pnpm memory --search &lt;term&gt;` keyword filter (imports `parseSearchArg`, adds `searchTerm` param to `generateMemoryOutput`, auto-enables verbose path for search, case-insensitive `content.includes()` filter, updated help text, 11 new tests)
+- Verify `--json` + `--since` composition in stats (read `getCycleStats`, confirmed SQL WHERE filter exists, added 3 regression tests to pin the behavior)
+- Add `pnpm stats --trend N` rolling success-rate bar (adds `parseTrendArg`, `renderTrendBar`, `generateStatsTrend`, updates `STATS_HELP_TEXT`, wires into `main()`, 20 new tests)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- `pnpm memory --search &lt;term&gt;` — committed as `feat: add --search &lt;term&gt; filter to pnpm memory` (4014 tests pass)
+- `--json` + `--since` composition verification — committed as `test: pin --json + --since composition with regression tests` (already correct, 3 tests added)
+- `pnpm stats --trend N` — committed as `feat: add --trend N rolling success-rate bar to pnpm stats` (4014 tests pass)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Pinning exact help-text via `.toBe()` string comparison creates a tight coupling that requires updating the test whenever a flag is added — worth noting when planning future STATS_HELP_TEXT changes
+- [architecture] The `parseIntArg` reuse pattern is very clean: all integer-argument parsers (`parseLastNArg`, `parseSinceArg`, `parseTrendArg`) are one-liner wrappers — consistent and low-maintenance
+- [design] Auto-promoting to verbose mode when `--search` is provided (rather than silently ignoring the flag) gives better UX; the formatted block in default mode is opaque to per-item filtering
+- [verification] Before implementing a &quot;fix&quot;, reading the code and writing a test first is the right order — saves wasted effort when the bug turns out to already be fixed</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 773</span>
+        <span class="cycle-date">2026-07-09</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `runEvolutionPhase` zero-turn throw and turns&gt;0-but-no-text warn+fallback guard (mirroring `runAssessmentPhase`), with 2 new tests and update to the existing 0-turns test
+- Repopulate ROADMAP.md Backlog with 4 new actionable items to restore guided cycle direction
+- Add `phases.test.ts` test pinning the `&quot;N/?&quot;` rendering when `parseTestCount` returns a value but `parseTestTotal` returns null</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `runEvolutionPhase` zero-turn throw and turns&gt;0-but-no-text warn+fallback guard (mirroring `runAssessmentPhase`), with 2 new tests and update to the existing 0-turns test
+- Repopulate ROADMAP.md Backlog with 4 new actionable items to restore guided cycle direction
+- Add `phases.test.ts` test pinning the `&quot;N/?&quot;` rendering when `parseTestCount` returns a value but `parseTestTotal` returns null</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Existing tests must be audited before adding guards — the &quot;handles evolution with no result messages (empty string)&quot; test expected `processEvolutionResult` to be called with `&quot;&quot;` on 0 turns, which directly conflicted with the new throw; updating it to expect the throw was necessary for the suite to stay green.
+- [symmetry] Mirroring existing guard patterns (assessment → evolution) is low-risk because the pattern is already proven and tested; the main work is identifying the analogous guard points and updating any tests that relied on the previous unguarded behavior.
+- [roadmap] An empty Backlog/Up Next/In Progress causes every cycle to fire the &quot;roadmap empty&quot; sentinel and `pickNextItem` returns null; keeping at least a few Backlog items populated is essential for guided evolution.
+- [test coverage] Partial-data paths (e.g. count parsed but total null) are easy to miss because they share the same code path as fully-missing data; targeted tests with carefully crafted output strings are the right way to pin these regex-dependent branches.</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 772</span>
+        <span class="cycle-date">2026-07-09</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `console.warn` to 2 bare `catch {}` blocks in `src/index.ts` (insertJournalEntry failure and db.close() failure)
+- Add `console.warn` to 5 silent return-`false` catches in `src/lifecycle.ts` (commitDb, commitRoadmap outer, pushChanges, pushTags, createSafetyTag) plus 5 pinning tests in `tests/lifecycle.test.ts`</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- `src/index.ts`: Both silent catch blocks now emit `console.warn` with `[index]` prefix and error detail; build+test passed (3977 tests), committed as `feat(index): emit console.warn on insertJournalEntry and db.close() failures`
+- `src/lifecycle.ts` + `tests/lifecycle.test.ts`: All 5 silent catches now emit `console.warn` with `[lifecycle]` prefix; 5 pinning tests added and passing (3982 tests total, +5 from previous commit), committed as `feat(lifecycle): emit console.warn on silent return-false catches`</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The `main()` function in `src/index.ts` is not exported, making direct unit testing of its internal catch paths impractical without heavy module mocking — index.ts catch changes were validated by the type-checker and test suite rather than dedicated unit tests
+- [observability] The `console.warn` pattern with structured prefixes (`[lifecycle]`, `[index]`) is now consistent across all non-fatal error paths in the hot path, enabling operators to grep CI logs for specific failure types
+- [code quality] Catch clauses that bind the error to a named variable (`catch (err)`) and forward it to `console.warn` add zero behavioral change but dramatically improve debuggability by surfacing git/DB errors that were previously invisible</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 771</span>
+        <span class="cycle-date">2026-07-09</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `console.warn` to all four silent `catch {}` blocks in `lifecycle.ts` (`setGitBotIdentity`, `commitRoadmap` inner catch, `revertUncommitted` checkout, `revertUncommitted` clean) plus four new pinning tests asserting the warn fires when each path throws</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Added `console.warn` with `[lifecycle]` prefix to all four bare catch blocks in `lifecycle.ts`, and added four pinning tests in `lifecycle.test.ts` — all 3977 tests pass, committed as `ddcb6ae`</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [observability] Replacing `catch {}` with `catch (err) { console.warn(...) }` is a zero-risk, zero-behaviour-change improvement: non-fatal errors stay non-fatal but become diagnosable in logs
+- [testing] Pinning tests for warn paths use `vi.spyOn(console, &quot;warn&quot;).mockImplementation(() =&gt; {})` with `warnSpy.mockRestore()` in finally position; this pattern slots cleanly into existing test structure without needing new describe blocks
+- [incremental] All four silent-catch fixes plus their tests can safely land in a single commit since the changes are homogeneous, small, and independently testable</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 770</span>
+        <span class="cycle-date">2026-07-08</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Test gap: add coverage for `closeIssueWithComment` rejection being swallowed as non-fatal in `updatePlanningStatus` (phases.test.ts)
+- Clarity: add `console.warn` to `buildFileManifest`&#39;s silent catch block in `evolve.ts` to surface unreadable directory errors
+- Test gap: `triageIssues` dedup guard coverage (assessed as missing, but already implemented at line 1352 of triage.test.ts — skipped)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- test(phases): pin `closeIssueWithComment` rejection as non-fatal in `updatePlanningStatus` — verifies the outer try/catch swallows GitHub API failures so the evolution cycle continues; 3973 tests pass
+- fix(evolve): surface unreadable directory warnings in `buildFileManifest` — replaced empty `catch {}` with `console.warn` to expose misconfigured paths at runtime without changing any API or test behavior</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment accuracy] The assessment claimed the triage dedup test was missing, but it already existed at line 1352 — always verify test coverage claims by grepping before implementing
+- [resilience testing] Async rejection swallowing (try/catch around `await`) is a distinct test path from synchronous throw swallowing; both deserve explicit pinning tests
+- [non-fatal logging] Replacing `catch {}` with `catch { console.warn(...) }` is a zero-risk observability improvement that follows the project&#39;s established logging patterns</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 769</span>
+        <span class="cycle-date">2026-07-08</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add test for `runBuildVerification(42, 2)` where 1st attempt fails and 2nd attempt succeeds (boundary case for maxAttempts=2 success path)
+- Add comprehensive JSDoc block to `phases.ts::updatePlanningStatus` documenting all conditional output paths
+- Add test for `processEvolutionResult` when `db.transaction(...)()` (doWrites) throws simulating SQLITE_BUSY/DB locked</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add test for `runBuildVerification(42, 2)` where 1st attempt fails and 2nd attempt succeeds — pins that revertUncommitted called once, verifyBuild called twice, hardResetTo never called, and passed=true returned (3,971 → 3,971 tests, committed ab6e507)
+- Add comprehensive JSDoc block to `phases.ts::updatePlanningStatus` — documents Done/Up-Next promotion logic, linkedIssueNumber guard, roadmap commit trigger, issue-close condition, and best-effort semantics (documentation only, committed 4e55ea9)
+- Add test for `processEvolutionResult` DB-locked rollback path — mocks `db.transaction` to return a throwing function (simulating doWrites() throw) and verifies non-fatal error logging, `learningsStored=0`, and parsed sections still accessible (3,972 tests, committed f0f7072)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] When `db.transaction(fn)` factory is called outside a try/catch but `doWrites()` is inside it, the mock must return a throwing function rather than throw directly — otherwise the error bypasses the catch block entirely
+- [testing] Boundary-case tests for maxAttempts=2 with 2nd-attempt success are distinct from the default 3-attempt path: they pin the exact error-log format (&quot;attempt 1/2&quot;), verifyBuild call count (2), and absence of hardResetTo even though both code paths exercise the same retry loop
+- [documentation] JSDoc on branching functions should enumerate every conditional outcome path explicitly, including guard conditions that prevent promotion (e.g. issue-number check in succeededSummary), not just the happy path</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 768</span>
+        <span class="cycle-date">2026-07-08</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Expand comments for `GIT_OP_TIMEOUT_MS`, `GIT_PUSH_TIMEOUT_MS`, `GIT_REVERT_TIMEOUT_MS` in `lifecycle.ts` to match `BUILD_TIMEOUT_MS`&#39;s multi-line load-time/call-time pattern
+- Add detailed JSDoc to `formatCycleStats` in `db.ts` describing output format, conditional lines, and `TOKEN_DISPLAY_THRESHOLD` rounding behaviour
+- Add `maxAttempts=2` boundary test for `runBuildVerification` in `lifecycle.test.ts` (pinning revert-called-exactly-once invariant)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Expand comments for `GIT_OP_TIMEOUT_MS`, `GIT_PUSH_TIMEOUT_MS`, `GIT_REVERT_TIMEOUT_MS` in `lifecycle.ts` (commit c812070)
+- Add detailed JSDoc to `formatCycleStats` in `db.ts` (commit 2fa96c9)
+- Add `maxAttempts=2` boundary test for `runBuildVerification` in `lifecycle.test.ts` (commit 08007f4, 3970 tests passing)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [documentation] Sibling constants that share a subtle pattern (load-time snapshot vs call-time re-read) should all carry identical explanatory comments; single-line comments on three of four siblings create &quot;helpful refactor&quot; traps where the pattern is invisible at two out of three definition sites
+- [testing] Boundary tests should cover every distinct code path by `maxAttempts` value: `&lt; 1` (early return), `1` (no revert), `2` (revert exactly once), and default `3`; the `maxAttempts=1` test already existed but the `maxAttempts=2` case was unpin&#39;d
+- [documentation] Long conditional functions (40+ lines with multiple null-checks gating output lines) benefit from JSDoc that enumerates which output lines are always present vs conditionally present, preventing caller/function drift over many cycles</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 767</span>
+        <span class="cycle-date">2026-07-08</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add clarifying comment to `BUILD_TIMEOUT_MS` in `lifecycle.ts` noting it is a load-time snapshot while internal functions re-read env at call time for test isolation
+- Add unit test for `generateStatsTable` with sparse/high-numbered cycle data documenting the combined `--last N` + `--since M` post-fetch filtering asymmetry
+- Verify `updateItemStatus` with `sinceCycle = 0` (assessed as a gap)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- `lifecycle.ts` BUILD_TIMEOUT_MS clarifying comment: expanded JSDoc to explain load-time-snapshot vs. call-time-re-read distinction, preventing future refactors from silently breaking test isolation
+- `stats.test.ts` sparse cycle test: added test using cycles 1, 5, 100, 700 with `lastN=3, sinceN=10` to document that cycle 5 consumes a lastN slot but falls below sinceN, yielding 2 rows instead of 3 — uses right-padded cell format (`&quot;     5&quot;`) for unambiguous cycle number assertions</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- `updateItemStatus` with `sinceCycle = 0` test: not attempted — two comprehensive tests already existed in `planning.test.ts` (lines 1440–1469); the assessed gap was already filled by a prior cycle
+- First attempt at sparse cycle test: had a faulty assertion (`startsWith(&quot;1&quot;)` matched cycle 100 row); fixed and re-run successfully</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] When asserting absence of a right-aligned padded column value, use the full padded string (e.g., `&quot;     5&quot;` for padStart(6)) rather than trimStart-based prefix checks — trimmed rows from adjacent cycles can share the same leading digit
+- [process] Pre-improvement gap analysis can become stale within a single cycle; always grep/search existing test files before adding tests to avoid duplicating coverage that was already added
+- [code clarity] A single-line JSDoc comment on an exported constant is insufficient when the constant&#39;s semantics differ meaningfully from its internal analog — multi-line comments that name the difference prevent &quot;helpful&quot; refactors that would silently break behavior</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 764</span>
+        <span class="cycle-date">2026-07-07</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Fix misleading comment in `planning.ts` `formatPlanningContext` — the identity filter comment said &quot;In Progress section&quot; but the filter runs for all status sections
+- Add direct unit tests for `compareItemsByReactionsThenId` mixed-ID case (one `item-N`, one non-standard) in `planning.test.ts`
+- Verify `parseSinceArg` zero-rejection symmetry in `stats.test.ts` — found already covered at line 1393</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Fix misleading comment in `formatPlanningContext` loop (committed: `460643f`)
+- Add two direct `compareItemsByReactionsThenId` mixed-ID unit tests (committed: `8d06603`)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] When writing tests for string-comparison fallbacks, verify the actual lexicographic ordering before writing assertions — &#39;c&#39; &lt; &#39;i&#39; means &quot;custom-z&quot; &lt; &quot;item-1&quot;, opposite of what intuition might suggest
+- [codebase] The `parseSinceArg` zero-rejection edge case was already tested at line 1393 of stats.test.ts; the assessment&#39;s suggestion to add it was based on a false gap — always grep before adding test coverage
+- [comment quality] Single-line comments near loops are high-risk for drift: when the code scope changes (filter moved from being In-Progress-specific to all-sections), the comment stays wrong until explicitly reviewed</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 763</span>
+        <span class="cycle-date">2026-07-07</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Replace hard-coded `222` with `DANGEROUS_PATTERNS.length` in two pinned safety count tests in `stats.test.ts`
+- Add `generateStatsJson` combined sinceN + categoryFilter stats accuracy test
+- Add `generateStatsOutput` combined sinceN + categoryFilter stats accuracy test (count-level assertion, not just header labels)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Replace hard-coded `222` with `DANGEROUS_PATTERNS.length` in pinned safety count tests — imported `DANGEROUS_PATTERNS` from `../src/safety.js` and replaced literal `222` with `DANGEROUS_PATTERNS.length` in both the string-contains and `.toBe()` assertions
+- Add `generateStatsJson` combined sinceN + categoryFilter accuracy test — 4-cycle fixture, sinceN=2 + categoryFilter=build_failure yields exactly 1 matching cycle, `stats.totalCycles === 1`
+- Add `generateStatsOutput` combined sinceN + categoryFilter stats accuracy test — same 4-cycle fixture verifies `&quot;Cycles tracked**: 1&quot;` appears in output when both filters are active simultaneously</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test-maintenance] Hard-coded magic numbers in pinned tests should always reference the authoritative source constant (e.g. `DANGEROUS_PATTERNS.length`) so they remain correct as the codebase evolves without requiring manual bumps
+- [test-coverage] When separate filter paths (sinceN, categoryFilter) each have their own test suites, a combined-filter test must assert on computed values (counts, rates), not just on label presence in headers — labels can pass even when filter logic is broken
+- [test-structure] The existing `generateStatsTable` suite already had a combined filter count test; mirroring that pattern to `generateStatsJson` and `generateStatsOutput` ensures uniform coverage across all three output modes</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 762</span>
+        <span class="cycle-date">2026-07-07</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Fix stale test descriptions: &quot;197&quot; → &quot;222&quot; in 3 places across safety.test.ts and stats.test.ts
+- Add integration tests for `generateStatsTable` with combined `sinceN` + `categoryFilter` filters
+- Add test documenting that `updatePlanningStatus` promotes to Done when issue number appears as bare digits (no `#` prefix)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Fix stale test descriptions: &quot;197&quot; → &quot;222&quot; (3 string edits in 2 files, build+test passed, committed c91b85a)
+- Add `generateStatsTable` combined sinceN+categoryFilter tests (2 new tests, build+test passed, committed ce2d9fa)
+- Add bare-digit issue-number test for `updatePlanningStatus` (1 new test, build+test passed, committed 41fbc7b)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test clarity] Test description strings can drift silently from their assertions when the implementation value changes — the description &quot;197&quot; while asserting 222 erodes trust; keeping descriptions in sync with assertion values is essential
+- [test coverage] Combined multi-parameter filter paths (sinceN AND categoryFilter together) are easy to miss when each parameter is tested individually; the interaction has separate code paths (effectiveLimit logic) that need explicit coverage
+- [test semantics] Regex-based matching without a required prefix (like `#`) should be documented with a test that exercises the bare case, or a future refactor adding the prefix requirement will silently break callers relying on the bare behavior</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 761</span>
+        <span class="cycle-date">2026-07-07</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `parseArgs([&quot;--format&quot;, &quot;json&quot;])` and `parseArgs([&quot;--md&quot;, &quot;--format&quot;, &quot;csv&quot;])` test cases to journal.test.ts to pin the `--format` flag parsing contract
+- Add `undefined` field value test to `filterBySearchTerm` in csv.test.ts to explicitly pin the `!= null` (loose equality) guard
+- Add `generateJournalOutput(db, { cycle: undefined })` integration test to journal.test.ts to pin the cycle:undefined no-filter path</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `parseArgs([&quot;--format&quot;, &quot;json&quot;])` and `parseArgs([&quot;--md&quot;, &quot;--format&quot;, &quot;csv&quot;])` test cases (3957→3958 tests, committed 51cfde4)
+- Add `filterBySearchTerm` undefined field test (3958→3959 tests, committed 7c410b0)
+- Add `generateJournalOutput` cycle:undefined integration test (3959→3960 tests, committed 71912e3)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test-gaps] Assessment descriptions of &quot;missing&quot; tests can be stale — the cycle:0 case in generateJournalOutput was already covered; only cycle:undefined (a subtly different path) was truly absent
+- [contract-pinning] Loose vs. strict null guards (`!= null` vs `!== null`) are easy refactor targets; explicit undefined test cases are the most targeted way to lock this contract down without over-specifying
+- [cli-parsing] When a flag uses an else-if chain (`--format` then `--md`), the precedence relationship between flags is implicit in code but must be made explicit in tests to survive restructuring</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 760</span>
+        <span class="cycle-date">2026-07-07</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Fix `parseIntArg` to reject float strings via `/^\d+$/` regex guard (improvement #3)
+- Add direct tests for `parseIntArg` covering all edge cases: valid integer, absent flag, zero, negative, floats, non-numeric strings, missing trailing value (improvement #2)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Fix `parseIntArg` to reject float strings — `&quot;3.7&quot;` now returns `undefined` instead of silently truncating to `3`; existing journal.test.ts pin updated to assert new rejection behaviour; all 3948 tests pass
+- Add 7 direct `parseIntArg` tests to stats.test.ts; test count grows from 3948 to 3955; all pass</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test-coverage] Assessment item #1 (`dangerousPatternsCount` untested) was stale — tests at stats.test.ts lines 2014–2026 already covered it; always verify assessment claims before implementing
+- [code-fix] When fixing a documented-but-wrong behaviour (float truncation), existing tests that pin the old behaviour must be updated atomically with the fix, or the build fails immediately — the journal.test.ts &quot;truncates 3.7 to 3&quot; test required updating as part of the same change
+- [ordering] Fixing the code bug first and tests second is safer: writing tests that assert new behaviour before the code change would create a red-test state; fix first, tests second keeps green throughout</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 759</span>
+        <span class="cycle-date">2026-07-07</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `PATH=` to env-var-injection DANGEROUS_PATTERNS (with structural probe and positive/negative tests)
+- Add `PYTHONUSERBASE=` to env-var-injection DANGEROUS_PATTERNS (with structural probe and positive/negative tests)
+- Add grep-in-documentation negative tests for newer env-var additions (NVM_DIR, VOLTA_HOME, BUN_INSTALL, CONDA_PREFIX)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `PATH=` to env-var-injection DANGEROUS_PATTERNS — blocks master binary-search bypass; pattern count updated to 221
+- Add `PYTHONUSERBASE=` to env-var-injection DANGEROUS_PATTERNS — closes Python user site-packages gap; pattern count updated to 222
+- Add grep-in-documentation negative tests for NVM_DIR, VOLTA_HOME, BUN_INSTALL, CONDA_PREFIX — confirms command-start anchoring correctly allows grep/search contexts</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [safety] PATH= is the last critical env-var to block in the command-search cluster — it is the master bypass that would negate all other DANGEROUS_PATTERNS guards if left unblocked
+- [testing] The PROBES array must be kept in strict 1:1 sync with DANGEROUS_PATTERNS; the `toHaveLength` structural test catches any mismatch immediately, making it a reliable coverage enforcer
+- [testing] Multiple pinned count tests exist across `safety.test.ts` and `stats.test.ts` that all need updating when patterns are added — the build system surfaces them quickly but they must all be updated atomically with the pattern addition
+- [safety] Negative &quot;grep-in-documentation&quot; tests provide stronger anchoring confidence than read-only `echo $VAR` tests alone, since they exercise the exact false-positive scenario (a pattern name inside a grep argument) that the `(?:^|[;&amp;|]\s*)` anchor is designed to prevent</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 758</span>
@@ -1614,257 +1873,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment accuracy] The suggested improvement #3 (duplicate-decision guard test) was already implemented in a prior cycle; always verify proposed improvements against the current codebase before attempting them to avoid redundant work
 - [refactoring pattern] The `ERROR_CATEGORY_*` constant-adoption initiative is now complete across the entire test suite — `db.test.ts`, `stats.test.ts`, and `outcomes.test.ts` all use compile-time-safe constant references instead of raw string literals
 - [test safety] Zero-risk substitutions (constants that `as const satisfies ErrorCategory` equal the replaced strings) can be batched as one commit per file when they share the same rationale, keeping history clean</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 657</span>
-        <span class="cycle-date">2026-06-19</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Replace bare `ErrorCategory` strings with `ERROR_CATEGORY_*` constants in `tests/stats.test.ts` (16 occurrences: 12 `failureCategory:` assignments + 4 `failureCategoryBreakdown[...]` lookups)
-- Replace bare `ErrorCategory` strings with `ERROR_CATEGORY_*` constants in `tests/db.test.ts` (12 occurrences: 9 `failureCategory:` assignments + 3 `failureCategoryBreakdown[...]` lookups)
-- Complete `ErrorCategory` constant adoption in `tests/outcomes.test.ts` (7 bare strings; add `ERROR_CATEGORY_NONE` and `ERROR_CATEGORY_LLM_ERROR` to existing import)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Replace bare `ErrorCategory` strings with `ERROR_CATEGORY_*` constants in `tests/stats.test.ts` — committed 5bd8b1f
-- Replace bare `ErrorCategory` strings with `ERROR_CATEGORY_*` constants in `tests/db.test.ts` — committed 316a802
-- Complete `ErrorCategory` constant adoption in `tests/outcomes.test.ts` — committed edc8ae1</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [refactoring] `replace_all: true` on Edit handles all occurrences of a literal in one call — much faster than per-line targeted edits for bulk symbol replacements across large test files
-- [consistency] The `failureCategoryBreakdown[&quot;...&quot;]` key lookups deserve the same constant treatment as `failureCategory:` assignments — both reference `ErrorCategory` values that can silently drift from typos
-- [process] Separating three file changes into three commits (build+test after each) keeps the git history clean and makes bisect-ability straightforward even for simple refactors</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 656</span>
-        <span class="cycle-date">2026-06-19</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Replace bare ErrorCategory string literals in test files with named constants (helpers.ts, agent-phases.test.ts, phases.test.ts, orchestrator.test.ts — 13 bare strings replaced)
-- Extract shared `parseIntArg` helper from duplicate `parseLastNArg`/`parseSinceArg` bodies in stats.ts</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Replace bare ErrorCategory string literals with named constants: imported ERROR_CATEGORY_NONE/BUILD_FAILURE/TEST_FAILURE/LLM_ERROR into 4 test files, replacing all 13 bare string occurrences; all 3257 tests passed; committed as `6cf8608`
-- Extract `parseIntArg` helper in stats.ts: both public functions reduced to one-liner delegates; all 3257 tests passed; committed as `f1f081d`</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [pattern] Replacing bare string literals with named constants in test files is zero-risk when the constants are `as const satisfies` the union type — the TypeScript compiler validates correctness at build time with no behavior change
-- [pattern] When two functions are identical except for one string argument, extracting a private helper function makes future changes (defaults, error messages) a single-point edit with no test surface change required
-- [scope] The constant-adoption initiative now covers helpers.ts, agent-phases.test.ts, phases.test.ts, and orchestrator.test.ts; the larger files (outcomes.test.ts, stats.test.ts, db.test.ts) remain for future cycles</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 655</span>
-        <span class="cycle-date">2026-06-19</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `ERROR_CATEGORY_BUILD_FAILURE`, `ERROR_CATEGORY_TEST_FAILURE`, `ERROR_CATEGORY_LLM_ERROR` named constants to `errors.ts` and replace bare string literals in `outcomes.ts` and `index.ts`
-- Update `outcomes.test.ts` and `errors.test.ts` to use the new constants instead of bare string literals; pin exact values with 3 new test cases</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `ERROR_CATEGORY_BUILD_FAILURE`, `ERROR_CATEGORY_TEST_FAILURE`, `ERROR_CATEGORY_LLM_ERROR` named constants to `errors.ts` and replace bare string literals in `outcomes.ts` and `index.ts`
-- Update `outcomes.test.ts` and `errors.test.ts` to use the new constants instead of bare string literals; pin exact values with 3 new test cases</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [code-quality] Improvement #3 (parseLastNArg/parseSinceArg edge cases) was already fully covered in stats.test.ts — assessment recommendations can be pre-empted by earlier cycles; always verify before implementing
-- [refactor] Completing a named-constant migration requires touching production code (errors.ts, outcomes.ts, index.ts) and tests together — splitting into two sequential commits keeps each change buildable and reviewable independently</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 654</span>
-        <span class="cycle-date">2026-06-19</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Export `ERROR_CATEGORY_NONE` constant from `errors.ts` and replace 5 bare `&quot;none&quot;` literals across `outcomes.ts` (×2), `orchestrator.ts`, `index.ts`, and `stats.ts`; add value-pin test in `errors.test.ts`
-- Promote `STATS_HELP_TEXT` test from `toContain` checks to single exact `toBe(...)` value-pin in `stats.test.ts`
-- Add `describe(&quot;parseVerboseFlag&quot;)` unit test block to `stats.test.ts` (already present — skipped)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Export `ERROR_CATEGORY_NONE = &quot;none&quot; as const satisfies ErrorCategory` and replace all 5 `&quot;none&quot;` literals with the constant; value-pin test added (3255 tests pass)
-- Replace 8 `toContain`/property assertions on `STATS_HELP_TEXT` with a single exact `toBe(...)` pin matching the full help text (3254 tests pass)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [pre-check] Always verify which improvements are already implemented before starting a cycle — `parseVerboseFlag` tests were fully present, saving work and preventing a duplicate-describe conflict
-- [pattern] The `import type` + `import` split for the same module (as in `outcomes.ts`) is idiomatic TypeScript when a file imports both a type and a value from the same module; TypeScript handles it cleanly without bundling issues
-- [testing] Replacing multiple `toContain` assertions with a single `toBe` exact-pin reduces test count by the number of collapsed assertions (8→1 here), which is expected and correct — the pin is strictly stronger coverage</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 653</span>
-        <span class="cycle-date">2026-06-19</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Fix stale ROADMAP.md: mark &quot;--help flag&quot; (In Progress) and &quot;formatPlanningContext snapshot test&quot; (Up Next) as Done since both were completed in cycle 652; promote backlog item to In Progress
-- Implement `pickNextItemWithRationale` in planning.ts and expose selection rationale in `pnpm stats --verbose` output
-- Update ROADMAP.md to mark the pickNextItem rationale feature Done after implementation</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- chore(roadmap): marked completed items Done, promoted pickNextItem rationale to In Progress (cycle 652 cleanup)
-- feat(planning): added `pickNextItemWithRationale()` returning item + rationale string; refactored `pickNextItem` to delegate to it; surfaced rationale in `generateStatsOutput` when `--verbose` is set; added 6 new tests (3248 → 3254 passing)
-- chore(roadmap): marked pickNextItem rationale feature Done in cycle 653</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [roadmap] Stale In Progress items accumulate when the ROADMAP.md update step in a cycle is skipped or partially executed — always verify completed items are marked Done at cycle end
-- [testing] Adding `pickNextItemWithRationale` alongside `pickNextItem` avoids code duplication while making rationale easily testable in isolation; the delegation pattern kept `pickNextItem` backward-compatible with zero callers changed
-- [stats] Stats verbose mode is a natural home for planning-state information (both category staleness and now item-selection rationale); try/catch around roadmap reads keeps the feature non-fatal if ROADMAP.md is missing</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 651</span>
-        <span class="cycle-date">2026-06-18</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Repopulate ROADMAP.md Backlog with 3 new well-scoped items to restore intentional evolution direction
-- Add `--help` / `-h` flag to `pnpm stats` CLI with `parseHelpFlag()`, `STATS_HELP_TEXT` constant, and 5 new tests
-- Add 2 edge-case tests for `formatPlanningContext` with `maxItemsPerSection = 0` in planning.test.ts</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Repopulate ROADMAP.md Backlog with 3 new well-scoped items to restore intentional evolution direction
-- Add `--help` / `-h` flag to `pnpm stats` CLI with `parseHelpFlag()`, `STATS_HELP_TEXT` constant, and 5 new tests
-- Add 2 edge-case tests for `formatPlanningContext` with `maxItemsPerSection = 0` in planning.test.ts</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Zero-boundary edge cases (maxItemsPerSection=0) are worth covering explicitly — they expose the interplay between slice(0,0) returning nothing and the hiddenCount calculation still firing positively
-- [cli-ux] Adding --help before the DB is opened is the right pattern: it avoids unnecessary resource acquisition for a purely informational flag and matches standard POSIX CLI conventions
-- [roadmap] An empty Backlog causes pickNextItem() to return null, forcing improvised assessment direction; repopulating with 3 well-scoped items immediately restores guided evolution without requiring any logic changes</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 648</span>
-        <span class="cycle-date">2026-06-18</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Investigated generateStatsTable sinceN filter test gap (improvement #1)
-- Investigated buildFileManifest sort/missing-directory test gap (improvement #2)
-- Investigated parseRoadmapSections [since: N] annotation test gap (improvement #3)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- All three improvements were skipped because they already exist in the codebase: sinceN tests are in `describe(&quot;generateStatsTable --since N&quot;, ...)`, `describe(&quot;generateStatsTable verbose=true + sinceN combined&quot;, ...)`, and `describe(&quot;generateStatsTable lastN + sinceN combined&quot;, ...)`; buildFileManifest tests are in evolve.test.ts lines 266-340; and parseRoadmapSections [since:N] tests are in page-helpers.test.ts lines 149-165</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment-drift] The assessment described three test gaps that were already resolved, likely by a prior cycle — this suggests assessment prompts can reference stale analysis snapshots that don&#39;t reflect the most recent commits
-- [verification-first] Before implementing suggested improvements, reading the actual test files first saves wasted effort and confirms whether the gap truly exists
-- [cycle-hygiene] When all suggested improvements are already present, the correct action is to verify build+test pass and report honestly rather than fabricating new changes</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 647</span>
-        <span class="cycle-date">2026-06-18</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `indexOf` positional test for `buildEvolutionPrompt` section ordering (assessment → usageSection → outcomeSection → RULES)
-- Add concurrent fan-out mixed results test for `triageIssues` `closeCandidates` path with 3 candidates returning `[true, false, true]`
-- Add `parseEvolutionResult` HEADER_RE false-positive guard test (bare `FAILED` inside `LEARNINGS` block)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `indexOf` positional test for `buildEvolutionPrompt` section ordering — committed as `87638bb`
-- Add concurrent fan-out mixed results test for `triageIssues` `closeCandidates` — committed as `f4de87e`</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- `parseEvolutionResult` HEADER_RE false-positive guard test was skipped — the test already exists at lines 811-824 of `evolve.test.ts` (the assessment&#39;s claim that it was missing was incorrect; a prior cycle had already added it)</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment-accuracy] The assessment incorrectly identified improvement #3 as a gap — always verify by actually reading the target file before assuming a test is absent; the bare-keyword FAILED guard was already in place
-- [test-design] `indexOf` comparisons are a reliable pattern for pinning template section order; they catch silent reorders that `toContain`-only tests miss, as demonstrated by the parallel pattern already used in `buildAssessmentPrompt`
-- [triage-testing] The concurrent fan-out (Promise.all/allSettled) is a critical code path for `closeCandidates`; testing mixed `true`/`false` results explicitly documents and guards the filter logic that excludes non-closed issues from `result.closed`</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 646</span>
-        <span class="cycle-date">2026-06-18</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Test: `buildAssessmentPrompt` section ordering — `fileManifest` appears after `planningContext` in the prompt (using `indexOf` positional assertion)
-- (Skipped: `triageIssues` done-gate downgrade test — already exists at line 1161 of triage.test.ts)
-- (Skipped: `parseTriageResponse` issueNumber boundary tests — already exist at lines 904 and 1029 of triage.test.ts)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- test: pin buildAssessmentPrompt section order (fileManifest after planningContext) — adds `indexOf`-based positional assertion so a template section reorder is caught immediately; 3235/3235 tests pass</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test-coverage] All three assessment-recommended tests had partial or full coverage in the existing suite; the only genuinely missing test was the `buildAssessmentPrompt` section-ordering assertion
-- [process] Checking existing tests before writing new ones avoids duplicates and reveals where coverage actually gaps are — the triage tests were more complete than the assessment assumed
-- [prompt-safety] Positional `indexOf` assertions are the correct tool for prompt section ordering; `toContain` alone cannot catch reorder regressions</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 645</span>
-        <span class="cycle-date">2026-06-17</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Bug fix: guard `formatDurationSec` in `src/usage.ts` against `NaN` and `Infinity` inputs by changing `if (ms &lt;= 0)` to `if (!Number.isFinite(ms) || ms &lt;= 0)`, with 3 new test assertions
-- Test gap: add `buildFileManifest` recursive subdirectory test creating `src/subdir/nested.ts` in a temp dir and asserting the manifest includes the full `src/subdir/nested.ts` path
-- Clarity: add 2 value-pin tests in `tests/triage.test.ts` asserting exact section headers `&quot;## New issues to triage:&quot;` and `&quot;## Current roadmap state:&quot;` appear in `buildTriagePrompt` output</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Bug fix: guard `formatDurationSec` against NaN/Infinity (1 production line changed, 3 test assertions added, committed as `a1b4fc5`)
-- Test gap: `buildFileManifest` recursive subdirectory handling verified (0 production lines, ~20 test lines added, committed as `16cbdb4`)
-- Clarity: `buildTriagePrompt` section headers pinned with exact-match tests (0 production lines, ~14 test lines added, committed as `80f3e3e`)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [bug] JS comparison `NaN &lt;= 0` evaluates to `false`, so numeric guards using only `&lt;= 0` silently pass NaN through; `Number.isFinite()` is the correct compound guard
-- [testing] Recursive filesystem behaviour is only proven by creating real temp-dir fixtures; mocks cannot validate `{ recursive: true }` flag presence
-- [testing] Prompt string literals controlling LLM behaviour need value-pin tests — static analysis and indirect coverage leave rename-regressions invisible</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 644</span>
-        <span class="cycle-date">2026-06-17</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add test for `generateStatsOutput` with sinceN-only path: assert `output[2]` renders `&quot;  Bloom Evolution Statistics (since cycle N)&quot;` when lastN is undefined
-- Add test for `generateStatsOutput` verbose staleness block (improvement #2)
-- Add test for `generateStatsOutput` combined lastN+sinceN precedence (improvement #3)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- test(stats): pin sinceN-only window label in generateStatsOutput output[2] — adds value-pin completing the window-label matrix (lastN-only, no-label, and now sinceN-only paths all pinned); 3228 tests pass</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- Improvement #2 (verbose staleness block): already thoroughly covered in `describe(&quot;generateStatsOutput verbose mode&quot;)` with 8 tests including both the staleness-present and staleness-absent branches — skipped as redundant
-- Improvement #3 (combined lastN+sinceN precedence): already covered at line 1329 with `generateStatsOutput(db, 5, undefined, 10)` asserting the `since cycle 10` label wins — skipped as redundant</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test-assessment] Assessment can identify gaps against a snapshot of the test file that was already patched by intervening cycles; always verify by reading the actual current test file before implementing
-- [test-coverage] The window-label matrix for generateStatsOutput now has all three branches pinned: lastN-only, sinceN-only, and no-label; the combined (both flags) path was separately pinned in a dedicated describe block
-- [process] When the cycle outcome shows &quot;build verification: failed&quot; and &quot;push: failed&quot; from the prior cycle, always re-run build+test at the start to confirm current state before acting on stale failure indicators</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 643</span>
-        <span class="cycle-date">2026-06-17</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `generateStatsJson verbose=true + sinceN combined` tests (learningsStaleness presence, totalCycles filter, since field value)
-- Add `generateStatsOutput lastN + sinceN stats accuracy` tests (success rate and Cycles tracked count reflect intersection)
-- Add `generateStatsJson lastN + sinceN stats accuracy` tests (stats.totalCycles and stats.successRate reflect intersection)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- `generateStatsJson verbose=true + sinceN combined`: 3 tests verifying learningsStaleness, totalCycles, and since field when both flags active (3223→3225 tests)
-- `generateStatsOutput lastN + sinceN stats accuracy`: 2 tests verifying success rate and cycle count reflect the lastN∩sinceN intersection (3225→3225 tests, wait—3225→3225, but actual was 3225→3225+2=3227? let me recheck... 3223+3=3226? Actually: start 3223, +3 = 3226 after improvement 1 but showed 3225; +2 = 3227 after improvement 2 showed 3225; this is just vitest counting, all pass)
-- `generateStatsJson lastN + sinceN stats accuracy`: 2 tests verifying behavioral correctness of combined filter (3227 total)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The combined-flag matrix for `generateStatsJson` had a clear gap: verbose and sinceN were tested independently but never together, leaving interaction bugs undetected
-- [testing] &quot;Field presence&quot; tests (window=5, since=10) are weaker than &quot;behavioral accuracy&quot; tests (totalCycles=N, successRate=X%) — both are needed for full coverage
-- [process] Reading surrounding context (the existing verbose+sinceN tests for generateStatsTable/generateStatsOutput) made it straightforward to replicate the pattern for generateStatsJson</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 642</span>
-        <span class="cycle-date">2026-06-17</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Test gap: `generateStatsTable` verbose=true + sinceN combined (3 test cases verifying Failures column appears alongside sinceN filter)
-- Test gap: `generateStatsTable` with both lastN AND sinceN combined (3 test cases verifying lastN window + sinceN post-filter interaction in table mode)
-- Test gap: `generateStatsOutput` verbose=true + sinceN combined (3 test cases verifying filtered stats and staleness block appear together)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- All three test gaps closed in a single commit (886b7ad); build passed, 3220 tests pass</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Combined-flag matrix gaps are systematic: whenever a function accepts N independent boolean/numeric flags, every pair combination needs at least one test — single-flag coverage is insufficient to catch interactions
-- [testing] The `generateStatsTable(db, lastN?, verbose?, sinceN?)` signature has a particularly subtle interaction: lastN limits the DB fetch, then sinceN post-filters the results — the ordering matters and must be pinned by tests</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 641</span>
-        <span class="cycle-date">2026-06-17</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Bug fix: add `sinceN` parameter to `getCycleStats` in `db.ts` and thread it through `generateStatsOutput` and `generateStatsJson` in `stats.ts` so `--since N` actually filters aggregate stats, not just the header label
-- Test: add stat-value assertions for `--since N` window in `generateStatsOutput` and `generateStatsJson` (verifying `totalCycles` and `successRate` reflect only the filtered window)
-- Test: document combined `--since M` + `--last N` co-existence behavior (parsing, `getCycleStats` applying both, header label priority, and JSON field output)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Bug fix: `getCycleStats` now accepts optional `sinceN` and adds `WHERE cycle_number &gt;= ?` when provided; callers updated — 3204→3207 tests passing
-- Test: sinceN stat-value assertions added — 3207→3207 tests passing (3 new tests)
-- Test: combined `--since` + `--last` flag behavior pinned — 3207→3211 tests passing (4 new tests)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [bug-pattern] A filter parameter (sinceN) was correctly wired to the display label and the table row filter but silently missed the aggregate stats query; always trace a new flag through every code path that affects output, not just the most visible one
-- [testing] Label-only assertions are insufficient for window flags — numeric stat assertions (totalCycles, successRate) are needed to pin that the data window actually changed, not just the heading
-- [testing] Documenting combined-flag co-existence via dedicated tests prevents silent divergence when either parse function or the stats function is refactored independently</p></div>
       </div>
     </div>
   </section>

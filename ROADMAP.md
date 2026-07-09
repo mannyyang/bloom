@@ -1,16 +1,18 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Add `pnpm stats --trend N` rolling success-rate view: show a sparkline or ASCII trend of improvement success rate over the last N cycles so regressions are visible at a glance without reading per-cycle rows.
-- [ ] Add `pnpm memory --search <term>` to query stored learnings by keyword, mirroring `pnpm journal --search` so both memory stores have a consistent search interface.
 - [ ] Emit a structured JSON cycle-summary file (e.g. `bloom-cycle-summary.json`) after each evolution run containing cycle number, outcome metrics, and improvement counts — enabling CI dashboards and external tooling to consume cycle data without parsing SQLite directly.
 - [ ] Add `pnpm stats --export json --since N` combined flag support so the filtered and full-export flags compose correctly (currently `--export json` ignores `--since`).
 
 ## Up Next
 
 ## In Progress
+- [ ] Add `pnpm stats --trend N` rolling success-rate view: show a sparkline or ASCII trend of improvement success rate over the last N cycles so regressions are visible at a glance without reading per-cycle rows.
+  [since: 774]
 
 ## Done
+- [x] Add `pnpm memory --search <term>` to query stored learnings by keyword, mirroring `pnpm journal --search` so both memory stores have a consistent search interface.
+  Completed in cycle 774: 3/3 improvements succeeded.
 - [x] Add `NVM_DIR` env-var injection pattern — `NVM_DIR=/tmp/evil` redirects Node Version Manager's install root; any `nvm use` or `nvm exec` call then resolves node/npm binaries from the attacker-controlled path. Completes the Node toolchain cluster alongside NODE_OPTIONS, NPM_CONFIG_PREFIX, and PNPM_HOME already blocked.
   Completed in cycle 758: pattern live at safety.ts line 780, all 218 probe tests pass.
 - [x] Add `pnpm stats --since N` flag for filtering the stats table to cycles ≥ N, mirroring the `--since` flag already present in `pnpm journal` so both CLIs have a consistent filtering interface.

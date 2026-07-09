@@ -83,15 +83,51 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Mon, 06 Jul 2026 21:34:37 GMT</p>
+    <p>Last updated: Thu, 09 Jul 2026 15:04:00 GMT</p>
   </header>
   
+  <section class="section">
+    <h2><span class="badge" style="background:#6b7280">Backlog</span></h2>
+    <ul>
+      <li class="item">
+        <span class="check">⬜</span>
+        <div class="item-body">
+          <span class="item-title">Emit a structured JSON cycle-summary file (e.g. `bloom-cycle-summary.json`) after each evolution run containing cycle number, outcome metrics, and improvement counts — enabling CI dashboards and external tooling to consume cycle data without parsing SQLite directly.</span>
+          
+        </div>
+      </li>
+      <li class="item">
+        <span class="check">⬜</span>
+        <div class="item-body">
+          <span class="item-title">Add `pnpm stats --export json --since N` combined flag support so the filtered and full-export flags compose correctly (currently `--export json` ignores `--since`).</span>
+          
+        </div>
+      </li></ul>
+  </section>
 
 
+  <section class="section">
+    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
+    <ul>
+      <li class="item">
+        <span class="check">⬜</span>
+        <div class="item-body">
+          <span class="item-title">Add `pnpm stats --trend N` rolling success-rate view: show a sparkline or ASCII trend of improvement success rate over the last N cycles so regressions are visible at a glance without reading per-cycle rows.</span>
+          
+        </div>
+      </li></ul>
+  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `pnpm memory --search &lt;term&gt;` to query stored learnings by keyword, mirroring `pnpm journal --search` so both memory stores have a consistent search interface.</span>
+          <p class="item-desc">Completed in cycle 774: 3/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -430,10 +466,10 @@
       <tbody>
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
-        <tr><td>Avg improvements / cycle</td><td><strong>1.8</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>83%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>6.1 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$36.29</strong></td></tr>
+        <tr><td>Avg improvements / cycle</td><td><strong>2.1</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>89%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.5 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$36.05</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -445,91 +481,91 @@
     
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 758</span>
-        <span class="cycle-date">2026-07-06</span>
+        <span class="cycle-badge">Cycle 774</span>
+        <span class="cycle-date">2026-07-09</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Update ROADMAP.md: mark NVM_DIR env-var injection pattern and `pnpm stats --since N` as Done (both already implemented but still in In Progress/Backlog)
-- Add VOLTA_HOME and BUN_INSTALL env-var injection patterns to safety.ts, update count pins from 218→220, add probes, and add positive + negative test cases
-- Add negative-case tests for the `conda install` pattern (bare install, safe subcommands, read-only echo context)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Update ROADMAP.md: NVM_DIR moved from In Progress to Done; `--since N` moved from Backlog to Done (build+test passed, committed f393569)
-- Add VOLTA_HOME and BUN_INSTALL patterns: 2 new DANGEROUS_PATTERNS entries, count 218→220, all count pins updated across safety.test.ts and stats.test.ts, 6 new unit tests added (build+test passed, committed 10c33e8)
-- Add conda install negative cases: 6 tests covering bare install, safe subcommands (list/activate), and read-only echo context (build+test passed, committed ac0c9bf)</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `pnpm memory --search &lt;term&gt;` keyword filter (imports `parseSearchArg`, adds `searchTerm` param to `generateMemoryOutput`, auto-enables verbose path for search, case-insensitive `content.includes()` filter, updated help text, 11 new tests)
+- Verify `--json` + `--since` composition in stats (read `getCycleStats`, confirmed SQL WHERE filter exists, added 3 regression tests to pin the behavior)
+- Add `pnpm stats --trend N` rolling success-rate bar (adds `parseTrendArg`, `renderTrendBar`, `generateStatsTrend`, updates `STATS_HELP_TEXT`, wires into `main()`, 20 new tests)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- `pnpm memory --search &lt;term&gt;` — committed as `feat: add --search &lt;term&gt; filter to pnpm memory` (4014 tests pass)
+- `--json` + `--since` composition verification — committed as `test: pin --json + --since composition with regression tests` (already correct, 3 tests added)
+- `pnpm stats --trend N` — committed as `feat: add --trend N rolling success-rate bar to pnpm stats` (4014 tests pass)</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [safety-patterns] When adding env-var injection probe commands that contain flags like `-e`, always verify the probe doesn&#39;t accidentally match an earlier pattern (e.g. `node -e` triggers inline-code-execution before env-var-injection); use a minimal flag-free probe like `volta run node app.js`
-- [test-maintenance] Count pins for DANGEROUS_PATTERNS exist in three separate test files (safety.test.ts count pin, safety.test.ts PROBES array, stats.test.ts verbose output pins) — all three must be updated atomically when adding new patterns
-- [roadmap-hygiene] Roadmap items can drift from reality when multiple improvements land in the same cycle; explicit verification against source code before marking Done prevents false In Progress entries accumulating
-- [test-coverage] Positive-only tests for regex patterns create a silent regression risk; adding negative cases for safe subcommands (conda list, conda activate) and read-only contexts (echo) provides a CI tripwire for future pattern changes</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Pinning exact help-text via `.toBe()` string comparison creates a tight coupling that requires updating the test whenever a flag is added — worth noting when planning future STATS_HELP_TEXT changes
+- [architecture] The `parseIntArg` reuse pattern is very clean: all integer-argument parsers (`parseLastNArg`, `parseSinceArg`, `parseTrendArg`) are one-liner wrappers — consistent and low-maintenance
+- [design] Auto-promoting to verbose mode when `--search` is provided (rather than silently ignoring the flag) gives better UX; the formatted block in default mode is opaque to per-item filtering
+- [verification] Before implementing a &quot;fix&quot;, reading the code and writing a test first is the right order — saves wasted effort when the bug turns out to already be fixed</p></div>
       </div>
     </div>
 
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 757</span>
-        <span class="cycle-date">2026-07-06</span>
+        <span class="cycle-badge">Cycle 773</span>
+        <span class="cycle-date">2026-07-09</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `Safety patterns: &lt;N&gt;` line to `generateStatsOutput` verbose block and `dangerousPatternsCount` field to `generateStatsJson` verbose result, importing `DANGEROUS_PATTERNS` from `safety.ts`, with pin tests asserting count is 218
-- Update `STATS_HELP_TEXT` `--verbose` description to mention &quot;safety pattern count&quot; and update the snapshot pin test to match</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- feat(stats): surface DANGEROUS_PATTERNS count in --verbose output — adds `Safety patterns: 218` to text output and `dangerousPatternsCount: 218` to JSON output when `--verbose` is set, with 6 new pin tests (commit 478e710)
-- docs(stats): update --verbose help text to mention safety pattern count — keeps the help string accurate after improvement 1 landed, with snapshot test updated (commit 200af50)</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `runEvolutionPhase` zero-turn throw and turns&gt;0-but-no-text warn+fallback guard (mirroring `runAssessmentPhase`), with 2 new tests and update to the existing 0-turns test
+- Repopulate ROADMAP.md Backlog with 4 new actionable items to restore guided cycle direction
+- Add `phases.test.ts` test pinning the `&quot;N/?&quot;` rendering when `parseTestCount` returns a value but `parseTestTotal` returns null</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `runEvolutionPhase` zero-turn throw and turns&gt;0-but-no-text warn+fallback guard (mirroring `runAssessmentPhase`), with 2 new tests and update to the existing 0-turns test
+- Repopulate ROADMAP.md Backlog with 4 new actionable items to restore guided cycle direction
+- Add `phases.test.ts` test pinning the `&quot;N/?&quot;` rendering when `parseTestCount` returns a value but `parseTestTotal` returns null</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test-accuracy] The assessment estimated 218 patterns but the safety.test.ts pin said 197; actual runtime count (218) took precedence — always verify counts via runtime rather than static analysis or prior-cycle snapshots
-- [grep-tool] The Grep tool&#39;s `count` output_mode showed a number above &quot;Found 0 total occurrences across 0 files&quot; which was confusing; the number shown before the message was the match count but the file count was 0 — likely a display artifact for binary or large files
-- [incremental-approach] Doing the feature (improvement 1) first then the help-text fix (improvement 2) as separate commits keeps each change reviewable and individually revertable</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Existing tests must be audited before adding guards — the &quot;handles evolution with no result messages (empty string)&quot; test expected `processEvolutionResult` to be called with `&quot;&quot;` on 0 turns, which directly conflicted with the new throw; updating it to expect the throw was necessary for the suite to stay green.
+- [symmetry] Mirroring existing guard patterns (assessment → evolution) is low-risk because the pattern is already proven and tested; the main work is identifying the analogous guard points and updating any tests that relied on the previous unguarded behavior.
+- [roadmap] An empty Backlog/Up Next/In Progress causes every cycle to fire the &quot;roadmap empty&quot; sentinel and `pickNextItem` returns null; keeping at least a few Backlog items populated is essential for guided evolution.
+- [test coverage] Partial-data paths (e.g. count parsed but total null) are easy to miss because they share the same code path as fully-missing data; targeted tests with carefully crafted output strings are the right way to pin these regex-dependent branches.</p></div>
       </div>
     </div>
 
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 756</span>
-        <span class="cycle-date">2026-07-06</span>
+        <span class="cycle-badge">Cycle 772</span>
+        <span class="cycle-date">2026-07-09</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add RUSTUP_HOME + PNPM_HOME env-var injection patterns to safety.ts (length pin 215→217, probes + block/allow tests added)
-- Repopulate ROADMAP.md backlog with three new items (NVM_DIR pattern, DANGEROUS_PATTERNS count in stats --verbose, pnpm stats --since N)
-- Add NVM_DIR env-var injection pattern to safety.ts (length pin 217→218, probes + block/allow tests added)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add RUSTUP_HOME + PNPM_HOME env-var injection patterns — 31 lines added, 3920 tests pass, committed as `209f5db`
-- Repopulate ROADMAP.md backlog with three actionable items — committed as `fae867e`
-- Add NVM_DIR env-var injection pattern — 16 lines added, 3920 tests pass, committed as `7a886a5`</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `console.warn` to 2 bare `catch {}` blocks in `src/index.ts` (insertJournalEntry failure and db.close() failure)
+- Add `console.warn` to 5 silent return-`false` catches in `src/lifecycle.ts` (commitDb, commitRoadmap outer, pushChanges, pushTags, createSafetyTag) plus 5 pinning tests in `tests/lifecycle.test.ts`</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- `src/index.ts`: Both silent catch blocks now emit `console.warn` with `[index]` prefix and error detail; build+test passed (3977 tests), committed as `feat(index): emit console.warn on insertJournalEntry and db.close() failures`
+- `src/lifecycle.ts` + `tests/lifecycle.test.ts`: All 5 silent catches now emit `console.warn` with `[lifecycle]` prefix; 5 pinning tests added and passing (3982 tests total, +5 from previous commit), committed as `feat(lifecycle): emit console.warn on silent return-false catches`</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] vitest&#39;s `--test-pattern` flag requires passing directly via `pnpm test -- tests/foo.test.ts` syntax; the `--test-pattern` / `--testPattern` flags are not supported in this project&#39;s vitest version — run the full suite instead
-- [safety] The Node toolchain cluster (NODE_OPTIONS, NPM_CONFIG_PREFIX, PNPM_HOME, NVM_DIR) and Rust cluster (CARGO_HOME, RUSTUP_HOME) share the same threat model: redirecting a tool&#39;s home directory to an attacker-controlled path propagates to every downstream binary lookup
-- [workflow] Incremental pattern additions (one or two at a time) with immediate probe + block/allow tests keep each commit small, reversible, and independently verifiable</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The `main()` function in `src/index.ts` is not exported, making direct unit testing of its internal catch paths impractical without heavy module mocking — index.ts catch changes were validated by the type-checker and test suite rather than dedicated unit tests
+- [observability] The `console.warn` pattern with structured prefixes (`[lifecycle]`, `[index]`) is now consistent across all non-fatal error paths in the hot path, enabling operators to grep CI logs for specific failure types
+- [code quality] Catch clauses that bind the error to a named variable (`catch (err)`) and forward it to `console.warn` add zero behavioral change but dramatically improve debuggability by surfacing git/DB errors that were previously invisible</p></div>
       </div>
     </div>
 
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 755</span>
-        <span class="cycle-date">2026-07-06</span>
+        <span class="cycle-badge">Cycle 771</span>
+        <span class="cycle-date">2026-07-09</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `BUNDLE_PATH` env-var-injection pattern to `DANGEROUS_PATTERNS` in `src/safety.ts` with comment block and unit tests
-- Add `NPM_CONFIG_PREFIX` env-var-injection pattern to `DANGEROUS_PATTERNS` in `src/safety.ts` with comment block and unit tests
-- Add both new command strings to the PROBES sentinel array in `tests/safety.test.ts` (regression guard)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Added `BUNDLE_PATH` and `NPM_CONFIG_PREFIX` patterns to `DANGEROUS_PATTERNS`, updated structural count pin (213→215), added entries to PROBES sentinel array, and added 6 unit tests each (block + safe-suffix false-positive + read-only false-positive); all 3911 tests pass</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `console.warn` to all four silent `catch {}` blocks in `lifecycle.ts` (`setGitBotIdentity`, `commitRoadmap` inner catch, `revertUncommitted` checkout, `revertUncommitted` clean) plus four new pinning tests asserting the warn fires when each path throws</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Added `console.warn` with `[lifecycle]` prefix to all four bare catch blocks in `lifecycle.ts`, and added four pinning tests in `lifecycle.test.ts` — all 3977 tests pass, committed as `ddcb6ae`</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The absolute count pin test description says &quot;197 entries&quot; but the assertion value was 213 — the description has drifted from the actual count and must be updated alongside the assertion value when new patterns are added
-- [safety] The PROBES array length must equal `DANGEROUS_PATTERNS.length`; forgetting to add sentinel entries causes a length mismatch failure before any per-pattern test fires
-- [process] Both the pattern addition and the count pin update must land in the same commit to avoid a broken intermediate state where build passes but tests fail</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [observability] Replacing `catch {}` with `catch (err) { console.warn(...) }` is a zero-risk, zero-behaviour-change improvement: non-fatal errors stay non-fatal but become diagnosable in logs
+- [testing] Pinning tests for warn paths use `vi.spyOn(console, &quot;warn&quot;).mockImplementation(() =&gt; {})` with `warnSpy.mockRestore()` in finally position; this pattern slots cleanly into existing test structure without needing new describe blocks
+- [incremental] All four silent-catch fixes plus their tests can safely land in a single commit since the changes are homogeneous, small, and independently testable</p></div>
       </div>
     </div>
 
     <div class="journal-card">
       <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 754</span>
-        <span class="cycle-date">2026-07-06</span>
+        <span class="cycle-badge">Cycle 770</span>
+        <span class="cycle-date">2026-07-08</span>
       </div>
       <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add VIRTUAL_ENV env-var injection guard to DANGEROUS_PATTERNS (safety.ts)
-- Add CONDA_PREFIX env-var injection guard to DANGEROUS_PATTERNS (safety.ts)
-- Block `conda install &lt;pkg&gt;` as untrusted-package-installation (safety.ts)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- All three patterns added to `src/safety.ts`, probes added to `tests/safety.test.ts`, absolute count pin updated 210→213; build and all 3905 tests pass; committed and pushed as `feat(safety): block VIRTUAL_ENV, CONDA_PREFIX injection and conda install`</p></div>
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Test gap: add coverage for `closeIssueWithComment` rejection being swallowed as non-fatal in `updatePlanningStatus` (phases.test.ts)
+- Clarity: add `console.warn` to `buildFileManifest`&#39;s silent catch block in `evolve.ts` to surface unreadable directory errors
+- Test gap: `triageIssues` dedup guard coverage (assessed as missing, but already implemented at line 1352 of triage.test.ts — skipped)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- test(phases): pin `closeIssueWithComment` rejection as non-fatal in `updatePlanningStatus` — verifies the outer try/catch swallows GitHub API failures so the evolution cycle continues; 3973 tests pass
+- fix(evolve): surface unreadable directory warnings in `buildFileManifest` — replaced empty `catch {}` with `console.warn` to expose misconfigured paths at runtime without changing any API or test behavior</p></div>
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The absolute count pin (`toHaveLength(N)`) in the structural integrity test must be updated in sync with DANGEROUS_PATTERNS; it is a separate hardcoded assertion from the PROBES symmetry check, so both need updating when adding patterns.
-- [patterns] The `(?:^|[;&amp;|]\s*)VAR\s*=/env-var-injection` anchor pattern is straightforward to extend; new env-var injection guards follow the same regex structure already established for LD_PRELOAD, PYTHONPATH, GEM_HOME, etc.
-- [patterns] The `(?:^|[;&amp;|]\s*)tool\s+subcommand\s+(?:-\S+\s+)*[a-zA-Z@]/untrusted-package-installation` pattern for `conda install` matches perfectly alongside the existing pip/gem/cargo/go/apt/brew entries with no special-casing needed.</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment accuracy] The assessment claimed the triage dedup test was missing, but it already existed at line 1352 — always verify test coverage claims by grepping before implementing
+- [resilience testing] Async rejection swallowing (try/catch around `await`) is a distinct test path from synchronous throw swallowing; both deserve explicit pinning tests
+- [non-fatal logging] Replacing `catch {}` with `catch { console.warn(...) }` is a zero-risk observability improvement that follows the project&#39;s established logging patterns</p></div>
       </div>
     </div>
   </section>
