@@ -212,6 +212,19 @@ export async function runEvolutionPhase(
     }
   }
   const evolutionMs = Date.now() - evolutionStart;
+
+  if (evolutionResult === "") {
+    if (evolutionTurns === 0) {
+      throw new Error("Evolution produced no output (0 turns). Aborting.");
+    }
+    // Turns ran but yielded no text content blocks — use a minimal fallback
+    // so the cycle can still be recorded rather than crashing with partial data.
+    console.warn(
+      `[evolution] Warning: ${evolutionTurns} turn(s) completed but produced no text output. Using fallback result.`,
+    );
+    evolutionResult = `(The evolution phase completed ${evolutionTurns} turn(s) but produced no readable text output. No improvements were recorded.)`;
+  }
+
   console.log(`\n[evolution] Completed in ${formatDurationSec(evolutionMs)} (${evolutionTurns} turns)`);
 
   // Log cycle usage summary

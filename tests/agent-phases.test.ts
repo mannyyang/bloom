@@ -389,16 +389,32 @@ describe("runEvolutionPhase", () => {
     expect(queryCalls[0].options.maxBudgetUsd).toBe(AGENT_EVOLUTION_MAX_BUDGET_USD);
   });
 
-  it("handles evolution with no result messages (empty string)", async () => {
+  it("throws when 0 turns are produced (SDK returned nothing)", async () => {
     const { deps } = createMockDeps([]);
     vi.mocked(deps.processEvolutionResult).mockReturnValue(createProcessedEvolution());
+    const db = createMockDb();
+
+    await expect(
+      runEvolutionPhase(db, 1, createOutcome(), "assessment", "identity", [], deps, createMockSafetyHooks()),
+    ).rejects.toThrow("Evolution produced no output (0 turns)");
+  });
+
+  it("passes fallback string to processEvolutionResult when turns run but yield no text", async () => {
+    const { deps } = createMockDeps([
+      { type: "progress", content: "thinking..." },
+    ]);
+    vi.mocked(deps.processEvolutionResult).mockReturnValue(createProcessedEvolution());
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const db = createMockDb();
 
     await runEvolutionPhase(
       db, 1, createOutcome(), "assessment", "identity", [], deps, createMockSafetyHooks(),
     );
 
-    expect(deps.processEvolutionResult).toHaveBeenCalledWith(db, 1, "");
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("no text output"));
+    const callArg = vi.mocked(deps.processEvolutionResult).mock.calls[0][2];
+    expect(callArg).toContain("no readable text output");
+    warnSpy.mockRestore();
   });
 
   it("accumulates phaseUsages from both assessment and evolution", async () => {
