@@ -104,8 +104,8 @@ async function main() {
     if (db && cycleCount > 0) {
       try {
         insertJournalEntry(db, cycleCount, "failed", `Evolution error: ${errorMessage(err)}`);
-      } catch {
-        // DB may not be usable — that's fine, we tried
+      } catch (journalErr) {
+        console.warn(`[index] insertJournalEntry failed (non-fatal): ${journalErr}`);
       }
     }
   } finally {
@@ -120,8 +120,8 @@ async function main() {
       }
       try {
         db.close();
-      } catch {
-        // ignore close errors
+      } catch (closeErr) {
+        console.warn(`[index] db.close() failed (non-fatal): ${closeErr}`);
       }
     }
   }
