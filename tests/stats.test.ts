@@ -755,6 +755,50 @@ describe("generateStatsJson", () => {
     expect(result.latestCycle).toBe(2);
     expect(result.since).toBe(99);
   });
+
+  it("rows field is present and is an array", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true, pushSucceeded: true }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2, buildVerificationPassed: false, pushSucceeded: false }));
+    const result = generateStatsJson(db);
+    expect(Array.isArray(result.rows)).toBe(true);
+  });
+
+  it("rows field length matches total cycles when no filters are active", () => {
+    for (let i = 1; i <= 4; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    const result = generateStatsJson(db);
+    expect(result.rows?.length).toBe(4);
+  });
+
+  it("rows field is filtered by lastN when lastN is provided", () => {
+    for (let i = 1; i <= 5; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    const result = generateStatsJson(db, 2);
+    expect(result.rows?.length).toBe(2);
+  });
+
+  it("rows field is filtered by sinceN when sinceN is provided", () => {
+    for (let i = 1; i <= 5; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    const result = generateStatsJson(db, undefined, false, 3);
+    // cycles 3, 4, 5 match sinceN=3
+    expect(result.rows?.length).toBe(3);
+  });
+
+  it("rows field entries have expected CycleRow fields", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 7, buildVerificationPassed: true, pushSucceeded: true }));
+    const result = generateStatsJson(db);
+    const row = result.rows?.[0];
+    expect(row).toBeDefined();
+    expect(typeof row?.cycleNumber).toBe("number");
+    expect(typeof row?.attempted).toBe("number");
+    expect(typeof row?.succeeded).toBe("number");
+    expect(typeof row?.buildPassed).toBe("boolean");
+    expect(typeof row?.pushed).toBe("boolean");
+  });
 });
 
 describe("formatCycleStats", () => {

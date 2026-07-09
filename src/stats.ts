@@ -334,6 +334,12 @@ export interface StatsJsonOutput {
   category: string | null;
   generatedAt: string;
   stats: CycleStats;
+  /**
+   * Per-cycle rows matching the active filters (lastN / sinceN / categoryFilter).
+   * Ordered newest-first, matching getCycleRows convention. Always present so
+   * dashboards and CI can consume per-cycle data without parsing ASCII tables.
+   */
+  rows?: CycleRow[];
   learningsStaleness?: CategoryStaleness[];
   /** Next-item selection rationale from pickNextItemWithRationale (verbose only). null means no actionable items. */
   nextItemRationale?: string | null;
@@ -362,8 +368,20 @@ export function generateStatsJson(
 ): StatsJsonOutput {
   const latestCycle = getLatestCycleNumber(db);
   const stats = getCycleStats(db, lastN, sinceN, categoryFilter);
+
+  // Apply same filtering logic as generateStatsTable so rows are consistent
+  // with the stats aggregate.
+  const effectiveLimit = (sinceN !== undefined || categoryFilter !== undefined) && lastN === undefined ? Number.MAX_SAFE_INTEGER : lastN;
+  let rows = getCycleRows(db, effectiveLimit);
+  if (sinceN !== undefined) {
+    rows = rows.filter((r: CycleRow) => r.cycleNumber >= sinceN);
+  }
+  if (categoryFilter !== undefined) {
+    rows = rows.filter((r: CycleRow) => (r.failureCategory ?? ERROR_CATEGORY_NONE) === categoryFilter);
+  }
+
   const result: StatsJsonOutput = {
-    latestCycle, window: lastN ?? null, since: sinceN ?? null, category: categoryFilter ?? null, generatedAt: new Date().toISOString(), stats,
+    latestCycle, window: lastN ?? null, since: sinceN ?? null, category: categoryFilter ?? null, generatedAt: new Date().toISOString(), stats, rows,
   };
   if (verbose) {
     result.learningsStaleness = getLastUpdatedCyclePerCategory(db);
