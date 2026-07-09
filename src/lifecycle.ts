@@ -99,7 +99,7 @@ export function setGitBotIdentity(): void {
   try {
     execFileSync("git", ["config", "user.name", GIT_BOT_NAME], { stdio: "ignore" });
     execFileSync("git", ["config", "user.email", GIT_BOT_EMAIL], { stdio: "ignore" });
-  } catch { /* env vars are sufficient fallback */ }
+  } catch (err) { console.warn(`[lifecycle] setGitBotIdentity git config failed (non-fatal): ${err}`); }
 }
 
 /**
@@ -133,7 +133,7 @@ export function commitRoadmap(cycleCount: number): boolean {
     try {
       execFileSync("pnpm", ["generate-pages"], { stdio: "inherit", timeout });
       execFileSync("git", ["add", "docs/"], { stdio: "ignore", timeout });
-    } catch { /* non-fatal: script may not exist or docs/ may be unchanged */ }
+    } catch (err) { console.warn(`[lifecycle] commitRoadmap generate-pages failed (non-fatal): ${err}`); }
     execFileSync("git", ["commit", "-m", `cycle ${cycleCount}: update roadmap`], { stdio: "inherit", timeout });
     return true;
   } catch {
@@ -189,10 +189,10 @@ export function revertUncommitted(): void {
   const timeout = parseTimeoutEnv(process.env.BLOOM_GIT_REVERT_TIMEOUT_MS, 10_000);
   try {
     execFileSync("git", ["checkout", "--", "."], { stdio: "inherit", timeout });
-  } catch { /* ignore */ }
+  } catch (err) { console.warn(`[lifecycle] revertUncommitted checkout failed (non-fatal): ${err}`); }
   try {
     execFileSync("git", ["clean", "-fd"], { stdio: "inherit", timeout });
-  } catch { /* ignore */ }
+  } catch (err) { console.warn(`[lifecycle] revertUncommitted clean failed (non-fatal): ${err}`); }
 }
 
 /**

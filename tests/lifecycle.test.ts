@@ -195,6 +195,16 @@ describe("lifecycle helpers", () => {
       mockedExecFileSync.mockImplementation(() => { throw new Error("git config failed"); });
       expect(() => setGitBotIdentity()).not.toThrow();
     });
+
+    it("emits console.warn when git config fails", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      mockedExecFileSync.mockImplementation(() => { throw new Error("git config failed"); });
+      setGitBotIdentity();
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("[lifecycle] setGitBotIdentity git config failed (non-fatal)"),
+      );
+      warnSpy.mockRestore();
+    });
   });
 
   describe("commitDb", () => {
@@ -288,6 +298,19 @@ describe("lifecycle helpers", () => {
         ["commit", "-m", "cycle 42: update roadmap"],
         expect.anything(),
       );
+    });
+
+    it("emits console.warn when pnpm generate-pages fails (inner catch)", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      mockedExecFileSync
+        .mockReturnValueOnce(Buffer.from(""))          // git add ROADMAP.md
+        .mockImplementationOnce(() => { throw new Error("generate-pages not found"); }) // pnpm generate-pages (non-fatal)
+        .mockReturnValue(Buffer.from(""));             // git commit
+      commitRoadmap(42);
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("[lifecycle] commitRoadmap generate-pages failed (non-fatal)"),
+      );
+      warnSpy.mockRestore();
     });
 
     it("returns false when git add fails", () => {
@@ -469,6 +492,29 @@ describe("lifecycle helpers", () => {
         ["clean", "-fd"],
         expect.objectContaining({ timeout: GIT_REVERT_TIMEOUT_MS }),
       );
+    });
+
+    it("emits console.warn when git checkout fails", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      mockedExecFileSync.mockImplementationOnce(() => { throw new Error("checkout failed"); })
+        .mockReturnValue(Buffer.from(""));
+      revertUncommitted();
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("[lifecycle] revertUncommitted checkout failed (non-fatal)"),
+      );
+      warnSpy.mockRestore();
+    });
+
+    it("emits console.warn when git clean fails", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      mockedExecFileSync
+        .mockReturnValueOnce(Buffer.from(""))          // git checkout succeeds
+        .mockImplementationOnce(() => { throw new Error("clean failed"); }); // git clean fails
+      revertUncommitted();
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("[lifecycle] revertUncommitted clean failed (non-fatal)"),
+      );
+      warnSpy.mockRestore();
     });
   });
 
