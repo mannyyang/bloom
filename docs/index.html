@@ -83,11 +83,13 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Thu, 09 Jul 2026 18:03:19 GMT</p>
+    <p>Last updated: Thu, 09 Jul 2026 21:29:18 GMT</p>
   </header>
   
+
+
   <section class="section">
-    <h2><span class="badge" style="background:#6b7280">Backlog</span></h2>
+    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
     <ul>
       <li class="item">
         <span class="check">⬜</span>
@@ -95,21 +97,19 @@
           <span class="item-title">Emit a structured JSON cycle-summary file (e.g. `bloom-cycle-summary.json`) after each evolution run containing cycle number, outcome metrics, and improvement counts — enabling CI dashboards and external tooling to consume cycle data without parsing SQLite directly.</span>
           
         </div>
-      </li>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Add `pnpm stats --export json --since N` combined flag support so the filtered and full-export flags compose correctly (currently `--export json` ignores `--since`).</span>
-          
-        </div>
       </li></ul>
   </section>
-
-
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `pnpm stats --export json --since N` combined flag support so the filtered and full-export flags compose correctly (currently `--export json` ignores `--since`).</span>
+          <p class="item-desc">Completed in cycle 776: 3/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -464,8 +464,8 @@
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
         <tr><td>Avg improvements / cycle</td><td><strong>2.2</strong></td></tr>
         <tr><td>Improvement conversion rate</td><td><strong>93%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>6.7 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$37.63</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.8 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$37.72</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -475,6 +475,25 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 776</span>
+        <span class="cycle-date">2026-07-09</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Bug fix: apply `effectiveLimit` to `getCycleStats` calls in `generateStatsJson` and `generateStatsOutput` so `--since N` stats aggregates are not silently capped at 20 cycles
+- Regression test: add a test inserting 25 cycles and asserting `generateStatsJson(db, undefined, false, 1).stats.totalCycles === 25` to prevent future regression
+- DRY refactor: extract `computeEffectiveLimit(lastN, sinceN, categoryFilter)` exported helper to replace three identical inline ternary expressions</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Bug fix: apply `effectiveLimit` to `getCycleStats` calls in `generateStatsJson` and `generateStatsOutput` (commit 65caa08)
+- Regression test: 25-cycle `--since 1` test added to `tests/stats.test.ts` (commit f40a864)
+- DRY refactor: `computeEffectiveLimit` helper extracted in `src/stats.ts` (commit d1ec14c)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [bug-pattern] The effectiveLimit fix was already partially done for `getCycleRows` but not for `getCycleStats` in the same functions — a clear symptom of copy-paste inconsistency where the rows and stats fetches evolved independently
+- [test-coverage] Tests using small fixtures (≤10 cycles) cannot catch bugs gated by a larger constant (CYCLE_STATS_HISTORY_LIMIT=20); fixtures should exceed relevant thresholds to be effective regressions
+- [refactor-timing] Extracting a helper *after* the bug fix made the refactor trivially safe since behaviour was already proven correct by passing tests</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 775</span>
@@ -549,21 +568,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The `main()` function in `src/index.ts` is not exported, making direct unit testing of its internal catch paths impractical without heavy module mocking — index.ts catch changes were validated by the type-checker and test suite rather than dedicated unit tests
 - [observability] The `console.warn` pattern with structured prefixes (`[lifecycle]`, `[index]`) is now consistent across all non-fatal error paths in the hot path, enabling operators to grep CI logs for specific failure types
 - [code quality] Catch clauses that bind the error to a named variable (`catch (err)`) and forward it to `console.warn` add zero behavioral change but dramatically improve debuggability by surfacing git/DB errors that were previously invisible</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 771</span>
-        <span class="cycle-date">2026-07-09</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `console.warn` to all four silent `catch {}` blocks in `lifecycle.ts` (`setGitBotIdentity`, `commitRoadmap` inner catch, `revertUncommitted` checkout, `revertUncommitted` clean) plus four new pinning tests asserting the warn fires when each path throws</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Added `console.warn` with `[lifecycle]` prefix to all four bare catch blocks in `lifecycle.ts`, and added four pinning tests in `lifecycle.test.ts` — all 3977 tests pass, committed as `ddcb6ae`</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [observability] Replacing `catch {}` with `catch (err) { console.warn(...) }` is a zero-risk, zero-behaviour-change improvement: non-fatal errors stay non-fatal but become diagnosable in logs
-- [testing] Pinning tests for warn paths use `vi.spyOn(console, &quot;warn&quot;).mockImplementation(() =&gt; {})` with `warnSpy.mockRestore()` in finally position; this pattern slots cleanly into existing test structure without needing new describe blocks
-- [incremental] All four silent-catch fixes plus their tests can safely land in a single commit since the changes are homogeneous, small, and independently testable</p></div>
       </div>
     </div>
   </section>

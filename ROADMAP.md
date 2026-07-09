@@ -1,14 +1,16 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Emit a structured JSON cycle-summary file (e.g. `bloom-cycle-summary.json`) after each evolution run containing cycle number, outcome metrics, and improvement counts — enabling CI dashboards and external tooling to consume cycle data without parsing SQLite directly.
-- [ ] Add `pnpm stats --export json --since N` combined flag support so the filtered and full-export flags compose correctly (currently `--export json` ignores `--since`).
 
 ## Up Next
 
 ## In Progress
+- [ ] Emit a structured JSON cycle-summary file (e.g. `bloom-cycle-summary.json`) after each evolution run containing cycle number, outcome metrics, and improvement counts — enabling CI dashboards and external tooling to consume cycle data without parsing SQLite directly.
+  [since: 776]
 
 ## Done
+- [x] Add `pnpm stats --export json --since N` combined flag support so the filtered and full-export flags compose correctly (currently `--export json` ignores `--since`).
+  Completed in cycle 776: 3/3 improvements succeeded.
 - [x] Add `pnpm stats --trend N` rolling success-rate view: show a sparkline or ASCII trend of improvement success rate over the last N cycles so regressions are visible at a glance without reading per-cycle rows.
   Completed in cycle 775: 3/3 improvements succeeded.
 - [x] Add `pnpm memory --search <term>` to query stored learnings by keyword, mirroring `pnpm journal --search` so both memory stores have a consistent search interface.
