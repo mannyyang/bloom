@@ -7,10 +7,10 @@
 ## Up Next
 
 ## In Progress
-- [ ] Add `pnpm stats --trend N` rolling success-rate view: show a sparkline or ASCII trend of improvement success rate over the last N cycles so regressions are visible at a glance without reading per-cycle rows.
-  [since: 774]
 
 ## Done
+- [x] Add `pnpm stats --trend N` rolling success-rate view: show a sparkline or ASCII trend of improvement success rate over the last N cycles so regressions are visible at a glance without reading per-cycle rows.
+  Completed in cycle 775: 3/3 improvements succeeded.
 - [x] Add `pnpm memory --search <term>` to query stored learnings by keyword, mirroring `pnpm journal --search` so both memory stores have a consistent search interface.
   Completed in cycle 774: 3/3 improvements succeeded.
 - [x] Add `NVM_DIR` env-var injection pattern — `NVM_DIR=/tmp/evil` redirects Node Version Manager's install root; any `nvm use` or `nvm exec` call then resolves node/npm binaries from the attacker-controlled path. Completes the Node toolchain cluster alongside NODE_OPTIONS, NPM_CONFIG_PREFIX, and PNPM_HOME already blocked.

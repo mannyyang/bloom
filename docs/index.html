@@ -83,7 +83,7 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Thu, 09 Jul 2026 15:04:00 GMT</p>
+    <p>Last updated: Thu, 09 Jul 2026 18:03:19 GMT</p>
   </header>
   
   <section class="section">
@@ -106,21 +106,17 @@
   </section>
 
 
-  <section class="section">
-    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Add `pnpm stats --trend N` rolling success-rate view: show a sparkline or ASCII trend of improvement success rate over the last N cycles so regressions are visible at a glance without reading per-cycle rows.</span>
-          
-        </div>
-      </li></ul>
-  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `pnpm stats --trend N` rolling success-rate view: show a sparkline or ASCII trend of improvement success rate over the last N cycles so regressions are visible at a glance without reading per-cycle rows.</span>
+          <p class="item-desc">Completed in cycle 775: 3/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -466,10 +462,10 @@
       <tbody>
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
-        <tr><td>Avg improvements / cycle</td><td><strong>2.1</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>89%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>6.5 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$36.05</strong></td></tr>
+        <tr><td>Avg improvements / cycle</td><td><strong>2.2</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>93%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.7 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$37.63</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -479,6 +475,26 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 775</span>
+        <span class="cycle-date">2026-07-09</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Richer trend bar: updated `renderTrendBar` to split rows into up to 4 equal-width groups (oldest→newest) and map each group&#39;s success rate to ▁/▃/▅/█ (0–25%/26–50%/51–75%/76–100%), using all four TREND_BAR_CHARS
+- Add per-cycle `rows` array to `--json` output: added `rows?: CycleRow[]` field to `StatsJsonOutput` and populated it in `generateStatsJson` with the same filtering logic as `generateStatsTable`, plus 5 new tests
+- Emit `bloom-cycle-summary.json` after each evolution cycle: added `writeCycleSummaryJson()` to `lifecycle.ts` with atomic temp-file+rename write, called it from `index.ts` after cycle summary printing, with 5 new tests</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Richer trend bar using all 4 TREND_BAR_CHARS in `renderTrendBar` (4014→4014 tests, 0 new)
+- Add per-cycle `rows` array to `--json` output in `generateStatsJson` (4014→4019 tests, +5 new)
+- Emit `bloom-cycle-summary.json` after each evolution cycle via `writeCycleSummaryJson` (4019→4024 tests, +5 new)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [TypeScript] `ErrorCategory` is a union type alias — test helper factories must use the imported constant (e.g. `ERROR_CATEGORY_NONE`) rather than a bare string literal to satisfy strict assignment compatibility
+- [testing] Unused imports trigger `TS6133` errors in strict mode — always trim imports down to only what is actually used in the test body
+- [design] The 4-group bar approach with `Math.min(n, 4)` groups naturally preserves per-cycle resolution for N ≤ 4 rows, making all existing `startsWith` assertions pass without modification
+- [atomicity] Temp-file + rename (`writeFileSync` then `renameSync`) is the correct pattern for atomic file writes in Node.js; it prevents CI from reading partially-written JSON during a crash</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 774</span>
@@ -548,24 +564,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [observability] Replacing `catch {}` with `catch (err) { console.warn(...) }` is a zero-risk, zero-behaviour-change improvement: non-fatal errors stay non-fatal but become diagnosable in logs
 - [testing] Pinning tests for warn paths use `vi.spyOn(console, &quot;warn&quot;).mockImplementation(() =&gt; {})` with `warnSpy.mockRestore()` in finally position; this pattern slots cleanly into existing test structure without needing new describe blocks
 - [incremental] All four silent-catch fixes plus their tests can safely land in a single commit since the changes are homogeneous, small, and independently testable</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 770</span>
-        <span class="cycle-date">2026-07-08</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Test gap: add coverage for `closeIssueWithComment` rejection being swallowed as non-fatal in `updatePlanningStatus` (phases.test.ts)
-- Clarity: add `console.warn` to `buildFileManifest`&#39;s silent catch block in `evolve.ts` to surface unreadable directory errors
-- Test gap: `triageIssues` dedup guard coverage (assessed as missing, but already implemented at line 1352 of triage.test.ts — skipped)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- test(phases): pin `closeIssueWithComment` rejection as non-fatal in `updatePlanningStatus` — verifies the outer try/catch swallows GitHub API failures so the evolution cycle continues; 3973 tests pass
-- fix(evolve): surface unreadable directory warnings in `buildFileManifest` — replaced empty `catch {}` with `console.warn` to expose misconfigured paths at runtime without changing any API or test behavior</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment accuracy] The assessment claimed the triage dedup test was missing, but it already existed at line 1352 — always verify test coverage claims by grepping before implementing
-- [resilience testing] Async rejection swallowing (try/catch around `await`) is a distinct test path from synchronous throw swallowing; both deserve explicit pinning tests
-- [non-fatal logging] Replacing `catch {}` with `catch { console.warn(...) }` is a zero-risk observability improvement that follows the project&#39;s established logging patterns</p></div>
       </div>
     </div>
   </section>
