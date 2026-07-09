@@ -274,16 +274,35 @@ export const TREND_BAR_CHARS = ["▁", "▃", "▅", "█"] as const;
 
 /**
  * Render a compact ASCII trend bar from an array of CycleRows.
- * Each cycle maps to one symbol: █ for success (buildPassed && pushed), ▁ otherwise.
- * Rows are displayed oldest-first (left = oldest, right = most recent).
- * Returns a string of the form `▁█▁██  60%` for use in generateStatsTrend.
+ * Rows are split into up to 4 equal-width groups (oldest → newest); each group's
+ * success rate (buildPassed && pushed) maps to one of four block characters:
+ *   0–25%  → ▁  (TREND_BAR_CHARS[0])
+ *   26–50% → ▃  (TREND_BAR_CHARS[1])
+ *   51–75% → ▅  (TREND_BAR_CHARS[2])
+ *   76–100%→ █  (TREND_BAR_CHARS[3])
+ * When rows.length < 4, each row forms its own group, preserving per-cycle
+ * resolution. The trailing percentage reflects the overall success rate.
+ * Returns a string of the form `▁▃▅█  60%` for use in generateStatsTrend.
  * Returns an empty string when rows is empty.
  */
 export function renderTrendBar(rows: CycleRow[]): string {
   if (rows.length === 0) return "";
-  const segments = [...rows].reverse().map(r =>
-    r.buildPassed && r.pushed ? TREND_BAR_CHARS[3] : TREND_BAR_CHARS[0],
-  );
+  const ordered = [...rows].reverse(); // oldest first
+  const n = ordered.length;
+  const numGroups = Math.min(n, 4);
+  const segments: string[] = [];
+  for (let i = 0; i < numGroups; i++) {
+    const start = Math.floor((i * n) / numGroups);
+    const end = Math.floor(((i + 1) * n) / numGroups);
+    const group = ordered.slice(start, end);
+    const successRate = group.filter(r => r.buildPassed && r.pushed).length / group.length;
+    let char: string;
+    if (successRate <= 0.25) char = TREND_BAR_CHARS[0];
+    else if (successRate <= 0.50) char = TREND_BAR_CHARS[1];
+    else if (successRate <= 0.75) char = TREND_BAR_CHARS[2];
+    else char = TREND_BAR_CHARS[3];
+    segments.push(char);
+  }
   const successCount = rows.filter(r => r.buildPassed && r.pushed).length;
   const pct = Math.round((successCount / rows.length) * 100);
   return `${segments.join("")}  ${pct}%`;
