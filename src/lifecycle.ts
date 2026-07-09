@@ -114,7 +114,8 @@ export function commitDb(cycleCount: number, label?: string): boolean {
     execFileSync("git", ["add", "bloom.db"], { stdio: "inherit", timeout });
     execFileSync("git", ["commit", "-m", msg], { stdio: "inherit", timeout });
     return true;
-  } catch {
+  } catch (err) {
+    console.warn(`[lifecycle] commitDb failed (non-fatal): ${err}`);
     return false;
   }
 }
@@ -136,7 +137,8 @@ export function commitRoadmap(cycleCount: number): boolean {
     } catch (err) { console.warn(`[lifecycle] commitRoadmap generate-pages failed (non-fatal): ${err}`); }
     execFileSync("git", ["commit", "-m", `cycle ${cycleCount}: update roadmap`], { stdio: "inherit", timeout });
     return true;
-  } catch {
+  } catch (err) {
+    console.warn(`[lifecycle] commitRoadmap failed (non-fatal): ${err}`);
     return false;
   }
 }
@@ -150,7 +152,8 @@ export function pushChanges(): boolean {
   try {
     execFileSync("git", ["push", "origin", "main"], { stdio: "inherit", timeout });
     return true;
-  } catch {
+  } catch (err) {
+    console.warn(`[lifecycle] pushChanges failed (non-fatal): ${err}`);
     return false;
   }
 }
@@ -164,7 +167,8 @@ export function pushTags(): boolean {
   try {
     execFileSync("git", ["push", "--tags"], { stdio: "inherit", timeout });
     return true;
-  } catch {
+  } catch (err) {
+    console.warn(`[lifecycle] pushTags failed (non-fatal): ${err}`);
     return false;
   }
 }
@@ -218,7 +222,8 @@ export function createSafetyTag(cycleCount: number): boolean {
   try {
     execFileSync("git", ["tag", "-f", safetyTagName(cycleCount)], { stdio: "inherit", timeout });
     return true;
-  } catch {
+  } catch (err) {
+    console.warn(`[lifecycle] createSafetyTag failed (non-fatal): ${err}`);
     return false;
   }
 }

@@ -254,6 +254,16 @@ describe("lifecycle helpers", () => {
         .mockImplementationOnce(() => { throw new Error("nothing to commit"); });
       expect(commitDb(42)).toBe(false);
     });
+
+    it("emits console.warn when commitDb fails", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      mockedExecFileSync.mockImplementation(() => { throw new Error("add failed"); });
+      commitDb(42);
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("[lifecycle] commitDb failed (non-fatal)"),
+      );
+      warnSpy.mockRestore();
+    });
   });
 
   describe("commitRoadmap", () => {
@@ -327,6 +337,16 @@ describe("lifecycle helpers", () => {
       expect(commitRoadmap(42)).toBe(false);
     });
 
+    it("emits console.warn when commitRoadmap outer catch fires", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      mockedExecFileSync.mockImplementation(() => { throw new Error("add failed"); });
+      commitRoadmap(42);
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("[lifecycle] commitRoadmap failed (non-fatal)"),
+      );
+      warnSpy.mockRestore();
+    });
+
     it("returns true when generate-pages succeeds but git add docs/ throws (inner catch)", () => {
       mockedExecFileSync
         .mockReturnValueOnce(Buffer.from(""))          // git add ROADMAP.md
@@ -356,6 +376,16 @@ describe("lifecycle helpers", () => {
     it("returns false when push fails", () => {
       mockedExecFileSync.mockImplementation(() => { throw new Error("push rejected"); });
       expect(pushChanges()).toBe(false);
+    });
+
+    it("emits console.warn when pushChanges fails", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      mockedExecFileSync.mockImplementation(() => { throw new Error("push rejected"); });
+      pushChanges();
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("[lifecycle] pushChanges failed (non-fatal)"),
+      );
+      warnSpy.mockRestore();
     });
 
     it("reads BLOOM_GIT_PUSH_TIMEOUT_MS lazily at call time", () => {
@@ -390,6 +420,16 @@ describe("lifecycle helpers", () => {
     it("returns false when tag push fails", () => {
       mockedExecFileSync.mockImplementation(() => { throw new Error("push rejected"); });
       expect(pushTags()).toBe(false);
+    });
+
+    it("emits console.warn when pushTags fails", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      mockedExecFileSync.mockImplementation(() => { throw new Error("push rejected"); });
+      pushTags();
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("[lifecycle] pushTags failed (non-fatal)"),
+      );
+      warnSpy.mockRestore();
     });
 
     it("reads BLOOM_GIT_PUSH_TIMEOUT_MS lazily at call time", () => {
@@ -532,6 +572,16 @@ describe("lifecycle helpers", () => {
     it("returns false when git tag fails", () => {
       mockedExecFileSync.mockImplementation(() => { throw new Error("tag failed"); });
       expect(createSafetyTag(42)).toBe(false);
+    });
+
+    it("emits console.warn when createSafetyTag fails", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      mockedExecFileSync.mockImplementation(() => { throw new Error("tag failed"); });
+      createSafetyTag(42);
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("[lifecycle] createSafetyTag failed (non-fatal)"),
+      );
+      warnSpy.mockRestore();
     });
 
     it("returns false for non-positive integers, floats, NaN, and Infinity", () => {
