@@ -112,6 +112,25 @@ describe("runBuildVerificationPhase", () => {
     expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("?/? tests"));
     logSpy.mockRestore();
   });
+
+  it("renders N/? when parseTestCount returns a value but parseTestTotal returns null", () => {
+    // Output has "Tests  42 passed" but no parenthesized total — count is parseable,
+    // total is not. Pins the "N/?" rendering in formatTestCount and catches
+    // future parseTestTotal regex regressions.
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.mocked(runBuildVerification).mockReturnValue({
+      passed: true,
+      output: "Tests  42 passed",
+    });
+    const outcome = createOutcome();
+    runBuildVerificationPhase(1, outcome);
+
+    expect(outcome.buildVerificationPassed).toBe(true);
+    expect(outcome.testCountAfter).toBe(42);
+    expect(outcome.testTotalAfter).toBeNull();
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("(42/? tests)"));
+    logSpy.mockRestore();
+  });
 });
 
 describe("updatePlanningStatus", () => {
