@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertLearning, insertStrategicContext } from "../src/db.js";
 import { generateMemoryOutput, MEMORY_HELP_TEXT } from "../scripts/memory.js";
-import { parseHelpFlag, parseVerboseFlag } from "../src/stats.js";
+import { parseHelpFlag, parseVerboseFlag, parseSearchArg } from "../src/stats.js";
 import { makeOutcome } from "./helpers.js";
 
 // ---------------------------------------------------------------------------
@@ -16,6 +16,10 @@ describe("MEMORY_HELP_TEXT", () => {
 
   it("documents --verbose flag", () => {
     expect(MEMORY_HELP_TEXT).toContain("--verbose");
+  });
+
+  it("documents --search flag", () => {
+    expect(MEMORY_HELP_TEXT).toContain("--search");
   });
 
   it("documents --help flag", () => {
@@ -147,5 +151,77 @@ describe("generateMemoryOutput — with data", () => {
       const joined = generateMemoryOutput(db, true).join("\n");
       expect(joined).not.toContain("No learnings stored yet.");
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// parseSearchArg reuse in memory CLI
+// ---------------------------------------------------------------------------
+
+describe("parseSearchArg reuse in memory CLI", () => {
+  it("returns the search term when --search is present", () => {
+    expect(parseSearchArg(["node", "memory.ts", "--search", "incremental"])).toBe("incremental");
+  });
+
+  it("returns undefined when --search flag is absent", () => {
+    expect(parseSearchArg(["node", "memory.ts", "--verbose"])).toBeUndefined();
+  });
+
+  it("returns undefined when --search has no value", () => {
+    expect(parseSearchArg(["node", "memory.ts", "--search"])).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateMemoryOutput — --search filtering
+// ---------------------------------------------------------------------------
+
+describe("generateMemoryOutput — search filtering", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    insertStrategicContext(db, 1, "Focus on safety improvements.");
+    insertLearning(db, 1, "pattern", "Incremental changes reduce risk.");
+    insertLearning(db, 1, "anti-pattern", "Inline code execution is blocked by hooks.");
+    insertLearning(db, 2, "domain", "SQLite WAL mode allows concurrent reads.");
+  });
+
+  it("returns matching learnings when search term matches", () => {
+    const joined = generateMemoryOutput(db, false, "incremental").join("\n");
+    expect(joined).toContain("Incremental changes reduce risk.");
+  });
+
+  it("excludes non-matching learnings", () => {
+    const joined = generateMemoryOutput(db, false, "incremental").join("\n");
+    expect(joined).not.toContain("SQLite WAL mode allows concurrent reads.");
+  });
+
+  it("is case-insensitive", () => {
+    const joined = generateMemoryOutput(db, false, "SQLITE").join("\n");
+    expect(joined).toContain("SQLite WAL mode allows concurrent reads.");
+  });
+
+  it("shows header with the search term", () => {
+    const joined = generateMemoryOutput(db, false, "incremental").join("\n");
+    expect(joined).toContain('Learnings matching "incremental"');
+  });
+
+  it("returns no-match message when term is not found", () => {
+    const joined = generateMemoryOutput(db, false, "xyznotfound").join("\n");
+    expect(joined).toContain('No learnings matching "xyznotfound".');
+  });
+
+  it("returns no-match message on empty database", () => {
+    const emptyDb = initDb(":memory:");
+    const joined = generateMemoryOutput(emptyDb, false, "anything").join("\n");
+    expect(joined).toContain('No learnings matching "anything".');
+  });
+
+  it("does not include strategic context when filtering by search term", () => {
+    const joined = generateMemoryOutput(db, false, "incremental").join("\n");
+    expect(joined).not.toContain("Focus on safety improvements.");
   });
 });

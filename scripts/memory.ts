@@ -19,15 +19,16 @@ import {
   LEARNING_CATEGORIES,
   MAX_MEMORY_CHARS,
 } from "../src/memory.js";
-import { parseHelpFlag, parseVerboseFlag } from "../src/stats.js";
+import { parseHelpFlag, parseVerboseFlag, parseSearchArg } from "../src/stats.js";
 
 /** Usage text printed when `pnpm memory --help` is invoked. */
 export const MEMORY_HELP_TEXT = `\
 Usage: pnpm memory [options]
 
 Options:
-  --verbose     Show all learnings by category with relevance scores (uncapped)
-  --help, -h    Print this help message and exit
+  --verbose           Show all learnings by category with relevance scores (uncapped)
+  --search <term>     Filter learnings to those containing <term> (case-insensitive)
+  --help, -h          Print this help message and exit
 `;
 
 /**
@@ -42,23 +43,37 @@ Options:
 export function generateMemoryOutput(
   db: Database.Database,
   verbose?: boolean,
+  searchTerm?: string,
 ): string[] {
   const lines: string[] = [];
 
-  if (verbose) {
-    // Show strategic context first
-    const strategic = getLatestStrategicContext(db);
-    if (strategic) {
-      lines.push("## Strategic Context");
-      lines.push(strategic);
-      lines.push("");
+  // When a search term is provided, always use the verbose path so the filter
+  // can be applied to individual learning items (the default formatted block
+  // is opaque to per-item filtering).
+  const useVerbose = verbose || searchTerm !== undefined;
+
+  if (useVerbose) {
+    // Show strategic context first (not filtered — context is a single block)
+    if (!searchTerm) {
+      const strategic = getLatestStrategicContext(db);
+      if (strategic) {
+        lines.push("## Strategic Context");
+        lines.push(strategic);
+        lines.push("");
+      }
     }
 
     // Show all learnings by category with relevance scores (uncapped)
-    lines.push("## Learnings by Category");
+    const header = searchTerm
+      ? `## Learnings matching "${searchTerm}"`
+      : "## Learnings by Category";
+    lines.push(header);
     let totalLearnings = 0;
     for (const category of LEARNING_CATEGORIES) {
-      const items = getRelevantLearnings(db, 100, category);
+      const allItems = getRelevantLearnings(db, 100, category);
+      const items = searchTerm
+        ? allItems.filter(item => item.content.toLowerCase().includes(searchTerm.toLowerCase()))
+        : allItems;
       if (items.length === 0) continue;
       lines.push(`### ${category} (${items.length})`);
       for (const item of items) {
@@ -68,7 +83,7 @@ export function generateMemoryOutput(
       totalLearnings += items.length;
     }
     if (totalLearnings === 0) {
-      lines.push("No learnings stored yet.");
+      lines.push(searchTerm ? `No learnings matching "${searchTerm}".` : "No learnings stored yet.");
     }
   } else {
     // Budget-capped memory snapshot — identical to what the assessment prompt receives
@@ -89,10 +104,11 @@ function main() {
     return;
   }
   const verbose = parseVerboseFlag(process.argv);
+  const searchTerm = parseSearchArg(process.argv);
   const db = initDb();
 
   try {
-    const output = generateMemoryOutput(db, verbose);
+    const output = generateMemoryOutput(db, verbose, searchTerm);
     for (const line of output) {
       console.log(line);
     }
