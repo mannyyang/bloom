@@ -756,6 +756,18 @@ describe("generateStatsJson", () => {
     expect(result.since).toBe(99);
   });
 
+  it("sinceN=1 with 25 cycles returns all 25 (regression: not capped at CYCLE_STATS_HISTORY_LIMIT=20)", () => {
+    // Regression test for the --since N truncation bug: when >20 cycles exist and
+    // sinceN is set without lastN, stats must reflect all matching cycles, not just
+    // the most recent CYCLE_STATS_HISTORY_LIMIT (20) ones.
+    for (let i = 1; i <= 25; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i, buildVerificationPassed: true, pushSucceeded: true }));
+    }
+    const result = generateStatsJson(db, undefined, false, 1);
+    expect(result.stats.totalCycles).toBe(25);
+    expect(result.rows?.length).toBe(25);
+  });
+
   it("rows field is present and is an array", () => {
     insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true, pushSucceeded: true }));
     insertCycle(db, makeOutcome({ cycleNumber: 2, buildVerificationPassed: false, pushSucceeded: false }));
