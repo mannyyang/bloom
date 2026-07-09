@@ -724,6 +724,36 @@ describe("generateStatsJson", () => {
     expect(parsed.learningsStaleness[0].category).toBe("process");
     expect(parsed.learningsStaleness[0].lastCycle).toBe(2);
   });
+
+  // Verify --json + --since composition: sinceN must actually filter stats rows.
+  // This pins the behaviour so a future refactor cannot silently drop the filter.
+  it("sinceN filters stats.totalCycles to only cycles >= sinceN", () => {
+    for (let i = 1; i <= 5; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i, buildVerificationPassed: true, pushSucceeded: true }));
+    }
+    const result = generateStatsJson(db, undefined, false, 3);
+    // cycles 3, 4, 5 match sinceN=3 → totalCycles must be 3
+    expect(result.stats.totalCycles).toBe(3);
+    // since field in output reflects the argument
+    expect(result.since).toBe(3);
+  });
+
+  it("sinceN=1 with all cycles returns the full count", () => {
+    for (let i = 1; i <= 4; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    const result = generateStatsJson(db, undefined, false, 1);
+    expect(result.stats.totalCycles).toBe(4);
+    expect(result.since).toBe(1);
+  });
+
+  it("sinceN beyond latest cycle returns zero stats but correct latestCycle", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    const result = generateStatsJson(db, undefined, false, 99);
+    expect(result.stats.totalCycles).toBe(0);
+    expect(result.latestCycle).toBe(2);
+    expect(result.since).toBe(99);
+  });
 });
 
 describe("formatCycleStats", () => {
