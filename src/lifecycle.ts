@@ -1,5 +1,7 @@
 import { execSync, execFileSync } from "node:child_process";
+import { writeFileSync, renameSync } from "node:fs";
 import { execSyncOutput } from "./errors.js";
+import type { CycleOutcome } from "./outcomes.js";
 
 /**
  * Parse a timeout value from an environment variable string.
@@ -280,4 +282,47 @@ export function hardResetTo(ref: string): void {
   }
   const timeout = parseTimeoutEnv(process.env.BLOOM_GIT_REVERT_TIMEOUT_MS, 10_000);
   execFileSync("git", ["reset", "--hard", ref], { stdio: "inherit", timeout });
+}
+
+/**
+ * Shape of the cycle summary JSON written to `bloom-cycle-summary.json`
+ * after each evolution cycle. Mirrors the top-level scalar fields of
+ * StatsJsonOutput so dashboards can parse it without SQLite access.
+ */
+export interface CycleSummaryJson {
+  cycleNumber: number;
+  buildPassed: boolean;
+  pushed: boolean;
+  improvementsAttempted: number;
+  improvementsSucceeded: number;
+  failureCategory: string;
+  durationMs: number | null;
+  generatedAt: string;
+}
+
+/**
+ * Write a structured cycle-summary JSON file to `destPath` after each
+ * evolution cycle. Written atomically via a temp file + rename to prevent
+ * CI from reading a partial file if the process is interrupted mid-write.
+ * Non-fatal: errors are logged as warnings so a write failure never aborts
+ * the main cycle flow.
+ */
+export function writeCycleSummaryJson(outcome: CycleOutcome, destPath: string): void {
+  const summary: CycleSummaryJson = {
+    cycleNumber: outcome.cycleNumber,
+    buildPassed: outcome.buildVerificationPassed,
+    pushed: outcome.pushSucceeded,
+    improvementsAttempted: outcome.improvementsAttempted,
+    improvementsSucceeded: outcome.improvementsSucceeded,
+    failureCategory: outcome.failureCategory,
+    durationMs: outcome.durationMs,
+    generatedAt: new Date().toISOString(),
+  };
+  const tmpPath = `${destPath}.tmp`;
+  try {
+    writeFileSync(tmpPath, JSON.stringify(summary, null, 2) + "\n", "utf-8");
+    renameSync(tmpPath, destPath);
+  } catch (err) {
+    console.warn(`[lifecycle] writeCycleSummaryJson failed (non-fatal): ${err}`);
+  }
 }

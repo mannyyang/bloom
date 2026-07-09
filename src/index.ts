@@ -13,6 +13,7 @@ import {
   pushChanges,
   pushTags,
   createSafetyTag,
+  writeCycleSummaryJson,
 } from "./lifecycle.js";
 import { runBuildVerificationPhase, updatePlanningStatus, pushChangesPhase } from "./phases.js";
 import { type PhaseUsage, formatDurationSec } from "./usage.js";
@@ -149,6 +150,11 @@ async function main() {
   const totalMs = Date.now() - cycleStartTime;
   console.log(`\n${formatCycleSummaryWithDuration(cycleCount, outcome, evolutionError !== null, totalMs)}\n`);
   console.log(formatOutcomeForJournal(outcome));
+
+  // Write structured cycle summary JSON for CI dashboards (non-fatal)
+  if (cycleCount > 0) {
+    writeCycleSummaryJson(outcome, "bloom-cycle-summary.json");
+  }
 
   // Exit with error code if the cycle failed, after DB has been committed/pushed
   if (evolutionError) {

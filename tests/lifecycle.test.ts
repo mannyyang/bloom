@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { readFileSync, existsSync, unlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { execSync, execFileSync } from "child_process";
+import { ERROR_CATEGORY_NONE } from "../src/errors.js";
 
 vi.mock("child_process", () => ({
   execSync: vi.fn(),
@@ -31,6 +35,7 @@ import {
   GIT_BOT_NAME,
   GIT_BOT_EMAIL,
   BUILD_MAX_ATTEMPTS,
+  writeCycleSummaryJson,
 } from "../src/lifecycle.js";
 
 describe("lifecycle helpers", () => {
@@ -1086,5 +1091,82 @@ describe("lifecycle helpers", () => {
         expect.objectContaining({ timeout: 4000 }),
       );
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// writeCycleSummaryJson
+// ---------------------------------------------------------------------------
+
+describe("writeCycleSummaryJson", () => {
+  let destPath: string;
+
+  const makeOutcome = (overrides: Partial<{
+    cycleNumber: number; buildVerificationPassed: boolean; pushSucceeded: boolean;
+    improvementsAttempted: number; improvementsSucceeded: number; durationMs: number | null;
+  }> = {}) => ({
+    cycleNumber: 1,
+    preflightPassed: true,
+    improvementsAttempted: 2,
+    improvementsSucceeded: 1,
+    buildVerificationPassed: true,
+    pushSucceeded: true,
+    testCountBefore: null,
+    testCountAfter: null,
+    testTotalBefore: null,
+    testTotalAfter: null,
+    durationMs: 60000,
+    failureCategory: ERROR_CATEGORY_NONE,
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    destPath = join(tmpdir(), `bloom-cycle-summary-test-${process.pid}-${Date.now()}.json`);
+  });
+
+  afterEach(() => {
+    for (const path of [destPath, `${destPath}.tmp`]) {
+      try { if (existsSync(path)) unlinkSync(path); } catch { /* ignore */ }
+    }
+  });
+
+  it("writes a valid JSON file to the destination path", () => {
+    writeCycleSummaryJson(makeOutcome(), destPath);
+    expect(existsSync(destPath)).toBe(true);
+    const content = readFileSync(destPath, "utf-8");
+    expect(() => JSON.parse(content)).not.toThrow();
+  });
+
+  it("written JSON contains expected top-level fields", () => {
+    writeCycleSummaryJson(makeOutcome({ cycleNumber: 42 }), destPath);
+    const parsed = JSON.parse(readFileSync(destPath, "utf-8"));
+    expect(parsed.cycleNumber).toBe(42);
+    expect(typeof parsed.buildPassed).toBe("boolean");
+    expect(typeof parsed.pushed).toBe("boolean");
+    expect(typeof parsed.improvementsAttempted).toBe("number");
+    expect(typeof parsed.improvementsSucceeded).toBe("number");
+    expect(typeof parsed.failureCategory).toBe("string");
+    expect(typeof parsed.generatedAt).toBe("string");
+  });
+
+  it("reflects buildPassed and pushed from outcome", () => {
+    writeCycleSummaryJson(
+      makeOutcome({ buildVerificationPassed: false, pushSucceeded: false }),
+      destPath,
+    );
+    const parsed = JSON.parse(readFileSync(destPath, "utf-8"));
+    expect(parsed.buildPassed).toBe(false);
+    expect(parsed.pushed).toBe(false);
+  });
+
+  it("durationMs is included as null when outcome.durationMs is null", () => {
+    writeCycleSummaryJson(makeOutcome({ durationMs: null }), destPath);
+    const parsed = JSON.parse(readFileSync(destPath, "utf-8"));
+    expect(parsed.durationMs).toBeNull();
+  });
+
+  it("temp file is cleaned up after successful write (no .tmp file left)", () => {
+    writeCycleSummaryJson(makeOutcome(), destPath);
+    expect(existsSync(`${destPath}.tmp`)).toBe(false);
   });
 });
