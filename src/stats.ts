@@ -367,11 +367,15 @@ export function generateStatsJson(
   categoryFilter?: string,
 ): StatsJsonOutput {
   const latestCycle = getLatestCycleNumber(db);
-  const stats = getCycleStats(db, lastN, sinceN, categoryFilter);
+  // When sinceN or categoryFilter is provided without an explicit lastN, fetch
+  // all rows so JS filters can apply correctly. The default
+  // CYCLE_STATS_HISTORY_LIMIT cap would otherwise silently drop cycles older
+  // than the 20-row window, causing getCycleStats to return incorrect totals.
+  const effectiveLimit = (sinceN !== undefined || categoryFilter !== undefined) && lastN === undefined ? Number.MAX_SAFE_INTEGER : lastN;
+  const stats = getCycleStats(db, effectiveLimit, sinceN, categoryFilter);
 
   // Apply same filtering logic as generateStatsTable so rows are consistent
   // with the stats aggregate.
-  const effectiveLimit = (sinceN !== undefined || categoryFilter !== undefined) && lastN === undefined ? Number.MAX_SAFE_INTEGER : lastN;
   let rows = getCycleRows(db, effectiveLimit);
   if (sinceN !== undefined) {
     rows = rows.filter((r: CycleRow) => r.cycleNumber >= sinceN);
@@ -416,7 +420,11 @@ export function generateStatsOutput(db: Database.Database, lastN?: number, verbo
     return lines;
   }
 
-  const stats = getCycleStats(db, lastN, sinceN, categoryFilter);
+  // When sinceN or categoryFilter is provided without an explicit lastN, fetch
+  // all cycles so the stats aggregate is not silently capped at
+  // CYCLE_STATS_HISTORY_LIMIT (20), which would give wrong totals for large DBs.
+  const effectiveLimit = (sinceN !== undefined || categoryFilter !== undefined) && lastN === undefined ? Number.MAX_SAFE_INTEGER : lastN;
+  const stats = getCycleStats(db, effectiveLimit, sinceN, categoryFilter);
   const formatted = formatCycleStats(stats);
 
   const windowParts: string[] = [];
