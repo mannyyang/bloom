@@ -273,7 +273,10 @@ export async function triageIssues(
   const closeCandidates = alreadyOnBoard.filter((issue) => {
     const linkedItem = boardItems.find((item) => item.linkedIssueNumber === issue.number);
     if (!linkedItem || linkedItem.status !== TRIAGE_BOARD_STATUS_DONE) return false;
-    if (db && hasIssueAction(db, issue.number, TRIAGE_ACTION_NAME)) return false;
+    if (db && hasIssueAction(db, issue.number, TRIAGE_ACTION_NAME)) {
+      console.log(`[triage] issue #${issue.number} already triaged — skipping close`);
+      return false;
+    }
     return true;
   });
 

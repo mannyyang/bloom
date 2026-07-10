@@ -1453,11 +1453,18 @@ describe("triageIssues with injected deps", () => {
     const mockDb = {} as import("better-sqlite3").Database;
     mockHasIssueAction.mockReturnValueOnce(true); // Guard A fires
 
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     const result = await triageIssues(issues, boardItems, 5, projectConfig, mockDb, deps);
 
     // closeIssueWithComment must NOT be called because the guard skipped the issue
     expect(mockCloseIssue).not.toHaveBeenCalled();
     expect(result.closed).toEqual([]);
+    // Diagnostic log must be emitted so operators can distinguish "already triaged"
+    // from "linked item not yet Done" — both paths produce result.closed=[] but
+    // only the already-triaged path should log this message.
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("already triaged — skipping close"));
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("#10"));
+    logSpy.mockRestore();
   });
 
   it("Guard B: skips re-triaging a new issue when db records it as already triaged", async () => {
