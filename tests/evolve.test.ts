@@ -522,15 +522,29 @@ describe("buildEvolutionPrompt", () => {
     expect(prompt).toContain(exactText);
   });
 
-  it("truncated assessment embeds exactly ASSESSMENT_CHAR_LIMIT characters — no more, no less", () => {
-    // Verify the slice boundary is tight: all ASSESSMENT_CHAR_LIMIT chars are kept,
-    // and the character at position ASSESSMENT_CHAR_LIMIT+1 is dropped.
+  it("truncated assessment (no newlines) embeds exactly ASSESSMENT_CHAR_LIMIT characters — no more, no less", () => {
+    // When the overflow text has no newlines, the hard limit is used as-is.
+    // Verify: all ASSESSMENT_CHAR_LIMIT chars are kept and the +1 char is dropped.
     const overflowText = "A".repeat(ASSESSMENT_CHAR_LIMIT + 1);
     const prompt = buildEvolutionPrompt(overflowText);
     // All first ASSESSMENT_CHAR_LIMIT characters must be present (no under-truncation)
     expect(prompt).toContain("A".repeat(ASSESSMENT_CHAR_LIMIT));
     // The full over-limit string must not appear (confirms the +1 char was removed)
     expect(prompt).not.toContain(overflowText);
+  });
+
+  it("truncation snaps to last newline so items are not severed mid-sentence", () => {
+    // Build a text where a newline falls just before the limit, followed by more
+    // content that pushes the total over ASSESSMENT_CHAR_LIMIT. The truncation
+    // should snap to the newline, preserving whole items.
+    const beforeNewline = "X".repeat(ASSESSMENT_CHAR_LIMIT - 10) + "\n";
+    const afterNewline = "Y".repeat(20); // pushes total over limit
+    const overflowText = beforeNewline + afterNewline;
+    const prompt = buildEvolutionPrompt(overflowText);
+    // Content after the newline must be excluded
+    expect(prompt).not.toContain("Y".repeat(20));
+    // Content up to the newline must be preserved
+    expect(prompt).toContain("X".repeat(ASSESSMENT_CHAR_LIMIT - 10));
   });
 
   it("section order: assessment → usageSection → outcomeSection → RULES (positional guard)", () => {

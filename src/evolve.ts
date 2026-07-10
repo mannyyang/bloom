@@ -226,10 +226,16 @@ export function buildEvolutionPrompt(assessment: string, context?: EvolutionProm
   // assessments cannot silently inflate the evolution prompt.
   let truncatedAssessment = assessment;
   if (assessment.length > ASSESSMENT_CHAR_LIMIT) {
+    // Snap to the last newline at or before the limit so we never sever an
+    // improvement item mid-sentence. Fall back to the hard limit when the text
+    // has no newlines (e.g. a single long paragraph). Note: lastIndexOf returns
+    // -1 when not found, which is truthy, so an explicit > 0 guard is needed.
+    const lastNewline = assessment.lastIndexOf("\n", ASSESSMENT_CHAR_LIMIT);
+    const snapIndex = lastNewline > 0 ? lastNewline : ASSESSMENT_CHAR_LIMIT;
+    truncatedAssessment = assessment.slice(0, snapIndex);
     console.warn(
-      `[evolve] Assessment truncated from ${assessment.length} to ${ASSESSMENT_CHAR_LIMIT} chars — some improvement items may have been dropped.`
+      `[evolve] Assessment truncated from ${assessment.length} to ${truncatedAssessment.length} chars (snapped to last newline) — some improvement items may have been dropped.`
     );
-    truncatedAssessment = assessment.slice(0, ASSESSMENT_CHAR_LIMIT);
   }
 
   const usageSection = context?.usageContext
