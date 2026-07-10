@@ -254,7 +254,10 @@ export async function triageIssues(
     closed: [],
   };
 
-  if (issues.length === 0) return result;
+  if (issues.length === 0) {
+    console.log("[triage] No issues to process — skipping");
+    return result;
+  }
 
   // Detect repo once upfront to avoid redundant subprocess calls per issue
   const repo = detectRepo();

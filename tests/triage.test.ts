@@ -1197,10 +1197,13 @@ describe("triageIssues error resilience", () => {
   });
 
   it("returns empty result when no issues provided", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     const result = await triageIssues([], [], 81, projectConfig);
     expect(result.decisions).toEqual([]);
     expect(result.addedToBacklog).toEqual([]);
     expect(result.closed).toEqual([]);
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("No issues to process — skipping"));
+    logSpy.mockRestore();
   });
 });
 
