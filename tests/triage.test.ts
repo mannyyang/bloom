@@ -1300,12 +1300,17 @@ describe("triageIssues with injected deps", () => {
     const issues = [makeIssue({ number: 11, title: "In progress" })];
     const boardItems = [makeBoardItem({ linkedIssueNumber: 11, status: "In Progress" })];
     const deps = makeDeps([]);
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     const result = await triageIssues(issues, boardItems, 5, projectConfig, undefined, deps);
 
     expect(mockCloseIssue).not.toHaveBeenCalled();
     expect(result.closed).not.toContain(11);
     expect(result.decisions).toEqual([]);
+    // Diagnostic log must fire so operators can distinguish "not yet Done" from "not tracked"
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("will close when Done"));
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("#11"));
+    logSpy.mockRestore();
   });
 
   it("ignores LLM decisions for issue numbers not in the untriaged set", async () => {
