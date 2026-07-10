@@ -1,6 +1,6 @@
 import { execSync, execFileSync } from "node:child_process";
 import { writeFileSync, renameSync } from "node:fs";
-import { execSyncOutput } from "./errors.js";
+import { execSyncOutput, errorMessage } from "./errors.js";
 import type { CycleOutcome } from "./outcomes.js";
 
 /**
@@ -101,7 +101,7 @@ export function setGitBotIdentity(): void {
   try {
     execFileSync("git", ["config", "user.name", GIT_BOT_NAME], { stdio: "ignore" });
     execFileSync("git", ["config", "user.email", GIT_BOT_EMAIL], { stdio: "ignore" });
-  } catch (err) { console.warn(`[lifecycle] setGitBotIdentity git config failed (non-fatal): ${err}`); }
+  } catch (err) { console.warn(`[lifecycle] setGitBotIdentity git config failed (non-fatal): ${errorMessage(err)}`); }
 }
 
 /**
@@ -130,7 +130,7 @@ export function commitDb(cycleCount: number, label?: string, extraFiles?: string
     execFileSync("git", ["commit", "-m", msg], { stdio: "inherit", timeout });
     return true;
   } catch (err) {
-    console.warn(`[lifecycle] commitDb failed (non-fatal): ${err}`);
+    console.warn(`[lifecycle] commitDb failed (non-fatal): ${errorMessage(err)}`);
     return false;
   }
 }
@@ -149,11 +149,11 @@ export function commitRoadmap(cycleCount: number): boolean {
     try {
       execFileSync("pnpm", ["generate-pages"], { stdio: "inherit", timeout });
       execFileSync("git", ["add", "docs/"], { stdio: "ignore", timeout });
-    } catch (err) { console.warn(`[lifecycle] commitRoadmap generate-pages failed (non-fatal): ${err}`); }
+    } catch (err) { console.warn(`[lifecycle] commitRoadmap generate-pages failed (non-fatal): ${errorMessage(err)}`); }
     execFileSync("git", ["commit", "-m", `cycle ${cycleCount}: update roadmap`], { stdio: "inherit", timeout });
     return true;
   } catch (err) {
-    console.warn(`[lifecycle] commitRoadmap failed (non-fatal): ${err}`);
+    console.warn(`[lifecycle] commitRoadmap failed (non-fatal): ${errorMessage(err)}`);
     return false;
   }
 }
@@ -168,7 +168,7 @@ export function pushChanges(): boolean {
     execFileSync("git", ["push", "origin", "main"], { stdio: "inherit", timeout });
     return true;
   } catch (err) {
-    console.warn(`[lifecycle] pushChanges failed (non-fatal): ${err}`);
+    console.warn(`[lifecycle] pushChanges failed (non-fatal): ${errorMessage(err)}`);
     return false;
   }
 }
@@ -183,7 +183,7 @@ export function pushTags(): boolean {
     execFileSync("git", ["push", "--tags"], { stdio: "inherit", timeout });
     return true;
   } catch (err) {
-    console.warn(`[lifecycle] pushTags failed (non-fatal): ${err}`);
+    console.warn(`[lifecycle] pushTags failed (non-fatal): ${errorMessage(err)}`);
     return false;
   }
 }
@@ -208,10 +208,10 @@ export function revertUncommitted(): void {
   const timeout = parseTimeoutEnv(process.env.BLOOM_GIT_REVERT_TIMEOUT_MS, 10_000);
   try {
     execFileSync("git", ["checkout", "--", "."], { stdio: "inherit", timeout });
-  } catch (err) { console.warn(`[lifecycle] revertUncommitted checkout failed (non-fatal): ${err}`); }
+  } catch (err) { console.warn(`[lifecycle] revertUncommitted checkout failed (non-fatal): ${errorMessage(err)}`); }
   try {
     execFileSync("git", ["clean", "-fd"], { stdio: "inherit", timeout });
-  } catch (err) { console.warn(`[lifecycle] revertUncommitted clean failed (non-fatal): ${err}`); }
+  } catch (err) { console.warn(`[lifecycle] revertUncommitted clean failed (non-fatal): ${errorMessage(err)}`); }
 }
 
 /**
@@ -238,7 +238,7 @@ export function createSafetyTag(cycleCount: number): boolean {
     execFileSync("git", ["tag", "-f", safetyTagName(cycleCount)], { stdio: "inherit", timeout });
     return true;
   } catch (err) {
-    console.warn(`[lifecycle] createSafetyTag failed (non-fatal): ${err}`);
+    console.warn(`[lifecycle] createSafetyTag failed (non-fatal): ${errorMessage(err)}`);
     return false;
   }
 }
@@ -336,6 +336,6 @@ export function writeCycleSummaryJson(outcome: CycleOutcome, destPath: string): 
     writeFileSync(tmpPath, JSON.stringify(summary, null, 2) + "\n", "utf-8");
     renameSync(tmpPath, destPath);
   } catch (err) {
-    console.warn(`[lifecycle] writeCycleSummaryJson failed (non-fatal): ${err}`);
+    console.warn(`[lifecycle] writeCycleSummaryJson failed (non-fatal): ${errorMessage(err)}`);
   }
 }
