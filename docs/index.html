@@ -83,26 +83,22 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Thu, 09 Jul 2026 21:29:18 GMT</p>
+    <p>Last updated: Fri, 10 Jul 2026 03:02:51 GMT</p>
   </header>
   
 
 
-  <section class="section">
-    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Emit a structured JSON cycle-summary file (e.g. `bloom-cycle-summary.json`) after each evolution run containing cycle number, outcome metrics, and improvement counts — enabling CI dashboards and external tooling to consume cycle data without parsing SQLite directly.</span>
-          
-        </div>
-      </li></ul>
-  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Emit a structured JSON cycle-summary file (e.g. `bloom-cycle-summary.json`) after each evolution run containing cycle number, outcome metrics, and improvement counts — enabling CI dashboards and external tooling to consume cycle data without parsing SQLite directly.</span>
+          <p class="item-desc">Completed in cycle 777: 3/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -463,9 +459,9 @@
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
         <tr><td>Avg improvements / cycle</td><td><strong>2.2</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>93%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>6.8 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$37.72</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>94%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>7 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$37.85</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -475,6 +471,25 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 777</span>
+        <span class="cycle-date">2026-07-10</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Fix bloom-cycle-summary.json commit gap: moved writeCycleSummaryJson before outcome commitDb call; extended commitDb with optional extraFiles param so the JSON is staged alongside bloom.db in the outcome commit
+- Add test coverage for git add bloom-cycle-summary.json: added 4 new tests in lifecycle.test.ts asserting extraFiles staging, ordering, non-fatal failure, and absence of extra adds when extraFiles is omitted
+- Add strategicContext field to StatsJsonOutput verbose JSON mode: populate via formatMemoryForPrompt to achieve full parity with text-mode verbose output</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Fix bloom-cycle-summary.json commit gap (a9fc22e) — build+test 4029/4029 passed
+- Add test coverage for git add bloom-cycle-summary.json (3e09e99) — build+test 4029/4029 passed
+- Add strategicContext field to StatsJsonOutput verbose JSON mode (25ab5b3) — build+test 4029/4029 passed</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [TypeScript] Declaring a variable only for a side-effect assertion (like findIndex for ordering) triggers TS6133 &quot;declared but never read&quot; — always use the variable in an expect() or remove it
+- [testing] Mocking execFileSync call order via mock.calls.findIndex() is reliable for asserting multi-step git workflows without coupling to specific call indices
+- [architecture] The extraFiles?: string[] pattern with inner try/catch per file is the right way to extend commitDb — it keeps the outer failure boundary clean while making individual file staging non-fatal</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 776</span>
@@ -551,23 +566,6 @@
 - [symmetry] Mirroring existing guard patterns (assessment → evolution) is low-risk because the pattern is already proven and tested; the main work is identifying the analogous guard points and updating any tests that relied on the previous unguarded behavior.
 - [roadmap] An empty Backlog/Up Next/In Progress causes every cycle to fire the &quot;roadmap empty&quot; sentinel and `pickNextItem` returns null; keeping at least a few Backlog items populated is essential for guided evolution.
 - [test coverage] Partial-data paths (e.g. count parsed but total null) are easy to miss because they share the same code path as fully-missing data; targeted tests with carefully crafted output strings are the right way to pin these regex-dependent branches.</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 772</span>
-        <span class="cycle-date">2026-07-09</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `console.warn` to 2 bare `catch {}` blocks in `src/index.ts` (insertJournalEntry failure and db.close() failure)
-- Add `console.warn` to 5 silent return-`false` catches in `src/lifecycle.ts` (commitDb, commitRoadmap outer, pushChanges, pushTags, createSafetyTag) plus 5 pinning tests in `tests/lifecycle.test.ts`</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- `src/index.ts`: Both silent catch blocks now emit `console.warn` with `[index]` prefix and error detail; build+test passed (3977 tests), committed as `feat(index): emit console.warn on insertJournalEntry and db.close() failures`
-- `src/lifecycle.ts` + `tests/lifecycle.test.ts`: All 5 silent catches now emit `console.warn` with `[lifecycle]` prefix; 5 pinning tests added and passing (3982 tests total, +5 from previous commit), committed as `feat(lifecycle): emit console.warn on silent return-false catches`</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The `main()` function in `src/index.ts` is not exported, making direct unit testing of its internal catch paths impractical without heavy module mocking — index.ts catch changes were validated by the type-checker and test suite rather than dedicated unit tests
-- [observability] The `console.warn` pattern with structured prefixes (`[lifecycle]`, `[index]`) is now consistent across all non-fatal error paths in the hot path, enabling operators to grep CI logs for specific failure types
-- [code quality] Catch clauses that bind the error to a named variable (`catch (err)`) and forward it to `console.warn` add zero behavioral change but dramatically improve debuggability by surfacing git/DB errors that were previously invisible</p></div>
       </div>
     </div>
   </section>
