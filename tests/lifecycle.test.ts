@@ -269,6 +269,52 @@ describe("lifecycle helpers", () => {
       );
       warnSpy.mockRestore();
     });
+
+    it("stages bloom-cycle-summary.json when passed as an extraFile", () => {
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+      expect(commitDb(42, "outcome", ["bloom-cycle-summary.json"])).toBe(true);
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["add", "bloom-cycle-summary.json"],
+        expect.objectContaining({ timeout: GIT_OP_TIMEOUT_MS }),
+      );
+    });
+
+    it("stages bloom.db before bloom-cycle-summary.json when extraFiles used", () => {
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+      commitDb(42, "outcome", ["bloom-cycle-summary.json"]);
+      const calls = mockedExecFileSync.mock.calls;
+      const addJsonIdx = calls.findIndex(c => Array.isArray(c[1]) && c[1].includes("bloom-cycle-summary.json"));
+      // bloom-cycle-summary.json add must be present
+      expect(addJsonIdx).toBeGreaterThanOrEqual(0);
+      // bloom.db add must appear before bloom-cycle-summary.json add
+      const dbIdx = calls.findIndex(c => Array.isArray(c[1]) && c[1].includes("bloom.db") && c[1][0] === "add");
+      expect(dbIdx).toBeLessThan(addJsonIdx);
+    });
+
+    it("still commits successfully when an extraFile git add fails (non-fatal)", () => {
+      mockedExecFileSync
+        .mockReturnValueOnce(Buffer.from(""))   // git add bloom.db
+        .mockImplementationOnce(() => { throw new Error("file not found"); }) // git add extra (non-fatal)
+        .mockReturnValueOnce(Buffer.from(""));  // git commit
+      expect(commitDb(42, "outcome", ["bloom-cycle-summary.json"])).toBe(true);
+      expect(mockedExecFileSync).toHaveBeenCalledWith(
+        "git",
+        ["commit", "-m", "cycle 42: outcome"],
+        expect.anything(),
+      );
+    });
+
+    it("does not call extra git add when extraFiles is undefined", () => {
+      mockedExecFileSync.mockReturnValue(Buffer.from(""));
+      commitDb(42, "outcome");
+      const addCalls = mockedExecFileSync.mock.calls.filter(
+        c => c[0] === "git" && Array.isArray(c[1]) && c[1][0] === "add",
+      );
+      // Only bloom.db should be staged when no extraFiles are provided
+      expect(addCalls).toHaveLength(1);
+      expect(addCalls[0][1]).toEqual(["add", "bloom.db"]);
+    });
   });
 
   describe("commitRoadmap", () => {
