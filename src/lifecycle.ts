@@ -108,12 +108,25 @@ export function setGitBotIdentity(): void {
  * Stage and commit the bloom.db file. Returns true on success, false if
  * the commit fails (e.g. nothing to commit).
  * Reads BLOOM_GIT_OP_TIMEOUT_MS at call time for test flexibility.
+ *
+ * @param extraFiles - optional additional file paths to stage alongside bloom.db.
+ *   Each file is staged with a best-effort git add; failures are silently
+ *   ignored so a missing file (e.g. on the "start" commit) never aborts the
+ *   overall commit.
  */
-export function commitDb(cycleCount: number, label?: string): boolean {
+export function commitDb(cycleCount: number, label?: string, extraFiles?: string[]): boolean {
   const timeout = parseTimeoutEnv(process.env.BLOOM_GIT_OP_TIMEOUT_MS, 30_000);
   try {
     const msg = label ? `cycle ${cycleCount}: ${label}` : `cycle ${cycleCount}`;
     execFileSync("git", ["add", "bloom.db"], { stdio: "inherit", timeout });
+    for (const f of extraFiles ?? []) {
+      try {
+        execFileSync("git", ["add", f], { stdio: "ignore", timeout });
+      } catch (_) {
+        // Non-fatal: file may not exist (e.g. on the start commit before the
+        // JSON has been written). The outer commit will still capture bloom.db.
+      }
+    }
     execFileSync("git", ["commit", "-m", msg], { stdio: "inherit", timeout });
     return true;
   } catch (err) {

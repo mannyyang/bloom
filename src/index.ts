@@ -127,11 +127,22 @@ async function main() {
     }
   }
 
+  const totalMs = Date.now() - cycleStartTime;
+  console.log(`\n${formatCycleSummaryWithDuration(cycleCount, outcome, evolutionError !== null, totalMs)}\n`);
+  console.log(formatOutcomeForJournal(outcome));
+
+  // Write structured cycle summary JSON before the outcome commit so it is
+  // staged alongside bloom.db and pushed — external dashboards can then read
+  // the latest summary between runs without SQLite access.
+  if (cycleCount > 0) {
+    writeCycleSummaryJson(outcome, "bloom-cycle-summary.json");
+  }
+
   // Always commit and push DB so failure metrics are not lost
   if (cycleCount > 0) {
     console.log("\n[db] Committing database changes...");
     try {
-      if (!commitDb(cycleCount, "outcome")) {
+      if (!commitDb(cycleCount, "outcome", ["bloom-cycle-summary.json"])) {
         console.error("[db] Outcome commit produced no changes — metrics may not be persisted to git.");
       }
       if (pushChanges()) {
@@ -145,15 +156,6 @@ async function main() {
     } catch (err) {
       console.error(`[db] Failed to commit/push: ${errorMessage(err)}`);
     }
-  }
-
-  const totalMs = Date.now() - cycleStartTime;
-  console.log(`\n${formatCycleSummaryWithDuration(cycleCount, outcome, evolutionError !== null, totalMs)}\n`);
-  console.log(formatOutcomeForJournal(outcome));
-
-  // Write structured cycle summary JSON for CI dashboards (non-fatal)
-  if (cycleCount > 0) {
-    writeCycleSummaryJson(outcome, "bloom-cycle-summary.json");
   }
 
   // Exit with error code if the cycle failed, after DB has been committed/pushed
