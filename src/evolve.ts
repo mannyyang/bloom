@@ -1,6 +1,7 @@
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { CONTEXT_JOURNAL_MAX_CHARS } from "./context.js";
+import { errorMessage } from "./errors.js";
 import { truncateWithEllipsis } from "./planning.js";
 
 /** Maximum characters allowed for the assessment passed into the evolution prompt. */
@@ -37,9 +38,9 @@ export function buildFileManifest(cwd: string = process.cwd()): string {
           files.push(`${dir}/${entry.replace(/\\/g, "/")}`);
         }
       }
-    } catch {
+    } catch (err) {
       // Directory missing or unreadable — warn to aid debugging misconfigured paths
-      console.warn(`[evolve] buildFileManifest: could not read dir '${dir}'`);
+      console.warn(`[evolve] buildFileManifest: could not read dir '${dir}': ${errorMessage(err)}`);
     }
   }
 
