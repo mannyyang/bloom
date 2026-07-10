@@ -345,7 +345,10 @@ export async function triageIssues(
     (i) => !hasIssueAction(db, i.number, TRIAGE_ACTION_NAME),
   );
 
-  if (untriaged.length === 0) return result;
+  if (untriaged.length === 0) {
+    console.log(`[triage] All new issues already triaged (${newIssues.length} issue${newIssues.length === 1 ? "" : "s"}) — skipping LLM call`);
+    return result;
+  }
 
   // Call LLM for triage decisions
   const prompt = buildTriagePrompt(untriaged, boardItems);

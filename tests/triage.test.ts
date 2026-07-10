@@ -2255,6 +2255,7 @@ describe("triageIssues with injected deps", () => {
 
     // Simulate all issues having been triaged previously
     mockHasIssueAction.mockReturnValue(true);
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     const result = await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
 
@@ -2263,6 +2264,10 @@ describe("triageIssues with injected deps", () => {
     expect(result.closed).toEqual([]);
     // LLM must not be called — no prompt budget spent on already-processed issues
     expect(queryFn).not.toHaveBeenCalled();
+    // Operators must see a clear log so "no triage actions" is distinguishable from "no new issues"
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("All new issues already triaged"));
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("skipping LLM call"));
+    logSpy.mockRestore();
   });
 
   it("emits count-mismatch warning when decision count differs from untriaged issue count (possible prompt drift)", async () => {
