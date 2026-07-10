@@ -121,6 +121,13 @@ export async function loadEvolutionContext(
       for (const d of triageResult.decisions) {
         console.log(`  - #${d.issueNumber}: ${d.action} — ${truncateWithEllipsis(d.reason, CONTEXT_REASON_PREVIEW_CHARS)}`);
       }
+      if (
+        triageResult.decisions.length === 0 &&
+        triageResult.addedToBacklog.length === 0 &&
+        triageResult.closed.length === 0
+      ) {
+        console.log("[triage] No actionable decisions this cycle");
+      }
       // Re-fetch items since triage may have added new ones
       projectItems = getProjectItems(projectConfig);
       console.log(`[planning] ${projectItems.length} items on roadmap (post-triage)`);

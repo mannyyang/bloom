@@ -312,6 +312,31 @@ describe("loadEvolutionContext", () => {
     expect(triageIssues).not.toHaveBeenCalled();
   });
 
+  it("logs no-op summary when triage makes zero changes", async () => {
+    // When all issues are already-triaged or filtered, triage returns an
+    // all-empty result. The operator should see confirmation that triage ran
+    // rather than silence between the "Triaging N issues" and "post-triage" logs.
+    const config = { filePath: "ROADMAP.md" };
+    const items: ProjectItem[] = [
+      { id: "1", title: "Item", status: "Up Next", body: "", linkedIssueNumber: null, reactions: 0 },
+    ];
+    const issues = [{ number: 42, title: "Already handled", body: "", reactions: 0, labels: [] }];
+    vi.mocked(ensureProject).mockReturnValue(config);
+    vi.mocked(getProjectItems).mockReturnValue(items);
+    vi.mocked(fetchCommunityIssues).mockResolvedValue(issues);
+    vi.mocked(triageIssues).mockResolvedValue({
+      decisions: [],
+      addedToBacklog: [],
+      closed: [],
+    });
+    vi.mocked(pickNextItem).mockReturnValue(null);
+    vi.mocked(formatPlanningContext).mockReturnValue("");
+
+    const consoleSpy = vi.spyOn(console, "log");
+    await loadEvolutionContext(fakeDb, 1);
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("No actionable decisions this cycle"));
+  });
+
   it("handles planning errors gracefully (non-fatal)", async () => {
     vi.mocked(ensureProject).mockImplementation(() => {
       throw new Error("roadmap parse failed");
