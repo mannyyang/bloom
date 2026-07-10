@@ -277,6 +277,15 @@ export async function triageIssues(
     return true;
   });
 
+  // Log issues that are on the board but whose linked item hasn't reached Done yet.
+  // Without this, operators can't tell why a tracked issue wasn't auto-closed.
+  for (const issue of alreadyOnBoard) {
+    const linkedItem = boardItems.find((item) => item.linkedIssueNumber === issue.number);
+    if (linkedItem && linkedItem.status !== TRIAGE_BOARD_STATUS_DONE) {
+      console.log(`[triage] issue #${issue.number} already on board (status: ${linkedItem.status ?? "No Status"}) — will close when Done`);
+    }
+  }
+
   // Pre-record "triaged" for each close candidate before the API fan-out so
   // the decision is persisted even if the GitHub close API fails. Mirrors the
   // new-issues path (phase 1) where insertIssueAction is called before
