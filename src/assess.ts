@@ -136,6 +136,8 @@ export async function main() {
 
   let assessment = "";
   let turns = 0;
+  // Collect raw message metadata for diagnostics when no output is produced.
+  const rawMessages: Array<{ type: string; text?: string }> = [];
 
   for await (const msg of query({
     prompt,
@@ -150,6 +152,12 @@ export async function main() {
     },
   })) {
     turns++;
+    // Record type and a short text snippet for post-loop diagnostics.
+    const msgAny = msg as Record<string, unknown>;
+    rawMessages.push({
+      type: typeof msgAny["type"] === "string" ? msgAny["type"] : "unknown",
+      text: typeof msgAny["text"] === "string" ? msgAny["text"].slice(0, 120) : undefined,
+    });
     const resultText = extractResultText(msg);
     if (resultText !== null) {
       assessment = resultText;
@@ -161,6 +169,12 @@ export async function main() {
   console.log(`[assess] Assessment: ${assessment.length}/${ASSESSMENT_CHAR_LIMIT} chars`);
   if (assessment.length > ASSESSMENT_CHAR_LIMIT) {
     console.warn(`[assess] Assessment exceeds ${ASSESSMENT_CHAR_LIMIT} char limit — evolution prompt will be truncated`);
+  }
+  // When the agent produced no useful text output, emit a debug dump of the
+  // raw message types so maintainers can diagnose whether the issue is a model
+  // timeout, a tool-loop, or a prompt problem — without needing to re-run.
+  if (!assessment) {
+    console.debug(`[assess] raw messages (${rawMessages.length}):`, JSON.stringify(rawMessages));
   }
   console.log("========================================");
   console.log("  Assessment Result");

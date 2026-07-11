@@ -233,6 +233,54 @@ describe("assess.ts main()", () => {
     errorSpy.mockRestore();
   });
 
+  it("emits console.debug with raw message dump when assessment is empty", async () => {
+    // Regression guard: when the agent produces no useful text output, a debug
+    // dump of raw message types must fire so maintainers can diagnose whether the
+    // issue is a model timeout, tool-loop, or prompt problem without re-running.
+    const messages = [
+      { type: "text", text: "thinking..." },
+      { type: "tool_use", text: undefined },
+    ];
+    mockQuery.mockReturnValue(mockGen(messages));
+    mockExtractResultText.mockReturnValue(null); // always null → empty assessment
+
+    const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    // debug must be called exactly once with the raw message array
+    expect(debugSpy).toHaveBeenCalledOnce();
+    const [label, json] = debugSpy.mock.calls[0];
+    expect(label).toContain("[assess] raw messages");
+    // The JSON dump must include type fields from the messages
+    expect(json).toContain("text");
+    expect(json).toContain("tool_use");
+
+    debugSpy.mockRestore();
+    consoleSpy.mockRestore();
+  });
+
+  it("does NOT emit console.debug when assessment has content", async () => {
+    // Counterpart: when the agent produces useful output, the debug dump must
+    // NOT fire — it is only a diagnostic for the no-output failure mode.
+    const resultMsg = { type: "result", result: "top improvements" };
+    mockQuery.mockReturnValue(mockGen([resultMsg]));
+    mockExtractResultText.mockImplementation((msg) =>
+      msg === resultMsg ? "top improvements" : null,
+    );
+
+    const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    expect(debugSpy).not.toHaveBeenCalled();
+
+    debugSpy.mockRestore();
+    vi.restoreAllMocks();
+  });
+
   it("counts message turns from the query generator", async () => {
     const messages = [
       { type: "text", text: "thinking" },
