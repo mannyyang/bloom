@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements, buildFileManifest, ASSESSMENT_CHAR_LIMIT } from "../src/evolve.js";
+import { buildAssessmentPrompt, buildEvolutionPrompt, parseEvolutionResult, countImprovements, buildFileManifest, ASSESSMENT_CHAR_LIMIT, MANIFEST_DIRS } from "../src/evolve.js";
 import { CONTEXT_JOURNAL_MAX_CHARS } from "../src/context.js";
 
 describe("CONTEXT_JOURNAL_MAX_CHARS", () => {
@@ -16,6 +16,20 @@ describe("ASSESSMENT_CHAR_LIMIT", () => {
   it("is interpolated into the assessment prompt", () => {
     const prompt = buildAssessmentPrompt({ journalSummary: "", cycleCount: 1 });
     expect(prompt).toContain("2000 characters");
+  });
+});
+
+describe("MANIFEST_DIRS", () => {
+  it("contains exactly src, tests, and scripts (value-pin)", () => {
+    // Pins the exact set of directories scanned by buildFileManifest.
+    // If a directory is silently added or removed, this test catches the
+    // regression immediately rather than letting it degrade the agent's
+    // codebase awareness.
+    expect(MANIFEST_DIRS).toEqual(["src", "tests", "scripts"]);
+  });
+
+  it("has exactly 3 entries", () => {
+    expect(MANIFEST_DIRS).toHaveLength(3);
   });
 });
 

@@ -20,12 +20,19 @@ export interface AssessmentContext {
 }
 
 /**
+ * Directories scanned by buildFileManifest to build the TypeScript file index.
+ * Exported so tests can pin the exact set and callers can reference it without
+ * duplicating the list — follows the established pattern for named constants.
+ */
+export const MANIFEST_DIRS = ["src", "tests", "scripts"] as const;
+
+/**
  * Build a newline-joined list of *.ts files under src/ and tests/.
  * Returns an empty string if neither directory can be read.
  * Paths are relative to cwd (e.g. "src/evolve.ts", "tests/evolve.test.ts").
  */
 export function buildFileManifest(cwd: string = process.cwd()): string {
-  const dirs = ["src", "tests", "scripts"];
+  const dirs = MANIFEST_DIRS;
   const files: string[] = [];
 
   for (const dir of dirs) {
