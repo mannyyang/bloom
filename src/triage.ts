@@ -385,8 +385,11 @@ export async function triageIssues(
   const decisions = parseTriageResponse(triageText);
 
   if (decisions.length !== untriaged.length) {
+    const decisionNumbers = new Set(decisions.map((d) => d.issueNumber));
+    const missingNums = untriaged.filter((i) => !decisionNumbers.has(i.number)).map((i) => i.number);
+    const missingSuffix = missingNums.length > 0 ? ` — missing: [${missingNums.join(", ")}]` : "";
     console.warn(
-      `[triage] triageIssues: got ${decisions.length} decisions for ${untriaged.length} issues (possible prompt drift)`,
+      `[triage] triageIssues: got ${decisions.length} decisions for ${untriaged.length} issues (possible prompt drift)${missingSuffix}`,
     );
   }
 

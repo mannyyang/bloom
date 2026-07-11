@@ -2298,6 +2298,32 @@ describe("triageIssues with injected deps", () => {
     warnSpy.mockRestore();
   });
 
+  it("count-mismatch warning includes missing issue numbers when LLM returns fewer decisions", async () => {
+    // When decisions.length < untriaged.length, the warning must include the exact
+    // issue numbers that were skipped by the LLM to enable quick prompt-drift debugging.
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const issues = [
+      makeIssue({ number: 10, title: "Issue Ten" }),
+      makeIssue({ number: 20, title: "Issue Twenty" }),
+      makeIssue({ number: 30, title: "Issue Thirty" }),
+    ];
+    // LLM returns a decision only for #10 — #20 and #30 are missing
+    const deps = makeDeps([
+      { issueNumber: 10, action: "not_applicable", reason: "Out of scope" },
+    ]);
+    const mockDb = {} as import("better-sqlite3").Database;
+    vi.mocked(closeIssueWithComment).mockResolvedValue(true);
+
+    await triageIssues(issues, [], 5, projectConfig, mockDb, deps);
+
+    // The warning must contain both missing issue numbers
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("20"));
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("30"));
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("missing:"));
+    warnSpy.mockRestore();
+  });
+
   it("emits count-mismatch warning when LLM returns MORE decisions than untriaged issues", async () => {
     // The reverse direction of the fewer-decisions test: LLM hallucinates extra decisions
     // beyond the untriaged set. decisions.length > untriaged.length must fire the
