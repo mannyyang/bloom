@@ -1,15 +1,17 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Add `pnpm context --verbose` CLI to print the full evolution context (identity, journal, memory, planning) without running any LLM, enabling cost-free prompt inspection and debugging of the context-loading pipeline.
-- [ ] Extract the shared roadmap-empty sentinel logic from `assess.ts` and `context.ts` into a single exported helper (e.g. `injectRoadmapEmptyWarning`) to eliminate the duplicated check and make future wording changes a one-line edit.
 - [ ] Improve assessment-phase reliability: when the assessment agent produces no readable text output (0 useful turns), log the raw SDK messages at debug level so maintainers can diagnose whether the issue is a model timeout, a tool-loop, or a prompt problem.
 
 ## Up Next
 
 ## In Progress
+- [ ] Add `pnpm context --verbose` CLI to print the full evolution context (identity, journal, memory, planning) without running any LLM, enabling cost-free prompt inspection and debugging of the context-loading pipeline.
+  [since: 787]
 
 ## Done
+- [x] Extract the shared roadmap-empty sentinel logic from `assess.ts` and `context.ts` into a single exported helper (e.g. `injectRoadmapEmptyWarning`) to eliminate the duplicated check and make future wording changes a one-line edit.
+  Completed in cycle 787: 3/3 improvements succeeded.
 - [x] Emit a structured JSON cycle-summary file (e.g. `bloom-cycle-summary.json`) after each evolution run containing cycle number, outcome metrics, and improvement counts — enabling CI dashboards and external tooling to consume cycle data without parsing SQLite directly.
   Completed in cycle 777: 3/3 improvements succeeded.
 - [x] Add `pnpm stats --export json --since N` combined flag support so the filtered and full-export flags compose correctly (currently `--export json` ignores `--since`).
