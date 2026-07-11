@@ -2493,3 +2493,60 @@ describe("triage constants", () => {
     expect(TRIAGE_ALREADY_ON_BOARD_COMMENT).toBe("This issue is already tracked on the Bloom Evolution Roadmap.");
   });
 });
+
+describe("triageIssues close-candidates DB transaction log", () => {
+  const projectConfig: ProjectConfig = { filePath: "ROADMAP.md" };
+
+  function makeDeps(decisions: Array<{ issueNumber: number; action: string; reason: string }>) {
+    const json = JSON.stringify(decisions);
+    async function* fakeQuery() {
+      yield { result: json };
+    }
+    return { queryFn: () => fakeQuery() as AsyncIterable<unknown> };
+  }
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("logs pre-record count after close-candidates DB transaction when candidates exist", async () => {
+    // Regression guard: after the closeCandidates DB transaction completes,
+    // a console.log must report how many candidates were pre-recorded.
+    // This gives operators visibility into the atomic pre-record step.
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const issues = [
+      makeIssue({ number: 30, title: "Done A" }),
+      makeIssue({ number: 31, title: "Done B" }),
+    ];
+    const boardItems = [
+      makeBoardItem({ linkedIssueNumber: 30, status: "Done" }),
+      makeBoardItem({ id: "item-31", linkedIssueNumber: 31, status: "Done" }),
+    ];
+    const deps = makeDeps([]);
+    const mockDb = { transaction: <T>(fn: () => T) => fn } as unknown as import("better-sqlite3").Database;
+    vi.mocked(closeIssueWithComment).mockResolvedValue(true);
+
+    await triageIssues(issues, boardItems, 5, projectConfig, mockDb, deps);
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Pre-recorded 2 close candidate(s) as triaged in DB"),
+    );
+    consoleSpy.mockRestore();
+  });
+
+  it("does not log pre-record message when there are no close candidates", async () => {
+    // The log is guarded by closeCandidates.length > 0; when there are none,
+    // the log must not fire.
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const issues = [makeIssue({ number: 50, title: "Backlog issue" })];
+    // Board item is Backlog (not Done) — no close candidates
+    const boardItems = [makeBoardItem({ linkedIssueNumber: 50, status: "Backlog" })];
+    const deps = makeDeps([]);
+
+    await triageIssues(issues, boardItems, 5, projectConfig, undefined, deps);
+
+    const calls = consoleSpy.mock.calls.map((c) => String(c[0]));
+    expect(calls.every((msg) => !msg.includes("Pre-recorded"))).toBe(true);
+    consoleSpy.mockRestore();
+  });
+});

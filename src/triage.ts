@@ -305,6 +305,7 @@ export async function triageIssues(
         insertIssueAction(db, cycleCount, issue.number, TRIAGE_ACTION_NAME);
       }
     })();
+    console.log(`[triage] Pre-recorded ${closeCandidates.length} close candidate(s) as triaged in DB`);
   }
 
   const closeResults = await Promise.all(
