@@ -8,6 +8,7 @@
     "test:watch": "vitest",
     "evolve": "tsx src/index.ts",
     "assess": "tsx src/assess.ts",
+    "context": "tsx src/context-cli.ts",
     "stats": "tsx src/stats.ts",
     "memory": "tsx scripts/memory.ts",
     "journal": "tsx src/journal.ts",

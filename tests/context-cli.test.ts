@@ -1,0 +1,206 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// --- Module mocks (hoisted by vitest before any imports) ---
+
+vi.mock("../src/db.js", () => ({
+  initDb: vi.fn(),
+  getLatestCycleNumber: vi.fn(),
+}));
+
+vi.mock("../src/context.js", () => ({
+  loadEvolutionContext: vi.fn(),
+}));
+
+vi.mock("../src/errors.js", () => ({
+  errorMessage: vi.fn((err: unknown) => String(err)),
+}));
+
+vi.mock("../src/stats.js", () => ({
+  parseVerboseFlag: vi.fn().mockReturnValue(false),
+  parseHelpFlag: vi.fn().mockReturnValue(false),
+}));
+
+// --- Import after mocks are set up ---
+
+import { initDb, getLatestCycleNumber } from "../src/db.js";
+import { loadEvolutionContext } from "../src/context.js";
+import { parseVerboseFlag, parseHelpFlag } from "../src/stats.js";
+import { main, CONTEXT_CLI_HELP_TEXT } from "../src/context-cli.js";
+
+const mockInitDb = vi.mocked(initDb);
+const mockGetLatestCycleNumber = vi.mocked(getLatestCycleNumber);
+const mockLoadEvolutionContext = vi.mocked(loadEvolutionContext);
+const mockParseVerboseFlag = vi.mocked(parseVerboseFlag);
+const mockParseHelpFlag = vi.mocked(parseHelpFlag);
+
+function makeCtx(overrides = {}) {
+  return {
+    identity: "# Identity content",
+    journalSummary: "journal text",
+    cycleStatsText: "stats text",
+    memoryContext: "memory text",
+    planningContext: "## Evolution Roadmap",
+    issues: [],
+    projectConfig: null,
+    currentItem: null,
+    ...overrides,
+  };
+}
+
+describe("context-cli.ts CONTEXT_CLI_HELP_TEXT", () => {
+  it("contains --verbose and --help flags", () => {
+    expect(CONTEXT_CLI_HELP_TEXT).toContain("--verbose");
+    expect(CONTEXT_CLI_HELP_TEXT).toContain("--help");
+  });
+});
+
+describe("context-cli.ts main()", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockInitDb.mockReturnValue({ close: vi.fn() } as any);
+    mockGetLatestCycleNumber.mockReturnValue(10);
+    mockLoadEvolutionContext.mockResolvedValue(makeCtx());
+    mockParseVerboseFlag.mockReturnValue(false);
+    mockParseHelpFlag.mockReturnValue(false);
+  });
+
+  it("--help: prints CONTEXT_CLI_HELP_TEXT and does NOT call loadEvolutionContext", async () => {
+    mockParseHelpFlag.mockReturnValue(true);
+    const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+    await main();
+
+    expect(stdoutSpy).toHaveBeenCalledWith(CONTEXT_CLI_HELP_TEXT);
+    expect(mockLoadEvolutionContext).not.toHaveBeenCalled();
+
+    stdoutSpy.mockRestore();
+  });
+
+  it("--help: exits before opening the DB", async () => {
+    mockParseHelpFlag.mockReturnValue(true);
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+    await main();
+
+    expect(mockInitDb).not.toHaveBeenCalled();
+
+    vi.restoreAllMocks();
+  });
+
+  it("calls loadEvolutionContext with cycleCount one above getLatestCycleNumber", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    mockGetLatestCycleNumber.mockReturnValue(41);
+
+    await main();
+
+    expect(mockLoadEvolutionContext).toHaveBeenCalledWith(expect.anything(), 42);
+  });
+
+  it("prints a summary line for each context section", async () => {
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    mockLoadEvolutionContext.mockResolvedValue(makeCtx({
+      identity: "# ID",
+      journalSummary: "jrnl",
+      issues: [{ number: 1, title: "Bug", body: "", reactions: 0, labels: [] }],
+    }));
+
+    await main();
+
+    const logged = consoleSpy.mock.calls.map((c) => c.join(" "));
+    expect(logged.some((l) => l.includes("Identity:"))).toBe(true);
+    expect(logged.some((l) => l.includes("Journal summary:"))).toBe(true);
+    expect(logged.some((l) => l.includes("Community issues: 1"))).toBe(true);
+
+    consoleSpy.mockRestore();
+  });
+
+  it("--verbose: prints full identity section", async () => {
+    mockParseVerboseFlag.mockReturnValue(true);
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    mockLoadEvolutionContext.mockResolvedValue(makeCtx({ identity: "FULL IDENTITY TEXT" }));
+
+    await main();
+
+    const logged = consoleSpy.mock.calls.map((c) => c.join(" "));
+    expect(logged.some((l) => l.includes("FULL IDENTITY TEXT"))).toBe(true);
+
+    consoleSpy.mockRestore();
+  });
+
+  it("--verbose: prints full planning context section when non-empty", async () => {
+    mockParseVerboseFlag.mockReturnValue(true);
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    mockLoadEvolutionContext.mockResolvedValue(makeCtx({ planningContext: "ROADMAP CONTENT" }));
+
+    await main();
+
+    const logged = consoleSpy.mock.calls.map((c) => c.join(" "));
+    expect(logged.some((l) => l.includes("ROADMAP CONTENT"))).toBe(true);
+
+    consoleSpy.mockRestore();
+  });
+
+  it("non-verbose mode does NOT print full identity text", async () => {
+    mockParseVerboseFlag.mockReturnValue(false);
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    mockLoadEvolutionContext.mockResolvedValue(makeCtx({ identity: "PRIVATE IDENTITY" }));
+
+    await main();
+
+    const logged = consoleSpy.mock.calls.map((c) => c.join(" "));
+    expect(logged.some((l) => l.includes("PRIVATE IDENTITY"))).toBe(false);
+
+    consoleSpy.mockRestore();
+  });
+
+  it("closes the DB after loadEvolutionContext resolves", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mockDb = (mockInitDb.mock.results[0].value as any);
+    expect(mockDb.close).toHaveBeenCalledOnce();
+  });
+
+  it("continues (non-fatal) when getLatestCycleNumber throws — cycleCount stays 0", async () => {
+    mockGetLatestCycleNumber.mockImplementation(() => {
+      throw new Error("DB locked");
+    });
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[context-cli] Could not load cycle number (non-fatal)")
+    );
+    // cycleCount defaults to 0
+    expect(mockLoadEvolutionContext).toHaveBeenCalledWith(expect.anything(), 0);
+
+    errorSpy.mockRestore();
+  });
+
+  it("closes DB and logs error when loadEvolutionContext throws, then exits", async () => {
+    mockLoadEvolutionContext.mockRejectedValue(new Error("identity missing"));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation((_code) => {
+      throw new Error("process.exit called");
+    });
+
+    await expect(main()).rejects.toThrow("process.exit called");
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[context-cli] Failed to load evolution context")
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mockDb = (mockInitDb.mock.results[0].value as any);
+    expect(mockDb.close).toHaveBeenCalledOnce();
+
+    exitSpy.mockRestore();
+    errorSpy.mockRestore();
+  });
+});
