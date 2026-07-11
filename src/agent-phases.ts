@@ -99,6 +99,7 @@ export async function runAssessmentPhase(
   const fileManifest = buildFileManifest();
   let assessment = "";
   let assessmentTurns = 0;
+  const rawAssessmentMessages: unknown[] = [];
   for await (const msg of deps.queryFn({
     prompt: buildAssessmentPrompt({
       journalSummary: ctx.journalSummary,
@@ -119,6 +120,7 @@ export async function runAssessmentPhase(
     },
   })) {
     assessmentTurns++;
+    rawAssessmentMessages.push(msg);
     const resultText = extractResultText(msg);
     if (resultText !== null) {
       assessment = resultText;
@@ -141,6 +143,16 @@ export async function runAssessmentPhase(
     console.warn(
       `[assessment] Warning: ${assessmentTurns} turn(s) completed but produced no text output. Using fallback assessment.`,
     );
+    // Dump raw messages at debug level so maintainers can distinguish model
+    // timeouts, tool-loop hangs, and prompt failures without re-running.
+    console.debug(`[assessment] Raw messages (${rawAssessmentMessages.length}):`);
+    for (let i = 0; i < rawAssessmentMessages.length; i++) {
+      try {
+        console.debug(`  [${i}] ${JSON.stringify(rawAssessmentMessages[i])}`);
+      } catch {
+        console.debug(`  [${i}] (non-serializable message)`);
+      }
+    }
     assessment = `(The assessment phase completed ${assessmentTurns} turn(s) but produced no readable text output. Please review the codebase independently and suggest small, safe improvements.)`;
   }
 
