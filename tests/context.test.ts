@@ -38,6 +38,7 @@ vi.mock("../src/planning.js", () => ({
   formatPlanningContext: vi.fn(),
   truncateWithEllipsis: (s: string, max: number) => s.length > max ? s.slice(0, max) + "…" : s,
   STATUS_IN_PROGRESS: "In Progress",
+  STATUS_DONE: "Done",
 }));
 
 vi.mock("../src/errors.js", () => ({
@@ -199,6 +200,38 @@ describe("loadEvolutionContext", () => {
     expect(ctx.currentItem).toEqual(items[0]);
     expect(ctx.planningContext).toBe("planning output");
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("1 items on roadmap"));
+  });
+
+  it("injects roadmap-empty sentinel when all items are Done", async () => {
+    const config = { filePath: "ROADMAP.md" };
+    const items: ProjectItem[] = [
+      { id: "1", title: "Done item", status: "Done", body: "", linkedIssueNumber: null, reactions: 0 },
+    ];
+    vi.mocked(ensureProject).mockReturnValue(config);
+    vi.mocked(getProjectItems).mockReturnValue(items);
+    vi.mocked(pickNextItem).mockReturnValue(null);
+    vi.mocked(formatPlanningContext).mockReturnValue("");
+
+    const consoleSpy = vi.spyOn(console, "log");
+    const ctx = await loadEvolutionContext(fakeDb, 1);
+    expect(ctx.planningContext).toContain("Roadmap empty");
+    expect(ctx.planningContext).toContain("please propose new backlog items");
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Roadmap empty"));
+  });
+
+  it("does not inject roadmap-empty sentinel when active items exist", async () => {
+    const config = { filePath: "ROADMAP.md" };
+    const items: ProjectItem[] = [
+      { id: "1", title: "Active item", status: "Up Next", body: "", linkedIssueNumber: null, reactions: 0 },
+    ];
+    vi.mocked(ensureProject).mockReturnValue(config);
+    vi.mocked(getProjectItems).mockReturnValue(items);
+    vi.mocked(pickNextItem).mockReturnValue(items[0]);
+    vi.mocked(formatPlanningContext).mockReturnValue("planning output");
+
+    const ctx = await loadEvolutionContext(fakeDb, 1);
+    expect(ctx.planningContext).toBe("planning output");
+    expect(ctx.planningContext).not.toContain("Roadmap empty");
   });
 
   it("marks selected item as In Progress", async () => {
