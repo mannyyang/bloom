@@ -26,7 +26,7 @@ import {
   parseRoadmap,
   formatPlanningContext,
   pickNextItem,
-  STATUS_DONE,
+  injectRoadmapEmptyWarning,
 } from "./planning.js";
 import { extractResultText, formatDurationSec } from "./usage.js";
 import { resolveModel, AGENT_ASSESSMENT_MAX_TURNS, AGENT_ASSESSMENT_MAX_BUDGET_USD } from "./agent-phases.js";
@@ -101,11 +101,7 @@ export async function main() {
       // When the backlog is empty (all items are Done, or roadmap has no items),
       // formatPlanningContext returns "" and the LLM has no direction. Inject a
       // sentinel so it knows to propose new backlog items rather than improvise.
-      const hasActiveItems = projectItems.some((i) => i.status !== STATUS_DONE);
-      if (!hasActiveItems) {
-        planningContext = (planningContext ? planningContext + "\n\n" : "") +
-          "⚠ Roadmap empty — please propose new backlog items.";
-      }
+      planningContext = injectRoadmapEmptyWarning(projectItems, planningContext);
       console.log(`[assess] Roadmap items: ${projectItems.length}`);
     } catch (err) {
       console.error(`[assess] Planning context unavailable (non-fatal): ${errorMessage(err)}`);

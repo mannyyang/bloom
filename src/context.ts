@@ -12,9 +12,9 @@ import {
   updateItemStatus,
   demoteStaleInProgressItems,
   formatPlanningContext,
+  injectRoadmapEmptyWarning,
   truncateWithEllipsis,
   STATUS_IN_PROGRESS,
-  STATUS_DONE,
   type ProjectConfig,
   type ProjectItem,
 } from "./planning.js";
@@ -177,13 +177,12 @@ export async function loadEvolutionContext(
     planningContext = formatPlanningContext(projectItems, currentItem);
     // When all items are Done (or roadmap is empty), formatPlanningContext returns "".
     // Inject a sentinel so the LLM knows to propose new backlog items rather than
-    // improvising direction. Mirrors the identical check in assess.ts.
-    const hasActiveItems = projectItems.some((i) => i.status !== STATUS_DONE);
-    if (!hasActiveItems) {
-      planningContext = (planningContext ? planningContext + "\n\n" : "") +
-        "⚠ Roadmap empty — please propose new backlog items.";
+    // improvising direction.
+    const injected = injectRoadmapEmptyWarning(projectItems, planningContext);
+    if (injected !== planningContext) {
       console.log("[planning] Roadmap empty — injecting sentinel for LLM direction");
     }
+    planningContext = injected;
   } catch (err) {
     console.error(`[planning] Failed (non-fatal): ${errorMessage(err)}`);
   }

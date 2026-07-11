@@ -39,6 +39,13 @@ vi.mock("../src/planning.js", () => ({
   parseRoadmap: vi.fn(),
   formatPlanningContext: vi.fn(),
   pickNextItem: vi.fn(),
+  injectRoadmapEmptyWarning: vi.fn((items: { status: string }[], existing: string) => {
+    const hasActive = items.some((i) => i.status !== "Done");
+    if (!hasActive) {
+      return (existing ? existing + "\n\n" : "") + "⚠ Roadmap empty — please propose new backlog items.";
+    }
+    return existing;
+  }),
   STATUS_IN_PROGRESS: "In Progress",
   STATUS_UP_NEXT: "Up Next",
   STATUS_BACKLOG: "Backlog",
@@ -75,7 +82,7 @@ import {
 import { extractResultText, formatDurationSec } from "../src/usage.js";
 import { buildAssessmentPrompt, buildFileManifest } from "../src/evolve.js";
 import { errorMessage } from "../src/errors.js";
-import { ensureProject, readRoadmap, parseRoadmap, formatPlanningContext, pickNextItem, STATUS_DONE } from "../src/planning.js";
+import { ensureProject, readRoadmap, parseRoadmap, formatPlanningContext, pickNextItem, injectRoadmapEmptyWarning, STATUS_DONE } from "../src/planning.js";
 import { formatMemoryForPrompt, MAX_MEMORY_CHARS } from "../src/memory.js";
 import { resolveModel } from "../src/agent-phases.js";
 import { parseVerboseFlag, parseHelpFlag } from "../src/stats.js";
@@ -92,6 +99,7 @@ const mockReadRoadmap = vi.mocked(readRoadmap);
 const mockParseRoadmap = vi.mocked(parseRoadmap);
 const mockFormatPlanningContext = vi.mocked(formatPlanningContext);
 const mockPickNextItem = vi.mocked(pickNextItem);
+const mockInjectRoadmapEmptyWarning = vi.mocked(injectRoadmapEmptyWarning);
 const mockGetLatestCycleNumber = vi.mocked(getLatestCycleNumber);
 const mockReadFileSync = vi.mocked(readFileSync);
 const mockGetRecentJournalSummary = vi.mocked(getRecentJournalSummary);
@@ -156,6 +164,14 @@ describe("assess.ts main()", () => {
     mockErrorMessage.mockImplementation((e: unknown) => String(e));
     mockParseVerboseFlag.mockReturnValue(false);
     mockParseHelpFlag.mockReturnValue(false);
+    // Restore real-like behaviour for injectRoadmapEmptyWarning after resetAllMocks().
+    mockInjectRoadmapEmptyWarning.mockImplementation((items, existing) => {
+      const hasActive = items.some((i) => i.status !== "Done");
+      if (!hasActive) {
+        return (existing ? existing + "\n\n" : "") + "⚠ Roadmap empty — please propose new backlog items.";
+      }
+      return existing;
+    });
   });
 
   it("calls buildAssessmentPrompt with cycleCount one above the latest cycle", async () => {

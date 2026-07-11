@@ -559,6 +559,23 @@ export function demoteStaleInProgressItems(
   });
 }
 
+/**
+ * Inject a sentinel into a planning context string when no active (non-Done)
+ * items exist. Returns the sentinel-appended string when the roadmap is empty
+ * or all items are Done; otherwise returns `existing` unchanged.
+ *
+ * Extracted from the identical inline blocks in assess.ts and context.ts so
+ * that any wording change becomes a single-line edit and the logic can be
+ * unit-tested in isolation.
+ */
+export function injectRoadmapEmptyWarning(items: ProjectItem[], existing: string): string {
+  const hasActiveItems = items.some((i) => i.status !== STATUS_DONE);
+  if (!hasActiveItems) {
+    return (existing ? existing + "\n\n" : "") + "⚠ Roadmap empty — please propose new backlog items.";
+  }
+  return existing;
+}
+
 // --- Planning Logic ---
 
 /**

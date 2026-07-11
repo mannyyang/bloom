@@ -36,6 +36,13 @@ vi.mock("../src/planning.js", () => ({
   updateItemStatus: vi.fn(),
   demoteStaleInProgressItems: vi.fn().mockReturnValue([]),
   formatPlanningContext: vi.fn(),
+  injectRoadmapEmptyWarning: vi.fn((items: { status: string }[], existing: string) => {
+    const hasActive = items.some((i) => i.status !== "Done");
+    if (!hasActive) {
+      return (existing ? existing + "\n\n" : "") + "⚠ Roadmap empty — please propose new backlog items.";
+    }
+    return existing;
+  }),
   truncateWithEllipsis: (s: string, max: number) => s.length > max ? s.slice(0, max) + "…" : s,
   STATUS_IN_PROGRESS: "In Progress",
   STATUS_DONE: "Done",
@@ -59,6 +66,7 @@ import {
   updateItemStatus,
   demoteStaleInProgressItems,
   formatPlanningContext,
+  injectRoadmapEmptyWarning,
   type ProjectItem,
 } from "../src/planning.js";
 import { loadEvolutionContext, CONTEXT_JOURNAL_MAX_CHARS, CONTEXT_JOURNAL_MAX_CYCLES, CONTEXT_REASON_PREVIEW_CHARS } from "../src/context.js";
@@ -95,6 +103,14 @@ function setupDefaults() {
   vi.mocked(formatMemoryForPrompt).mockReturnValue("memory context");
   vi.mocked(ensureProject).mockImplementation(() => { throw new Error("no roadmap"); });
   vi.mocked(demoteStaleInProgressItems).mockReturnValue([]);
+  // Restore real-like behaviour for injectRoadmapEmptyWarning after resetAllMocks().
+  vi.mocked(injectRoadmapEmptyWarning).mockImplementation((items, existing) => {
+    const hasActive = items.some((i) => i.status !== "Done");
+    if (!hasActive) {
+      return (existing ? existing + "\n\n" : "") + "⚠ Roadmap empty — please propose new backlog items.";
+    }
+    return existing;
+  });
 }
 
 describe("loadEvolutionContext", () => {
