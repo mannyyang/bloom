@@ -140,6 +140,28 @@ STRATEGIC_CONTEXT: Focus on orchestrator tests next cycle`;
       logSpy.mockRestore();
     });
 
+    it("success log includes section count alongside learnings and strategicContext", () => {
+      // Operators need to know how many journal sections were persisted to detect
+      // partial writes without querying the DB. This test pins the section count
+      // field in the log so a refactor silently dropping it is caught.
+      const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      // 4 non-empty sections: attempted, succeeded, failed, learnings (strategic_context absent)
+      const result = `ATTEMPTED: Improvement A
+SUCCEEDED: Improvement A
+FAILED: None
+LEARNINGS: - [pattern] Small changes are safer`;
+
+      processEvolutionResult(db, 1, result);
+
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining("4 section(s)"),
+      );
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining("section(s),"),
+      );
+      logSpy.mockRestore();
+    });
+
     it("handles missing strategic context gracefully", () => {
       const result = `ATTEMPTED: Something
 SUCCEEDED: Something

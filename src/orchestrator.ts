@@ -22,6 +22,7 @@ interface WriteResult {
   learningsCount: number;
   dedupSkipped: number;
   strategicStored: boolean;
+  sectionCount: number;
 }
 
 /**
@@ -74,9 +75,11 @@ export function processEvolutionResult(
 
   const doWrites = db.transaction((): WriteResult => {
     // 1. Journal entries
+    let sectionCount = 0;
     for (const [section, content] of Object.entries(journalSections)) {
       if (content) {
         insertJournalEntry(db, cycleCount, section, content);
+        sectionCount++;
       }
     }
 
@@ -93,15 +96,18 @@ export function processEvolutionResult(
       learningsCount: learningsResult.count,
       dedupSkipped: learningsResult.dedupSkipped,
       strategicStored: !!strategicCtx,
+      sectionCount,
     };
   });
 
+  let sectionCount = 0;
   try {
     const writeResult = doWrites();
     learningsStored = writeResult.learningsCount;
     dedupSkipped = writeResult.dedupSkipped;
     strategicContextStored = writeResult.strategicStored;
-    console.log(`[orchestrator] Evolution result stored: ${learningsStored} learning(s), strategicContext=${strategicContextStored}`);
+    sectionCount = writeResult.sectionCount;
+    console.log(`[orchestrator] Evolution result stored: ${sectionCount} section(s), ${learningsStored} learning(s), strategicContext=${strategicContextStored}`);
   } catch (err) {
     console.error(`[orchestrator] Failed to persist evolution data (non-fatal, transaction rolled back): ${errorMessage(err)}`);
   }
