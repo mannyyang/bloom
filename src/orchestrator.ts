@@ -101,6 +101,7 @@ export function processEvolutionResult(
     learningsStored = writeResult.learningsCount;
     dedupSkipped = writeResult.dedupSkipped;
     strategicContextStored = writeResult.strategicStored;
+    console.log(`[orchestrator] Evolution result stored: ${learningsStored} learning(s), strategicContext=${strategicContextStored}`);
   } catch (err) {
     console.error(`[orchestrator] Failed to persist evolution data (non-fatal, transaction rolled back): ${errorMessage(err)}`);
   }

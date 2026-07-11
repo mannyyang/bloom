@@ -121,6 +121,7 @@ STRATEGIC_CONTEXT: Keep going`;
     });
 
     it("stores strategic context", () => {
+      const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
       const result = `ATTEMPTED: Something
 SUCCEEDED: Something
 FAILED: Nothing
@@ -130,6 +131,13 @@ STRATEGIC_CONTEXT: Focus on orchestrator tests next cycle`;
       const processed = processEvolutionResult(db, 1, result);
 
       expect(processed.strategicContextStored).toBe(true);
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining("[orchestrator] Evolution result stored:"),
+      );
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining("strategicContext=true"),
+      );
+      logSpy.mockRestore();
     });
 
     it("handles missing strategic context gracefully", () => {
