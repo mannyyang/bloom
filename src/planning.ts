@@ -545,11 +545,16 @@ export function demoteStaleInProgressItems(
   const filePath = resolve(process.cwd(), config.filePath);
   return withRoadmapItems(filePath, (items, markDirty) => {
     const stale = detectStaleInProgressItems(items, currentCycle, threshold);
-    for (const item of stale) {
-      item.status = STATUS_UP_NEXT;
-      item.body = stripSinceAnnotation(item.body).trim();
+    if (stale.length === 0) {
+      console.log("[planning] demoteStaleInProgressItems: no stale In Progress items found");
+    } else {
+      for (const item of stale) {
+        console.log(`[planning] Demoting stale In Progress item "${item.title}" → Up Next`);
+        item.status = STATUS_UP_NEXT;
+        item.body = stripSinceAnnotation(item.body).trim();
+      }
+      markDirty();
     }
-    if (stale.length > 0) markDirty();
     return stale.map((i) => i.title);
   });
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { existsSync, readFileSync, writeFileSync, unlinkSync } from "fs";
 import { resolve } from "path";
 import { ensureProject, getProjectItems, addDraftItem, addLinkedItem, updateItemStatus, demoteStaleInProgressItems, readRoadmap, type ProjectConfig } from "../src/planning.js";
@@ -464,6 +464,7 @@ describe("updateItemStatus", () => {
 
 describe("demoteStaleInProgressItems", () => {
   it("returns empty array when roadmap has no In Progress items", () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     writeTestRoadmap(`# Bloom Evolution Roadmap
 
 ## Backlog
@@ -478,9 +479,12 @@ describe("demoteStaleInProgressItems", () => {
     const config = makeConfig();
     const demoted = demoteStaleInProgressItems(config, 10);
     expect(demoted).toEqual([]);
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("no stale In Progress items found"));
+    logSpy.mockRestore();
   });
 
   it("demotes stale In Progress item (no annotation) to Up Next", () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     writeTestRoadmap(`# Bloom Evolution Roadmap
 
 ## Backlog
@@ -498,6 +502,9 @@ describe("demoteStaleInProgressItems", () => {
     expect(demoted).toEqual(["Stuck task"]);
     const items = getProjectItems(config);
     expect(items[0].status).toBe("Up Next");
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("Demoting stale In Progress item"));
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("Stuck task"));
+    logSpy.mockRestore();
   });
 
   it("demotes item stuck beyond threshold and strips [since: N] annotation", () => {
