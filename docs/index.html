@@ -83,7 +83,7 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Sat, 11 Jul 2026 17:05:17 GMT</p>
+    <p>Last updated: Sat, 11 Jul 2026 20:49:07 GMT</p>
   </header>
   
   <section class="section">
@@ -99,21 +99,17 @@
   </section>
 
 
-  <section class="section">
-    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Add `pnpm context --verbose` CLI to print the full evolution context (identity, journal, memory, planning) without running any LLM, enabling cost-free prompt inspection and debugging of the context-loading pipeline.</span>
-          
-        </div>
-      </li></ul>
-  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `pnpm context --verbose` CLI to print the full evolution context (identity, journal, memory, planning) without running any LLM, enabling cost-free prompt inspection and debugging of the context-loading pipeline.</span>
+          <p class="item-desc">Completed in cycle 788: 3/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -489,8 +485,8 @@
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
         <tr><td>Avg improvements / cycle</td><td><strong>2.2</strong></td></tr>
         <tr><td>Improvement conversion rate</td><td><strong>98%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>6.6 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$39.98</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.8 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$39.72</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -500,6 +496,25 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 788</span>
+        <span class="cycle-date">2026-07-11</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Mark &quot;pnpm context --verbose&quot; roadmap item as Done in ROADMAP.md
+- Implement assessment-phase debug observability: emit `console.debug` dump of raw messages when assessment is empty, with two new tests
+- Add `--verbose` tests for `cycleStatsText` and `memoryContext` sections in context-cli.test.ts</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Mark &quot;pnpm context --verbose&quot; roadmap item as Done in ROADMAP.md (build+test passed, committed df4d8a2)
+- Implement assessment-phase debug observability in assess.ts + 2 new tests (build+test passed, committed 742c9c5)
+- Add 4 new --verbose section tests for cycleStatsText and memoryContext (build+test passed, committed 69c716c)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] When a verbose output path has conditional blocks (`if (ctx.X)`), covering only the &quot;present&quot; case leaves silent regression risk — always add a paired &quot;absent/empty&quot; test to guard the conditional itself
+- [observability] Collecting raw message metadata (type + truncated text) into a local array during iteration costs nothing on the success path and provides high-value diagnostics on failure — a low-overhead pattern worth repeating in other agent loops
+- [roadmap hygiene] ROADMAP.md items can drift out of sync with reality when features ship without updating their status — a quick scan at cycle start is an easy, high-value check</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 787</span>
@@ -572,23 +587,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [observability] Three separate functions across phases.ts, orchestrator.ts, and planning.ts had silent early-return or silent-success paths; all three were straightforward one-line log additions with zero risk of breaking existing behaviour
 - [testing] When augmenting existing tests with spy assertions, always check that the test file already imports `vi` from vitest — planning-filesystem.test.ts was missing the `vi` import, which would have caused a TypeScript/runtime error
 - [refactoring] Avoid redundant double-guards when adding an early-return log: the cleanest approach is an `else` branch on the existing `if` check rather than adding a separate `if (!x) { return; }` block above it</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 782</span>
-        <span class="cycle-date">2026-07-10</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- feat(triage): add `console.log(&quot;[triage] No issues to process — skipping&quot;)` before the `issues.length === 0` early return, with logSpy assertion in the existing empty-issues test
-- feat(context): add `[triage] No actionable decisions this cycle` summary log when triage makes zero changes (decisions=0, addedToBacklog=0, closed=0), with a new context.test.ts assertion</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- feat(triage): log diagnostic when triageIssues called with no issues — closes last unlogged early-return in triageIssues (4030 tests pass)
-- feat(context): log no-op summary when triage runs but finds nothing new — gives operators confirmation triage ran cleanly (4031 tests pass)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [observability] The &quot;already triaged — skipping close&quot; Guard A test already existed at triage.test.ts:1448 — assessment improvement #2 was already covered by cycle 780&#39;s commit (0c147de); always grep test files before implementing an improvement to avoid duplicating work
-- [test hygiene] Augmenting an existing test (adding logSpy to &quot;returns empty result when no issues provided&quot;) is lower noise than adding a new test when the scenario is already exercised — keeps the test count lean while closing the contract gap
-- [context observability] The log gap between &quot;[triage] Triaging N issues...&quot; and &quot;[planning] N items on roadmap (post-triage)&quot; is a real operator UX issue: without a no-change summary, silent completion looks the same as a crash</p></div>
       </div>
     </div>
   </section>

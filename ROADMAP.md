@@ -9,7 +9,7 @@
 
 ## Done
 - [x] Add `pnpm context --verbose` CLI to print the full evolution context (identity, journal, memory, planning) without running any LLM, enabling cost-free prompt inspection and debugging of the context-loading pipeline.
-  Completed in cycle 788: feature fully implemented in src/context-cli.ts with comprehensive test coverage in tests/context-cli.test.ts.
+  Completed in cycle 788: 3/3 improvements succeeded.
 - [x] Extract the shared roadmap-empty sentinel logic from `assess.ts` and `context.ts` into a single exported helper (e.g. `injectRoadmapEmptyWarning`) to eliminate the duplicated check and make future wording changes a one-line edit.
   Completed in cycle 787: 3/3 improvements succeeded.
 - [x] Emit a structured JSON cycle-summary file (e.g. `bloom-cycle-summary.json`) after each evolution run containing cycle number, outcome metrics, and improvement counts — enabling CI dashboards and external tooling to consume cycle data without parsing SQLite directly.
