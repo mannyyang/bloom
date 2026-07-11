@@ -195,18 +195,24 @@ describe("updatePlanningStatus", () => {
   });
 
   it("does nothing when projectConfig is null", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     const processed = { improvementsSucceeded: 1, improvementsAttempted: 1 };
     await updatePlanningStatus(10, null, currentItem, processed);
 
     expect(updateItemStatus).not.toHaveBeenCalled();
     expect(commitRoadmap).not.toHaveBeenCalled();
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("skipping status update"));
+    logSpy.mockRestore();
   });
 
   it("does nothing when currentItem is null", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     const processed = { improvementsSucceeded: 1, improvementsAttempted: 1 };
     await updatePlanningStatus(10, projectConfig, null, processed);
 
     expect(updateItemStatus).not.toHaveBeenCalled();
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("skipping status update"));
+    logSpy.mockRestore();
   });
 
   it("does not promote to Done when linkedIssueNumber is set but succeededSummary is empty", async () => {

@@ -128,6 +128,8 @@ export async function updatePlanningStatus(
       } else {
         console.error(`[planning] Item "${currentItem.title}" (id=${currentItem.id}) not found in roadmap — skipping commit.`);
       }
+    } else {
+      console.log("[planning] No roadmap config or current item — skipping status update");
     }
   } catch (err) {
     console.error(`[planning] Failed to update roadmap status (non-fatal): ${errorMessage(err)}`);
