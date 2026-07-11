@@ -141,6 +141,66 @@ describe("context-cli.ts main()", () => {
     consoleSpy.mockRestore();
   });
 
+  it("--verbose: prints full cycleStatsText section when non-empty", async () => {
+    // Regression guard: if the cycleStatsText block is accidentally dropped from
+    // the verbose output path, the stats section goes blank with no failing test.
+    mockParseVerboseFlag.mockReturnValue(true);
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    mockLoadEvolutionContext.mockResolvedValue(makeCtx({ cycleStatsText: "CYCLE STATS CONTENT" }));
+
+    await main();
+
+    const logged = consoleSpy.mock.calls.map((c) => c.join(" "));
+    expect(logged.some((l) => l.includes("CYCLE STATS CONTENT"))).toBe(true);
+
+    consoleSpy.mockRestore();
+  });
+
+  it("--verbose: skips cycleStatsText section when empty", async () => {
+    // Guard the conditional: when cycleStatsText is falsy the section header
+    // must be absent so the output stays clean.
+    mockParseVerboseFlag.mockReturnValue(true);
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    mockLoadEvolutionContext.mockResolvedValue(makeCtx({ cycleStatsText: "" }));
+
+    await main();
+
+    const logged = consoleSpy.mock.calls.map((c) => c.join(" "));
+    expect(logged.some((l) => l.includes("Cycle Stats"))).toBe(false);
+
+    consoleSpy.mockRestore();
+  });
+
+  it("--verbose: prints full memoryContext section when non-empty", async () => {
+    // Regression guard: if the memoryContext block is accidentally dropped from
+    // the verbose output path, accumulated learnings go blank with no failing test.
+    mockParseVerboseFlag.mockReturnValue(true);
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    mockLoadEvolutionContext.mockResolvedValue(makeCtx({ memoryContext: "MEMORY CONTEXT CONTENT" }));
+
+    await main();
+
+    const logged = consoleSpy.mock.calls.map((c) => c.join(" "));
+    expect(logged.some((l) => l.includes("MEMORY CONTEXT CONTENT"))).toBe(true);
+
+    consoleSpy.mockRestore();
+  });
+
+  it("--verbose: skips memoryContext section when empty", async () => {
+    // Guard the conditional: when memoryContext is falsy the section header
+    // must be absent so the output stays clean.
+    mockParseVerboseFlag.mockReturnValue(true);
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    mockLoadEvolutionContext.mockResolvedValue(makeCtx({ memoryContext: "" }));
+
+    await main();
+
+    const logged = consoleSpy.mock.calls.map((c) => c.join(" "));
+    expect(logged.some((l) => l.includes("Memory Context"))).toBe(false);
+
+    consoleSpy.mockRestore();
+  });
+
   it("non-verbose mode does NOT print full identity text", async () => {
     mockParseVerboseFlag.mockReturnValue(false);
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
