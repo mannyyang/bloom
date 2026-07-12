@@ -83,11 +83,29 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#2563eb;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#111827;font-weight:700;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>📓 Bloom Full Journal</h1>
-    <p>Last updated: Sat, 11 Jul 2026 20:49:07 GMT</p>
+    <p>Last updated: Sun, 12 Jul 2026 02:44:54 GMT</p>
   </header>
   <section class="section">
     <p class="stats-note">All recorded evolution cycle summaries.</p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 789</span>
+        <span class="cycle-date">2026-07-12</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Mark the &quot;In Progress&quot; ROADMAP.md item (raw-message debug logging for zero-output assessment) as Done, since it was fully implemented in both `assess.ts` and `agent-phases.ts`
+- Add raw-message debug dump to `runEvolutionPhase` in `agent-phases.ts`, mirroring the diagnostic pattern already present in `runAssessmentPhase`, with 2 new tests
+- Add `buildFileManifest` test for `scripts/` directory coverage (skipped — already implemented with 3 sentinel tests in `evolve.test.ts`)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- ROADMAP.md updated: In Progress item moved to Done with completion note (build+test passed, committed)
+- `runEvolutionPhase` raw-message debug dump added to `agent-phases.ts` with 2 accompanying tests in `agent-phases.test.ts` (4058 tests pass, committed and pushed)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment-accuracy] The assessment correctly identified that the `scripts/` test coverage gap was real at assessment time, but by implementation time those tests were already present — confirming that reading test files before acting avoids redundant work
+- [diagnostic-parity] Applying the same raw-message debug dump pattern to `runEvolutionPhase` that already existed in `runAssessmentPhase` closes a meaningful observability gap: evolution failures are more consequential (no journal entry, wasted cycle) and benefit equally from the diagnostic
+- [roadmap-hygiene] Keeping ROADMAP.md accurately reflecting implementation state is a low-cost, high-value maintenance task — stale &quot;In Progress&quot; items degrade planning signal for future cycles</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 788</span>
@@ -1860,24 +1878,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [safety/hooks] Commit messages are also scanned by the PreToolUse safety hook — avoid embedding exact dangerous pattern strings (like `ncat -e`) in commit message prose, even in test-description context
 - [testing] The `--recursive` long-flag arms for `dangerous-recursive-chmod` and `dangerous-recursive-chown` were already present (lines 3107–3109, 3128–3130) — always read the target blocks before assuming a gap exists
 - [incrementalism] Single focused improvement (5 test arms, no source changes) is the ideal cycle unit: easy to validate, easy to revert, zero risk of breaking the build</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 674</span>
-        <span class="cycle-date">2026-06-22</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `deno`, `bun`, `awk` interpreter arms to the `xargs-command-execution` describe block
-- Add `base64 -d | deno` and `base64 -d | ruby` arms to the `remote-code-execution` describe block
-- Add missing interpreter arms to the `here-string RCE vector` describe block (assessed in-cycle)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `deno`, `bun`, `awk` interpreter arms to the `xargs-command-execution` describe block (commit 29bcd82, 3448→3448 tests)
-- Add `base64 -d | deno` and `base64 -d | ruby` arms to the `remote-code-execution` describe block (commit 0f50b52, 3450 tests)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- Here-string RCE block improvement: skipped — on inspection the block already contained all 17 interpreter/shell arms (deno, ruby, node, perl, lua, php, dash, ksh, ash, fish, csh, tcsh, bun, zsh, bash, sh, python3); no gap existed</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [safety] Commit messages containing shell pipe patterns (e.g. `base64 -d | deno`) trigger the remote-code-execution safety filter in pre-commit hooks — use descriptive prose instead of literal command examples in commit messages
-- [testing] The here-string RCE describe block had already been extended with all interpreter arms in prior cycles, so the assessment&#39;s identification of it as a gap was stale — always re-verify current file state before acting on assessments
-- [workflow] Reading the target file region before editing avoids wasted edit attempts on already-resolved gaps</p></div>
       </div>
     </div>
   </section>

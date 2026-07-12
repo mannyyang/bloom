@@ -83,26 +83,22 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Sat, 11 Jul 2026 20:49:07 GMT</p>
+    <p>Last updated: Sun, 12 Jul 2026 02:44:54 GMT</p>
   </header>
   
-  <section class="section">
-    <h2><span class="badge" style="background:#6b7280">Backlog</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Improve assessment-phase reliability: when the assessment agent produces no readable text output (0 useful turns), log the raw SDK messages at debug level so maintainers can diagnose whether the issue is a model timeout, a tool-loop, or a prompt problem.</span>
-          
-        </div>
-      </li></ul>
-  </section>
 
 
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Improve assessment-phase reliability: when the assessment agent produces no readable text output (0 useful turns), log the raw SDK messages at debug level so maintainers can diagnose whether the issue is a model timeout, a tool-loop, or a prompt problem.</span>
+          <p class="item-desc">Completed in cycle 789: 2/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -485,8 +481,8 @@
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
         <tr><td>Avg improvements / cycle</td><td><strong>2.2</strong></td></tr>
         <tr><td>Improvement conversion rate</td><td><strong>98%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>6.8 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$39.72</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.6 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$38.87</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -496,6 +492,24 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 789</span>
+        <span class="cycle-date">2026-07-12</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Mark the &quot;In Progress&quot; ROADMAP.md item (raw-message debug logging for zero-output assessment) as Done, since it was fully implemented in both `assess.ts` and `agent-phases.ts`
+- Add raw-message debug dump to `runEvolutionPhase` in `agent-phases.ts`, mirroring the diagnostic pattern already present in `runAssessmentPhase`, with 2 new tests
+- Add `buildFileManifest` test for `scripts/` directory coverage (skipped — already implemented with 3 sentinel tests in `evolve.test.ts`)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- ROADMAP.md updated: In Progress item moved to Done with completion note (build+test passed, committed)
+- `runEvolutionPhase` raw-message debug dump added to `agent-phases.ts` with 2 accompanying tests in `agent-phases.test.ts` (4058 tests pass, committed and pushed)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment-accuracy] The assessment correctly identified that the `scripts/` test coverage gap was real at assessment time, but by implementation time those tests were already present — confirming that reading test files before acting avoids redundant work
+- [diagnostic-parity] Applying the same raw-message debug dump pattern to `runEvolutionPhase` that already existed in `runAssessmentPhase` closes a meaningful observability gap: evolution failures are more consequential (no journal entry, wasted cycle) and benefit equally from the diagnostic
+- [roadmap-hygiene] Keeping ROADMAP.md accurately reflecting implementation state is a low-cost, high-value maintenance task — stale &quot;In Progress&quot; items degrade planning signal for future cycles</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 788</span>
@@ -568,25 +582,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [observability] Silent success paths in DB transaction blocks are a recurring gap — all three improvements followed the same pattern: a side-effect with no operator-visible signal. Adding a single log line after each is low-risk and high-value for debugging.
 - [testing] The existing test infrastructure (consoleSpy, warnSpy patterns) makes these log-addition tests trivial to write — the suite is well-structured for behavioral pinning.
 - [code structure] The `WriteResult` interface in orchestrator.ts was already the right abstraction for extending the transaction&#39;s return shape — adding `sectionCount` there required only a 4-line delta in the interface + transaction body.</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 783</span>
-        <span class="cycle-date">2026-07-11</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `console.log(&quot;[planning] No roadmap config or current item — skipping status update&quot;)` to `updatePlanningStatus` null-guard branch in `phases.ts`, with `logSpy` assertions in the two null-guard tests
-- Add `console.log(&quot;[orchestrator] Evolution result stored: ...&quot;)` after `doWrites()` commits successfully in `orchestrator.ts`, with a spy assertion added to the &quot;stores strategic context&quot; test
-- Add diagnostic logs to `demoteStaleInProgressItems` in `planning.ts` (one for the zero-stale case, one per demoted item), with `logSpy` assertions in two existing tests</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add skip log to `updatePlanningStatus` null-guard branch (`phases.ts`) + test assertions — build passed, all 4031 tests pass
-- Add success log after `doWrites()` in `processEvolutionResult` (`orchestrator.ts`) + test assertion — build passed, all 4031 tests pass
-- Add diagnostic logs to `demoteStaleInProgressItems` (`planning.ts`) + test assertions — build passed, all 4031 tests pass</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [observability] Three separate functions across phases.ts, orchestrator.ts, and planning.ts had silent early-return or silent-success paths; all three were straightforward one-line log additions with zero risk of breaking existing behaviour
-- [testing] When augmenting existing tests with spy assertions, always check that the test file already imports `vi` from vitest — planning-filesystem.test.ts was missing the `vi` import, which would have caused a TypeScript/runtime error
-- [refactoring] Avoid redundant double-guards when adding an early-return log: the cleanest approach is an `else` branch on the existing `if` check rather than adding a separate `if (!x) { return; }` block above it</p></div>
       </div>
     </div>
   </section>
