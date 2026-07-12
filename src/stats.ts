@@ -16,7 +16,7 @@ import { formatMemoryForPrompt } from "./memory.js";
 import { readRoadmap, parseRoadmap, pickNextItemWithRationale } from "./planning.js";
 import { errorMessage, ERROR_CATEGORY_NONE } from "./errors.js";
 import { DANGEROUS_PATTERNS } from "./safety.js";
-import { csvQuoteField } from "./csv.js";
+import { csvQuoteField, filterBySearchTerm } from "./csv.js";
 
 /**
  * Number of characters of memory to include in the stats preview.
@@ -210,6 +210,7 @@ Options:
   --last <N>            Show stats for the last N cycles only
   --since <N>           Show stats starting from cycle number N (inclusive)
   --category <CAT>      Filter to cycles matching failure_category (e.g. build_failure, none)
+  --search <term>       Filter --table/--csv rows by cycle number or failure_category substring
   --trend <N>           Show an ASCII success-rate bar for the last N cycles
   --cost-alert <USD>    Warn and exit non-zero when avg cost/cycle exceeds threshold
   --json                Output raw stats as JSON (for scripting/CI)
@@ -286,9 +287,12 @@ export function computeEffectiveLimit(lastN?: number, sinceN?: number, categoryF
  * When `verbose` is true, appends a Failures column showing each row's
  * failure_category (rendered as "—" when the category is "none" or absent).
  */
-export function generateStatsTable(db: Database.Database, lastN?: number, verbose?: boolean, sinceN?: number, categoryFilter?: string): string {
+export function generateStatsTable(db: Database.Database, lastN?: number, verbose?: boolean, sinceN?: number, categoryFilter?: string, search?: string): string {
   const effectiveLimit = computeEffectiveLimit(lastN, sinceN, categoryFilter);
   let rows = applyRowFilters(getCycleRows(db, effectiveLimit), sinceN, categoryFilter);
+  if (search !== undefined) {
+    rows = filterBySearchTerm(rows, search, (r) => [String(r.cycleNumber), r.failureCategory]);
+  }
   if (rows.length === 0) return "";
 
   const baseHeaderCells = [
@@ -382,9 +386,12 @@ export function generateStatsCsvFromRows(rows: CycleRow[]): string {
  * categoryFilter logic used by generateStatsTable and generateStatsJson.
  * Returns a CSV string (always includes the header row, even when no cycles exist).
  */
-export function generateStatsCsv(db: Database.Database, lastN?: number, sinceN?: number, categoryFilter?: string): string {
+export function generateStatsCsv(db: Database.Database, lastN?: number, sinceN?: number, categoryFilter?: string, search?: string): string {
   const effectiveLimit = computeEffectiveLimit(lastN, sinceN, categoryFilter);
-  const rows = applyRowFilters(getCycleRows(db, effectiveLimit), sinceN, categoryFilter);
+  let rows = applyRowFilters(getCycleRows(db, effectiveLimit), sinceN, categoryFilter);
+  if (search !== undefined) {
+    rows = filterBySearchTerm(rows, search, (r) => [String(r.cycleNumber), r.failureCategory]);
+  }
   return generateStatsCsvFromRows(rows);
 }
 
@@ -607,6 +614,7 @@ function main() {
   const lastN = parseLastNArg(process.argv);
   const sinceN = parseSinceArg(process.argv);
   const categoryFilter = parseCategoryArg(process.argv);
+  const searchTerm = parseSearchArg(process.argv);
   const trendN = parseTrendArg(process.argv);
   const costAlertThreshold = parseCostAlertArg(process.argv);
   const jsonMode = parseJsonFlag(process.argv);
@@ -624,9 +632,9 @@ function main() {
       const result = generateStatsJson(db, lastN, verbose, sinceN, undefined, categoryFilter);
       console.log(JSON.stringify(result, null, 2));
     } else if (csvMode) {
-      process.stdout.write(generateStatsCsv(db, lastN, sinceN, categoryFilter));
+      process.stdout.write(generateStatsCsv(db, lastN, sinceN, categoryFilter, searchTerm));
     } else if (tableMode) {
-      const table = generateStatsTable(db, lastN, verbose, sinceN, categoryFilter);
+      const table = generateStatsTable(db, lastN, verbose, sinceN, categoryFilter, searchTerm);
       console.log(table || "No evolution cycles recorded yet.");
     } else {
       const output = generateStatsOutput(db, lastN, verbose, sinceN, undefined, categoryFilter);

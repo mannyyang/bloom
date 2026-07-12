@@ -68,6 +68,7 @@ describe("STATS_HELP_TEXT", () => {
       `  --last <N>            Show stats for the last N cycles only\n` +
       `  --since <N>           Show stats starting from cycle number N (inclusive)\n` +
       `  --category <CAT>      Filter to cycles matching failure_category (e.g. build_failure, none)\n` +
+      `  --search <term>       Filter --table/--csv rows by cycle number or failure_category substring\n` +
       `  --trend <N>           Show an ASCII success-rate bar for the last N cycles\n` +
       `  --cost-alert <USD>    Warn and exit non-zero when avg cost/cycle exceeds threshold\n` +
       `  --json                Output raw stats as JSON (for scripting/CI)\n` +
@@ -2555,5 +2556,120 @@ describe("generateStatsTrend", () => {
     // At least one of the bar chars must appear
     const hasBarChar = TREND_BAR_CHARS.some(c => result.includes(c));
     expect(hasBarChar).toBe(true);
+  });
+});
+
+import { applyRowFilters } from "../src/stats.js";
+import type { CycleRow } from "../src/db.js";
+
+describe("applyRowFilters", () => {
+  const makeRow = (cycleNumber: number, failureCategory?: string): CycleRow => ({
+    cycleNumber,
+    attempted: 0,
+    succeeded: 0,
+    buildPassed: false,
+    pushed: false,
+    durationMs: null,
+    totalCostUsd: 0,
+    failureCategory: failureCategory ?? null,
+  });
+
+  it("returns all rows when no filters are applied", () => {
+    const rows = [makeRow(1), makeRow(2), makeRow(3)];
+    expect(applyRowFilters(rows)).toHaveLength(3);
+  });
+
+  it("filters by sinceN (inclusive)", () => {
+    const rows = [makeRow(1), makeRow(5), makeRow(10)];
+    const result = applyRowFilters(rows, 5);
+    expect(result.map(r => r.cycleNumber)).toEqual([5, 10]);
+  });
+
+  it("filters by categoryFilter matching failureCategory", () => {
+    const rows = [
+      makeRow(1, "build_failure"),
+      makeRow(2, "none"),
+      makeRow(3, "build_failure"),
+    ];
+    const result = applyRowFilters(rows, undefined, "build_failure");
+    expect(result.map(r => r.cycleNumber)).toEqual([1, 3]);
+  });
+
+  it("matches null failureCategory to ERROR_CATEGORY_NONE when filtering by 'none'", () => {
+    const rows = [makeRow(1, null as unknown as string), makeRow(2, "build_failure")];
+    const result = applyRowFilters(rows, undefined, "none");
+    expect(result.map(r => r.cycleNumber)).toEqual([1]);
+  });
+
+  it("applies both sinceN and categoryFilter together", () => {
+    const rows = [
+      makeRow(1, "build_failure"),
+      makeRow(5, "build_failure"),
+      makeRow(5, "none"),
+    ];
+    const result = applyRowFilters(rows, 5, "build_failure");
+    expect(result.map(r => r.cycleNumber)).toEqual([5]);
+  });
+});
+
+describe("generateStatsTable --search", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+    insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true, pushSucceeded: true, failureCategory: "none" }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "build_failure" }));
+    insertCycle(db, makeOutcome({ cycleNumber: 3, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "test_failure" }));
+  });
+
+  it("returns all rows when search is undefined", () => {
+    const table = generateStatsTable(db, undefined, false, undefined, undefined, undefined);
+    expect(table).toContain("1");
+    expect(table).toContain("2");
+    expect(table).toContain("3");
+  });
+
+  it("filters rows by cycle number substring", () => {
+    const table = generateStatsTable(db, undefined, false, undefined, undefined, "2");
+    // Cycle 2 should appear, but not cycles 1 or 3 (unless their numbers also contain "2")
+    const lines = table.split("\n").filter(l => /^\s*\d/.test(l));
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain("2");
+  });
+
+  it("returns empty string when search term matches nothing", () => {
+    const table = generateStatsTable(db, undefined, false, undefined, undefined, "zzznomatch");
+    expect(table).toBe("");
+  });
+});
+
+describe("generateStatsCsv --search", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+    insertCycle(db, makeOutcome({ cycleNumber: 10, buildVerificationPassed: true, pushSucceeded: true, failureCategory: "none" }));
+    insertCycle(db, makeOutcome({ cycleNumber: 20, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "build_failure" }));
+  });
+
+  it("includes all rows when search is undefined", () => {
+    const csv = generateStatsCsv(db, undefined, undefined, undefined, undefined);
+    expect(csv).toContain("10");
+    expect(csv).toContain("20");
+  });
+
+  it("filters CSV rows by failure_category substring", () => {
+    const csv = generateStatsCsv(db, undefined, undefined, undefined, "build");
+    const lines = csv.trim().split("\n");
+    // header + 1 data row
+    expect(lines).toHaveLength(2);
+    expect(lines[1]).toContain("build_failure");
+  });
+
+  it("returns only header row when search term matches nothing", () => {
+    const csv = generateStatsCsv(db, undefined, undefined, undefined, "zzznomatch");
+    const lines = csv.trim().split("\n");
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toBe(STATS_CSV_HEADER);
   });
 });
