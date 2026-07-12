@@ -417,6 +417,48 @@ describe("runEvolutionPhase", () => {
     warnSpy.mockRestore();
   });
 
+  it("emits console.debug with raw messages when turns run but yield no text output", async () => {
+    // Guards the diagnostic dump added to runEvolutionPhase: when the evolution
+    // loop completes without producing any text, the raw message objects must be
+    // serialised and emitted at debug level so maintainers can diagnose the failure
+    // mode (model timeout, tool-loop, prompt problem) without re-running the cycle.
+    const { deps } = createMockDeps([
+      { type: "progress", content: "thinking..." },
+    ]);
+    vi.mocked(deps.processEvolutionResult).mockReturnValue(createProcessedEvolution());
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
+    const db = createMockDb();
+
+    await runEvolutionPhase(
+      db, 1, createOutcome(), "assessment", "identity", [], deps, createMockSafetyHooks(),
+    );
+
+    // The header line must mention "[evolution]" and the message count.
+    expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("[evolution]"));
+    expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining("Raw messages"));
+  });
+
+  it("does not emit console.debug raw-message dump when evolution succeeds", async () => {
+    // The debug dump must be suppressed on the happy path to avoid polluting
+    // normal logs with internal message metadata on every successful cycle.
+    const { deps } = createMockDeps([
+      createUsageMessage({ result: "successful evolution output" }),
+    ]);
+    vi.mocked(deps.processEvolutionResult).mockReturnValue(createProcessedEvolution());
+    const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
+    const db = createMockDb();
+
+    await runEvolutionPhase(
+      db, 1, createOutcome(), "assessment", "identity", [], deps, createMockSafetyHooks(),
+    );
+
+    const evolutionDebugCalls = debugSpy.mock.calls.filter(
+      (c) => typeof c[0] === "string" && c[0].includes("[evolution]"),
+    );
+    expect(evolutionDebugCalls).toHaveLength(0);
+  });
+
   it("accumulates phaseUsages from both assessment and evolution", async () => {
     const assessmentUsage: PhaseUsage = {
       phase: "Assessment",

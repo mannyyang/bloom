@@ -192,6 +192,7 @@ export async function runEvolutionPhase(
   const outcomeContext = formatOutcomeForJournal(outcome);
   let evolutionResult = "";
   let evolutionTurns = 0;
+  const rawEvolutionMessages: unknown[] = [];
   for await (const msg of deps.queryFn({
     prompt: buildEvolutionPrompt(assessment, { usageContext, outcomeContext }),
     options: {
@@ -211,6 +212,7 @@ export async function runEvolutionPhase(
     },
   })) {
     evolutionTurns++;
+    rawEvolutionMessages.push(msg);
     const resultText = extractResultText(msg);
     if (resultText !== null) {
       evolutionResult = resultText;
@@ -234,6 +236,16 @@ export async function runEvolutionPhase(
     console.warn(
       `[evolution] Warning: ${evolutionTurns} turn(s) completed but produced no text output. Using fallback result.`,
     );
+    // Dump raw messages at debug level so maintainers can distinguish model
+    // timeouts, tool-loop hangs, and prompt failures without re-running.
+    console.debug(`[evolution] Raw messages (${rawEvolutionMessages.length}):`);
+    for (let i = 0; i < rawEvolutionMessages.length; i++) {
+      try {
+        console.debug(`  [${i}] ${JSON.stringify(rawEvolutionMessages[i])}`);
+      } catch {
+        console.debug(`  [${i}] (non-serializable message)`);
+      }
+    }
     evolutionResult = `(The evolution phase completed ${evolutionTurns} turn(s) but produced no readable text output. No improvements were recorded.)`;
   }
 
