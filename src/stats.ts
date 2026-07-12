@@ -256,6 +256,40 @@ export const COL_COST = 8;
  */
 export const COL_FAILURES = 16;
 
+/**
+ * Width of the SinceCycle column in the verbose ASCII table.
+ * Wide enough for the header label "SinceCycle" (10 chars) and up to 7-digit
+ * cycle numbers. Exported so tests can assert this invariant.
+ */
+export const COL_SINCE_CYCLE = 10;
+
+/**
+ * Compute the streak-start cycle for each row in a newest-first CycleRow array.
+ * Returns a Map from cycleNumber to the first cycle number of the current
+ * consecutive-failure run (where failure = !(buildPassed && pushed)).
+ * For success rows, returns null (no active failure streak).
+ * For failure rows, returns the cycle number where the current run began.
+ * Exported for unit-testability.
+ *
+ * @example
+ * // Cycles 1 (pass), 2 (fail), 3 (fail), 4 (pass), 5 (fail)
+ * // streakStart: 1→null, 2→2, 3→2, 4→null, 5→5
+ */
+export function computeStreakStartCycles(rows: CycleRow[]): Map<number, number | null> {
+  const result = new Map<number, number | null>();
+  const ordered = [...rows].reverse(); // process oldest-first
+  let streakStart: number | null = null;
+  for (const r of ordered) {
+    if (r.buildPassed && r.pushed) {
+      streakStart = null;
+    } else {
+      if (streakStart === null) streakStart = r.cycleNumber;
+    }
+    result.set(r.cycleNumber, streakStart);
+  }
+  return result;
+}
+
 function pad(s: string, width: number, right = false): string {
   return right ? s.padStart(width) : s.padEnd(width);
 }
@@ -332,11 +366,15 @@ export function generateStatsTable(db: Database.Database, lastN?: number, verbos
 
   if (verbose) {
     baseHeaderCells.push(pad("Failures", COL_FAILURES));
+    baseHeaderCells.push(pad("SinceCycle", COL_SINCE_CYCLE, true));
     baseSepCells.push("-".repeat(COL_FAILURES));
+    baseSepCells.push("-".repeat(COL_SINCE_CYCLE));
   }
 
   const header = baseHeaderCells.join("  ");
   const separator = baseSepCells.join("  ");
+
+  const streakStarts = verbose ? computeStreakStartCycles(rows) : undefined;
 
   const dataRows = rows.map((r: CycleRow) => {
     const durationStr = r.durationMs !== null
@@ -352,9 +390,12 @@ export function generateStatsTable(db: Database.Database, lastN?: number, verbos
       pad(durationStr, COL_DURATION, true),
       pad(costStr, COL_COST, true),
     ];
-    if (verbose) {
+    if (verbose && streakStarts !== undefined) {
       const cat = r.failureCategory && r.failureCategory !== ERROR_CATEGORY_NONE ? r.failureCategory : STATS_NO_FAILURE_SYMBOL;
+      const since = streakStarts.get(r.cycleNumber);
+      const sinceStr = since !== null && since !== undefined ? String(since) : STATS_NO_FAILURE_SYMBOL;
       cells.push(pad(cat, COL_FAILURES));
+      cells.push(pad(sinceStr, COL_SINCE_CYCLE, true));
     }
     return cells.join("  ");
   });
