@@ -493,6 +493,19 @@ export function exportJournalJson(db: Database.Database, maxCycles?: number, sin
   return maxCycles !== undefined ? entries.slice(0, maxCycles) : entries;
 }
 
+/**
+ * Per-phase token usage summary: input tokens, output tokens, and the
+ * output-to-input ratio (outputTokens / inputTokens), useful for identifying
+ * which phases are token-heavy and where prompt compression is most impactful.
+ * `ratio` is null when inputTokens is 0 (division by zero guard).
+ */
+export interface PhaseTokenRatio {
+  phase: string;
+  inputTokens: number;
+  outputTokens: number;
+  ratio: number | null;
+}
+
 export interface CycleStats {
   totalCycles: number;
   successRate: number;
@@ -507,6 +520,8 @@ export interface CycleStats {
   totalOutputTokens: number;
   failureCategoryBreakdown: Record<string, number>;
   learningCategoryDistribution: Record<string, number>;
+  /** Per-phase token breakdown, ordered by total input tokens descending. Empty when no phase_usage rows exist. */
+  phaseTokenRatios: PhaseTokenRatio[];
 }
 
 /**
@@ -549,6 +564,41 @@ export function getLearningCategoryDistribution(db: Database.Database): Record<s
     distribution[row.category] = row.cnt;
   }
   return distribution;
+}
+
+/**
+ * Aggregate input/output tokens from `phase_usage` grouped by phase for the
+ * given cycle numbers. Returns one entry per phase ordered by input tokens
+ * descending (most token-heavy phases first).
+ *
+ * Extracted as a named helper so callers that already hold a cycle-number list
+ * (e.g. getCycleStats) can reuse it without duplicating the SQL, mirroring the
+ * pattern of getLearningCategoryDistribution.
+ *
+ * Returns an empty array when `cycleNumbers` is empty or no matching rows exist.
+ */
+export function getPhaseTokensByPhase(db: Database.Database, cycleNumbers: number[]): PhaseTokenRatio[] {
+  if (cycleNumbers.length === 0) return [];
+  const inPlaceholders = cycleNumbers.map(() => "?").join(",");
+  const rows = validateRows<{ phase: string; total_input: number; total_output: number }>(
+    db.prepare(`
+      SELECT phase,
+             SUM(input_tokens)  AS total_input,
+             SUM(output_tokens) AS total_output
+      FROM phase_usage
+      WHERE cycle_number IN (${inPlaceholders})
+      GROUP BY phase
+      ORDER BY total_input DESC
+    `).all(...cycleNumbers),
+    { phase: "string", total_input: "number", total_output: "number" },
+    "getPhaseTokensByPhase",
+  );
+  return rows.map(r => ({
+    phase: r.phase,
+    inputTokens: r.total_input,
+    outputTokens: r.total_output,
+    ratio: r.total_input > 0 ? Math.round((r.total_output / r.total_input) * 1000) / 1000 : null,
+  }));
 }
 
 /**
@@ -621,6 +671,7 @@ export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS
       totalOutputTokens: 0,
       failureCategoryBreakdown: {},
       learningCategoryDistribution: {},
+      phaseTokenRatios: [],
     };
   }
 
@@ -713,8 +764,9 @@ export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS
   }
 
   const learningCategoryDistribution = getLearningCategoryDistribution(db);
+  const phaseTokenRatios = getPhaseTokensByPhase(db, cycleNumbers);
 
-  return { totalCycles, successRate, avgImprovements, avgConversionRate, testCountTrend, recentFailures, avgDurationMinutes, totalCostUsd, avgCostPerCycle, totalInputTokens, totalOutputTokens, failureCategoryBreakdown, learningCategoryDistribution };
+  return { totalCycles, successRate, avgImprovements, avgConversionRate, testCountTrend, recentFailures, avgDurationMinutes, totalCostUsd, avgCostPerCycle, totalInputTokens, totalOutputTokens, failureCategoryBreakdown, learningCategoryDistribution, phaseTokenRatios };
 }
 
 /**
@@ -781,6 +833,16 @@ export function formatCycleStats(stats: CycleStats): string {
       .map(([cat, count]) => `${count} ${cat}`)
       .join(", ");
     lines.push(`- **Learnings by category**: ${dist}`);
+  }
+  if (stats.phaseTokenRatios.length > 0) {
+    const fmtTokens = (n: number) => n >= TOKEN_DISPLAY_THRESHOLD ? `${Math.round(n / TOKEN_DISPLAY_THRESHOLD)}k` : `${n}`;
+    const phaseDetails = stats.phaseTokenRatios
+      .map(p => {
+        const ratioStr = p.ratio !== null ? ` (ratio: ${p.ratio.toFixed(2)})` : "";
+        return `${p.phase}: ${fmtTokens(p.inputTokens)} in / ${fmtTokens(p.outputTokens)} out${ratioStr}`;
+      })
+      .join(", ");
+    lines.push(`- **Per-phase token efficiency**: ${phaseDetails}`);
   }
   return lines.join("\n");
 }

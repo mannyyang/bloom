@@ -878,6 +878,7 @@ describe("formatCycleStats", () => {
       totalOutputTokens: 0,
       failureCategoryBreakdown: {},
       learningCategoryDistribution: {},
+      phaseTokenRatios: [],
     };
     expect(formatCycleStats(stats)).toBe("No previous cycle data available.");
   });
@@ -899,6 +900,7 @@ describe("formatCycleStats", () => {
       totalOutputTokens: 0,
       failureCategoryBreakdown: {},
       learningCategoryDistribution: {},
+      phaseTokenRatios: [],
     };
     expect(formatCycleStats(stats)).toBe(
       "- **Cycles tracked**: 1\n" +
@@ -926,6 +928,7 @@ describe("formatCycleStats", () => {
       totalOutputTokens: 80000,
       failureCategoryBreakdown: { build_failure: 1 },
       learningCategoryDistribution: {},
+      phaseTokenRatios: [],
     };
     expect(formatCycleStats(stats)).toBe(
       "- **Cycles tracked**: 2\n" +
@@ -955,6 +958,7 @@ describe("formatCycleStats", () => {
       totalOutputTokens: 0,
       failureCategoryBreakdown: {},
       learningCategoryDistribution: { domain: 12, pattern: 5, "anti-pattern": 3 },
+      phaseTokenRatios: [],
     };
     const result = formatCycleStats(stats);
     expect(result).toContain("Learnings by category");
@@ -978,6 +982,7 @@ describe("formatCycleStats", () => {
       totalOutputTokens: 0,
       failureCategoryBreakdown: {},
       learningCategoryDistribution: {},
+      phaseTokenRatios: [],
     };
     expect(formatCycleStats(stats)).not.toContain("Learnings by category");
   });

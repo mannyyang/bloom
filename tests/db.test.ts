@@ -26,6 +26,7 @@ import {
   getCycleRows,
   getLastUpdatedCyclePerCategory,
   getLearningCategoryDistribution,
+  getPhaseTokensByPhase,
   getRelevantLearnings,
   CYCLE_STATS_HISTORY_LIMIT,
   RELEVANT_LEARNINGS_LIMIT,
@@ -1340,6 +1341,7 @@ describe("db", () => {
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
         failureCategoryBreakdown: {},
         learningCategoryDistribution: {},
+        phaseTokenRatios: [],
       });
       expect(result).toBe("No previous cycle data available.");
     });
@@ -1352,6 +1354,7 @@ describe("db", () => {
         totalInputTokens: 50000, totalOutputTokens: 25000,
         failureCategoryBreakdown: {},
         learningCategoryDistribution: {},
+        phaseTokenRatios: [],
       });
       expect(result).toContain("10");
       expect(result).toContain("80%");
@@ -1371,6 +1374,7 @@ describe("db", () => {
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
         failureCategoryBreakdown: {},
         learningCategoryDistribution: {},
+        phaseTokenRatios: [],
       });
       expect(result).not.toContain("Conversion rate");
     });
@@ -1382,6 +1386,7 @@ describe("db", () => {
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
         failureCategoryBreakdown: {},
         learningCategoryDistribution: {},
+        phaseTokenRatios: [],
       });
       expect(result).toContain("-7");
       expect(result).not.toContain("+-7");
@@ -1394,6 +1399,7 @@ describe("db", () => {
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
         failureCategoryBreakdown: {},
         learningCategoryDistribution: {},
+        phaseTokenRatios: [],
       });
       expect(result).not.toContain("duration");
       expect(result).not.toContain("cost");
@@ -1406,6 +1412,7 @@ describe("db", () => {
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
         failureCategoryBreakdown: {},
         learningCategoryDistribution: {},
+        phaseTokenRatios: [],
       });
       expect(result).not.toContain("tokens");
       expect(result).not.toContain("Cost");
@@ -1419,6 +1426,7 @@ describe("db", () => {
         totalInputTokens: 500, totalOutputTokens: 200,
         failureCategoryBreakdown: {},
         learningCategoryDistribution: {},
+        phaseTokenRatios: [],
       });
       expect(result).toContain("500 in / 200 out tokens");
     });
@@ -1430,6 +1438,7 @@ describe("db", () => {
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
         failureCategoryBreakdown: { test_failure: 3, build_failure: 1 },
         learningCategoryDistribution: {},
+        phaseTokenRatios: [],
       });
       expect(result).toContain("Failure breakdown");
       expect(result).toContain("3 test_failure");
@@ -1443,6 +1452,7 @@ describe("db", () => {
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
         failureCategoryBreakdown: { test_failure: 1 },
         learningCategoryDistribution: {},
+        phaseTokenRatios: [],
       });
       expect(result).not.toContain("Failure breakdown");
     });
@@ -1454,6 +1464,7 @@ describe("db", () => {
         totalCostUsd: 2.50, avgCostPerCycle: 0.83, totalInputTokens: 0, totalOutputTokens: 0,
         failureCategoryBreakdown: {},
         learningCategoryDistribution: {},
+        phaseTokenRatios: [],
       });
       expect(result).toContain("$2.50 total / $0.83 avg");
       expect(result).not.toContain("tokens");
@@ -1466,6 +1477,7 @@ describe("db", () => {
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 500, totalOutputTokens: 200,
         failureCategoryBreakdown: {},
         learningCategoryDistribution: {},
+        phaseTokenRatios: [],
       });
       expect(result).toContain("500 in / 200 out tokens");
       expect(result).not.toContain("$");
@@ -1478,6 +1490,7 @@ describe("db", () => {
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 400, totalOutputTokens: 0,
         failureCategoryBreakdown: {},
         learningCategoryDistribution: {},
+        phaseTokenRatios: [],
       });
       expect(result).toContain("400 in / 0 out tokens");
       expect(result).not.toContain("$");
@@ -1490,6 +1503,7 @@ describe("db", () => {
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 300,
         failureCategoryBreakdown: {},
         learningCategoryDistribution: {},
+        phaseTokenRatios: [],
       });
       expect(result).toContain("0 in / 300 out tokens");
       expect(result).not.toContain("$");
@@ -1502,8 +1516,129 @@ describe("db", () => {
         totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
         failureCategoryBreakdown: {},
         learningCategoryDistribution: {},
+        phaseTokenRatios: [],
       });
       expect(result).not.toContain("Failure breakdown");
+    });
+
+    it("omits per-phase token efficiency bullet when phaseTokenRatios is empty", () => {
+      const result = formatCycleStats({
+        totalCycles: 1, successRate: 100, avgImprovements: 1, avgConversionRate: null,
+        testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
+        totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
+        failureCategoryBreakdown: {},
+        learningCategoryDistribution: {},
+        phaseTokenRatios: [],
+      });
+      expect(result).not.toContain("Per-phase token efficiency");
+    });
+
+    it("renders per-phase token efficiency bullet when phaseTokenRatios is non-empty", () => {
+      const result = formatCycleStats({
+        totalCycles: 1, successRate: 100, avgImprovements: 1, avgConversionRate: null,
+        testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
+        totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
+        failureCategoryBreakdown: {},
+        learningCategoryDistribution: {},
+        phaseTokenRatios: [
+          { phase: "assess", inputTokens: 45000, outputTokens: 8000, ratio: 0.178 },
+          { phase: "evolve", inputTokens: 120000, outputTokens: 3000, ratio: 0.025 },
+        ],
+      });
+      expect(result).toContain("Per-phase token efficiency");
+      expect(result).toContain("assess: 45k in / 8k out");
+      expect(result).toContain("evolve: 120k in / 3k out");
+    });
+
+    it("renders null ratio as omitted ratio string when inputTokens is 0", () => {
+      const result = formatCycleStats({
+        totalCycles: 1, successRate: 100, avgImprovements: 1, avgConversionRate: null,
+        testCountTrend: null, recentFailures: 0, avgDurationMinutes: null,
+        totalCostUsd: 0, avgCostPerCycle: 0, totalInputTokens: 0, totalOutputTokens: 0,
+        failureCategoryBreakdown: {},
+        learningCategoryDistribution: {},
+        phaseTokenRatios: [
+          { phase: "assess", inputTokens: 0, outputTokens: 50, ratio: null },
+        ],
+      });
+      expect(result).toContain("Per-phase token efficiency");
+      expect(result).toContain("assess: 0 in / 50 out");
+      // ratio string is omitted when ratio is null
+      expect(result).not.toContain("ratio:");
+    });
+  });
+
+  describe("getPhaseTokensByPhase", () => {
+    it("returns empty array when cycleNumbers is empty", () => {
+      expect(getPhaseTokensByPhase(db, [])).toEqual([]);
+    });
+
+    it("returns empty array when no phase_usage rows exist for given cycles", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      expect(getPhaseTokensByPhase(db, [1])).toEqual([]);
+    });
+
+    it("aggregates tokens per phase across multiple cycles", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+      insertPhaseUsage(db, 1, { phase: "assess", totalCostUsd: 0.1, inputTokens: 10000, outputTokens: 2000, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, durationMs: 1000, numTurns: 3 });
+      insertPhaseUsage(db, 2, { phase: "assess", totalCostUsd: 0.1, inputTokens: 5000, outputTokens: 1000, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, durationMs: 1000, numTurns: 2 });
+      insertPhaseUsage(db, 1, { phase: "evolve", totalCostUsd: 0.2, inputTokens: 20000, outputTokens: 500, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, durationMs: 2000, numTurns: 5 });
+
+      const result = getPhaseTokensByPhase(db, [1, 2]);
+      // ordered by total_input DESC: evolve (20000) > assess (15000)
+      expect(result).toHaveLength(2);
+      expect(result[0].phase).toBe("evolve");
+      expect(result[0].inputTokens).toBe(20000);
+      expect(result[0].outputTokens).toBe(500);
+      expect(result[1].phase).toBe("assess");
+      expect(result[1].inputTokens).toBe(15000);
+      expect(result[1].outputTokens).toBe(3000);
+    });
+
+    it("computes ratio as outputTokens/inputTokens rounded to 3 decimal places", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertPhaseUsage(db, 1, { phase: "assess", totalCostUsd: 0.1, inputTokens: 9000, outputTokens: 1000, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, durationMs: 1000, numTurns: 1 });
+
+      const result = getPhaseTokensByPhase(db, [1]);
+      expect(result).toHaveLength(1);
+      expect(result[0].ratio).toBe(0.111); // 1000/9000 = 0.1111... → 0.111
+    });
+
+    it("sets ratio to null when inputTokens is 0", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertPhaseUsage(db, 1, { phase: "assess", totalCostUsd: 0, inputTokens: 0, outputTokens: 50, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, durationMs: 100, numTurns: 1 });
+
+      const result = getPhaseTokensByPhase(db, [1]);
+      expect(result).toHaveLength(1);
+      expect(result[0].ratio).toBeNull();
+    });
+
+    it("getCycleStats includes phaseTokenRatios when phase_usage data exists", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertPhaseUsage(db, 1, { phase: "assess", totalCostUsd: 0.1, inputTokens: 8000, outputTokens: 500, cacheReadInputTokens: 0, cacheCreationInputTokens: 0, durationMs: 1000, numTurns: 2 });
+
+      const stats = getCycleStats(db);
+      expect(stats.phaseTokenRatios).toHaveLength(1);
+      expect(stats.phaseTokenRatios[0].phase).toBe("assess");
+      expect(stats.phaseTokenRatios[0].inputTokens).toBe(8000);
+      expect(stats.phaseTokenRatios[0].outputTokens).toBe(500);
+      // 500/8000 = 0.0625 → Math.round(0.0625 * 1000) / 1000 = Math.round(62.5) / 1000 = 63/1000 = 0.063
+      expect(stats.phaseTokenRatios[0].ratio).toBe(0.063);
+    });
+
+    it("getCycleStats returns phaseTokenRatios as empty array when no phase_usage rows exist", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      // No phase_usage rows inserted
+      const stats = getCycleStats(db);
+      expect(stats.phaseTokenRatios).toEqual([]);
+    });
+
+    it("getCycleStats returns phaseTokenRatios as empty array when no cycles exist (early-return path)", () => {
+      // No cycles at all — exercises the early-return zero-value path
+      const stats = getCycleStats(db);
+      expect(stats.totalCycles).toBe(0);
+      expect(stats.phaseTokenRatios).toEqual([]);
     });
   });
 
