@@ -244,6 +244,22 @@ function pad(s: string, width: number, right = false): string {
 }
 
 /**
+ * Apply sinceN and categoryFilter to an array of CycleRows, returning the filtered subset.
+ * Extracted from the repeated filter pattern in generateStatsTable, generateStatsCsv, and
+ * generateStatsJson — a single point of truth so filter logic changes need one edit, not three.
+ * Exported for unit-testability.
+ */
+export function applyRowFilters(rows: CycleRow[], sinceN?: number, categoryFilter?: string): CycleRow[] {
+  if (sinceN !== undefined) {
+    rows = rows.filter((r: CycleRow) => r.cycleNumber >= sinceN);
+  }
+  if (categoryFilter !== undefined) {
+    rows = rows.filter((r: CycleRow) => (r.failureCategory ?? ERROR_CATEGORY_NONE) === categoryFilter);
+  }
+  return rows;
+}
+
+/**
  * Compute the effective row-fetch limit to pass to getCycleStats / getCycleRows.
  *
  * When sinceN or categoryFilter is provided without an explicit lastN we must
@@ -272,13 +288,7 @@ export function computeEffectiveLimit(lastN?: number, sinceN?: number, categoryF
  */
 export function generateStatsTable(db: Database.Database, lastN?: number, verbose?: boolean, sinceN?: number, categoryFilter?: string): string {
   const effectiveLimit = computeEffectiveLimit(lastN, sinceN, categoryFilter);
-  let rows = getCycleRows(db, effectiveLimit);
-  if (sinceN !== undefined) {
-    rows = rows.filter((r: CycleRow) => r.cycleNumber >= sinceN);
-  }
-  if (categoryFilter !== undefined) {
-    rows = rows.filter((r: CycleRow) => (r.failureCategory ?? ERROR_CATEGORY_NONE) === categoryFilter);
-  }
+  let rows = applyRowFilters(getCycleRows(db, effectiveLimit), sinceN, categoryFilter);
   if (rows.length === 0) return "";
 
   const baseHeaderCells = [
@@ -374,13 +384,7 @@ export function generateStatsCsvFromRows(rows: CycleRow[]): string {
  */
 export function generateStatsCsv(db: Database.Database, lastN?: number, sinceN?: number, categoryFilter?: string): string {
   const effectiveLimit = computeEffectiveLimit(lastN, sinceN, categoryFilter);
-  let rows = getCycleRows(db, effectiveLimit);
-  if (sinceN !== undefined) {
-    rows = rows.filter((r: CycleRow) => r.cycleNumber >= sinceN);
-  }
-  if (categoryFilter !== undefined) {
-    rows = rows.filter((r: CycleRow) => (r.failureCategory ?? ERROR_CATEGORY_NONE) === categoryFilter);
-  }
+  const rows = applyRowFilters(getCycleRows(db, effectiveLimit), sinceN, categoryFilter);
   return generateStatsCsvFromRows(rows);
 }
 
@@ -498,13 +502,7 @@ export function generateStatsJson(
 
   // Apply same filtering logic as generateStatsTable so rows are consistent
   // with the stats aggregate.
-  let rows = getCycleRows(db, effectiveLimit);
-  if (sinceN !== undefined) {
-    rows = rows.filter((r: CycleRow) => r.cycleNumber >= sinceN);
-  }
-  if (categoryFilter !== undefined) {
-    rows = rows.filter((r: CycleRow) => (r.failureCategory ?? ERROR_CATEGORY_NONE) === categoryFilter);
-  }
+  const rows = applyRowFilters(getCycleRows(db, effectiveLimit), sinceN, categoryFilter);
 
   const result: StatsJsonOutput = {
     latestCycle, window: lastN ?? null, since: sinceN ?? null, category: categoryFilter ?? null, generatedAt: new Date().toISOString(), stats, rows,
