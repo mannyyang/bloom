@@ -552,6 +552,7 @@ function main() {
   const tableMode = parseTableFlag(process.argv);
   const verbose = parseVerboseFlag(process.argv);
   const db = initDb();
+  const effectiveLimit = computeEffectiveLimit(lastN, sinceN, categoryFilter);
 
   let costAlertTriggered = false;
   try {
@@ -571,7 +572,6 @@ function main() {
     }
 
     if (costAlertThreshold !== undefined) {
-      const effectiveLimit = computeEffectiveLimit(lastN, sinceN, categoryFilter);
       const stats = getCycleStats(db, effectiveLimit, sinceN, categoryFilter);
       const warning = checkCostAlert(stats.avgCostPerCycle, costAlertThreshold);
       if (warning !== null) {
