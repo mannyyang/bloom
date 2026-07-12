@@ -1,13 +1,14 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Improve assessment-phase reliability: when the assessment agent produces no readable text output (0 useful turns), log the raw SDK messages at debug level so maintainers can diagnose whether the issue is a model timeout, a tool-loop, or a prompt problem.
 
 ## Up Next
 
 ## In Progress
 
 ## Done
+- [x] Improve assessment-phase reliability: when the assessment agent produces no readable text output (0 useful turns), log the raw SDK messages at debug level so maintainers can diagnose whether the issue is a model timeout, a tool-loop, or a prompt problem.
+  Completed: raw-message collection and `console.debug` dump implemented in both `assess.ts` and `agent-phases.ts` (`runAssessmentPhase`); 2 dedicated tests cover the debug-fires and debug-suppressed paths.
 - [x] Add `pnpm context --verbose` CLI to print the full evolution context (identity, journal, memory, planning) without running any LLM, enabling cost-free prompt inspection and debugging of the context-loading pipeline.
   Completed in cycle 788: 3/3 improvements succeeded.
 - [x] Extract the shared roadmap-empty sentinel logic from `assess.ts` and `context.ts` into a single exported helper (e.g. `injectRoadmapEmptyWarning`) to eliminate the duplicated check and make future wording changes a one-line edit.
