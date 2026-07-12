@@ -10,6 +10,7 @@
 
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
+import { writeFileSync } from "node:fs";
 import type Database from "better-sqlite3";
 import { initDb, getCycleStats, formatCycleStats, getLatestCycleNumber, getCycleRows, getLastUpdatedCyclePerCategory, CYCLE_SUMMARY_SEPARATOR, MS_PER_MINUTE, type CycleStats, type CycleRow, type CategoryStaleness } from "./db.js";
 import { formatMemoryForPrompt } from "./memory.js";
@@ -129,6 +130,20 @@ export function parseTrendArg(argv: string[]): number | undefined {
 }
 
 /**
+ * Parse `--output-file <path>` from an argv array, returning the path string
+ * when the flag is present and followed by a non-flag value, or undefined when
+ * the flag is absent, its value is missing, or the value starts with `--`.
+ * Exported so tests can verify parsing without touching process.argv.
+ */
+export function parseOutputFileArg(argv: string[]): string | undefined {
+  const idx = argv.indexOf("--output-file");
+  if (idx === -1) return undefined;
+  const val = argv[idx + 1];
+  if (!val || val.startsWith("--")) return undefined;
+  return val;
+}
+
+/**
  * Parse `--cost-alert <USD>` from an argv array, returning the threshold as a
  * non-negative finite number, or undefined when the flag is absent, its value
  * is missing, or the value is not a valid non-negative number.
@@ -213,6 +228,7 @@ Options:
   --search <term>       Filter --table/--csv rows by cycle number or failure_category substring
   --trend <N>           Show an ASCII success-rate bar for the last N cycles
   --cost-alert <USD>    Warn and exit non-zero when avg cost/cycle exceeds threshold
+  --output-file <path>  Write output to a file (in addition to stdout)
   --json                Output raw stats as JSON (for scripting/CI)
   --csv                 Output per-cycle data as RFC 4180 CSV (spreadsheet-friendly)
   --table               Output per-cycle data as an ASCII table
@@ -617,6 +633,7 @@ function main() {
   const searchTerm = parseSearchArg(process.argv);
   const trendN = parseTrendArg(process.argv);
   const costAlertThreshold = parseCostAlertArg(process.argv);
+  const outputFile = parseOutputFileArg(process.argv);
   const jsonMode = parseJsonFlag(process.argv);
   const csvMode = parseCsvFlag(process.argv);
   const tableMode = parseTableFlag(process.argv);
@@ -626,21 +643,26 @@ function main() {
 
   let costAlertTriggered = false;
   try {
+    let outputContent: string;
     if (trendN !== undefined) {
-      console.log(generateStatsTrend(db, trendN));
+      outputContent = generateStatsTrend(db, trendN) + "\n";
     } else if (jsonMode) {
       const result = generateStatsJson(db, lastN, verbose, sinceN, undefined, categoryFilter);
-      console.log(JSON.stringify(result, null, 2));
+      outputContent = JSON.stringify(result, null, 2) + "\n";
     } else if (csvMode) {
-      process.stdout.write(generateStatsCsv(db, lastN, sinceN, categoryFilter, searchTerm));
+      outputContent = generateStatsCsv(db, lastN, sinceN, categoryFilter, searchTerm);
     } else if (tableMode) {
       const table = generateStatsTable(db, lastN, verbose, sinceN, categoryFilter, searchTerm);
-      console.log(table || "No evolution cycles recorded yet.");
+      outputContent = (table || "No evolution cycles recorded yet.") + "\n";
     } else {
       const output = generateStatsOutput(db, lastN, verbose, sinceN, undefined, categoryFilter);
-      for (const line of output) {
-        console.log(line);
-      }
+      outputContent = output.join("\n") + "\n";
+    }
+
+    process.stdout.write(outputContent);
+
+    if (outputFile !== undefined) {
+      writeFileSync(outputFile, outputContent, "utf8");
     }
 
     if (costAlertThreshold !== undefined) {

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution, getLastUpdatedCyclePerCategory } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseCsvFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, parseTrendArg, parseCostAlertArg, checkCostAlert, generateStatsJson, generateStatsTable, generateStatsTrend, renderTrendBar, TREND_BAR_CHARS, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES, COL_COST, generateStatsCsvFromRows, generateStatsCsv, STATS_CSV_HEADER } from "../src/stats.js";
+import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseCsvFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, parseTrendArg, parseCostAlertArg, parseOutputFileArg, checkCostAlert, generateStatsJson, generateStatsTable, generateStatsTrend, renderTrendBar, TREND_BAR_CHARS, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES, COL_COST, generateStatsCsvFromRows, generateStatsCsv, STATS_CSV_HEADER } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE, ERROR_CATEGORY_LLM_ERROR } from "../src/errors.js";
 import { MAX_MEMORY_CHARS } from "../src/memory.js";
@@ -71,6 +71,7 @@ describe("STATS_HELP_TEXT", () => {
       `  --search <term>       Filter --table/--csv rows by cycle number or failure_category substring\n` +
       `  --trend <N>           Show an ASCII success-rate bar for the last N cycles\n` +
       `  --cost-alert <USD>    Warn and exit non-zero when avg cost/cycle exceeds threshold\n` +
+      `  --output-file <path>  Write output to a file (in addition to stdout)\n` +
       `  --json                Output raw stats as JSON (for scripting/CI)\n` +
       `  --csv                 Output per-cycle data as RFC 4180 CSV (spreadsheet-friendly)\n` +
       `  --table               Output per-cycle data as an ASCII table\n` +
@@ -104,6 +105,24 @@ describe("parseCostAlertArg", () => {
   });
   it("returns undefined when value is negative", () => {
     expect(parseCostAlertArg(["node", "stats.js", "--cost-alert", "-1"])).toBeUndefined();
+  });
+});
+
+describe("parseOutputFileArg", () => {
+  it("returns undefined when --output-file is absent", () => {
+    expect(parseOutputFileArg(["node", "stats.js", "--table"])).toBeUndefined();
+  });
+  it("returns the path string when --output-file is present", () => {
+    expect(parseOutputFileArg(["node", "stats.js", "--output-file", "/tmp/out.txt"])).toBe("/tmp/out.txt");
+  });
+  it("returns undefined when value is missing (next arg is a flag)", () => {
+    expect(parseOutputFileArg(["node", "stats.js", "--output-file", "--json"])).toBeUndefined();
+  });
+  it("returns undefined when flag is last arg (no value follows)", () => {
+    expect(parseOutputFileArg(["node", "stats.js", "--output-file"])).toBeUndefined();
+  });
+  it("accepts a relative path", () => {
+    expect(parseOutputFileArg(["node", "stats.js", "--output-file", "stats-out.json"])).toBe("stats-out.json");
   });
 });
 
