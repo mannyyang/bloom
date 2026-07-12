@@ -1,15 +1,17 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Add `pnpm stats --search <term>` to filter table/CSV rows by failure_category or cycle number substring, consistent with the `--search` flag already on `pnpm journal` and `pnpm roadmap`; `parseSearchArg` is already exported from `stats.ts`.
-- [ ] Add `pnpm stats --output-file <path>` to write stats output to a file instead of stdout, enabling CI artifact capture without shell redirection.
 - [ ] Add `sinceCycle` duration to `pnpm stats --table --verbose`: show how long each consecutive failure run lasted without switching to JSON mode.
 
 ## Up Next
 
 ## In Progress
+- [ ] Add `pnpm stats --search <term>` to filter table/CSV rows by failure_category or cycle number substring, consistent with the `--search` flag already on `pnpm journal` and `pnpm roadmap`; `parseSearchArg` is already exported from `stats.ts`.
+  [since: 794]
 
 ## Done
+- [x] Add `pnpm stats --output-file <path>` to write stats output to a file instead of stdout, enabling CI artifact capture without shell redirection.
+  Completed in cycle 794: 2/2 improvements succeeded.
 - [x] Surface per-phase token efficiency ratios (output/input tokens) in assessment context, giving the LLM a concrete signal for which phases are token-heavy so it can prioritise prompt-compression improvements in those phases.
   Completed in cycle 791: 1/3 improvements succeeded.
 - [x] Improve assessment-phase reliability: when the assessment agent produces no readable text output (0 useful turns), log the raw SDK messages at debug level so maintainers can diagnose whether the issue is a model timeout, a tool-loop, or a prompt problem.
