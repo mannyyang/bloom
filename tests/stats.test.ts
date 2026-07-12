@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution, getLastUpdatedCyclePerCategory } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, parseTrendArg, parseCostAlertArg, checkCostAlert, generateStatsJson, generateStatsTable, generateStatsTrend, renderTrendBar, TREND_BAR_CHARS, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES } from "../src/stats.js";
+import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, parseTrendArg, parseCostAlertArg, checkCostAlert, generateStatsJson, generateStatsTable, generateStatsTrend, renderTrendBar, TREND_BAR_CHARS, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES, COL_COST } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE, ERROR_CATEGORY_LLM_ERROR } from "../src/errors.js";
 import { MAX_MEMORY_CHARS } from "../src/memory.js";
@@ -1187,6 +1187,7 @@ describe("generateStatsTable", () => {
     expect(table).toContain("Build");
     expect(table).toContain("Push");
     expect(table).toContain("Duration");
+    expect(table).toContain("Cost");
   });
 
   it("includes a separator row of dashes", () => {
@@ -1262,6 +1263,7 @@ describe("generateStatsTable", () => {
   it("renders an exact data row for fully-known cycle values (non-verbose)", () => {
     // Pin the exact cell layout so a column-width or padding regression is
     // caught immediately. All inputs are fully-determined (no nulls).
+    // No phase_usage inserted, so totalCostUsd=0 → Cost column shows "—".
     insertCycle(db, makeOutcome({
       cycleNumber: 7,
       improvementsAttempted: 2,
@@ -1280,8 +1282,39 @@ describe("generateStatsTable", () => {
       "✓     ",      // padEnd(6)
       "✓    ",       // padEnd(5)
       "   1.5 min",  // padStart(10)
+      "       —",    // padStart(8) — no phase_usage, cost=0 → em-dash
     ];
     expect(dataRow).toBe(expectedCells.join("  "));
+  });
+
+  it("shows em-dash in Cost column when no phase_usage exists for cycle", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    const table = generateStatsTable(db);
+    // Cost column header is present
+    expect(table).toContain("Cost");
+    // Data row shows STATS_NO_FAILURE_SYMBOL (em-dash) for zero cost
+    const dataRow = table.split("\n")[2];
+    expect(dataRow).toContain(STATS_NO_FAILURE_SYMBOL);
+  });
+
+  it("shows formatted $X.XX in Cost column when phase_usage has cost", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertPhaseUsage(db, 1, {
+      phase: "assessment",
+      totalCostUsd: 0.38,
+      inputTokens: 1000,
+      outputTokens: 200,
+      cacheReadInputTokens: 0,
+      cacheCreationInputTokens: 0,
+      durationMs: 5000,
+      numTurns: 5,
+    });
+    const table = generateStatsTable(db);
+    expect(table).toContain("$0.38");
+  });
+
+  it("COL_COST is 8 — pinned to detect accidental size reduction", () => {
+    expect(COL_COST).toBe(8);
   });
 
   it("rows are ordered newest-first (highest cycle number at top)", () => {
@@ -2316,27 +2349,27 @@ describe("renderTrendBar", () => {
   });
 
   it("renders full block for a successful cycle", () => {
-    const rows = [{ cycleNumber: 1, attempted: 1, succeeded: 1, buildPassed: true, pushed: true, durationMs: null, failureCategory: null }];
+    const rows = [{ cycleNumber: 1, attempted: 1, succeeded: 1, buildPassed: true, pushed: true, durationMs: null, failureCategory: null, totalCostUsd: 0 }];
     expect(renderTrendBar(rows)).toContain(TREND_BAR_CHARS[3]); // "█"
   });
 
   it("renders low block for a failed cycle", () => {
-    const rows = [{ cycleNumber: 1, attempted: 0, succeeded: 0, buildPassed: false, pushed: false, durationMs: null, failureCategory: null }];
+    const rows = [{ cycleNumber: 1, attempted: 0, succeeded: 0, buildPassed: false, pushed: false, durationMs: null, failureCategory: null, totalCostUsd: 0 }];
     expect(renderTrendBar(rows)).toContain(TREND_BAR_CHARS[0]); // "▁"
   });
 
   it("includes a trailing percentage", () => {
     const rows = [
-      { cycleNumber: 1, attempted: 1, succeeded: 1, buildPassed: true, pushed: true, durationMs: null, failureCategory: null },
-      { cycleNumber: 2, attempted: 1, succeeded: 1, buildPassed: true, pushed: true, durationMs: null, failureCategory: null },
+      { cycleNumber: 1, attempted: 1, succeeded: 1, buildPassed: true, pushed: true, durationMs: null, failureCategory: null, totalCostUsd: 0 },
+      { cycleNumber: 2, attempted: 1, succeeded: 1, buildPassed: true, pushed: true, durationMs: null, failureCategory: null, totalCostUsd: 0 },
     ];
     expect(renderTrendBar(rows)).toContain("100%");
   });
 
   it("computes 50% for one success and one failure", () => {
     const rows = [
-      { cycleNumber: 1, attempted: 1, succeeded: 1, buildPassed: true, pushed: true, durationMs: null, failureCategory: null },
-      { cycleNumber: 2, attempted: 0, succeeded: 0, buildPassed: false, pushed: false, durationMs: null, failureCategory: null },
+      { cycleNumber: 1, attempted: 1, succeeded: 1, buildPassed: true, pushed: true, durationMs: null, failureCategory: null, totalCostUsd: 0 },
+      { cycleNumber: 2, attempted: 0, succeeded: 0, buildPassed: false, pushed: false, durationMs: null, failureCategory: null, totalCostUsd: 0 },
     ];
     expect(renderTrendBar(rows)).toContain("50%");
   });
@@ -2344,9 +2377,9 @@ describe("renderTrendBar", () => {
   it("renders oldest cycle first (reverse of input order)", () => {
     // Input is newest-first (as returned by getCycleRows). After .reverse(), oldest is leftmost.
     const rows = [
-      { cycleNumber: 3, attempted: 1, succeeded: 1, buildPassed: false, pushed: false, durationMs: null, failureCategory: null }, // newest
-      { cycleNumber: 2, attempted: 1, succeeded: 1, buildPassed: true, pushed: true, durationMs: null, failureCategory: null },
-      { cycleNumber: 1, attempted: 1, succeeded: 1, buildPassed: true, pushed: true, durationMs: null, failureCategory: null },  // oldest
+      { cycleNumber: 3, attempted: 1, succeeded: 1, buildPassed: false, pushed: false, durationMs: null, failureCategory: null, totalCostUsd: 0 }, // newest
+      { cycleNumber: 2, attempted: 1, succeeded: 1, buildPassed: true, pushed: true, durationMs: null, failureCategory: null, totalCostUsd: 0 },
+      { cycleNumber: 1, attempted: 1, succeeded: 1, buildPassed: true, pushed: true, durationMs: null, failureCategory: null, totalCostUsd: 0 },  // oldest
     ];
     const bar = renderTrendBar(rows);
     // oldest(1)=█, middle(2)=█, newest(3)=▁ → "██▁"

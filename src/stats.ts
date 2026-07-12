@@ -216,6 +216,12 @@ const COL_BUILD = 6;
 const COL_PUSH = 5;
 const COL_DURATION = 10;
 /**
+ * Width of the Cost column in the ASCII stats table.
+ * Wide enough for "$999.99" (7 chars) plus padding.
+ * Exported so tests can assert this invariant.
+ */
+export const COL_COST = 8;
+/**
  * Width of the Failures column in the verbose ASCII table.
  * Must be >= the length of every ErrorCategory string so no category value
  * is silently truncated. Exported so tests can assert this invariant.
@@ -271,6 +277,7 @@ export function generateStatsTable(db: Database.Database, lastN?: number, verbos
     pad("Build", COL_BUILD),
     pad("Push", COL_PUSH),
     pad("Duration", COL_DURATION, true),
+    pad("Cost", COL_COST, true),
   ];
   const baseSepCells = [
     "-".repeat(COL_CYCLE),
@@ -279,6 +286,7 @@ export function generateStatsTable(db: Database.Database, lastN?: number, verbos
     "-".repeat(COL_BUILD),
     "-".repeat(COL_PUSH),
     "-".repeat(COL_DURATION),
+    "-".repeat(COL_COST),
   ];
 
   if (verbose) {
@@ -293,6 +301,7 @@ export function generateStatsTable(db: Database.Database, lastN?: number, verbos
     const durationStr = r.durationMs !== null
       ? `${(r.durationMs / MS_PER_MINUTE).toFixed(1)} min`
       : STATS_NO_DURATION_SYMBOL;
+    const costStr = r.totalCostUsd > 0 ? `$${r.totalCostUsd.toFixed(2)}` : STATS_NO_FAILURE_SYMBOL;
     const cells = [
       pad(String(r.cycleNumber), COL_CYCLE, true),
       pad(String(r.attempted), COL_ATTEMPTED, true),
@@ -300,6 +309,7 @@ export function generateStatsTable(db: Database.Database, lastN?: number, verbos
       pad(r.buildPassed ? "✓" : "✗", COL_BUILD),
       pad(r.pushed ? "✓" : "✗", COL_PUSH),
       pad(durationStr, COL_DURATION, true),
+      pad(costStr, COL_COST, true),
     ];
     if (verbose) {
       const cat = r.failureCategory && r.failureCategory !== ERROR_CATEGORY_NONE ? r.failureCategory : STATS_NO_FAILURE_SYMBOL;

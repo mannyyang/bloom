@@ -238,11 +238,15 @@ export interface CycleRow {
   pushed: boolean;
   durationMs: number | null;
   failureCategory: string | null;
+  /** Total cost in USD for this cycle, summed from phase_usage. 0 when no usage rows exist. */
+  totalCostUsd: number;
 }
 
 /**
  * Fetch the most recent `limit` cycles ordered newest-first.
  * Returns a lightweight row per cycle suitable for tabular display.
+ * `totalCostUsd` is populated via a LEFT JOIN on phase_usage so each row
+ * includes its cost without a separate query per cycle.
  */
 export function getCycleRows(db: Database.Database, limit: number = CYCLE_STATS_HISTORY_LIMIT): CycleRow[] {
   type RawRow = {
@@ -253,13 +257,20 @@ export function getCycleRows(db: Database.Database, limit: number = CYCLE_STATS_
     push_succeeded: number;
     duration_ms: number | null;
     failure_category: string | null;
+    total_cost: number;
   };
   const rows = validateRows<RawRow>(
     db.prepare(`
-      SELECT cycle_number, improvements_attempted, improvements_succeeded,
-             build_verification_passed, push_succeeded, duration_ms, failure_category
-      FROM cycles
-      ORDER BY cycle_number DESC
+      SELECT c.cycle_number, c.improvements_attempted, c.improvements_succeeded,
+             c.build_verification_passed, c.push_succeeded, c.duration_ms, c.failure_category,
+             COALESCE(p.total_cost, 0) as total_cost
+      FROM cycles c
+      LEFT JOIN (
+        SELECT cycle_number, SUM(cost_usd) as total_cost
+        FROM phase_usage
+        GROUP BY cycle_number
+      ) p ON p.cycle_number = c.cycle_number
+      ORDER BY c.cycle_number DESC
       LIMIT ?
     `).all(limit),
     {
@@ -270,6 +281,7 @@ export function getCycleRows(db: Database.Database, limit: number = CYCLE_STATS_
       push_succeeded: "number",
       duration_ms: "number?",
       failure_category: "string?",
+      total_cost: "number",
     },
     "getCycleRows",
   );
@@ -281,6 +293,7 @@ export function getCycleRows(db: Database.Database, limit: number = CYCLE_STATS_
     pushed: r.push_succeeded === 1,
     durationMs: r.duration_ms,
     failureCategory: r.failure_category,
+    totalCostUsd: r.total_cost,
   }));
 }
 
