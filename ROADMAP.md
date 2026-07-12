@@ -1,13 +1,14 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Surface per-phase token efficiency ratios (output/input tokens) in assessment context, giving the LLM a concrete signal for which phases are token-heavy so it can prioritise prompt-compression improvements in those phases.
 
 ## Up Next
 
 ## In Progress
 
 ## Done
+- [x] Surface per-phase token efficiency ratios (output/input tokens) in assessment context, giving the LLM a concrete signal for which phases are token-heavy so it can prioritise prompt-compression improvements in those phases.
+  Completed in cycle 791: 1/3 improvements succeeded.
 - [x] Improve assessment-phase reliability: when the assessment agent produces no readable text output (0 useful turns), log the raw SDK messages at debug level so maintainers can diagnose whether the issue is a model timeout, a tool-loop, or a prompt problem.
   Completed in cycle 789: 2/3 improvements succeeded.
 - [x] Add `pnpm context --verbose` CLI to print the full evolution context (identity, journal, memory, planning) without running any LLM, enabling cost-free prompt inspection and debugging of the context-loading pipeline.
