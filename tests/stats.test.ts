@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution, getLastUpdatedCyclePerCategory } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, parseTrendArg, generateStatsJson, generateStatsTable, generateStatsTrend, renderTrendBar, TREND_BAR_CHARS, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES } from "../src/stats.js";
+import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, parseTrendArg, parseCostAlertArg, checkCostAlert, generateStatsJson, generateStatsTable, generateStatsTrend, renderTrendBar, TREND_BAR_CHARS, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE, ERROR_CATEGORY_LLM_ERROR } from "../src/errors.js";
 import { MAX_MEMORY_CHARS } from "../src/memory.js";
@@ -69,10 +69,59 @@ describe("STATS_HELP_TEXT", () => {
       `  --since <N>           Show stats starting from cycle number N (inclusive)\n` +
       `  --category <CAT>      Filter to cycles matching failure_category (e.g. build_failure, none)\n` +
       `  --trend <N>           Show an ASCII success-rate bar for the last N cycles\n` +
+      `  --cost-alert <USD>    Warn and exit non-zero when avg cost/cycle exceeds threshold\n` +
       `  --json                Output raw stats as JSON (for scripting/CI)\n` +
       `  --table               Output per-cycle data as an ASCII table\n` +
       `  --verbose             Include extra detail (staleness data, safety pattern count, or Failures column)\n` +
       `  --help, -h            Print this help message and exit\n`,
+    );
+  });
+});
+
+describe("parseCostAlertArg", () => {
+  it("returns undefined when --cost-alert is absent", () => {
+    expect(parseCostAlertArg(["node", "stats.js", "--table"])).toBeUndefined();
+  });
+  it("parses a valid float threshold", () => {
+    expect(parseCostAlertArg(["node", "stats.js", "--cost-alert", "2.50"])).toBe(2.5);
+  });
+  it("parses an integer threshold", () => {
+    expect(parseCostAlertArg(["node", "stats.js", "--cost-alert", "3"])).toBe(3);
+  });
+  it("parses zero as a valid threshold", () => {
+    expect(parseCostAlertArg(["node", "stats.js", "--cost-alert", "0"])).toBe(0);
+  });
+  it("returns undefined when value is missing (next arg is a flag)", () => {
+    expect(parseCostAlertArg(["node", "stats.js", "--cost-alert", "--table"])).toBeUndefined();
+  });
+  it("returns undefined when value is missing (flag is last arg)", () => {
+    expect(parseCostAlertArg(["node", "stats.js", "--cost-alert"])).toBeUndefined();
+  });
+  it("returns undefined when value is non-numeric", () => {
+    expect(parseCostAlertArg(["node", "stats.js", "--cost-alert", "abc"])).toBeUndefined();
+  });
+  it("returns undefined when value is negative", () => {
+    expect(parseCostAlertArg(["node", "stats.js", "--cost-alert", "-1"])).toBeUndefined();
+  });
+});
+
+describe("checkCostAlert", () => {
+  it("returns null when avgCostPerCycle is below threshold", () => {
+    expect(checkCostAlert(1.00, 2.50)).toBeNull();
+  });
+  it("returns null when avgCostPerCycle equals threshold", () => {
+    expect(checkCostAlert(2.50, 2.50)).toBeNull();
+  });
+  it("returns a warning string when avgCostPerCycle exceeds threshold", () => {
+    const result = checkCostAlert(3.00, 2.50);
+    expect(result).not.toBeNull();
+    expect(result).toContain("COST ALERT");
+    expect(result).toContain("$3.00");
+    expect(result).toContain("$2.50");
+  });
+  it("warning message format is pinned", () => {
+    expect(checkCostAlert(3.00, 2.50)).toBe(
+      "COST ALERT: avg cost/cycle $3.00 exceeds threshold $2.50",
     );
   });
 });

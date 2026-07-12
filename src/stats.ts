@@ -128,6 +128,35 @@ export function parseTrendArg(argv: string[]): number | undefined {
 }
 
 /**
+ * Parse `--cost-alert <USD>` from an argv array, returning the threshold as a
+ * non-negative finite number, or undefined when the flag is absent, its value
+ * is missing, or the value is not a valid non-negative number.
+ * Exported so tests can verify parsing without touching process.argv.
+ */
+export function parseCostAlertArg(argv: string[]): number | undefined {
+  const idx = argv.indexOf("--cost-alert");
+  if (idx === -1) return undefined;
+  const raw = argv[idx + 1];
+  if (!raw || raw.startsWith("--")) return undefined;
+  const val = parseFloat(raw);
+  if (!isFinite(val) || val < 0) return undefined;
+  return val;
+}
+
+/**
+ * Check whether `avgCostPerCycle` exceeds `threshold`.
+ * Returns a human-readable warning string when the threshold is exceeded, or
+ * null when the cost is within the threshold.
+ * Exported for unit-testability so callers can assert the exact message format.
+ */
+export function checkCostAlert(avgCostPerCycle: number, threshold: number): string | null {
+  if (avgCostPerCycle > threshold) {
+    return `COST ALERT: avg cost/cycle $${avgCostPerCycle.toFixed(2)} exceeds threshold $${threshold.toFixed(2)}`;
+  }
+  return null;
+}
+
+/**
  * Parse `--json` from an argv array, returning true when the flag is present.
  * Mirrors the pattern of parseLastNArg for consistency.
  */
@@ -172,6 +201,7 @@ Options:
   --since <N>           Show stats starting from cycle number N (inclusive)
   --category <CAT>      Filter to cycles matching failure_category (e.g. build_failure, none)
   --trend <N>           Show an ASCII success-rate bar for the last N cycles
+  --cost-alert <USD>    Warn and exit non-zero when avg cost/cycle exceeds threshold
   --json                Output raw stats as JSON (for scripting/CI)
   --table               Output per-cycle data as an ASCII table
   --verbose             Include extra detail (staleness data, safety pattern count, or Failures column)
@@ -507,11 +537,13 @@ function main() {
   const sinceN = parseSinceArg(process.argv);
   const categoryFilter = parseCategoryArg(process.argv);
   const trendN = parseTrendArg(process.argv);
+  const costAlertThreshold = parseCostAlertArg(process.argv);
   const jsonMode = parseJsonFlag(process.argv);
   const tableMode = parseTableFlag(process.argv);
   const verbose = parseVerboseFlag(process.argv);
   const db = initDb();
 
+  let costAlertTriggered = false;
   try {
     if (trendN !== undefined) {
       console.log(generateStatsTrend(db, trendN));
@@ -527,8 +559,22 @@ function main() {
         console.log(line);
       }
     }
+
+    if (costAlertThreshold !== undefined) {
+      const effectiveLimit = computeEffectiveLimit(lastN, sinceN, categoryFilter);
+      const stats = getCycleStats(db, effectiveLimit, sinceN, categoryFilter);
+      const warning = checkCostAlert(stats.avgCostPerCycle, costAlertThreshold);
+      if (warning !== null) {
+        console.warn(warning);
+        costAlertTriggered = true;
+      }
+    }
   } finally {
     db.close();
+  }
+
+  if (costAlertTriggered) {
+    process.exit(1);
   }
 }
 
