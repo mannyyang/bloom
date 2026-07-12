@@ -16,6 +16,7 @@ import { formatMemoryForPrompt } from "./memory.js";
 import { readRoadmap, parseRoadmap, pickNextItemWithRationale } from "./planning.js";
 import { errorMessage, ERROR_CATEGORY_NONE } from "./errors.js";
 import { DANGEROUS_PATTERNS } from "./safety.js";
+import { csvQuoteField } from "./csv.js";
 
 /**
  * Number of characters of memory to include in the stats preview.
@@ -165,6 +166,15 @@ export function parseJsonFlag(argv: string[]): boolean {
 }
 
 /**
+ * Parse `--csv` from an argv array, returning true when the flag is present.
+ * When true, main() exports per-cycle rows as RFC 4180 CSV instead of the
+ * default summary view. Parallel to --json but spreadsheet-friendly.
+ */
+export function parseCsvFlag(argv: string[]): boolean {
+  return argv.includes("--csv");
+}
+
+/**
  * Parse `--table` from an argv array, returning true when the flag is present.
  * Mirrors the pattern of parseJsonFlag for consistency.
  */
@@ -203,6 +213,7 @@ Options:
   --trend <N>           Show an ASCII success-rate bar for the last N cycles
   --cost-alert <USD>    Warn and exit non-zero when avg cost/cycle exceeds threshold
   --json                Output raw stats as JSON (for scripting/CI)
+  --csv                 Output per-cycle data as RFC 4180 CSV (spreadsheet-friendly)
   --table               Output per-cycle data as an ASCII table
   --verbose             Include extra detail (staleness data, safety pattern count, or Failures column)
   --help, -h            Print this help message and exit
@@ -319,6 +330,58 @@ export function generateStatsTable(db: Database.Database, lastN?: number, verbos
   });
 
   return [header, separator, ...dataRows].join("\n");
+}
+
+/**
+ * CSV header row for generateStatsCsv output.
+ * Columns match the CycleRow fields in declaration order.
+ * Exported so tests can assert the exact header without hard-coding it twice.
+ */
+export const STATS_CSV_HEADER = "cycle,attempted,succeeded,build_passed,pushed,duration_ms,total_cost_usd,failure_category";
+
+/**
+ * Export per-cycle rows as RFC 4180 CSV using the shared csvQuoteField utility.
+ * Produces a header row followed by one data row per cycle, newest-first.
+ * Fields with commas, double-quotes, or newlines are automatically quoted.
+ * Returns just the header row (no data rows) when rows is empty so the output
+ * is always a valid CSV file that can be imported into a spreadsheet tool.
+ *
+ * @param rows - CycleRow array as returned by getCycleRows (newest-first)
+ */
+export function generateStatsCsvFromRows(rows: CycleRow[]): string {
+  const lines: string[] = [STATS_CSV_HEADER];
+  for (const r of rows) {
+    const durationMs = r.durationMs !== null ? String(r.durationMs) : "";
+    const fields = [
+      csvQuoteField(String(r.cycleNumber)),
+      csvQuoteField(String(r.attempted)),
+      csvQuoteField(String(r.succeeded)),
+      csvQuoteField(r.buildPassed ? "true" : "false"),
+      csvQuoteField(r.pushed ? "true" : "false"),
+      csvQuoteField(durationMs),
+      csvQuoteField(r.totalCostUsd > 0 ? r.totalCostUsd.toFixed(4) : "0"),
+      csvQuoteField(r.failureCategory ?? ""),
+    ];
+    lines.push(fields.join(","));
+  }
+  return lines.join("\n") + "\n";
+}
+
+/**
+ * Generate RFC 4180 CSV from the database, applying the same lastN / sinceN /
+ * categoryFilter logic used by generateStatsTable and generateStatsJson.
+ * Returns a CSV string (always includes the header row, even when no cycles exist).
+ */
+export function generateStatsCsv(db: Database.Database, lastN?: number, sinceN?: number, categoryFilter?: string): string {
+  const effectiveLimit = computeEffectiveLimit(lastN, sinceN, categoryFilter);
+  let rows = getCycleRows(db, effectiveLimit);
+  if (sinceN !== undefined) {
+    rows = rows.filter((r: CycleRow) => r.cycleNumber >= sinceN);
+  }
+  if (categoryFilter !== undefined) {
+    rows = rows.filter((r: CycleRow) => (r.failureCategory ?? ERROR_CATEGORY_NONE) === categoryFilter);
+  }
+  return generateStatsCsvFromRows(rows);
 }
 
 /**
@@ -549,6 +612,7 @@ function main() {
   const trendN = parseTrendArg(process.argv);
   const costAlertThreshold = parseCostAlertArg(process.argv);
   const jsonMode = parseJsonFlag(process.argv);
+  const csvMode = parseCsvFlag(process.argv);
   const tableMode = parseTableFlag(process.argv);
   const verbose = parseVerboseFlag(process.argv);
   const db = initDb();
@@ -561,6 +625,8 @@ function main() {
     } else if (jsonMode) {
       const result = generateStatsJson(db, lastN, verbose, sinceN, undefined, categoryFilter);
       console.log(JSON.stringify(result, null, 2));
+    } else if (csvMode) {
+      process.stdout.write(generateStatsCsv(db, lastN, sinceN, categoryFilter));
     } else if (tableMode) {
       const table = generateStatsTable(db, lastN, verbose, sinceN, categoryFilter);
       console.log(table || "No evolution cycles recorded yet.");

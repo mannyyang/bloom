@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution, getLastUpdatedCyclePerCategory } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, parseTrendArg, parseCostAlertArg, checkCostAlert, generateStatsJson, generateStatsTable, generateStatsTrend, renderTrendBar, TREND_BAR_CHARS, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES, COL_COST } from "../src/stats.js";
+import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseCsvFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, parseTrendArg, parseCostAlertArg, checkCostAlert, generateStatsJson, generateStatsTable, generateStatsTrend, renderTrendBar, TREND_BAR_CHARS, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES, COL_COST, generateStatsCsvFromRows, generateStatsCsv, STATS_CSV_HEADER } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE, ERROR_CATEGORY_LLM_ERROR } from "../src/errors.js";
 import { MAX_MEMORY_CHARS } from "../src/memory.js";
@@ -71,6 +71,7 @@ describe("STATS_HELP_TEXT", () => {
       `  --trend <N>           Show an ASCII success-rate bar for the last N cycles\n` +
       `  --cost-alert <USD>    Warn and exit non-zero when avg cost/cycle exceeds threshold\n` +
       `  --json                Output raw stats as JSON (for scripting/CI)\n` +
+      `  --csv                 Output per-cycle data as RFC 4180 CSV (spreadsheet-friendly)\n` +
       `  --table               Output per-cycle data as an ASCII table\n` +
       `  --verbose             Include extra detail (staleness data, safety pattern count, or Failures column)\n` +
       `  --help, -h            Print this help message and exit\n`,
@@ -620,6 +621,127 @@ describe("parseJsonFlag", () => {
 
   it("returns false when only similar-but-not-equal flags are present", () => {
     expect(parseJsonFlag(["node", "stats.js", "--json2", "--JSON"])).toBe(false);
+  });
+});
+
+describe("parseCsvFlag", () => {
+  it("returns false when --csv is absent", () => {
+    expect(parseCsvFlag(["node", "stats.js"])).toBe(false);
+  });
+
+  it("returns true when --csv is present", () => {
+    expect(parseCsvFlag(["node", "stats.js", "--csv"])).toBe(true);
+  });
+
+  it("returns true when --csv appears alongside other flags", () => {
+    expect(parseCsvFlag(["node", "stats.js", "--last", "5", "--csv"])).toBe(true);
+  });
+
+  it("returns false for an empty argv", () => {
+    expect(parseCsvFlag([])).toBe(false);
+  });
+
+  it("returns false when only similar-but-not-equal flags are present", () => {
+    expect(parseCsvFlag(["node", "stats.js", "--csv2", "--CSV"])).toBe(false);
+  });
+});
+
+describe("STATS_CSV_HEADER", () => {
+  it("contains all expected column names", () => {
+    expect(STATS_CSV_HEADER).toBe("cycle,attempted,succeeded,build_passed,pushed,duration_ms,total_cost_usd,failure_category");
+  });
+});
+
+describe("generateStatsCsvFromRows", () => {
+  it("returns only the header row when rows array is empty", () => {
+    const result = generateStatsCsvFromRows([]);
+    expect(result).toBe(STATS_CSV_HEADER + "\n");
+  });
+
+  it("produces a header + one data row per cycle", () => {
+    const rows = [
+      { cycleNumber: 5, attempted: 2, succeeded: 1, buildPassed: true, pushed: true, durationMs: 60000, totalCostUsd: 0.12, failureCategory: null },
+      { cycleNumber: 4, attempted: 1, succeeded: 0, buildPassed: false, pushed: false, durationMs: null, totalCostUsd: 0, failureCategory: "build_failure" },
+    ];
+    const result = generateStatsCsvFromRows(rows);
+    const lines = result.split("\n");
+    expect(lines[0]).toBe(STATS_CSV_HEADER);
+    expect(lines[1]).toBe("5,2,1,true,true,60000,0.1200,");
+    expect(lines[2]).toBe("4,1,0,false,false,,0,build_failure");
+    expect(lines[lines.length - 1]).toBe(""); // trailing newline
+  });
+
+  it("quotes fields containing commas or double-quotes (RFC 4180)", () => {
+    const rows = [
+      { cycleNumber: 1, attempted: 1, succeeded: 1, buildPassed: true, pushed: true, durationMs: 1000, totalCostUsd: 0.01, failureCategory: 'cat,with,commas' },
+    ];
+    const result = generateStatsCsvFromRows(rows);
+    expect(result).toContain('"cat,with,commas"');
+  });
+
+  it("emits empty string for null durationMs", () => {
+    const rows = [
+      { cycleNumber: 1, attempted: 0, succeeded: 0, buildPassed: false, pushed: false, durationMs: null, totalCostUsd: 0, failureCategory: null },
+    ];
+    const result = generateStatsCsvFromRows(rows);
+    // duration_ms column should be empty (between pushed and total_cost_usd)
+    expect(result).toContain("false,false,,0,");
+  });
+
+  it("emits empty string for null failureCategory", () => {
+    const rows = [
+      { cycleNumber: 1, attempted: 1, succeeded: 1, buildPassed: true, pushed: true, durationMs: 5000, totalCostUsd: 0.05, failureCategory: null },
+    ];
+    const result = generateStatsCsvFromRows(rows);
+    const lines = result.split("\n");
+    // last field should be empty (null → "")
+    expect(lines[1]).toMatch(/,$/);
+  });
+});
+
+describe("generateStatsCsv (DB integration)", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("returns header-only CSV when no cycles are recorded", () => {
+    const result = generateStatsCsv(db);
+    expect(result).toBe(STATS_CSV_HEADER + "\n");
+  });
+
+  it("returns one data row per cycle newest-first", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    const result = generateStatsCsv(db);
+    const lines = result.trimEnd().split("\n");
+    expect(lines[0]).toBe(STATS_CSV_HEADER);
+    expect(lines.length).toBe(3); // header + 2 data rows
+    // First data row is newest cycle (2) per getCycleRows ordering
+    expect(lines[1]).toMatch(/^2,/);
+    expect(lines[2]).toMatch(/^1,/);
+  });
+
+  it("filters by --last N", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 3 }));
+    const result = generateStatsCsv(db, 2);
+    const lines = result.trimEnd().split("\n");
+    expect(lines.length).toBe(3); // header + 2 rows
+  });
+
+  it("filters by --since N", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 3 }));
+    const result = generateStatsCsv(db, undefined, 2);
+    const lines = result.trimEnd().split("\n");
+    // Only cycles 2 and 3 should appear
+    expect(lines.length).toBe(3); // header + 2 rows
+    expect(lines[1]).toMatch(/^3,/);
+    expect(lines[2]).toMatch(/^2,/);
   });
 });
 
