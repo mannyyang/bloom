@@ -1,6 +1,7 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
+- [ ] Surface per-phase token efficiency ratios (output/input tokens) in assessment context, giving the LLM a concrete signal for which phases are token-heavy so it can prioritise prompt-compression improvements in those phases.
 
 ## Up Next
 
