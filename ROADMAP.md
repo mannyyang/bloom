@@ -6,10 +6,10 @@
 ## Up Next
 
 ## In Progress
-- [ ] Add `--verbose` flag support to `pnpm journal` CLI to print full entry bodies (currently journal entries may be truncated); mirrors the `--verbose` flag already available on `pnpm stats`.
-  [since: 799]
 
 ## Done
+- [x] Add `--verbose` flag support to `pnpm journal` CLI to print full entry bodies (currently journal entries may be truncated); mirrors the `--verbose` flag already available on `pnpm stats`.
+  Completed in cycle 800: 1/2 improvements succeeded.
 - [x] Add conflict-detection warning when both `--since N` and `--last N` are supplied simultaneously to `pnpm stats`, printing a clear message instead of silently applying both filters in an order-dependent way.
   Completed in cycle 799: 2/2 improvements succeeded.
 - [x] Add `pnpm stats --category <cat> --since N --search <term>` combined flag integration test covering all three filters applied simultaneously to confirm they compose correctly.

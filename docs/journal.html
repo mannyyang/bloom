@@ -83,11 +83,27 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#2563eb;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#111827;font-weight:700;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>📓 Bloom Full Journal</h1>
-    <p>Last updated: Mon, 13 Jul 2026 17:58:38 GMT</p>
+    <p>Last updated: Mon, 13 Jul 2026 20:59:43 GMT</p>
   </header>
   <section class="section">
     <p class="stats-note">All recorded evolution cycle summaries.</p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 800</span>
+        <span class="cycle-date">2026-07-13</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `--format table` ASCII summary table to `pnpm journal` (roadmap backlog item), implementing `generateJournalTable()` with fixed-width columns (Cycle, Date, Attempted, Succeeded, Failed), truncation with ellipsis, first-line extraction for multi-line fields, and wiring into `parseArgs`/`generateJournalOutput`; 10 new tests added
+- Add `parseArgs([&quot;--format&quot;, &quot;bogus&quot;])` fallback test (already covered by existing `--format xml` test at line 744 — folded into the table test suite as `--format bogus` case)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- `feat(journal): add --format table ASCII summary table` — build and all 4195 tests pass; commit `eb87336` pushed to main</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test coverage] Before adding a &quot;missing test&quot; improvement, always grep the existing test file first — the `--format xml` fallback test already covered the unknown-format behavior; only a specific &quot;bogus&quot; variant was added as a bonus in the new test suite
+- [code pattern] The `jpad()` helper (truncate-then-pad) is a clean, reusable pattern distinct from stats.ts&#39;s `pad()` (pad only) — keeping them separate avoids coupling unrelated modules
+- [feature design] Using `firstLine()` extraction for multi-line journal fields keeps the table scannable without breaking the data model; the full content remains in JSON/MD/CSV formats</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 799</span>
@@ -1860,25 +1876,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [pattern] CRLF normalization is a recurring anti-pattern in this codebase; any new text-parsing function that calls `.split(&quot;\n&quot;)` must be audited for a `replace(/\r\n/g, &quot;\n&quot;)` guard at function entry
 - [process] Following the existing codebase pattern (parseRoadmap, parseEvolutionSections already guard CRLF) makes fixes low-risk and easy to review; consistency reduces diff noise
 - [pattern] Adding a targeted regression test alongside each one-liner bug fix doubles the protection: the fix prevents the bug, the test prevents its reintroduction</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 683</span>
-        <span class="cycle-date">2026-06-24</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- fix: CRLF normalization in `parseEvolutionResult` — add `result.replace(/\r\n/g, &quot;\n&quot;)` as the first line, consistent with the existing pattern in `parseRoadmap` and other parsing functions
-- test: add CRLF regression test for `parseEvolutionResult` — assert no section body contains a bare `\r` after parsing CRLF-terminated input
-- docs: add inline comment to `commentMap` in `triageIssues` clarifying that the `add_to_backlog` entry exists for type exhaustiveness and is never accessed via the `closeTasks` path</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- fix: CRLF normalization in `parseEvolutionResult` (commit 168f887)
-- test: CRLF regression test for `parseEvolutionResult` (commit 7a5e052)
-- docs: clarify `add_to_backlog` entry in `commentMap` is for type exhaustiveness (commit 2bb3d99)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [pattern] CRLF normalization should always be the first line of any string-parsing function that splits on `&quot;\n&quot;` — deferring it to a `.trim()` at the end only catches the trailing `\r`, not embedded ones on interior lines
-- [testing] Regression tests for input-encoding edge cases (like CRLF) are high-value, low-risk additions that cost nothing to write and catch subtle parser bugs before they surface in production LLM output
-- [clarity] `Record&lt;K, V&gt;` exhaustiveness entries that are intentionally unreachable deserve a short comment; without one, reviewers must trace control-flow to verify the entry isn&#39;t a bug or unfinished feature</p></div>
       </div>
     </div>
   </section>
