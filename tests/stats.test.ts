@@ -2858,6 +2858,52 @@ describe("generateStatsTable --search", () => {
   });
 });
 
+describe("generateStatsTable --search + --verbose streak column correctness", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+    // Cycle 1: success (build+push pass, no failure)
+    insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true, pushSucceeded: true, failureCategory: "none", durationMs: 60000 }));
+    // Cycle 2: build failure — streak starts here
+    insertCycle(db, makeOutcome({ cycleNumber: 2, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "build_failure", durationMs: 90000 }));
+    // Cycle 3: test failure — continues streak
+    insertCycle(db, makeOutcome({ cycleNumber: 3, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "test_failure", durationMs: 70000 }));
+  });
+
+  it("verbose+search: Failures column shows failure_category for filtered failure row", () => {
+    const table = generateStatsTable(db, undefined, true, undefined, undefined, "build");
+    // Only cycle 2 (build_failure) matches "build"
+    expect(table).toContain("build_failure");
+    expect(table).not.toContain("test_failure");
+  });
+
+  it("verbose+search: SinceCycle column shows a cycle number for a filtered failure row", () => {
+    const table = generateStatsTable(db, undefined, true, undefined, undefined, "build");
+    // Cycle 2 is a failure; streak start should be cycle 2 (only row in filtered set)
+    // The SinceCycle value "2" should appear in the data row
+    const dataLines = table.split("\n").filter(l => /^\s*\d/.test(l));
+    expect(dataLines).toHaveLength(1);
+    expect(dataLines[0]).toContain("2"); // SinceCycle = 2
+  });
+
+  it("verbose+search: StreakMin column shows a duration or — for a filtered failure row", () => {
+    const table = generateStatsTable(db, undefined, true, undefined, undefined, "build");
+    // durationMs=90000 for cycle 2 => streak duration = 1.5 min
+    expect(table).toContain("1.5 min");
+  });
+
+  it("verbose+search: success row shows — in Failures, SinceCycle, and StreakMin columns", () => {
+    const table = generateStatsTable(db, undefined, true, undefined, undefined, "1");
+    // Cycle 1 has cycleNumber=1 which matches search "1" — it is a success row
+    const dataLines = table.split("\n").filter(l => /^\s*\d/.test(l));
+    expect(dataLines).toHaveLength(1);
+    // Count occurrences of — in data line: Failures=—, SinceCycle=—, StreakMin=—
+    const emDashes = (dataLines[0].match(/—/g) ?? []).length;
+    expect(emDashes).toBeGreaterThanOrEqual(3);
+  });
+});
+
 describe("generateStatsCsv --search", () => {
   let db: Database.Database;
 
