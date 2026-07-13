@@ -1,14 +1,18 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Add `sinceCycle` duration to `pnpm stats --table --verbose`: show how long each consecutive failure run lasted without switching to JSON mode.
+- [ ] Add `pnpm stats --table --search <term>` footer note showing "Showing X of Y cycles (search: <term>)" when a filter reduces the row count, making filtered results transparent.
+- [ ] Add `pnpm stats --category <cat> --since N --search <term>` combined flag integration test covering all three filters applied simultaneously to confirm they compose correctly.
 
 ## Up Next
-- [ ] Add `pnpm stats --search <term>` to filter table/CSV rows by failure_category or cycle number substring, consistent with the `--search` flag already on `pnpm journal` and `pnpm roadmap`; `parseSearchArg` is already exported from `stats.ts`.
 
 ## In Progress
 
 ## Done
+- [x] Add `sinceCycle` duration to `pnpm stats --table --verbose`: `COL_STREAK_DUR`, `computeStreakDurations`, and `StreakMin` column are fully live in verbose mode.
+  Completed in cycle 796: already implemented in stats.ts with computeStreakDurations and SinceCycle/StreakMin columns.
+- [x] Add `pnpm stats --search <term>` to filter table/CSV rows by failure_category or cycle number substring, consistent with the `--search` flag already on `pnpm journal` and `pnpm roadmap`; `parseSearchArg` is already exported from `stats.ts`.
+  Completed in cycle 796: generateStatsTable, generateStatsCsv, and generateStatsJson all accept and apply a search parameter; tests in stats.test.ts lines 2822–2890 and stats-json-verbose.test.ts lines 110–145.
 - [x] Add `pnpm stats --output-file <path>` to write stats output to a file instead of stdout, enabling CI artifact capture without shell redirection.
   Completed in cycle 794: 2/2 improvements succeeded.
 - [x] Surface per-phase token efficiency ratios (output/input tokens) in assessment context, giving the LLM a concrete signal for which phases are token-heavy so it can prioritise prompt-compression improvements in those phases.
