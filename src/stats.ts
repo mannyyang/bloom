@@ -381,6 +381,7 @@ export function computeEffectiveLimit(lastN?: number, sinceN?: number, categoryF
 export function generateStatsTable(db: Database.Database, lastN?: number, verbose?: boolean, sinceN?: number, categoryFilter?: string, search?: string): string {
   const effectiveLimit = computeEffectiveLimit(lastN, sinceN, categoryFilter);
   let rows = applyRowFilters(getCycleRows(db, effectiveLimit), sinceN, categoryFilter);
+  const preSearchCount = rows.length;
   if (search !== undefined) {
     rows = filterBySearchTerm(rows, search, (r) => [String(r.cycleNumber), r.failureCategory]);
   }
@@ -449,7 +450,11 @@ export function generateStatsTable(db: Database.Database, lastN?: number, verbos
     return cells.join("  ");
   });
 
-  return [header, separator, ...dataRows].join("\n");
+  const lines = [header, separator, ...dataRows];
+  if (search !== undefined && rows.length < preSearchCount) {
+    lines.push(`Showing ${rows.length} of ${preSearchCount} cycles (search: ${search})`);
+  }
+  return lines.join("\n");
 }
 
 /**

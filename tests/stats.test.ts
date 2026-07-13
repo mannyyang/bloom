@@ -2904,6 +2904,42 @@ describe("generateStatsTable --search + --verbose streak column correctness", ()
   });
 });
 
+describe("generateStatsTable filter footer", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+    insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true, pushSucceeded: true, failureCategory: "none" }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "build_failure" }));
+    insertCycle(db, makeOutcome({ cycleNumber: 3, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "test_failure" }));
+  });
+
+  it("appends 'Showing X of Y cycles (search: <term>)' footer when search reduces row count", () => {
+    const table = generateStatsTable(db, undefined, false, undefined, undefined, "build");
+    expect(table).toContain("Showing 1 of 3 cycles (search: build)");
+  });
+
+  it("does not append footer when search is undefined", () => {
+    const table = generateStatsTable(db, undefined, false, undefined, undefined, undefined);
+    expect(table).not.toContain("Showing");
+    expect(table).not.toContain("cycles (search:");
+  });
+
+  it("does not append footer when search matches all rows", () => {
+    // All cycles have numbers containing digits — search for empty-string equivalent
+    // Use a term that matches all 3 rows (all cycle numbers contain digits)
+    const table = generateStatsTable(db, undefined, false, undefined, undefined, "failure");
+    // "failure" matches cycles 2 (build_failure) and 3 (test_failure) but not 1 (none) — 2 of 3
+    expect(table).toContain("Showing 2 of 3 cycles (search: failure)");
+  });
+
+  it("footer row is the last line of the table output", () => {
+    const table = generateStatsTable(db, undefined, false, undefined, undefined, "build");
+    const lines = table.split("\n");
+    expect(lines[lines.length - 1]).toContain("Showing 1 of 3 cycles (search: build)");
+  });
+});
+
 describe("generateStatsCsv --search", () => {
   let db: Database.Database;
 

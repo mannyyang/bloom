@@ -1,7 +1,6 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Add `pnpm stats --table --search <term>` footer note showing "Showing X of Y cycles (search: <term>)" when a filter reduces the row count, making filtered results transparent.
 - [ ] Add `pnpm stats --category <cat> --since N --search <term>` combined flag integration test covering all three filters applied simultaneously to confirm they compose correctly.
 
 ## Up Next
@@ -9,6 +8,8 @@
 ## In Progress
 
 ## Done
+- [x] Add `pnpm stats --table --search <term>` footer note showing "Showing X of Y cycles (search: <term>)" when a filter reduces the row count, making filtered results transparent.
+  Completed in cycle 796: generateStatsTable appends footer when search reduces visible rows; 4 tests added.
 - [x] Add `sinceCycle` duration to `pnpm stats --table --verbose`: `COL_STREAK_DUR`, `computeStreakDurations`, and `StreakMin` column are fully live in verbose mode.
   Completed in cycle 796: already implemented in stats.ts with computeStreakDurations and SinceCycle/StreakMin columns.
 - [x] Add `pnpm stats --search <term>` to filter table/CSV rows by failure_category or cycle number substring, consistent with the `--search` flag already on `pnpm journal` and `pnpm roadmap`; `parseSearchArg` is already exported from `stats.ts`.
