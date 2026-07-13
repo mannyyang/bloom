@@ -160,6 +160,19 @@ export function parseCostAlertArg(argv: string[]): number | undefined {
 }
 
 /**
+ * Detect conflicting filter combinations in the stats CLI.
+ * Returns a warning string when both `lastN` and `sinceN` are set (their
+ * intersection is applied silently), or null when only one or neither is set.
+ * Exported for unit-testability; main() calls this and prints to stderr.
+ */
+export function detectConflictingFilters(lastN?: number, sinceN?: number): string | null {
+  if (lastN !== undefined && sinceN !== undefined) {
+    return `Warning: --last and --since are both set; showing cycles >= ${sinceN} limited to the last ${lastN}.`;
+  }
+  return null;
+}
+
+/**
  * Check whether `avgCostPerCycle` exceeds `threshold`.
  * Returns a human-readable warning string when the threshold is exceeded, or
  * null when the cost is within the threshold.
@@ -739,6 +752,11 @@ function main() {
   const verbose = parseVerboseFlag(process.argv);
   const db = initDb();
   const effectiveLimit = computeEffectiveLimit(lastN, sinceN, categoryFilter);
+
+  const conflictWarning = detectConflictingFilters(lastN, sinceN);
+  if (conflictWarning !== null) {
+    process.stderr.write(conflictWarning + "\n");
+  }
 
   let costAlertTriggered = false;
   try {
