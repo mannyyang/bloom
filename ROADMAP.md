@@ -1,13 +1,14 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Add `pnpm stats --category <cat> --since N --search <term>` combined flag integration test covering all three filters applied simultaneously to confirm they compose correctly.
 
 ## Up Next
 
 ## In Progress
 
 ## Done
+- [x] Add `pnpm stats --category <cat> --since N --search <term>` combined flag integration test covering all three filters applied simultaneously to confirm they compose correctly.
+  Completed in cycle 797: 1/2 improvements succeeded.
 - [x] Add `pnpm stats --table --search <term>` footer note showing "Showing X of Y cycles (search: <term>)" when a filter reduces the row count, making filtered results transparent.
   Completed in cycle 796: 3/3 improvements succeeded.
 - [x] Add `sinceCycle` duration to `pnpm stats --table --verbose`: `COL_STREAK_DUR`, `computeStreakDurations`, and `StreakMin` column are fully live in verbose mode.

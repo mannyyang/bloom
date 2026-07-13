@@ -83,26 +83,22 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Mon, 13 Jul 2026 06:58:55 GMT</p>
+    <p>Last updated: Mon, 13 Jul 2026 11:12:54 GMT</p>
   </header>
   
-  <section class="section">
-    <h2><span class="badge" style="background:#6b7280">Backlog</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Add `pnpm stats --category &lt;cat&gt; --since N --search &lt;term&gt;` combined flag integration test covering all three filters applied simultaneously to confirm they compose correctly.</span>
-          
-        </div>
-      </li></ul>
-  </section>
 
 
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `pnpm stats --category &lt;cat&gt; --since N --search &lt;term&gt;` combined flag integration test covering all three filters applied simultaneously to confirm they compose correctly.</span>
+          <p class="item-desc">Completed in cycle 797: 1/2 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -527,8 +523,8 @@
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
         <tr><td>Avg improvements / cycle</td><td><strong>1.8</strong></td></tr>
         <tr><td>Improvement conversion rate</td><td><strong>90%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>6.6 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$42.25</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.7 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$41.64</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -538,6 +534,21 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 797</span>
+        <span class="cycle-date">2026-07-13</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add three-flag combined integration tests for `generateStatsTable` validating that `sinceN`, `categoryFilter`, and `search` compose correctly
+- Add footer documentation test asserting that &quot;Y&quot; in the footer reflects post-sinceN/categoryFilter count, not total db rows</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- test(stats): add three-flag combined filter integration tests (sinceN + categoryFilter + search) — 3 new test cases in `generateStatsTable three-flag combined filter` describe block, all 4155 tests pass, committed and pushed as `35baca9`</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- First attempt of the &quot;only matching row&quot; test used `expect(table).not.toContain(&quot;1&quot;)` which failed because the footer &quot;Showing **1** of 2 cycles&quot; contains the digit &quot;1&quot;; fixed by scoping the assertion to data lines only</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] When asserting cycle numbers are absent from a stats table, scope assertions to data lines (`filter(l =&gt; /^\s*\d/.test(l))`) rather than the full table string — header, separator, and footer lines can contain incidental digit matches
+- [stats] The `generateStatsTable` footer &quot;Showing X of Y&quot; uses `preSearchCount` (post-`applyRowFilters`) as Y, so Y represents rows after `--since`/`--category` filtering, not total cycles in the database — this behavior is now pinned by a test</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 796</span>
@@ -610,23 +621,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test-coverage] The ellipsis-suppression branch in `formatMemoryForPrompt` was already covered by three tests (including a deterministic boundary test) — the assessment predated those additions; always verify before writing duplicate tests
 - [api-design] `makeOutcome` in test helpers takes `Partial&lt;CycleOutcome&gt;` (object), not a raw number — passing a plain integer produces a TS2559 type mismatch; read helper signatures before using them in new tests
 - [refactoring] Hoisting a shared computation (`computeEffectiveLimit`) to the top of a function before a `try` block is a safe, zero-test-impact DRY improvement that makes shared dependencies visible for future flag additions</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 791</span>
-        <span class="cycle-date">2026-07-12</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `PhaseTokenRatio` interface and `phaseTokenRatios` field to `CycleStats`, backed by a new exported `getPhaseTokensByPhase` helper that groups `phase_usage` by phase and computes input/output totals and ratio
-- Update `formatCycleStats` to emit a &quot;Per-phase token efficiency&quot; bullet when `phaseTokenRatios` is non-empty
-- Add 11 tests covering `getPhaseTokensByPhase` aggregation, ratio computation, null-ratio edge case, `getCycleStats` integration, and the zero-cycles/zero-rows early-return paths</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- feat: add per-phase token efficiency ratios to CycleStats — all three planned improvements shipped together; build and 4084 tests pass, committed as bc59a29 and pushed to main</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] When adding a new required field to an interface, all manually-constructed object literals in tests immediately fail TypeScript — batch `replace_all` edits are the efficient fix, but non-empty variant fields require separate targeted edits
-- [arithmetic] `Math.round(0.0625 * 1000) / 1000 = 0.063` not `0.0625` due to banker&#39;s rounding at the 0.5 boundary — pin expected values with `.toBe()` rather than `.toBeCloseTo()` when the rounding is deterministic
-- [design] Extracting SQL aggregations as named helpers (e.g. `getPhaseTokensByPhase` mirrors `getLearningCategoryDistribution`) makes both the query and its tests independently composable without re-reading the parent function</p></div>
       </div>
     </div>
   </section>
