@@ -1,6 +1,9 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
+- [ ] Add `--verbose` flag support to `pnpm journal` CLI to print full entry bodies (currently journal entries may be truncated); mirrors the `--verbose` flag already available on `pnpm stats`.
+- [ ] Add conflict-detection warning when both `--since N` and `--last N` are supplied simultaneously to `pnpm stats`, printing a clear message instead of silently applying both filters in an order-dependent way.
+- [ ] Add `--format table` mode to `pnpm journal` CLI so journal entries can be displayed in an ASCII summary table (cycle, date, succeeded/attempted, build pass) without reading full text, mirroring `pnpm stats --table`.
 
 ## Up Next
 
