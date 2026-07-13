@@ -4,10 +4,9 @@
 - [ ] Add `sinceCycle` duration to `pnpm stats --table --verbose`: show how long each consecutive failure run lasted without switching to JSON mode.
 
 ## Up Next
+- [ ] Add `pnpm stats --search <term>` to filter table/CSV rows by failure_category or cycle number substring, consistent with the `--search` flag already on `pnpm journal` and `pnpm roadmap`; `parseSearchArg` is already exported from `stats.ts`.
 
 ## In Progress
-- [ ] Add `pnpm stats --search <term>` to filter table/CSV rows by failure_category or cycle number substring, consistent with the `--search` flag already on `pnpm journal` and `pnpm roadmap`; `parseSearchArg` is already exported from `stats.ts`.
-  [since: 794]
 
 ## Done
 - [x] Add `pnpm stats --output-file <path>` to write stats output to a file instead of stdout, enabling CI artifact capture without shell redirection.
