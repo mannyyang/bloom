@@ -2743,6 +2743,14 @@ describe("generateStatsTable --search", () => {
     expect(lines[0]).toContain("2");
   });
 
+  it("filters rows by failure_category substring", () => {
+    // "build" matches "build_failure" (cycle 2) but not "none" or "test_failure"
+    const table = generateStatsTable(db, undefined, true, undefined, undefined, "build");
+    const lines = table.split("\n").filter(l => /^\s*\d/.test(l));
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain("2");
+  });
+
   it("returns empty string when search term matches nothing", () => {
     const table = generateStatsTable(db, undefined, false, undefined, undefined, "zzznomatch");
     expect(table).toBe("");
