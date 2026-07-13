@@ -3011,3 +3011,87 @@ describe("generateStatsTable three-flag combined filter (sinceN + categoryFilter
     expect(table).toContain("Showing 1 of 2 cycles (search: 5)");
   });
 });
+
+describe("generateStatsCsv --category filter", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+    insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true, pushSucceeded: true, failureCategory: "none" }));
+    insertCycle(db, makeOutcome({ cycleNumber: 2, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "build_failure" }));
+    insertCycle(db, makeOutcome({ cycleNumber: 3, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "test_failure" }));
+  });
+
+  it("returns all rows when categoryFilter is undefined", () => {
+    const csv = generateStatsCsv(db, undefined, undefined, undefined);
+    const lines = csv.trimEnd().split("\n");
+    // header + 3 data rows
+    expect(lines).toHaveLength(4);
+  });
+
+  it("filters CSV rows to matching category only", () => {
+    const csv = generateStatsCsv(db, undefined, undefined, "build_failure");
+    const lines = csv.trimEnd().split("\n");
+    // header + 1 data row
+    expect(lines).toHaveLength(2);
+    expect(lines[1]).toContain("build_failure");
+    expect(lines[1]).toMatch(/^2,/);
+  });
+
+  it("returns header-only when categoryFilter matches nothing", () => {
+    const csv = generateStatsCsv(db, undefined, undefined, "llm_error");
+    const lines = csv.trimEnd().split("\n");
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toBe(STATS_CSV_HEADER);
+  });
+
+  it("excludes rows from other categories when filtering", () => {
+    const csv = generateStatsCsv(db, undefined, undefined, "test_failure");
+    const lines = csv.trimEnd().split("\n");
+    expect(lines).toHaveLength(2);
+    expect(lines[1]).toContain("test_failure");
+    // cycle 2 (build_failure) must not appear
+    expect(csv).not.toMatch(/^2,/m);
+  });
+});
+
+describe("generateStatsCsv three-flag composition (sinceN + categoryFilter + search)", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+    // Cycle 1: below sinceN threshold
+    insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true, pushSucceeded: true, failureCategory: "none" }));
+    // Cycle 3: build_failure, at sinceN=3 threshold
+    insertCycle(db, makeOutcome({ cycleNumber: 3, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "build_failure" }));
+    // Cycle 5: build_failure, above sinceN=3 — only row matching all three filters
+    insertCycle(db, makeOutcome({ cycleNumber: 5, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "build_failure" }));
+    // Cycle 7: test_failure, excluded by categoryFilter
+    insertCycle(db, makeOutcome({ cycleNumber: 7, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "test_failure" }));
+  });
+
+  it("sinceN + categoryFilter + search compose to return only the matching CSV row", () => {
+    // sinceN=3 keeps cycles 3,5,7; categoryFilter=build_failure keeps 3,5; search="5" keeps only 5
+    const csv = generateStatsCsv(db, undefined, 3, "build_failure", "5");
+    const lines = csv.trimEnd().split("\n");
+    // header + 1 data row
+    expect(lines).toHaveLength(2);
+    expect(lines[1]).toMatch(/^5,/);
+    expect(lines[1]).toContain("build_failure");
+  });
+
+  it("returns header-only when three flags compose to zero matches", () => {
+    const csv = generateStatsCsv(db, undefined, 3, "build_failure", "zzznomatch");
+    const lines = csv.trimEnd().split("\n");
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toBe(STATS_CSV_HEADER);
+  });
+
+  it("sinceN alone excludes cycles below threshold in CSV", () => {
+    // sinceN=3 excludes cycle 1; all three categories above threshold present
+    const csv = generateStatsCsv(db, undefined, 3, undefined, undefined);
+    const lines = csv.trimEnd().split("\n");
+    expect(lines).toHaveLength(4); // header + cycles 3, 5, 7
+    expect(csv).not.toMatch(/^1,/m);
+  });
+});
