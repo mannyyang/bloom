@@ -106,3 +106,40 @@ describe("generateStatsJson verbose nextItemRationale", () => {
     expect(parsed.nextItemRationale).toBeNull();
   });
 });
+
+describe("generateStatsJson --search filtering", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+    // Set up mocks so verbose tests don't fail trying to read the roadmap
+    mockReadRoadmap.mockReturnValue("");
+    mockParseRoadmap.mockReturnValue([]);
+    mockPickNextItem.mockReturnValue({ item: null, rationale: null });
+    insertCycle(db, makeOutcome({ cycleNumber: 10, buildVerificationPassed: true, pushSucceeded: true, failureCategory: "none" }));
+    insertCycle(db, makeOutcome({ cycleNumber: 20, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "build_failure" }));
+    insertCycle(db, makeOutcome({ cycleNumber: 30, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "test_failure" }));
+  });
+
+  it("includes all rows when search is undefined", () => {
+    const result = generateStatsJson(db);
+    expect(result.rows).toHaveLength(3);
+  });
+
+  it("filters rows by cycle number substring", () => {
+    const result = generateStatsJson(db, undefined, false, undefined, undefined, undefined, "20");
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows![0].cycleNumber).toBe(20);
+  });
+
+  it("filters rows by failure_category substring", () => {
+    const result = generateStatsJson(db, undefined, false, undefined, undefined, undefined, "build");
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows![0].failureCategory).toBe("build_failure");
+  });
+
+  it("returns empty rows array when search term matches nothing", () => {
+    const result = generateStatsJson(db, undefined, false, undefined, undefined, undefined, "zzznomatch");
+    expect(result.rows).toHaveLength(0);
+  });
+});

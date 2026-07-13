@@ -559,6 +559,7 @@ export function generateStatsJson(
   sinceN?: number,
   roadmapPath?: string,
   categoryFilter?: string,
+  search?: string,
 ): StatsJsonOutput {
   const latestCycle = getLatestCycleNumber(db);
   const effectiveLimit = computeEffectiveLimit(lastN, sinceN, categoryFilter);
@@ -566,7 +567,10 @@ export function generateStatsJson(
 
   // Apply same filtering logic as generateStatsTable so rows are consistent
   // with the stats aggregate.
-  const rows = applyRowFilters(getCycleRows(db, effectiveLimit), sinceN, categoryFilter);
+  let rows = applyRowFilters(getCycleRows(db, effectiveLimit), sinceN, categoryFilter);
+  if (search !== undefined) {
+    rows = filterBySearchTerm(rows, search, (r) => [String(r.cycleNumber), r.failureCategory]);
+  }
 
   const result: StatsJsonOutput = {
     latestCycle, window: lastN ?? null, since: sinceN ?? null, category: categoryFilter ?? null, generatedAt: new Date().toISOString(), stats, rows,
@@ -688,7 +692,7 @@ function main() {
     if (trendN !== undefined) {
       outputContent = generateStatsTrend(db, trendN) + "\n";
     } else if (jsonMode) {
-      const result = generateStatsJson(db, lastN, verbose, sinceN, undefined, categoryFilter);
+      const result = generateStatsJson(db, lastN, verbose, sinceN, undefined, categoryFilter, searchTerm);
       outputContent = JSON.stringify(result, null, 2) + "\n";
     } else if (csvMode) {
       outputContent = generateStatsCsv(db, lastN, sinceN, categoryFilter, searchTerm);
