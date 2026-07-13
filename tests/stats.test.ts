@@ -2970,3 +2970,44 @@ describe("generateStatsCsv --search", () => {
     expect(lines[0]).toBe(STATS_CSV_HEADER);
   });
 });
+
+describe("generateStatsTable three-flag combined filter (sinceN + categoryFilter + search)", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+    // Cycle 1: success, below sinceN threshold
+    insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true, pushSucceeded: true, failureCategory: "none" }));
+    // Cycle 3: build_failure, at or above sinceN=3 threshold
+    insertCycle(db, makeOutcome({ cycleNumber: 3, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "build_failure" }));
+    // Cycle 5: build_failure, above sinceN=3 threshold — only row matching all three filters
+    insertCycle(db, makeOutcome({ cycleNumber: 5, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "build_failure" }));
+    // Cycle 7: test_failure, above sinceN=3 threshold, excluded by categoryFilter
+    insertCycle(db, makeOutcome({ cycleNumber: 7, buildVerificationPassed: false, pushSucceeded: false, failureCategory: "test_failure" }));
+  });
+
+  it("sinceN + categoryFilter + search together return only matching row", () => {
+    // sinceN=3: keeps cycles 3,5,7; categoryFilter=build_failure: keeps 3,5; search="5": keeps only cycle 5
+    const table = generateStatsTable(db, undefined, false, 3, "build_failure", "5");
+    const dataLines = table.split("\n").filter(l => /^\s*\d/.test(l));
+    expect(dataLines).toHaveLength(1);
+    expect(dataLines[0]).toContain("5");
+    // Cycle numbers 3 and 7 must not appear in data rows
+    expect(dataLines[0]).not.toContain("3");
+    expect(dataLines[0]).not.toContain("7");
+  });
+
+  it("returns empty string when all three filters compose to zero matches", () => {
+    // sinceN=3 + categoryFilter=build_failure + search matching nothing among those rows
+    const table = generateStatsTable(db, undefined, false, 3, "build_failure", "zzznomatch");
+    expect(table).toBe("");
+  });
+
+  it("footer 'Y' reflects post-sinceN/categoryFilter count, not total cycle count", () => {
+    // sinceN=3 + categoryFilter=build_failure → preSearchCount=2 (cycles 3 and 5)
+    // search="5" reduces to 1 row → footer shows "Showing 1 of 2 cycles (search: 5)"
+    // Y=2 is the post-sinceN/category count (not 4 total cycles in db)
+    const table = generateStatsTable(db, undefined, false, 3, "build_failure", "5");
+    expect(table).toContain("Showing 1 of 2 cycles (search: 5)");
+  });
+});
