@@ -50,6 +50,7 @@ Options:
   --since <CYCLE>   Show only entries from cycle CYCLE onwards (inclusive)
   --cycle <N>       Show the journal entry for exactly one specific cycle
   --search <term>   Filter entries by case-insensitive keyword search across all text fields
+  --verbose         Show summary metadata (entry count and cycle range)
   --help, -h        Print this help message and exit
 `;
 
@@ -119,9 +120,9 @@ export function generateJournalCsv(entries: JournalExportEntry[]): string {
  */
 export function generateJournalOutput(
   db: Database.Database,
-  options: { format?: "json" | "md" | "csv"; limit?: number; since?: number; cycle?: number; search?: string } = {},
+  options: { format?: "json" | "md" | "csv"; limit?: number; since?: number; cycle?: number; search?: string; verbose?: boolean } = {},
 ): string {
-  const { format = "json", limit, since, cycle, search } = options;
+  const { format = "json", limit, since, cycle, search, verbose } = options;
   // Math.floor normalises fractional values (e.g. 3.7 → 3).
   // The explicit `!== undefined` guard makes intent clear: 0 is not a valid
   // limit (pass undefined to mean "no limit"), and `safeLimit > 0` already
@@ -143,17 +144,43 @@ export function generateJournalOutput(
   );
 
   if (format === "md") {
-    return formatJournalMarkdown(entries);
+    let mdOutput = formatJournalMarkdown(entries);
+    if (verbose && entries.length > 0) {
+      const cycleNumbers = entries.map((e) => e.cycleNumber);
+      const minCycle = Math.min(...cycleNumbers);
+      const maxCycle = Math.max(...cycleNumbers);
+      const summaryLine = `Entries: ${entries.length} | Range: ${minCycle}–${maxCycle}`;
+      mdOutput = mdOutput.replace(
+        "# Bloom Evolution Journal\n",
+        `# Bloom Evolution Journal\n${summaryLine}\n`,
+      );
+    }
+    return mdOutput;
   }
 
   if (format === "csv") {
     return generateJournalCsv(entries);
   }
 
+  if (verbose) {
+    const cycleNumbers = entries.map((e) => e.cycleNumber);
+    return JSON.stringify(
+      {
+        totalEntries: entries.length,
+        cycleRange: entries.length > 0
+          ? { min: Math.min(...cycleNumbers), max: Math.max(...cycleNumbers) }
+          : null,
+        entries,
+      },
+      null,
+      2,
+    );
+  }
+
   return JSON.stringify(entries, null, 2);
 }
 
-export function parseArgs(argv: string[]): { format: "json" | "md" | "csv"; limit?: number; since?: number; cycle?: number; search?: string } {
+export function parseArgs(argv: string[]): { format: "json" | "md" | "csv"; limit?: number; since?: number; cycle?: number; search?: string; verbose?: boolean } {
   let format: "json" | "md" | "csv" = "json";
   // --format <fmt> takes precedence; unknown values fall back to "json"
   const formatFlagIdx = argv.indexOf("--format");
@@ -172,6 +199,7 @@ export function parseArgs(argv: string[]): { format: "json" | "md" | "csv"; limi
     since: parseIntArg(argv, "--since"),
     cycle: parseIntArg(argv, "--cycle"),
     search: parseSearchArg(argv),
+    verbose: argv.includes("--verbose") ? true : undefined,
   };
 }
 

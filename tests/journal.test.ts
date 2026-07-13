@@ -869,6 +869,129 @@ describe("generateJournalOutput --search filter", () => {
   });
 });
 
+describe("parseArgs --verbose", () => {
+  it("returns verbose: true when --verbose flag is present", () => {
+    const result = parseArgs(["--verbose"]);
+    expect(result.verbose).toBe(true);
+  });
+
+  it("returns verbose: undefined when --verbose flag is absent", () => {
+    const result = parseArgs([]);
+    expect(result.verbose).toBeUndefined();
+  });
+
+  it("combines --verbose with --format md", () => {
+    const result = parseArgs(["--verbose", "--format", "md"]);
+    expect(result.verbose).toBe(true);
+    expect(result.format).toBe("md");
+  });
+
+  it("combines --verbose with --limit", () => {
+    const result = parseArgs(["--verbose", "--limit", "5"]);
+    expect(result.verbose).toBe(true);
+    expect(result.limit).toBe(5);
+  });
+
+  it("JOURNAL_HELP_TEXT lists --verbose flag", () => {
+    expect(JOURNAL_HELP_TEXT).toContain("--verbose");
+  });
+});
+
+describe("generateJournalOutput --verbose (JSON mode)", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("JSON verbose with entries returns object with totalEntries and cycleRange", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 10 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 20 }));
+    insertJournalEntry(db, 10, "attempted", "First");
+    insertJournalEntry(db, 20, "attempted", "Second");
+
+    const output = generateJournalOutput(db, { verbose: true });
+    const parsed = JSON.parse(output);
+    expect(parsed.totalEntries).toBe(2);
+    expect(parsed.cycleRange).toEqual({ min: 10, max: 20 });
+    expect(Array.isArray(parsed.entries)).toBe(true);
+    expect(parsed.entries).toHaveLength(2);
+  });
+
+  it("JSON verbose with no entries returns totalEntries: 0 and cycleRange: null", () => {
+    const output = generateJournalOutput(db, { verbose: true });
+    const parsed = JSON.parse(output);
+    expect(parsed.totalEntries).toBe(0);
+    expect(parsed.cycleRange).toBeNull();
+    expect(parsed.entries).toEqual([]);
+  });
+
+  it("JSON verbose single entry has cycleRange min === max", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 42 }));
+    insertJournalEntry(db, 42, "attempted", "Solo");
+
+    const output = generateJournalOutput(db, { verbose: true });
+    const parsed = JSON.parse(output);
+    expect(parsed.totalEntries).toBe(1);
+    expect(parsed.cycleRange).toEqual({ min: 42, max: 42 });
+  });
+
+  it("JSON without verbose returns plain array (no metadata wrapper)", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertJournalEntry(db, 1, "attempted", "Something");
+
+    const output = generateJournalOutput(db);
+    const parsed = JSON.parse(output);
+    expect(Array.isArray(parsed)).toBe(true);
+    expect(parsed.totalEntries).toBeUndefined();
+  });
+});
+
+describe("generateJournalOutput --verbose (md mode)", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("md verbose with entries contains summary line with entry count and range", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 5 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 15 }));
+    insertJournalEntry(db, 5, "attempted", "First");
+    insertJournalEntry(db, 15, "attempted", "Second");
+
+    const output = generateJournalOutput(db, { format: "md", verbose: true });
+    expect(output).toContain("Entries: 2 | Range: 5–15");
+    expect(output).toContain("# Bloom Evolution Journal");
+  });
+
+  it("md verbose summary line appears after the top-level heading", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 7 }));
+    insertJournalEntry(db, 7, "attempted", "Work");
+
+    const output = generateJournalOutput(db, { format: "md", verbose: true });
+    const lines = output.split("\n");
+    // Line 0: "# Bloom Evolution Journal", line 1: "Entries: ..."
+    expect(lines[0]).toBe("# Bloom Evolution Journal");
+    expect(lines[1]).toContain("Entries: 1 | Range: 7–7");
+  });
+
+  it("md verbose with no entries does not inject summary line", () => {
+    const output = generateJournalOutput(db, { format: "md", verbose: true });
+    expect(output).toBe("No journal entries recorded yet.");
+    expect(output).not.toContain("Entries:");
+  });
+
+  it("md without verbose does not inject summary line", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 3 }));
+    insertJournalEntry(db, 3, "attempted", "Work");
+
+    const output = generateJournalOutput(db, { format: "md" });
+    expect(output).not.toContain("Entries:");
+    expect(output).toContain("# Bloom Evolution Journal");
+  });
+});
+
 describe("parseArgs --search", () => {
   it("parses --search with a term", () => {
     const result = parseArgs(["--search", "keyword"]);
