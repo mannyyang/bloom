@@ -1,15 +1,17 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Add `--verbose` flag support to `pnpm journal` CLI to print full entry bodies (currently journal entries may be truncated); mirrors the `--verbose` flag already available on `pnpm stats`.
-- [ ] Add conflict-detection warning when both `--since N` and `--last N` are supplied simultaneously to `pnpm stats`, printing a clear message instead of silently applying both filters in an order-dependent way.
 - [ ] Add `--format table` mode to `pnpm journal` CLI so journal entries can be displayed in an ASCII summary table (cycle, date, succeeded/attempted, build pass) without reading full text, mirroring `pnpm stats --table`.
 
 ## Up Next
 
 ## In Progress
+- [ ] Add `--verbose` flag support to `pnpm journal` CLI to print full entry bodies (currently journal entries may be truncated); mirrors the `--verbose` flag already available on `pnpm stats`.
+  [since: 799]
 
 ## Done
+- [x] Add conflict-detection warning when both `--since N` and `--last N` are supplied simultaneously to `pnpm stats`, printing a clear message instead of silently applying both filters in an order-dependent way.
+  Completed in cycle 799: 2/2 improvements succeeded.
 - [x] Add `pnpm stats --category <cat> --since N --search <term>` combined flag integration test covering all three filters applied simultaneously to confirm they compose correctly.
   Completed in cycle 797: 1/2 improvements succeeded.
 - [x] Add `pnpm stats --table --search <term>` footer note showing "Showing X of Y cycles (search: <term>)" when a filter reduces the row count, making filtered results transparent.
