@@ -264,6 +264,13 @@ export const COL_FAILURES = 16;
 export const COL_SINCE_CYCLE = 10;
 
 /**
+ * Width of the StreakMin column in the verbose ASCII table.
+ * Wide enough for the header label "StreakMin" (9 chars) and values like
+ * "999.9 min" (9 chars). Exported so tests can assert this invariant.
+ */
+export const COL_STREAK_DUR = 10;
+
+/**
  * Compute the streak-start cycle for each row in a newest-first CycleRow array.
  * Returns a Map from cycleNumber to the first cycle number of the current
  * consecutive-failure run (where failure = !(buildPassed && pushed)).
@@ -286,6 +293,40 @@ export function computeStreakStartCycles(rows: CycleRow[]): Map<number, number |
       if (streakStart === null) streakStart = r.cycleNumber;
     }
     result.set(r.cycleNumber, streakStart);
+  }
+  return result;
+}
+
+/**
+ * Compute the total streak duration (in milliseconds) for each row in a
+ * newest-first CycleRow array, given the pre-computed streak-start map.
+ * For success rows (streakStart is null), the value is null ("—" rendered).
+ * For failure rows, sums the non-null durationMs values of every cycle from
+ * streakStart through the current cycle (inclusive). Returns null when all
+ * cycle durations in the streak are null (no data to sum).
+ * Exported for unit-testability, parallel to computeStreakStartCycles.
+ */
+export function computeStreakDurations(
+  rows: CycleRow[],
+  streakStarts: Map<number, number | null>,
+): Map<number, number | null> {
+  const result = new Map<number, number | null>();
+  const durationByN = new Map<number, number | null>();
+  for (const r of rows) durationByN.set(r.cycleNumber, r.durationMs);
+
+  for (const r of rows) {
+    const start = streakStarts.get(r.cycleNumber);
+    if (start === null || start === undefined) {
+      result.set(r.cycleNumber, null); // success row — no active streak
+      continue;
+    }
+    let total: number | null = null;
+    for (const [cn, dur] of durationByN) {
+      if (cn >= start && cn <= r.cycleNumber && dur !== null) {
+        total = (total ?? 0) + dur;
+      }
+    }
+    result.set(r.cycleNumber, total);
   }
   return result;
 }
@@ -367,14 +408,17 @@ export function generateStatsTable(db: Database.Database, lastN?: number, verbos
   if (verbose) {
     baseHeaderCells.push(pad("Failures", COL_FAILURES));
     baseHeaderCells.push(pad("SinceCycle", COL_SINCE_CYCLE, true));
+    baseHeaderCells.push(pad("StreakMin", COL_STREAK_DUR, true));
     baseSepCells.push("-".repeat(COL_FAILURES));
     baseSepCells.push("-".repeat(COL_SINCE_CYCLE));
+    baseSepCells.push("-".repeat(COL_STREAK_DUR));
   }
 
   const header = baseHeaderCells.join("  ");
   const separator = baseSepCells.join("  ");
 
   const streakStarts = verbose ? computeStreakStartCycles(rows) : undefined;
+  const streakDurations = (verbose && streakStarts !== undefined) ? computeStreakDurations(rows, streakStarts) : undefined;
 
   const dataRows = rows.map((r: CycleRow) => {
     const durationStr = r.durationMs !== null
@@ -390,12 +434,17 @@ export function generateStatsTable(db: Database.Database, lastN?: number, verbos
       pad(durationStr, COL_DURATION, true),
       pad(costStr, COL_COST, true),
     ];
-    if (verbose && streakStarts !== undefined) {
+    if (verbose && streakStarts !== undefined && streakDurations !== undefined) {
       const cat = r.failureCategory && r.failureCategory !== ERROR_CATEGORY_NONE ? r.failureCategory : STATS_NO_FAILURE_SYMBOL;
       const since = streakStarts.get(r.cycleNumber);
       const sinceStr = since !== null && since !== undefined ? String(since) : STATS_NO_FAILURE_SYMBOL;
+      const streakMs = streakDurations.get(r.cycleNumber);
+      const streakStr = streakMs !== null && streakMs !== undefined
+        ? `${(streakMs / MS_PER_MINUTE).toFixed(1)} min`
+        : STATS_NO_FAILURE_SYMBOL;
       cells.push(pad(cat, COL_FAILURES));
       cells.push(pad(sinceStr, COL_SINCE_CYCLE, true));
+      cells.push(pad(streakStr, COL_STREAK_DUR, true));
     }
     return cells.join("  ");
   });

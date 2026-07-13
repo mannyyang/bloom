@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution, getLastUpdatedCyclePerCategory } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseCsvFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, parseTrendArg, parseCostAlertArg, parseOutputFileArg, checkCostAlert, generateStatsJson, generateStatsTable, generateStatsTrend, renderTrendBar, TREND_BAR_CHARS, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES, COL_COST, COL_SINCE_CYCLE, computeStreakStartCycles, generateStatsCsvFromRows, generateStatsCsv, STATS_CSV_HEADER } from "../src/stats.js";
+import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseCsvFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, parseTrendArg, parseCostAlertArg, parseOutputFileArg, checkCostAlert, generateStatsJson, generateStatsTable, generateStatsTrend, renderTrendBar, TREND_BAR_CHARS, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES, COL_COST, COL_SINCE_CYCLE, COL_STREAK_DUR, computeStreakStartCycles, computeStreakDurations, generateStatsCsvFromRows, generateStatsCsv, STATS_CSV_HEADER } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE, ERROR_CATEGORY_LLM_ERROR } from "../src/errors.js";
 import { MAX_MEMORY_CHARS } from "../src/memory.js";
@@ -103,6 +103,80 @@ describe("computeStreakStartCycles", () => {
     expect(result.get(2)).toBe(1); // same streak
     expect(result.get(3)).toBeNull(); // success resets streak
     expect(result.get(4)).toBe(4); // new streak starts at cycle 4
+  });
+});
+
+describe("COL_STREAK_DUR column-width invariant", () => {
+  it("is a positive integer", () => {
+    expect(COL_STREAK_DUR).toBeGreaterThan(0);
+    expect(Number.isInteger(COL_STREAK_DUR)).toBe(true);
+  });
+  it("is >= length of header label 'StreakMin'", () => {
+    expect(COL_STREAK_DUR).toBeGreaterThanOrEqual("StreakMin".length);
+  });
+});
+
+describe("computeStreakDurations", () => {
+  function makeRow(cycleNumber: number, buildPassed: boolean, pushed: boolean, durationMs: number | null) {
+    return { cycleNumber, buildPassed, pushed, attempted: 0, succeeded: 0, durationMs, totalCostUsd: 0, failureCategory: buildPassed && pushed ? "none" : "build_failure" };
+  }
+
+  it("returns empty map for empty input", () => {
+    const streakStarts = computeStreakStartCycles([]);
+    expect(computeStreakDurations([], streakStarts)).toEqual(new Map());
+  });
+
+  it("returns null for success rows (no active streak)", () => {
+    const rows = [makeRow(1, true, true, 60000)];
+    const starts = computeStreakStartCycles(rows);
+    const durs = computeStreakDurations(rows, starts);
+    expect(durs.get(1)).toBeNull();
+  });
+
+  it("returns durationMs for a single-cycle failure streak", () => {
+    const rows = [makeRow(1, false, false, 120000)];
+    const starts = computeStreakStartCycles(rows);
+    const durs = computeStreakDurations(rows, starts);
+    expect(durs.get(1)).toBe(120000);
+  });
+
+  it("returns null when all durations in the streak are null", () => {
+    const rows = [
+      makeRow(2, false, false, null),
+      makeRow(1, false, false, null),
+    ];
+    const starts = computeStreakStartCycles(rows);
+    const durs = computeStreakDurations(rows, starts);
+    expect(durs.get(1)).toBeNull();
+    expect(durs.get(2)).toBeNull();
+  });
+
+  it("sums durationMs across consecutive failure cycles in a streak", () => {
+    // newest-first: 3, 2, 1 — all failures
+    const rows = [
+      makeRow(3, false, false, 30000),
+      makeRow(2, false, false, 20000),
+      makeRow(1, false, false, 10000),
+    ];
+    const starts = computeStreakStartCycles(rows);
+    const durs = computeStreakDurations(rows, starts);
+    expect(durs.get(1)).toBe(10000);         // streak[1..1] = 10000
+    expect(durs.get(2)).toBe(30000);         // streak[1..2] = 10000+20000
+    expect(durs.get(3)).toBe(60000);         // streak[1..3] = 10000+20000+30000
+  });
+
+  it("resets after a success: new streak only counts its own cycles", () => {
+    // newest-first: 4 (fail), 3 (pass), 2 (fail), 1 (fail)
+    const rows = [
+      makeRow(4, false, false, 40000),
+      makeRow(3, true, true, 30000),
+      makeRow(2, false, false, 20000),
+      makeRow(1, false, false, 10000),
+    ];
+    const starts = computeStreakStartCycles(rows);
+    const durs = computeStreakDurations(rows, starts);
+    expect(durs.get(3)).toBeNull();          // success row
+    expect(durs.get(4)).toBe(40000);         // new streak at cycle 4, only 40000
   });
 });
 
@@ -1654,13 +1728,40 @@ describe("generateStatsTable", () => {
       expect(dataRow).toContain(STATS_NO_FAILURE_SYMBOL); // Failures column renders the no-value symbol
     });
 
-    it("verbose table has two more columns than non-verbose table (Failures + SinceCycle)", () => {
+    it("verbose table has three more columns than non-verbose table (Failures + SinceCycle + StreakMin)", () => {
       insertCycle(db, makeOutcome({ cycleNumber: 1 }));
       const normalTable = generateStatsTable(db);
       const verboseTable = generateStatsTable(db, undefined, true);
       const normalHeaderCols = normalTable.split("\n")[0].trim().split(/\s{2,}/);
       const verboseHeaderCols = verboseTable.split("\n")[0].trim().split(/\s{2,}/);
-      expect(verboseHeaderCols.length).toBe(normalHeaderCols.length + 2);
+      expect(verboseHeaderCols.length).toBe(normalHeaderCols.length + 3);
+    });
+
+    it("includes StreakMin column header when verbose=true", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      const table = generateStatsTable(db, undefined, true);
+      expect(table).toContain("StreakMin");
+    });
+
+    it("does not include StreakMin column header when verbose is absent", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      const table = generateStatsTable(db);
+      expect(table).not.toContain("StreakMin");
+    });
+
+    it("shows streak duration in StreakMin column for a failure row with known durationMs", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: false, pushSucceeded: false, failureCategory: ERROR_CATEGORY_BUILD_FAILURE, durationMs: 120000 }));
+      const table = generateStatsTable(db, undefined, true);
+      // 120000 ms = 2.0 min
+      expect(table).toContain("2.0 min");
+    });
+
+    it("shows — in StreakMin column for a success row", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true, pushSucceeded: true, failureCategory: ERROR_CATEGORY_NONE, durationMs: 90000 }));
+      const table = generateStatsTable(db, undefined, true);
+      const dataRow = table.split("\n")[2];
+      // For success row: Failures=— , SinceCycle=— , StreakMin=— (three em-dashes)
+      expect(dataRow.split(STATS_NO_FAILURE_SYMBOL).length - 1).toBeGreaterThanOrEqual(3);
     });
 
     it("verbose table separator row is longer than normal separator", () => {
