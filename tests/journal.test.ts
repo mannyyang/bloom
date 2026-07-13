@@ -4,6 +4,7 @@ import { initDb, insertCycle, insertJournalEntry } from "../src/db.js";
 import {
   generateJournalOutput,
   generateJournalCsv,
+  generateJournalTable,
   formatJournalMarkdown,
   parseArgs,
   JOURNAL_ATTEMPTED_HEADER,
@@ -1120,4 +1121,135 @@ describe("generateJournalCsv", () => {
     expect(generateJournalCsv(entries)).toMatch(/\n$/);
   });
 
+});
+
+describe("generateJournalTable", () => {
+  it("returns empty string for empty entries array", () => {
+    expect(generateJournalTable([])).toBe("");
+  });
+
+  it("returns header, separator, and one data row for a single entry", () => {
+    const entries: JournalExportEntry[] = [{
+      cycleNumber: 42,
+      date: "2025-06-01",
+      attempted: "Fix a bug",
+      succeeded: "Bug fixed",
+      failed: "nothing",
+      learnings: "",
+      strategic_context: "",
+    }];
+    const output = generateJournalTable(entries);
+    const lines = output.split("\n");
+    expect(lines).toHaveLength(3); // header + separator + 1 data row
+    expect(lines[0]).toContain("Cycle");
+    expect(lines[0]).toContain("Date");
+    expect(lines[0]).toContain("Attempted");
+    expect(lines[0]).toContain("Succeeded");
+    expect(lines[0]).toContain("Failed");
+    expect(lines[1]).toMatch(/^-+/);
+    expect(lines[2]).toContain("42");
+    expect(lines[2]).toContain("2025-06-01");
+    expect(lines[2]).toContain("Fix a bug");
+    expect(lines[2]).toContain("Bug fixed");
+    expect(lines[2]).toContain("nothing");
+  });
+
+  it("returns header + separator + N rows for N entries", () => {
+    const entries: JournalExportEntry[] = [
+      { cycleNumber: 1, date: "2025-01-01", attempted: "Attempt A", succeeded: "Succeed A", failed: "Fail A", learnings: "", strategic_context: "" },
+      { cycleNumber: 2, date: "2025-01-02", attempted: "Attempt B", succeeded: "Succeed B", failed: "Fail B", learnings: "", strategic_context: "" },
+      { cycleNumber: 3, date: "2025-01-03", attempted: "Attempt C", succeeded: "Succeed C", failed: "Fail C", learnings: "", strategic_context: "" },
+    ];
+    const output = generateJournalTable(entries);
+    const lines = output.split("\n");
+    expect(lines).toHaveLength(5); // header + separator + 3 data rows
+    expect(lines[2]).toContain("1");
+    expect(lines[3]).toContain("2");
+    expect(lines[4]).toContain("3");
+  });
+
+  it("truncates long text fields with an ellipsis", () => {
+    const longText = "A".repeat(50);
+    const entries: JournalExportEntry[] = [{
+      cycleNumber: 1,
+      date: "2025-01-01",
+      attempted: longText,
+      succeeded: "",
+      failed: "",
+      learnings: "",
+      strategic_context: "",
+    }];
+    const output = generateJournalTable(entries);
+    const dataRow = output.split("\n")[2];
+    // The Attempted column is 40 chars wide; 50-char text should be truncated
+    expect(dataRow).toContain("\u2026"); // ellipsis character
+    expect(dataRow).not.toContain(longText);
+  });
+
+  it("only shows first line of multi-line text fields", () => {
+    const entries: JournalExportEntry[] = [{
+      cycleNumber: 1,
+      date: "2025-01-01",
+      attempted: "First line\nSecond line",
+      succeeded: "",
+      failed: "",
+      learnings: "",
+      strategic_context: "",
+    }];
+    const output = generateJournalTable(entries);
+    expect(output).toContain("First line");
+    expect(output).not.toContain("Second line");
+  });
+
+  it("handles null/undefined text fields gracefully", () => {
+    const entries = [{
+      cycleNumber: 1,
+      date: "2025-01-01",
+      attempted: null,
+      succeeded: null,
+      failed: null,
+      learnings: null,
+      strategic_context: null,
+    }] as unknown as JournalExportEntry[];
+    expect(() => generateJournalTable(entries)).not.toThrow();
+    const output = generateJournalTable(entries);
+    expect(output.split("\n")).toHaveLength(3);
+  });
+});
+
+describe("parseArgs --format table", () => {
+  it("--format table returns table format", () => {
+    const result = parseArgs(["--format", "table"]);
+    expect(result).toEqual({ format: "table", limit: undefined, since: undefined, cycle: undefined });
+  });
+
+  it("--format bogus falls back to json (unknown format fallback)", () => {
+    const result = parseArgs(["--format", "bogus"]);
+    expect(result).toEqual({ format: "json", limit: undefined, since: undefined, cycle: undefined });
+  });
+});
+
+describe("generateJournalOutput --format table", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("returns 'No journal entries recorded yet.' for empty DB", () => {
+    const output = generateJournalOutput(db, { format: "table" });
+    expect(output).toBe("No journal entries recorded yet.");
+  });
+
+  it("returns ASCII table with header and data rows for existing entries", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 800 }));
+    insertJournalEntry(db, 800, "attempted", "Add table format");
+    insertJournalEntry(db, 800, "succeeded", "Table implemented");
+
+    const output = generateJournalOutput(db, { format: "table" });
+    expect(output).toContain("Cycle");
+    expect(output).toContain("800");
+    expect(output).toContain("Add table format");
+    expect(output).toContain("Table implemented");
+  });
 });

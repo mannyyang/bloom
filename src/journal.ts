@@ -44,7 +44,7 @@ export const JOURNAL_HELP_TEXT = `\
 Usage: pnpm journal [options]
 
 Options:
-  --format <fmt>    Output format: json (default), md, or csv
+  --format <fmt>    Output format: json (default), md, csv, or table
   --md              Shorthand for --format md
   --limit <N>       Limit output to the most recent N entries
   --since <CYCLE>   Show only entries from cycle CYCLE onwards (inclusive)
@@ -92,6 +92,63 @@ export function formatJournalMarkdown(entries: JournalExportEntry[]): string {
   return lines.join("\n");
 }
 
+/** Column widths for the ASCII journal summary table. */
+const JCOL_CYCLE = 6;
+const JCOL_DATE = 10;
+const JCOL_ATTEMPTED = 40;
+const JCOL_SUCCEEDED = 40;
+const JCOL_FAILED = 20;
+
+/**
+ * Pad (and truncate with ellipsis) a string to a fixed column width.
+ * Right-aligns numeric columns when `right` is true.
+ */
+function jpad(s: string, width: number, right = false): string {
+  const truncated = s.length > width ? s.slice(0, width - 1) + "\u2026" : s;
+  return right ? truncated.padStart(width) : truncated.padEnd(width);
+}
+
+/**
+ * Render journal entries as a fixed-width ASCII summary table.
+ * Columns: Cycle, Date, Attempted (first line, truncated), Succeeded (first line,
+ * truncated), Failed (first line, truncated).
+ * Returns an empty string when entries is empty.
+ */
+export function generateJournalTable(entries: JournalExportEntry[]): string {
+  if (entries.length === 0) return "";
+
+  const headerCells = [
+    jpad("Cycle", JCOL_CYCLE, true),
+    jpad("Date", JCOL_DATE),
+    jpad("Attempted", JCOL_ATTEMPTED),
+    jpad("Succeeded", JCOL_SUCCEEDED),
+    jpad("Failed", JCOL_FAILED),
+  ];
+  const sepCells = [
+    "-".repeat(JCOL_CYCLE),
+    "-".repeat(JCOL_DATE),
+    "-".repeat(JCOL_ATTEMPTED),
+    "-".repeat(JCOL_SUCCEEDED),
+    "-".repeat(JCOL_FAILED),
+  ];
+
+  const header = headerCells.join("  ");
+  const separator = sepCells.join("  ");
+
+  const firstLine = (text: string | null | undefined): string =>
+    (text ?? "").split("\n")[0] ?? "";
+
+  const dataRows = entries.map((e) => [
+    jpad(String(e.cycleNumber), JCOL_CYCLE, true),
+    jpad(e.date, JCOL_DATE),
+    jpad(firstLine(e.attempted), JCOL_ATTEMPTED),
+    jpad(firstLine(e.succeeded), JCOL_SUCCEEDED),
+    jpad(firstLine(e.failed), JCOL_FAILED),
+  ].join("  "));
+
+  return [header, separator, ...dataRows].join("\n");
+}
+
 /**
  * Serialize journal entries as RFC 4180 CSV.
  * The first row is a fixed header; subsequent rows are one entry each.
@@ -120,7 +177,7 @@ export function generateJournalCsv(entries: JournalExportEntry[]): string {
  */
 export function generateJournalOutput(
   db: Database.Database,
-  options: { format?: "json" | "md" | "csv"; limit?: number; since?: number; cycle?: number; search?: string; verbose?: boolean } = {},
+  options: { format?: "json" | "md" | "csv" | "table"; limit?: number; since?: number; cycle?: number; search?: string; verbose?: boolean } = {},
 ): string {
   const { format = "json", limit, since, cycle, search, verbose } = options;
   // Math.floor normalises fractional values (e.g. 3.7 → 3).
@@ -162,6 +219,10 @@ export function generateJournalOutput(
     return generateJournalCsv(entries);
   }
 
+  if (format === "table") {
+    return generateJournalTable(entries) || "No journal entries recorded yet.";
+  }
+
   if (verbose) {
     const cycleNumbers = entries.map((e) => e.cycleNumber);
     return JSON.stringify(
@@ -180,13 +241,13 @@ export function generateJournalOutput(
   return JSON.stringify(entries, null, 2);
 }
 
-export function parseArgs(argv: string[]): { format: "json" | "md" | "csv"; limit?: number; since?: number; cycle?: number; search?: string; verbose?: boolean } {
-  let format: "json" | "md" | "csv" = "json";
+export function parseArgs(argv: string[]): { format: "json" | "md" | "csv" | "table"; limit?: number; since?: number; cycle?: number; search?: string; verbose?: boolean } {
+  let format: "json" | "md" | "csv" | "table" = "json";
   // --format <fmt> takes precedence; unknown values fall back to "json"
   const formatFlagIdx = argv.indexOf("--format");
   if (formatFlagIdx !== -1 && argv[formatFlagIdx + 1]) {
     const val = argv[formatFlagIdx + 1];
-    if (val === "csv" || val === "md") {
+    if (val === "csv" || val === "md" || val === "table") {
       format = val;
     }
   } else if (argv.includes("--md")) {
