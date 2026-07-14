@@ -1215,4 +1215,22 @@ describe("writeCycleSummaryJson", () => {
     writeCycleSummaryJson(makeOutcome(), destPath);
     expect(existsSync(`${destPath}.tmp`)).toBe(false);
   });
+
+  it("logs a warning, does not throw, and cleans up .tmp when renameSync fails", () => {
+    // Force renameSync to fail by pre-creating a directory at destPath.
+    // writeFileSync(tmpPath) succeeds (tmpPath is destPath + ".tmp", a sibling file),
+    // but renameSync(tmpPath, destPath) fails with EISDIR because destPath is a directory.
+    const { mkdirSync, rmdirSync } = require("node:fs");
+    mkdirSync(destPath, { recursive: true });
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      expect(() => writeCycleSummaryJson(makeOutcome(), destPath)).not.toThrow();
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("writeCycleSummaryJson failed"));
+      // Temp file must be cleaned up even though rename failed
+      expect(existsSync(`${destPath}.tmp`)).toBe(false);
+    } finally {
+      warnSpy.mockRestore();
+      try { rmdirSync(destPath); } catch { /* ignore */ }
+    }
+  });
 });
