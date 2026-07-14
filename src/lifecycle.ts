@@ -1,5 +1,5 @@
 import { execSync, execFileSync } from "node:child_process";
-import { writeFileSync, renameSync } from "node:fs";
+import { writeFileSync, renameSync, unlinkSync, existsSync } from "node:fs";
 import { execSyncOutput, errorMessage } from "./errors.js";
 import type { CycleOutcome } from "./outcomes.js";
 
@@ -334,7 +334,13 @@ export function writeCycleSummaryJson(outcome: CycleOutcome, destPath: string): 
   const tmpPath = `${destPath}.tmp`;
   try {
     writeFileSync(tmpPath, JSON.stringify(summary, null, 2) + "\n", "utf-8");
-    renameSync(tmpPath, destPath);
+    try {
+      renameSync(tmpPath, destPath);
+    } catch (renameErr) {
+      // Clean up the temp file to avoid stale .tmp accumulation.
+      try { if (existsSync(tmpPath)) unlinkSync(tmpPath); } catch { /* ignore */ }
+      throw renameErr;
+    }
   } catch (err) {
     console.warn(`[lifecycle] writeCycleSummaryJson failed (non-fatal): ${errorMessage(err)}`);
   }
