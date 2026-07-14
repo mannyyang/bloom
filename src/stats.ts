@@ -563,6 +563,16 @@ export function renderTrendBar(rows: CycleRow[]): string {
 }
 
 /**
+ * Prefix string rendered at the start of the trend summary line produced by
+ * generateStatsTrend.  Extracted as a named constant so subprocess integration
+ * tests can assert trend output without duplicating the literal, mirroring the
+ * STATS_NO_FAILURE_SYMBOL / STATS_NEXT_ITEM_HEADER pattern.
+ *
+ * Example full line: "Trend (last 10): ▁▃▅█  60%"
+ */
+export const STATS_TREND_PREFIX = "Trend (last ";
+
+/**
  * Generate a single-line trend summary showing the success rate of the last N cycles
  * as an ASCII bar plus a trailing percentage.
  * Returns "No evolution cycles recorded yet." when the database is empty.
@@ -572,7 +582,7 @@ export function generateStatsTrend(db: Database.Database, trendN: number): strin
   const rows = getCycleRows(db, trendN);
   if (rows.length === 0) return "No evolution cycles recorded yet.";
   const bar = renderTrendBar(rows);
-  return `Trend (last ${rows.length}): ${bar}`;
+  return `${STATS_TREND_PREFIX}${rows.length}): ${bar}`;
 }
 
 /**

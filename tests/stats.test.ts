@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution, getLastUpdatedCyclePerCategory } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseCsvFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, parseTrendArg, parseCostAlertArg, parseOutputFileArg, checkCostAlert, generateStatsJson, generateStatsTable, generateStatsTrend, renderTrendBar, TREND_BAR_CHARS, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES, COL_COST, COL_SINCE_CYCLE, COL_STREAK_DUR, computeStreakStartCycles, computeStreakDurations, generateStatsCsvFromRows, generateStatsCsv, STATS_CSV_HEADER, computeEffectiveLimit } from "../src/stats.js";
+import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseCsvFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, parseTrendArg, parseCostAlertArg, parseOutputFileArg, checkCostAlert, generateStatsJson, generateStatsTable, generateStatsTrend, renderTrendBar, TREND_BAR_CHARS, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES, COL_COST, COL_SINCE_CYCLE, COL_STREAK_DUR, computeStreakStartCycles, computeStreakDurations, generateStatsCsvFromRows, generateStatsCsv, STATS_CSV_HEADER, computeEffectiveLimit, STATS_TREND_PREFIX } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE, ERROR_CATEGORY_LLM_ERROR } from "../src/errors.js";
 import { MAX_MEMORY_CHARS } from "../src/memory.js";
@@ -2723,6 +2723,23 @@ describe("renderTrendBar", () => {
 });
 
 // ---------------------------------------------------------------------------
+// STATS_TREND_PREFIX value-pin
+// ---------------------------------------------------------------------------
+
+describe("STATS_TREND_PREFIX", () => {
+  it("has the expected literal value", () => {
+    expect(STATS_TREND_PREFIX).toBe("Trend (last ");
+  });
+
+  it("is used as the prefix of generateStatsTrend output when cycles exist", () => {
+    const db = initDb(":memory:");
+    insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true, pushSucceeded: true }));
+    const result = generateStatsTrend(db, 5);
+    expect(result.startsWith(STATS_TREND_PREFIX)).toBe(true);
+    db.close();
+  });
+});
+
 // generateStatsTrend
 // ---------------------------------------------------------------------------
 
