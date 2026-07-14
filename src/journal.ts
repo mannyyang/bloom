@@ -154,9 +154,14 @@ export function generateJournalTable(entries: JournalExportEntry[]): string {
  * The first row is a fixed header; subsequent rows are one entry each.
  * An empty entries array produces a header-only output (still RFC 4180 valid).
  */
+/**
+ * Fixed CSV column header for journal exports.
+ * Exported so tests can pin it and detect accidental column drift.
+ */
+export const JOURNAL_CSV_HEADER = "cycleNumber,date,attempted,succeeded,failed,learnings,strategic_context";
+
 export function generateJournalCsv(entries: JournalExportEntry[]): string {
-  const HEADER = "cycleNumber,date,attempted,succeeded,failed,learnings,strategic_context";
-  const lines: string[] = [HEADER];
+  const lines: string[] = [JOURNAL_CSV_HEADER];
   for (const entry of entries) {
     lines.push([
       csvQuoteField(String(entry.cycleNumber)),

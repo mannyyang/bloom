@@ -13,6 +13,7 @@ import {
   JOURNAL_LEARNINGS_HEADER,
   JOURNAL_STRATEGIC_CONTEXT_HEADER,
   JOURNAL_HELP_TEXT,
+  JOURNAL_CSV_HEADER,
 } from "../src/journal.js";
 import type { JournalExportEntry } from "../src/db.js";
 import { makeOutcome } from "./helpers.js";
@@ -1274,5 +1275,23 @@ describe("generateJournalOutput --format table", () => {
 
     const output = generateJournalOutput(db, { format: "table" });
     expect(output).not.toContain("Entries:");
+  });
+});
+
+describe("JOURNAL_CSV_HEADER", () => {
+  it("is pinned to the expected column names", () => {
+    expect(JOURNAL_CSV_HEADER).toBe(
+      "cycleNumber,date,attempted,succeeded,failed,learnings,strategic_context"
+    );
+  });
+
+  it("generateJournalCsv uses JOURNAL_CSV_HEADER as the first row", () => {
+    const csv = generateJournalCsv([]);
+    expect(csv.split("\n")[0]).toBe(JOURNAL_CSV_HEADER);
+  });
+
+  it("header-only output for empty entries is exactly JOURNAL_CSV_HEADER + newline", () => {
+    const csv = generateJournalCsv([]);
+    expect(csv).toBe(JOURNAL_CSV_HEADER + "\n");
   });
 });
