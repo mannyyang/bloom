@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution, getLastUpdatedCyclePerCategory } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseCsvFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, parseTrendArg, parseCostAlertArg, parseOutputFileArg, checkCostAlert, generateStatsJson, generateStatsTable, generateStatsTrend, renderTrendBar, TREND_BAR_CHARS, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES, COL_COST, COL_SINCE_CYCLE, COL_STREAK_DUR, computeStreakStartCycles, computeStreakDurations, generateStatsCsvFromRows, generateStatsCsv, STATS_CSV_HEADER } from "../src/stats.js";
+import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseCsvFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, parseTrendArg, parseCostAlertArg, parseOutputFileArg, checkCostAlert, generateStatsJson, generateStatsTable, generateStatsTrend, renderTrendBar, TREND_BAR_CHARS, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES, COL_COST, COL_SINCE_CYCLE, COL_STREAK_DUR, computeStreakStartCycles, computeStreakDurations, generateStatsCsvFromRows, generateStatsCsv, STATS_CSV_HEADER, computeEffectiveLimit } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE, ERROR_CATEGORY_LLM_ERROR } from "../src/errors.js";
 import { MAX_MEMORY_CHARS } from "../src/memory.js";
@@ -3093,5 +3093,87 @@ describe("generateStatsCsv three-flag composition (sinceN + categoryFilter + sea
     const lines = csv.trimEnd().split("\n");
     expect(lines).toHaveLength(4); // header + cycles 3, 5, 7
     expect(csv).not.toMatch(/^1,/m);
+  });
+});
+
+describe("computeEffectiveLimit", () => {
+  it("returns undefined when all args are undefined (all-time query)", () => {
+    // Critical: undefined means getCycleRows uses its default CYCLE_STATS_HISTORY_LIMIT,
+    // but getCycleStats without a limit returns all-time stats correctly.
+    // The computeEffectiveLimit contract is that no filters → no artificial cap imposed.
+    expect(computeEffectiveLimit(undefined, undefined, undefined)).toBeUndefined();
+  });
+
+  it("returns lastN when only lastN is provided", () => {
+    expect(computeEffectiveLimit(10, undefined, undefined)).toBe(10);
+  });
+
+  it("returns MAX_SAFE_INTEGER when sinceN is set and lastN is absent", () => {
+    // Must fetch all rows so JS-side sinceN filter sees every matching cycle
+    expect(computeEffectiveLimit(undefined, 5, undefined)).toBe(Number.MAX_SAFE_INTEGER);
+  });
+
+  it("returns MAX_SAFE_INTEGER when categoryFilter is set and lastN is absent", () => {
+    // Must fetch all rows so JS-side category filter sees every matching cycle
+    expect(computeEffectiveLimit(undefined, undefined, "build_failure")).toBe(Number.MAX_SAFE_INTEGER);
+  });
+
+  it("returns MAX_SAFE_INTEGER when both sinceN and categoryFilter are set and lastN is absent", () => {
+    expect(computeEffectiveLimit(undefined, 3, "test_failure")).toBe(Number.MAX_SAFE_INTEGER);
+  });
+
+  it("returns lastN when lastN is set alongside sinceN (lastN wins)", () => {
+    // Explicit lastN always honoured; JS-side filter still applies sinceN post-fetch
+    expect(computeEffectiveLimit(20, 5, undefined)).toBe(20);
+  });
+
+  it("returns lastN when all three args are set (lastN wins)", () => {
+    expect(computeEffectiveLimit(15, 3, "build_failure")).toBe(15);
+  });
+
+  it("returns lastN=1 (minimum positive) when only lastN=1 is set", () => {
+    expect(computeEffectiveLimit(1, undefined, undefined)).toBe(1);
+  });
+});
+
+describe("generateStatsCsv --verbose ignored (contract pin)", () => {
+  // generateStatsCsv intentionally has no verbose parameter.
+  // This describe block pins that contract so a future refactor that silently
+  // adds verbose-only fields to the CSV output will be caught by test failures.
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+    insertCycle(db, makeOutcome({ cycleNumber: 1, buildVerificationPassed: true, pushSucceeded: true }));
+  });
+
+  it("output contains only STATS_CSV_HEADER columns (no verbose-only fields)", () => {
+    const csv = generateStatsCsv(db);
+    const headerLine = csv.split("\n")[0];
+    expect(headerLine).toBe(STATS_CSV_HEADER);
+    // Verbose-only field names that must not appear in CSV header
+    expect(headerLine).not.toContain("staleness");
+    expect(headerLine).not.toContain("dangerous_patterns");
+    expect(headerLine).not.toContain("strategic_context");
+  });
+
+  it("calling generateStatsCsv twice with same args produces identical output (no hidden state)", () => {
+    const csv1 = generateStatsCsv(db);
+    const csv2 = generateStatsCsv(db);
+    expect(csv1).toBe(csv2);
+  });
+
+  it("parseCsvFlag and parseVerboseFlag can both be true without affecting CSV content", () => {
+    // Simulate the main() path: both --csv and --verbose present.
+    // generateStatsCsv is called WITHOUT verbose — the CSV must be unchanged.
+    const argv = ["node", "stats.js", "--csv", "--verbose"];
+    const csvMode = parseCsvFlag(argv);
+    const verbose = parseVerboseFlag(argv);
+    expect(csvMode).toBe(true);
+    expect(verbose).toBe(true);
+    // CSV output is the same regardless of the verbose flag value since
+    // generateStatsCsv does not accept a verbose parameter.
+    const csv = generateStatsCsv(db);
+    expect(csv.split("\n")[0]).toBe(STATS_CSV_HEADER);
   });
 });
