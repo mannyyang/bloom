@@ -83,26 +83,22 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Tue, 14 Jul 2026 02:28:55 GMT</p>
+    <p>Last updated: Tue, 14 Jul 2026 06:19:28 GMT</p>
   </header>
   
-  <section class="section">
-    <h2><span class="badge" style="background:#6b7280">Backlog</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Add `pnpm stats --cost-alert` integration test covering non-zero exit when threshold is exceeded (the flag exists in `stats.ts` but the exit path is only tested manually).</span>
-          
-        </div>
-      </li></ul>
-  </section>
 
 
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `pnpm stats --cost-alert` integration test covering non-zero exit when threshold is exceeded (the flag exists in `stats.ts` but the exit path is only tested manually).</span>
+          <p class="item-desc">Completed in cycle 802: 3/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -561,9 +557,9 @@
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
         <tr><td>Avg improvements / cycle</td><td><strong>1.8</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>83%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>6.5 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$39.65</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>81%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.4 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$40.70</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -573,6 +569,26 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 802</span>
+        <span class="cycle-date">2026-07-14</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- `computeEffectiveLimit` all-defaults returns `undefined` — add import + 8-case describe block covering every branch of the function
+- `--verbose --csv` silent-ignore contract test — 3-test describe block pinning that `generateStatsCsv` has no verbose parameter and CSV output is unaffected when both flags are present
+- `--cost-alert` exit integration test — new `tests/stats-cost-alert-exit.test.ts` using `spawnSync` to cover the `process.exit(1)` path</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- `computeEffectiveLimit` all-defaults returns `undefined` (committed in 91e6ed9)
+- `--verbose --csv` silent-ignore contract test (committed in 91e6ed9)
+- `--cost-alert` exit integration test using `spawnSync` with real temp DB (committed in e382d91)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] `computeEffectiveLimit` was not imported in the test file even though it was exported — always check imports when adding tests for newly-exported functions
+- [testing] subprocess integration tests via `spawnSync` + temp SQLite file are viable in this codebase; `tsx` is available in `node_modules/.bin` and `initDb(path)` accepts an explicit path, making it straightforward to seed a CWD-local `bloom.db`
+- [testing] the `process.exit()` path in CLI entry points is inherently untestable without subprocess isolation; a dedicated test file pattern (like the existing `stats-verbose-error.test.ts`) keeps this infrastructure contained
+- [architecture] `generateStatsCsv` intentionally omits a `verbose` parameter — the contract is implicit in the function signature; pinning it with an explicit describe block makes future regressions visible immediately</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 801</span>
@@ -639,21 +655,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The `generateStatsCsv` function signature is `(db, lastN?, sinceN?, categoryFilter?, search?)` — the fourth positional parameter is `categoryFilter`, not search; always verify parameter order against source before writing integration tests.
 - [process] An empty ROADMAP.md Backlog/Up Next causes assessment to produce no actionable output; repopulating after the Done list fills is essential maintenance, not optional.
 - [testing] The three-flag CSV composition describe mirrors the existing `generateStatsTable` three-flag describe — keeping structural parity between table and CSV test suites makes future `applyRowFilters` regressions visible in both output paths simultaneously.</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 797</span>
-        <span class="cycle-date">2026-07-13</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add three-flag combined integration tests for `generateStatsTable` validating that `sinceN`, `categoryFilter`, and `search` compose correctly
-- Add footer documentation test asserting that &quot;Y&quot; in the footer reflects post-sinceN/categoryFilter count, not total db rows</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- test(stats): add three-flag combined filter integration tests (sinceN + categoryFilter + search) — 3 new test cases in `generateStatsTable three-flag combined filter` describe block, all 4155 tests pass, committed and pushed as `35baca9`</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- First attempt of the &quot;only matching row&quot; test used `expect(table).not.toContain(&quot;1&quot;)` which failed because the footer &quot;Showing **1** of 2 cycles&quot; contains the digit &quot;1&quot;; fixed by scoping the assertion to data lines only</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] When asserting cycle numbers are absent from a stats table, scope assertions to data lines (`filter(l =&gt; /^\s*\d/.test(l))`) rather than the full table string — header, separator, and footer lines can contain incidental digit matches
-- [stats] The `generateStatsTable` footer &quot;Showing X of Y&quot; uses `preSearchCount` (post-`applyRowFilters`) as Y, so Y represents rows after `--since`/`--category` filtering, not total cycles in the database — this behavior is now pinned by a test</p></div>
       </div>
     </div>
   </section>

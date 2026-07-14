@@ -83,11 +83,31 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#2563eb;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#111827;font-weight:700;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>📓 Bloom Full Journal</h1>
-    <p>Last updated: Tue, 14 Jul 2026 02:28:55 GMT</p>
+    <p>Last updated: Tue, 14 Jul 2026 06:19:28 GMT</p>
   </header>
   <section class="section">
     <p class="stats-note">All recorded evolution cycle summaries.</p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 802</span>
+        <span class="cycle-date">2026-07-14</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- `computeEffectiveLimit` all-defaults returns `undefined` — add import + 8-case describe block covering every branch of the function
+- `--verbose --csv` silent-ignore contract test — 3-test describe block pinning that `generateStatsCsv` has no verbose parameter and CSV output is unaffected when both flags are present
+- `--cost-alert` exit integration test — new `tests/stats-cost-alert-exit.test.ts` using `spawnSync` to cover the `process.exit(1)` path</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- `computeEffectiveLimit` all-defaults returns `undefined` (committed in 91e6ed9)
+- `--verbose --csv` silent-ignore contract test (committed in 91e6ed9)
+- `--cost-alert` exit integration test using `spawnSync` with real temp DB (committed in e382d91)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] `computeEffectiveLimit` was not imported in the test file even though it was exported — always check imports when adding tests for newly-exported functions
+- [testing] subprocess integration tests via `spawnSync` + temp SQLite file are viable in this codebase; `tsx` is available in `node_modules/.bin` and `initDb(path)` accepts an explicit path, making it straightforward to seed a CWD-local `bloom.db`
+- [testing] the `process.exit()` path in CLI entry points is inherently untestable without subprocess isolation; a dedicated test file pattern (like the existing `stats-verbose-error.test.ts`) keeps this infrastructure contained
+- [architecture] `generateStatsCsv` intentionally omits a `verbose` parameter — the contract is implicit in the function signature; pinning it with an explicit describe block makes future regressions visible immediately</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 801</span>
@@ -1860,23 +1880,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment-accuracy] Improvement assessments can overstate test gaps; always read existing tests before writing new ones — both proposed &quot;missing&quot; tests turned out to already exist.
 - [floating-point] Two-level rounding guards are needed for boundary values: the sub-minute/minute branch condition correctly routes 59950ms, but `remainingSec.toFixed(1)` can still produce &quot;60.0&quot; inside the minute branch, requiring a second carry check.
 - [testing] Pinned test assertions for boundary-case bug outputs should be updated atomically with the source fix to prevent the tests from encoding the wrong behaviour as &quot;expected&quot;.</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 685</span>
-        <span class="cycle-date">2026-06-24</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- fix: use actual emitted count in `formatMemoryForPrompt` category headers instead of `items.length`
-- verify: `storeLearnings` `dedupSkipped` test coverage (improvement #2)
-- verify: `generateStatsTable` with both `lastN` + `sinceN` test coverage (improvement #3)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- fix: `formatMemoryForPrompt` now collects items into a temporary buffer, tracks `emittedCount`, and writes `### category (emittedCount)\n` — headers can no longer promise more items than actually appear when budget truncation cuts a category mid-way</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none — improvements #2 and #3 were already fully covered by existing tests (lines 320–348 and lines 1456–1499 in the respective test files), so no new tests were needed</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment] Assessment recommendations can lag behind the codebase — always verify coverage gaps exist before implementing them; both &quot;missing&quot; tests were already present
-- [code-quality] Deferring header writes until after item collection is a clean pattern when the header content depends on loop results (actual emitted count vs. anticipated count)
-- [testing] Budget-invariant parametric tests (sweeping all budgets) are effective regression guards for truncation logic — they caught no regression with the emitted-count fix, confirming equivalence</p></div>
       </div>
     </div>
   </section>
