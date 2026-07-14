@@ -2,6 +2,12 @@
 
 ## Backlog
 
+- [ ] Add `--verbose` flag to `pnpm roadmap` CLI to print full item descriptions inline, mirroring the `--verbose` enrichment already available on `pnpm journal` and `pnpm stats`.
+- [ ] Expose `triage` decision fields in `pnpm stats --json` output (e.g. `triageDecision`, `triageRationale`) so CI dashboards can surface issue-triage audit trails without parsing SQLite directly.
+- [ ] Add `--limit <n>` flag to `pnpm journal` CLI to cap the number of entries returned, preventing unbounded output as the database grows and mirroring the `--last N` pattern on `pnpm stats`.
+- [ ] Extract `parseTimeoutEnv` boundary-value tests (inputs: 0, negative, NaN, Infinity, float) into a dedicated `describe` block in `lifecycle.test.ts` to make the edge-case contract explicit and easier to extend.
+- [ ] Add `--format csv` output to `pnpm roadmap` CLI for direct spreadsheet import of roadmap items (status, title, completedInCycle), consistent with CSV export already available in `pnpm journal` and `pnpm stats`.
+
 ## Up Next
 
 ## In Progress
