@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { generateRoadmapOutput, generateRoadmapJson, generateRoadmapMarkdown, generateRoadmapCsv, parseRoadmapFilterFlag, parseFormatFlag, parseRoadmapSearchFlag, ROADMAP_BODY_PREVIEW_MAX_CHARS, ROADMAP_HELP_TEXT, STATUS_ORDER, type RoadmapJsonSummary } from "../src/roadmap.js";
+import { generateRoadmapOutput, generateRoadmapJson, generateRoadmapMarkdown, generateRoadmapCsv, parseRoadmapFilterFlag, parseFormatFlag, parseRoadmapSearchFlag, ROADMAP_BODY_PREVIEW_MAX_CHARS, ROADMAP_HELP_TEXT, ROADMAP_CSV_HEADER, STATUS_ORDER, type RoadmapJsonSummary } from "../src/roadmap.js";
 import { parseHelpFlag } from "../src/stats.js";
 import * as planning from "../src/planning.js";
 import { parseRoadmap, serializeRoadmap, STATUS_COLUMNS, ITEM_BODY_LIMIT, PLANNING_BODY_PREVIEW_CHARS } from "../src/planning.js";
@@ -2049,5 +2049,24 @@ describe("generateRoadmapCsv --search filter", () => {
     expect(lines).toHaveLength(2); // header + 1 matching Backlog item
     expect(csv).toContain("Improve prompt efficiency");
     expect(csv).not.toContain("Track conversion rate");
+  });
+});
+
+describe("ROADMAP_CSV_HEADER", () => {
+  it("has the expected column schema", () => {
+    // Value-pinning: if a column is added, removed, or reordered in
+    // generateRoadmapCsv, this assertion catches the drift immediately
+    // rather than letting a silent schema change reach consumers.
+    expect(ROADMAP_CSV_HEADER).toBe("title,status,linkedIssueNumber,reactions,sinceCycle,body");
+  });
+
+  it("generateRoadmapCsv uses ROADMAP_CSV_HEADER as the first row", () => {
+    const csv = generateRoadmapCsv(SAMPLE_ROADMAP);
+    expect(csv.split("\n")[0]).toBe(ROADMAP_CSV_HEADER);
+  });
+
+  it("header-only output for empty roadmap is exactly ROADMAP_CSV_HEADER + newline", () => {
+    const csv = generateRoadmapCsv(EMPTY_ROADMAP);
+    expect(csv).toBe(ROADMAP_CSV_HEADER + "\n");
   });
 });

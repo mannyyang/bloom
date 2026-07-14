@@ -116,10 +116,17 @@ export function parseRoadmapSearchFlag(argv: string[]): string | undefined {
  * The first row is a fixed header. An empty items array produces header-only output.
  * When `filterStatus` is provided, only items with that status are included.
  */
+/**
+ * Fixed header row for CSV output produced by generateRoadmapCsv.
+ * Exported so tests can pin the schema and catch column-level regressions
+ * without parsing generated output — mirrors the STATS_CSV_HEADER /
+ * JOURNAL_CSV_HEADER convention in stats.ts and journal.ts.
+ */
+export const ROADMAP_CSV_HEADER = "title,status,linkedIssueNumber,reactions,sinceCycle,body";
+
 export function generateRoadmapCsv(content: string, filterStatus?: StatusColumn, search?: string): string {
   const { items } = generateRoadmapJson(content, filterStatus, undefined, search);
-  const HEADER = "title,status,linkedIssueNumber,reactions,sinceCycle,body";
-  const lines: string[] = [HEADER];
+  const lines: string[] = [ROADMAP_CSV_HEADER];
   for (const item of items) {
     lines.push([
       csvQuoteField(item.title),
