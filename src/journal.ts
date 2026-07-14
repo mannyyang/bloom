@@ -220,7 +220,15 @@ export function generateJournalOutput(
   }
 
   if (format === "table") {
-    return generateJournalTable(entries) || "No journal entries recorded yet.";
+    const tableOutput = generateJournalTable(entries);
+    if (!tableOutput) return "No journal entries recorded yet.";
+    if (verbose && entries.length > 0) {
+      const cycleNumbers = entries.map((e) => e.cycleNumber);
+      const minCycle = Math.min(...cycleNumbers);
+      const maxCycle = Math.max(...cycleNumbers);
+      return `${tableOutput}\nEntries: ${entries.length} | Range: ${minCycle}–${maxCycle}`;
+    }
+    return tableOutput;
   }
 
   if (verbose) {

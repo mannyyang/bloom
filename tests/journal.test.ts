@@ -1252,4 +1252,27 @@ describe("generateJournalOutput --format table", () => {
     expect(output).toContain("Add table format");
     expect(output).toContain("Table implemented");
   });
+
+  it("table verbose appends footer with entry count and cycle range", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 10 }));
+    insertCycle(db, makeOutcome({ cycleNumber: 20 }));
+    insertJournalEntry(db, 10, "attempted", "First attempt");
+    insertJournalEntry(db, 20, "attempted", "Second attempt");
+
+    const output = generateJournalOutput(db, { format: "table", verbose: true });
+    expect(output).toContain("Entries: 2 | Range: 10\u201320");
+  });
+
+  it("table verbose with empty DB still returns sentinel string", () => {
+    const output = generateJournalOutput(db, { format: "table", verbose: true });
+    expect(output).toBe("No journal entries recorded yet.");
+  });
+
+  it("table without verbose does not append footer", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 5 }));
+    insertJournalEntry(db, 5, "attempted", "Some attempt");
+
+    const output = generateJournalOutput(db, { format: "table" });
+    expect(output).not.toContain("Entries:");
+  });
 });
