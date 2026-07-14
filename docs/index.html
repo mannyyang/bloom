@@ -83,7 +83,7 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Mon, 13 Jul 2026 20:59:43 GMT</p>
+    <p>Last updated: Tue, 14 Jul 2026 02:28:55 GMT</p>
   </header>
   
   <section class="section">
@@ -92,7 +92,7 @@
       <li class="item">
         <span class="check">⬜</span>
         <div class="item-body">
-          <span class="item-title">Add `--format table` mode to `pnpm journal` CLI so journal entries can be displayed in an ASCII summary table (cycle, date, succeeded/attempted, build pass) without reading full text, mirroring `pnpm stats --table`.</span>
+          <span class="item-title">Add `pnpm stats --cost-alert` integration test covering non-zero exit when threshold is exceeded (the flag exists in `stats.ts` but the exit path is only tested manually).</span>
           
         </div>
       </li></ul>
@@ -103,6 +103,20 @@
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `--verbose` summary footer to `pnpm journal --format table` (entry count + cycle range), matching how `--verbose` enriches `--format md` and JSON.</span>
+          <p class="item-desc">Completed in cycle 801: 2/3 improvements succeeded.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `--format table` mode to `pnpm journal` CLI so journal entries can be displayed in an ASCII summary table (cycle, date, succeeded/attempted, build pass) without reading full text, mirroring `pnpm stats --table`.</span>
+          <p class="item-desc">Completed in cycle 801: generateJournalTable, parseArgs, and generateJournalOutput all fully support --format table.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -546,10 +560,10 @@
       <tbody>
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
-        <tr><td>Avg improvements / cycle</td><td><strong>1.9</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>86%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>6.6 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$40.45</strong></td></tr>
+        <tr><td>Avg improvements / cycle</td><td><strong>1.8</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>83%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.5 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$39.65</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -559,6 +573,24 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 801</span>
+        <span class="cycle-date">2026-07-14</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Update ROADMAP.md: move `--format table` from In Progress to Done, add 2 new Backlog items
+- Add `--verbose` summary footer to `pnpm journal --format table` output (entry count + cycle range), with 3 new tests
+- Test gap: `parseArgs` unknown `--format` fallback (assessed for necessity)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Update ROADMAP.md: `--format table` item moved to Done, 2 new Backlog items added (`--verbose` table footer and `--cost-alert` integration test)
+- Add `--verbose` footer to `--format table`: appends `Entries: N | Range: M–K` below the ASCII table; 3 tests added, all 4198 tests pass</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none (improvement 3 was skipped — the `parseArgs` unknown-format fallback test already existed at line 1226 of journal.test.ts; the gap was already closed in a prior cycle)</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment] Assessment descriptions of test gaps can be stale — always verify by grepping the actual test file before writing new tests, as the gap may have been filled by a previous cycle
+- [feature-parity] Adding verbose behavior to table format required a small 6-line change in `generateJournalOutput`; the pattern of appending a footer line mirrors md&#39;s inline summary and JSON&#39;s wrapper object cleanly
+- [roadmap] Moving items from In Progress to Done as soon as implementation is confirmed prevents roadmap drift and keeps the backlog health signal meaningful for future assessment cycles</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 800</span>
@@ -622,26 +654,6 @@
         <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- First attempt of the &quot;only matching row&quot; test used `expect(table).not.toContain(&quot;1&quot;)` which failed because the footer &quot;Showing **1** of 2 cycles&quot; contains the digit &quot;1&quot;; fixed by scoping the assertion to data lines only</p></div>
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] When asserting cycle numbers are absent from a stats table, scope assertions to data lines (`filter(l =&gt; /^\s*\d/.test(l))`) rather than the full table string — header, separator, and footer lines can contain incidental digit matches
 - [stats] The `generateStatsTable` footer &quot;Showing X of Y&quot; uses `preSearchCount` (post-`applyRowFilters`) as Y, so Y represents rows after `--since`/`--category` filtering, not total cycles in the database — this behavior is now pinned by a test</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 796</span>
-        <span class="cycle-date">2026-07-13</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Fix stale ROADMAP.md: move fully-implemented `pnpm stats --search` and `sinceCycle/StreakMin` items from In Progress/Backlog to Done; add two fresh backlog items
-- Add tests for `--search` + `--verbose` streak column correctness: verify Failures, SinceCycle, and StreakMin render correctly in filtered verbose output
-- Add filtered-row count footer to `generateStatsTable` when `--search` reduces row count; shows &quot;Showing X of Y cycles (search: &lt;term&gt;)&quot;</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Fix stale ROADMAP.md: both implemented items moved to Done with completion notes, two new backlog items added (build+test: 4144 tests pass, committed f7aebc4)
-- Add verbose+search streak column tests: 4 new tests covering Failures, SinceCycle, StreakMin correctness and success-row dash rendering (build+test: 4148 tests pass, committed 72688b7)
-- Add filter-count footer to `generateStatsTable`: appends &quot;Showing X of Y cycles (search: &lt;term&gt;)&quot; when search narrows results; 4 footer tests added (build+test: 4152 tests pass, committed 06afa51)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [roadmap] Items can be &quot;done&quot; in the codebase for cycles before the roadmap entry is updated; the assessment phase catches this by cross-referencing source/tests against ROADMAP.md status
-- [testing] Verbose+search tests that only check row count leave column-value correctness untested; the most valuable additions verify that computed values (SinceCycle, StreakMin) render correctly on filtered subsets
-- [ux] CLI filter commands benefit from a visible &quot;Showing X of Y&quot; summary — this pattern mirrors grep&#39;s `-c` flag and makes it immediately clear whether the filter matched expected rows
-- [process] Keeping ROADMAP.md current (moving done items to Done promptly) prevents the &quot;empty roadmap → no-output assessment&quot; failure mode observed in prior cycles</p></div>
       </div>
     </div>
   </section>

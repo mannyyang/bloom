@@ -1,7 +1,6 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Add `--verbose` summary footer to `pnpm journal --format table` (entry count + cycle range), matching how `--verbose` enriches `--format md` and JSON.
 - [ ] Add `pnpm stats --cost-alert` integration test covering non-zero exit when threshold is exceeded (the flag exists in `stats.ts` but the exit path is only tested manually).
 
 ## Up Next
@@ -9,6 +8,8 @@
 ## In Progress
 
 ## Done
+- [x] Add `--verbose` summary footer to `pnpm journal --format table` (entry count + cycle range), matching how `--verbose` enriches `--format md` and JSON.
+  Completed in cycle 801: 2/3 improvements succeeded.
 - [x] Add `--format table` mode to `pnpm journal` CLI so journal entries can be displayed in an ASCII summary table (cycle, date, succeeded/attempted, build pass) without reading full text, mirroring `pnpm stats --table`.
   Completed in cycle 801: generateJournalTable, parseArgs, and generateJournalOutput all fully support --format table.
 - [x] Add `--verbose` flag support to `pnpm journal` CLI to print full entry bodies (currently journal entries may be truncated); mirrors the `--verbose` flag already available on `pnpm stats`.
