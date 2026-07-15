@@ -633,6 +633,13 @@ export interface StatsJsonOutput {
    * null when no memory has been recorded yet.
    */
   strategicContext?: string | null;
+  /**
+   * In Progress items whose [since: N] annotation age meets or exceeds
+   * STATS_STUCK_ITEM_AGE_THRESHOLD (verbose only). Mirrors the stuck-items
+   * block in text-mode generateStatsOutput so JSON consumers get full parity.
+   * Empty array means no stuck items. Only present when verbose=true.
+   */
+  stuckItems?: Array<{ title: string; sinceCycle: number; age: number }>;
 }
 
 /**
@@ -678,6 +685,17 @@ export function generateStatsJson(
       const items = parseRoadmap(roadmapContent);
       const { rationale } = pickNextItemWithRationale(items);
       result.nextItemRationale = rationale;
+      // Surface stuck In Progress items for JSON consumers, mirroring text-mode verbose.
+      result.stuckItems = items
+        .filter((item) => {
+          if (item.status !== STATUS_IN_PROGRESS || !item.body) return false;
+          const since = parseInProgressSinceCycle(item.body);
+          return since !== null && latestCycle - since >= STATS_STUCK_ITEM_AGE_THRESHOLD;
+        })
+        .map((item) => {
+          const since = parseInProgressSinceCycle(item.body)!;
+          return { title: item.title, sinceCycle: since, age: latestCycle - since };
+        });
     } catch (err) {
       result.nextItemRationale = `unavailable (${errorMessage(err)})`;
     }

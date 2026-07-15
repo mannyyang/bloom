@@ -10,7 +10,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle } from "../src/db.js";
-import { generateStatsJson } from "../src/stats.js";
+import { generateStatsJson, STATS_STUCK_ITEM_AGE_THRESHOLD } from "../src/stats.js";
 import { makeOutcome } from "./helpers.js";
 
 vi.mock("../src/planning.js", async (importOriginal) => {
@@ -141,5 +141,74 @@ describe("generateStatsJson --search filtering", () => {
   it("returns empty rows array when search term matches nothing", () => {
     const result = generateStatsJson(db, undefined, false, undefined, undefined, undefined, "zzznomatch");
     expect(result.rows).toHaveLength(0);
+  });
+});
+
+describe("generateStatsJson verbose stuckItems parity", () => {
+  const LATEST_CYCLE = 20;
+  let db: Database.Database;
+
+  function makeRoadmapItem(title: string, status: string, body: string) {
+    return { id: `id-${title}`, title, status, body, linkedIssueNumber: null, reactions: 0 } as ReturnType<typeof import("../src/planning.js").parseRoadmap>[number];
+  }
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+    for (let i = 1; i <= LATEST_CYCLE; i++) {
+      insertCycle(db, makeOutcome({ cycleNumber: i }));
+    }
+    mockReadRoadmap.mockReturnValue("");
+    mockParseRoadmap.mockReturnValue([]);
+    mockPickNextItem.mockReturnValue({ item: null, rationale: null });
+  });
+
+  it("verbose=false omits stuckItems field", () => {
+    const result = generateStatsJson(db, undefined, false);
+    expect(Object.prototype.hasOwnProperty.call(result, "stuckItems")).toBe(false);
+  });
+
+  it("verbose=true includes stuckItems as empty array when no items are stuck", () => {
+    // Item age = 1 cycle — below threshold
+    mockParseRoadmap.mockReturnValue([
+      makeRoadmapItem("Recent", "In Progress", `[since: ${LATEST_CYCLE - 1}]`),
+    ]);
+    const result = generateStatsJson(db, undefined, true);
+    expect(Object.prototype.hasOwnProperty.call(result, "stuckItems")).toBe(true);
+    expect(result.stuckItems).toEqual([]);
+  });
+
+  it("verbose=true includes stuck item when age meets threshold", () => {
+    const sinceCycle = LATEST_CYCLE - STATS_STUCK_ITEM_AGE_THRESHOLD;
+    mockParseRoadmap.mockReturnValue([
+      makeRoadmapItem("Old task", "In Progress", `[since: ${sinceCycle}]`),
+    ]);
+    const result = generateStatsJson(db, undefined, true);
+    expect(result.stuckItems).toHaveLength(1);
+    expect(result.stuckItems![0]).toEqual({
+      title: "Old task",
+      sinceCycle,
+      age: STATS_STUCK_ITEM_AGE_THRESHOLD,
+    });
+  });
+
+  it("verbose=true excludes non-In Progress items from stuckItems", () => {
+    const sinceCycle = 1; // very old, but status is Backlog
+    mockParseRoadmap.mockReturnValue([
+      makeRoadmapItem("Backlog task", "Backlog", `[since: ${sinceCycle}]`),
+    ]);
+    const result = generateStatsJson(db, undefined, true);
+    expect(result.stuckItems).toEqual([]);
+  });
+
+  it("verbose=true stuckItems is JSON-serialisable", () => {
+    const sinceCycle = LATEST_CYCLE - STATS_STUCK_ITEM_AGE_THRESHOLD;
+    mockParseRoadmap.mockReturnValue([
+      makeRoadmapItem("Stale", "In Progress", `[since: ${sinceCycle}]`),
+    ]);
+    const result = generateStatsJson(db, undefined, true);
+    expect(() => JSON.stringify(result)).not.toThrow();
+    const parsed = JSON.parse(JSON.stringify(result));
+    expect(parsed.stuckItems).toHaveLength(1);
+    expect(parsed.stuckItems[0].title).toBe("Stale");
   });
 });
