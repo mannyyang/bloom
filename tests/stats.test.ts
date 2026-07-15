@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution, getLastUpdatedCyclePerCategory } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseCsvFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, parseTrendArg, parseCostAlertArg, parseOutputFileArg, checkCostAlert, generateStatsJson, generateStatsTable, generateStatsTrend, renderTrendBar, TREND_BAR_CHARS, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES, COL_COST, COL_SINCE_CYCLE, COL_STREAK_DUR, computeStreakStartCycles, computeStreakDurations, generateStatsCsvFromRows, generateStatsCsv, STATS_CSV_HEADER, computeEffectiveLimit, STATS_TREND_PREFIX } from "../src/stats.js";
+import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseCsvFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, parseTrendArg, parseCostAlertArg, parseOutputFileArg, checkCostAlert, generateStatsJson, generateStatsTable, generateStatsTrend, renderTrendBar, TREND_BAR_CHARS, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES, COL_COST, COL_SINCE_CYCLE, COL_STREAK_DUR, computeStreakStartCycles, computeStreakDurations, generateStatsCsvFromRows, generateStatsCsv, STATS_CSV_HEADER, computeEffectiveLimit, STATS_TREND_PREFIX, parseCycleArg } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE, ERROR_CATEGORY_LLM_ERROR } from "../src/errors.js";
 import { MAX_MEMORY_CHARS } from "../src/memory.js";
@@ -2835,6 +2835,25 @@ describe("applyRowFilters", () => {
     const result = applyRowFilters(rows, 5, "build_failure");
     expect(result.map(r => r.cycleNumber)).toEqual([5]);
   });
+
+  it("cycleN takes priority over sinceN — returns only the matching cycle", () => {
+    const rows = [makeRow(1), makeRow(2), makeRow(3)];
+    const result = applyRowFilters(rows, 3, undefined, 2);
+    expect(result).toHaveLength(1);
+    expect(result[0].cycleNumber).toBe(2);
+  });
+
+  it("cycleN takes priority over categoryFilter", () => {
+    const rows = [makeRow(1, "build_failure"), makeRow(2, "none")];
+    const result = applyRowFilters(rows, undefined, "build_failure", 2);
+    expect(result).toHaveLength(1);
+    expect(result[0].cycleNumber).toBe(2);
+  });
+
+  it("returns empty array when cycleN matches no row", () => {
+    const rows = [makeRow(1), makeRow(2)];
+    expect(applyRowFilters(rows, undefined, undefined, 99)).toHaveLength(0);
+  });
 });
 
 describe("generateStatsTable --search", () => {
@@ -3195,3 +3214,30 @@ describe("generateStatsCsv --verbose ignored (contract pin)", () => {
     expect(csv.split("\n")[0]).toBe(STATS_CSV_HEADER);
   });
 });
+
+describe("parseCycleArg", () => {
+  it("returns undefined when --cycle flag is absent", () => {
+    expect(parseCycleArg(["node", "stats.js"])).toBeUndefined();
+  });
+
+  it("returns the integer value when --cycle N is present", () => {
+    expect(parseCycleArg(["node", "stats.js", "--cycle", "42"])).toBe(42);
+  });
+
+  it("returns undefined when --cycle value is missing", () => {
+    expect(parseCycleArg(["node", "stats.js", "--cycle"])).toBeUndefined();
+  });
+
+  it("returns undefined when --cycle value is zero", () => {
+    expect(parseCycleArg(["node", "stats.js", "--cycle", "0"])).toBeUndefined();
+  });
+
+  it("returns undefined when --cycle value is non-numeric", () => {
+    expect(parseCycleArg(["node", "stats.js", "--cycle", "abc"])).toBeUndefined();
+  });
+
+  it("returns undefined when --cycle is followed by another flag", () => {
+    expect(parseCycleArg(["node", "stats.js", "--cycle", "--verbose"])).toBeUndefined();
+  });
+});
+
