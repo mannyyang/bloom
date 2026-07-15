@@ -83,11 +83,13 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Wed, 15 Jul 2026 02:28:19 GMT</p>
+    <p>Last updated: Wed, 15 Jul 2026 06:17:07 GMT</p>
   </header>
   
+
+
   <section class="section">
-    <h2><span class="badge" style="background:#6b7280">Backlog</span></h2>
+    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
     <ul>
       <li class="item">
         <span class="check">⬜</span>
@@ -95,21 +97,19 @@
           <span class="item-title">Add `--since &lt;cycle&gt;` flag to `pnpm roadmap` CLI to filter items to those added or updated at or after a given cycle number, mirroring the `--since` flag already present on `pnpm journal` and `pnpm stats`.</span>
           
         </div>
-      </li>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Add per-status item count to `generateRoadmapOutput` verbose footer line (e.g. &quot;3 backlog · 1 in progress&quot;) so the summary is visible without scrolling through all sections, mirroring the per-category breakdown in `pnpm stats --verbose`.</span>
-          
-        </div>
       </li></ul>
   </section>
-
-
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add per-status item count to `generateRoadmapOutput` verbose footer line (e.g. &quot;3 backlog · 1 in progress&quot;) so the summary is visible without scrolling through all sections, mirroring the per-category breakdown in `pnpm stats --verbose`.</span>
+          <p class="item-desc">Completed in cycle 808: 2/2 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -610,9 +610,9 @@
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
         <tr><td>Avg improvements / cycle</td><td><strong>1.8</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>82%</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>81%</strong></td></tr>
         <tr><td>Avg cycle duration</td><td><strong>5.8 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$31.25</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$31.23</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -622,6 +622,23 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 808</span>
+        <span class="cycle-date">2026-07-15</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `--since &lt;N&gt;` flag to `pnpm roadmap` to filter In Progress items by minimum cycle number
+- Add verbose footer with per-status item counts to `generateRoadmapOutput`</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `--since &lt;N&gt;` flag to `pnpm roadmap`: imports `parseSinceArg` from `stats.ts`, adds `filterItemsBySinceCycle` helper, threads `sinceCycle` param through all four output functions (output/json/markdown/csv), updates help text and `main()`
+- Add verbose footer with per-status counts: in `generateRoadmapOutput`, appends a closing `Items: N in progress · …` line after all sections when `--verbose` is active and at least one item was rendered</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [reuse] `parseSinceArg` was already exported from `stats.ts` with no modification needed — the shared `parseIntArg` primitive makes extending CLIs with standard flags cheap
+- [api-design] Adding optional parameters to 4 functions via a consistent trailing `sinceCycle?` argument required only localized edits; the delegating pattern (`generateRoadmapCsv` → `generateRoadmapJson`) meant filter logic lives in one canonical place for the JSON path
+- [safety] The null-passthrough rule for unannotated items is critical: silently hiding In Progress items without a `[since: N]` annotation would be a data loss hazard in CI dashboards</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 807</span>
@@ -694,26 +711,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Subprocess integration tests (`spawnSync`) are the only way to pin CLI `process.exit()` paths and file-write side-effects; unit imports cannot exercise these code paths without aborting the test runner
 - [patterns] Exporting string constants (like `STATS_CSV_HEADER`/`JOURNAL_CSV_HEADER`) and pinning them in tests is a low-cost, high-value safeguard against accidental schema drift in serialized outputs
 - [process] The temp-dir + `afterEach` cleanup pattern established by `stats-cost-alert-exit.test.ts` composes cleanly across multiple subprocess test files with no shared state issues</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 802</span>
-        <span class="cycle-date">2026-07-14</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- `computeEffectiveLimit` all-defaults returns `undefined` — add import + 8-case describe block covering every branch of the function
-- `--verbose --csv` silent-ignore contract test — 3-test describe block pinning that `generateStatsCsv` has no verbose parameter and CSV output is unaffected when both flags are present
-- `--cost-alert` exit integration test — new `tests/stats-cost-alert-exit.test.ts` using `spawnSync` to cover the `process.exit(1)` path</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- `computeEffectiveLimit` all-defaults returns `undefined` (committed in 91e6ed9)
-- `--verbose --csv` silent-ignore contract test (committed in 91e6ed9)
-- `--cost-alert` exit integration test using `spawnSync` with real temp DB (committed in e382d91)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] `computeEffectiveLimit` was not imported in the test file even though it was exported — always check imports when adding tests for newly-exported functions
-- [testing] subprocess integration tests via `spawnSync` + temp SQLite file are viable in this codebase; `tsx` is available in `node_modules/.bin` and `initDb(path)` accepts an explicit path, making it straightforward to seed a CWD-local `bloom.db`
-- [testing] the `process.exit()` path in CLI entry points is inherently untestable without subprocess isolation; a dedicated test file pattern (like the existing `stats-verbose-error.test.ts`) keeps this infrastructure contained
-- [architecture] `generateStatsCsv` intentionally omits a `verbose` parameter — the contract is implicit in the function signature; pinning it with an explicit describe block makes future regressions visible immediately</p></div>
       </div>
     </div>
   </section>

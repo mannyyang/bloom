@@ -83,11 +83,28 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#2563eb;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#111827;font-weight:700;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>📓 Bloom Full Journal</h1>
-    <p>Last updated: Wed, 15 Jul 2026 02:28:19 GMT</p>
+    <p>Last updated: Wed, 15 Jul 2026 06:17:07 GMT</p>
   </header>
   <section class="section">
     <p class="stats-note">All recorded evolution cycle summaries.</p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 808</span>
+        <span class="cycle-date">2026-07-15</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `--since &lt;N&gt;` flag to `pnpm roadmap` to filter In Progress items by minimum cycle number
+- Add verbose footer with per-status item counts to `generateRoadmapOutput`</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `--since &lt;N&gt;` flag to `pnpm roadmap`: imports `parseSinceArg` from `stats.ts`, adds `filterItemsBySinceCycle` helper, threads `sinceCycle` param through all four output functions (output/json/markdown/csv), updates help text and `main()`
+- Add verbose footer with per-status counts: in `generateRoadmapOutput`, appends a closing `Items: N in progress · …` line after all sections when `--verbose` is active and at least one item was rendered</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [reuse] `parseSinceArg` was already exported from `stats.ts` with no modification needed — the shared `parseIntArg` primitive makes extending CLIs with standard flags cheap
+- [api-design] Adding optional parameters to 4 functions via a consistent trailing `sinceCycle?` argument required only localized edits; the delegating pattern (`generateRoadmapCsv` → `generateRoadmapJson`) meant filter logic lives in one canonical place for the JSON path
+- [safety] The null-passthrough rule for unannotated items is critical: silently hiding In Progress items without a `[since: N]` annotation would be a data loss hazard in CI dashboards</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 807</span>
@@ -1864,25 +1881,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test-coverage] Always check existing tests before writing new ones — improvement 3 (`parseRoadmapFilterFlag` with CLI flag as second token) was already covered by tests at lines 1111-1112 of roadmap.test.ts, saving redundant effort
 - [boundary-testing] Zero-value and undefined boundary tests are especially valuable for guards like `sinceCycle &gt; 0` since a `&gt;=` typo would silently cause always-stale demotion every cycle
 - [stale-detection] The future-cycle rejection path in `parseInProgressSinceCycle` (returning null when N &gt; currentCycle) feeds directly into the always-stale codepath — worth exercising end-to-end through the filesystem-level demote function</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 690</span>
-        <span class="cycle-date">2026-06-25</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- `cleanItemBody` CRLF guard: add `body.replace(/\r\n/g, &quot;\n&quot;)` as first statement + regression test
-- `generateRoadmapJson` currentCycle threading: add optional `currentCycle?` param and pass to `parseInProgressSinceCycle` + test
-- `parseRoadmap` checkbox-vs-heading precedence: add two tests pinning that section heading always wins over `[ ]`/`[x]` state</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- `cleanItemBody` CRLF guard: `src/planning.ts` + `tests/planning.test.ts` — committed `4d15241`
-- `generateRoadmapJson` currentCycle threading: `src/roadmap.ts` + `tests/roadmap.test.ts` — committed `cb9451f`
-- `parseRoadmap` checkbox-vs-heading precedence tests: `tests/planning.test.ts` — committed `9e22abf`</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [consistency] Every body-handling utility in planning.ts normalizes CRLF as its first step; cleanItemBody was the sole exception — public utilities must handle all input encodings regardless of write-path guarantees
-- [API design] Optional parameters that carry validation context (like `currentCycle`) should propagate through call chains; stopping at an intermediate function silently breaks the guard the parameter was meant to provide
-- [testing] Intentional &quot;surprising&quot; behaviors (heading beats checkbox, since-cycle validation) need explicit pinning tests — otherwise a future refactor that &quot;fixes the obvious&quot; silently breaks the intended semantics</p></div>
       </div>
     </div>
   </section>
