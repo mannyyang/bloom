@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { generateRoadmapOutput, generateRoadmapJson, generateRoadmapMarkdown, generateRoadmapCsv, parseRoadmapFilterFlag, parseFormatFlag, parseRoadmapSearchFlag, ROADMAP_BODY_PREVIEW_MAX_CHARS, ROADMAP_HELP_TEXT, ROADMAP_CSV_HEADER, STATUS_ORDER, type RoadmapJsonSummary } from "../src/roadmap.js";
+import { generateRoadmapOutput, generateRoadmapJson, generateRoadmapMarkdown, generateRoadmapCsv, parseRoadmapFilterFlag, parseFormatFlag, parseRoadmapSearchFlag, filterItemsBySinceCycle, ROADMAP_BODY_PREVIEW_MAX_CHARS, ROADMAP_HELP_TEXT, ROADMAP_CSV_HEADER, STATUS_ORDER, type RoadmapJsonSummary } from "../src/roadmap.js";
 import { parseHelpFlag } from "../src/stats.js";
 import * as planning from "../src/planning.js";
 import { parseRoadmap, serializeRoadmap, STATUS_COLUMNS, ITEM_BODY_LIMIT, PLANNING_BODY_PREVIEW_CHARS } from "../src/planning.js";
@@ -2088,5 +2088,137 @@ describe("ROADMAP_CSV_HEADER", () => {
   it("header-only output for empty roadmap is exactly ROADMAP_CSV_HEADER + newline", () => {
     const csv = generateRoadmapCsv(EMPTY_ROADMAP);
     expect(csv).toBe(ROADMAP_CSV_HEADER + "\n");
+  });
+});
+
+describe("filterItemsBySinceCycle", () => {
+  const makeItem = (status: string | null, body: string) => ({
+    id: "test-id",
+    title: "Test item",
+    status: status as import("../src/planning.js").StatusColumn | null,
+    body,
+    linkedIssueNumber: null,
+    reactions: 0,
+  });
+
+  it("always keeps non-In-Progress items regardless of body annotation", () => {
+    const items = [
+      makeItem("Backlog", "[since: 1]"),
+      makeItem("Up Next", "[since: 5]"),
+      makeItem("Done", "[since: 2]"),
+    ];
+    const result = filterItemsBySinceCycle(items, 10);
+    expect(result).toHaveLength(3);
+  });
+
+  it("keeps In-Progress items with no [since: N] annotation (null sinceCycle)", () => {
+    const items = [makeItem("In Progress", "Some description without annotation")];
+    const result = filterItemsBySinceCycle(items, 10);
+    expect(result).toHaveLength(1);
+  });
+
+  it("keeps In-Progress items where sinceCycle >= threshold", () => {
+    const items = [makeItem("In Progress", "[since: 10]")];
+    const resultEqual = filterItemsBySinceCycle(items, 10);
+    expect(resultEqual).toHaveLength(1);
+
+    const resultAbove = filterItemsBySinceCycle(items, 5);
+    expect(resultAbove).toHaveLength(1);
+  });
+
+  it("excludes In-Progress items where sinceCycle < threshold", () => {
+    const items = [makeItem("In Progress", "[since: 3]")];
+    const result = filterItemsBySinceCycle(items, 10);
+    expect(result).toHaveLength(0);
+  });
+
+  it("handles mixed items: keeps non-IP and annotated-IP >= threshold, drops annotated-IP < threshold", () => {
+    const items = [
+      makeItem("In Progress", "[since: 5]"),  // below threshold → excluded
+      makeItem("In Progress", "[since: 15]"), // above threshold → kept
+      makeItem("In Progress", "no annotation"), // null → kept
+      makeItem("Backlog", "[since: 1]"),       // non-IP → always kept
+    ];
+    const result = filterItemsBySinceCycle(items, 10);
+    expect(result).toHaveLength(3);
+    expect(result.map(i => i.body)).not.toContain("[since: 5]");
+  });
+});
+
+describe("generateRoadmapOutput --since integration", () => {
+  const SINCE_ROADMAP = `# Bloom Evolution Roadmap
+
+## In Progress
+- [ ] Old item
+  [since: 2]
+- [ ] New item
+  [since: 20]
+- [ ] Unannotated item
+
+## Backlog
+- [ ] Future task
+`;
+
+  it("with sinceCycle: excludes In Progress items below threshold", () => {
+    const output = generateRoadmapOutput(SINCE_ROADMAP, undefined, undefined, false, 10);
+    const joined = output.join("\n");
+    expect(joined).not.toContain("Old item");
+    expect(joined).toContain("New item");
+  });
+
+  it("with sinceCycle: keeps In Progress items with no annotation", () => {
+    const output = generateRoadmapOutput(SINCE_ROADMAP, undefined, undefined, false, 10);
+    const joined = output.join("\n");
+    expect(joined).toContain("Unannotated item");
+  });
+
+  it("with sinceCycle: always keeps non-In-Progress items", () => {
+    const output = generateRoadmapOutput(SINCE_ROADMAP, undefined, undefined, false, 10);
+    const joined = output.join("\n");
+    expect(joined).toContain("Future task");
+  });
+
+  it("without sinceCycle: shows all items including old ones", () => {
+    const output = generateRoadmapOutput(SINCE_ROADMAP);
+    const joined = output.join("\n");
+    expect(joined).toContain("Old item");
+    expect(joined).toContain("New item");
+  });
+});
+
+describe("generateRoadmapMarkdown --since integration", () => {
+  const SINCE_ROADMAP = `# Bloom Evolution Roadmap
+
+## In Progress
+- [ ] Old item
+  [since: 2]
+- [ ] New item
+  [since: 20]
+- [ ] Unannotated item
+
+## Backlog
+- [ ] Future task
+`;
+
+  it("with sinceCycle: excludes In Progress items below threshold", () => {
+    const output = generateRoadmapMarkdown(SINCE_ROADMAP, undefined, undefined, 10);
+    expect(output).not.toContain("Old item");
+    expect(output).toContain("New item");
+  });
+
+  it("with sinceCycle: keeps In Progress items with no annotation", () => {
+    const output = generateRoadmapMarkdown(SINCE_ROADMAP, undefined, undefined, 10);
+    expect(output).toContain("Unannotated item");
+  });
+
+  it("with sinceCycle: always keeps non-In-Progress items", () => {
+    const output = generateRoadmapMarkdown(SINCE_ROADMAP, undefined, undefined, 10);
+    expect(output).toContain("Future task");
+  });
+
+  it("without sinceCycle: shows all In Progress items", () => {
+    const output = generateRoadmapMarkdown(SINCE_ROADMAP);
+    expect(output).toContain("Old item");
+    expect(output).toContain("New item");
   });
 });
