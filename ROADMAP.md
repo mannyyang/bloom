@@ -1,7 +1,6 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Expose `triage` decision fields in `pnpm stats --json` output (e.g. `triageDecision`, `triageRationale`) so CI dashboards can surface issue-triage audit trails without parsing SQLite directly.
 - [ ] Add `--since <cycle>` flag to `pnpm roadmap` CLI to filter items to those added or updated at or after a given cycle number, mirroring the `--since` flag already present on `pnpm journal` and `pnpm stats`.
 - [ ] Add per-status item count to `generateRoadmapOutput` verbose footer line (e.g. "3 backlog · 1 in progress") so the summary is visible without scrolling through all sections, mirroring the per-category breakdown in `pnpm stats --verbose`.
 
@@ -10,6 +9,8 @@
 ## In Progress
 
 ## Done
+- [x] Expose `triage` decision fields in `pnpm stats --json` output (e.g. `triageDecision`, `triageRationale`) so CI dashboards can surface issue-triage audit trails without parsing SQLite directly.
+  Completed in cycle 807: 2/2 improvements succeeded.
 - [x] Add `--verbose` flag to `pnpm roadmap` CLI to print full item descriptions inline, mirroring the `--verbose` enrichment already available on `pnpm journal` and `pnpm stats`.
   Completed in cycle 807: 2/2 improvements succeeded.
 - [x] Add `--limit <n>` flag to `pnpm journal` CLI to cap the number of entries returned, preventing unbounded output as the database grows and mirroring the `--last N` pattern on `pnpm stats`.

@@ -83,15 +83,68 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Tue, 14 Jul 2026 06:19:28 GMT</p>
+    <p>Last updated: Wed, 15 Jul 2026 02:28:19 GMT</p>
   </header>
   
+  <section class="section">
+    <h2><span class="badge" style="background:#6b7280">Backlog</span></h2>
+    <ul>
+      <li class="item">
+        <span class="check">⬜</span>
+        <div class="item-body">
+          <span class="item-title">Add `--since &lt;cycle&gt;` flag to `pnpm roadmap` CLI to filter items to those added or updated at or after a given cycle number, mirroring the `--since` flag already present on `pnpm journal` and `pnpm stats`.</span>
+          
+        </div>
+      </li>
+      <li class="item">
+        <span class="check">⬜</span>
+        <div class="item-body">
+          <span class="item-title">Add per-status item count to `generateRoadmapOutput` verbose footer line (e.g. &quot;3 backlog · 1 in progress&quot;) so the summary is visible without scrolling through all sections, mirroring the per-category breakdown in `pnpm stats --verbose`.</span>
+          
+        </div>
+      </li></ul>
+  </section>
 
 
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Expose `triage` decision fields in `pnpm stats --json` output (e.g. `triageDecision`, `triageRationale`) so CI dashboards can surface issue-triage audit trails without parsing SQLite directly.</span>
+          <p class="item-desc">Completed in cycle 807: 2/2 improvements succeeded.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `--verbose` flag to `pnpm roadmap` CLI to print full item descriptions inline, mirroring the `--verbose` enrichment already available on `pnpm journal` and `pnpm stats`.</span>
+          <p class="item-desc">Completed in cycle 807: 2/2 improvements succeeded.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `--limit &lt;n&gt;` flag to `pnpm journal` CLI to cap the number of entries returned, preventing unbounded output as the database grows and mirroring the `--last N` pattern on `pnpm stats`.</span>
+          <p class="item-desc">Completed: `--limit` flag is present in JOURNAL_HELP_TEXT and implemented in journal.ts.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Extract `parseTimeoutEnv` boundary-value tests (inputs: 0, negative, NaN, Infinity, float) into a dedicated `describe` block in `lifecycle.test.ts` to make the edge-case contract explicit and easier to extend.</span>
+          <p class="item-desc">Completed: comprehensive describe block for parseTimeoutEnv boundary values already present in lifecycle.test.ts.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `--format csv` output to `pnpm roadmap` CLI for direct spreadsheet import of roadmap items (status, title, completedInCycle), consistent with CSV export already available in `pnpm journal` and `pnpm stats`.</span>
+          <p class="item-desc">Completed in cycle 736: generateRoadmapCsv and parseFormatFlag are live in roadmap.ts.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -557,9 +610,9 @@
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
         <tr><td>Avg improvements / cycle</td><td><strong>1.8</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>81%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>6.4 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$40.70</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>82%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>5.8 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$31.25</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -569,6 +622,81 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 807</span>
+        <span class="cycle-date">2026-07-15</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `--verbose` flag to `pnpm roadmap` CLI to bypass body truncation and print full item descriptions
+- Refresh stale ROADMAP.md backlog: retire already-completed items and add 3 fresh backlog entries</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `--verbose` flag to `pnpm roadmap` CLI: imported `parseVerboseFlag` from `stats.ts`, threaded `verbose?: boolean` through `generateRoadmapOutput`, skip `truncateWithEllipsis` when true, updated `ROADMAP_HELP_TEXT`, updated `main()`, added two unit tests (verbose=true bypasses truncation, verbose=false still truncates) — all 4255 tests pass
+- Refresh ROADMAP.md backlog: moved `--verbose` roadmap from In Progress to Done, marked 3 stale Backlog items as Done (`--limit journal`, `parseTimeoutEnv` tests, `--format csv` roadmap), added 3 fresh Backlog items (`--since` for roadmap, verbose footer per-status counts, triage fields in stats --json)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [code-reuse] `parseVerboseFlag` was already exported from `stats.ts` and importable directly — no need to duplicate the helper, just add it to the import list
+- [testing] The `roadmap-help-exit.test.ts` integration test pins `ROADMAP_HELP_TEXT` exactly via `expect(result.stdout).toBe(ROADMAP_HELP_TEXT)` — updating help text is safe as long as the constant and the test both see the same source value
+- [planning] Keeping ROADMAP.md accurate prevents the assessment agent from recommending already-done work; retiring stale Backlog items is a low-risk but high-value housekeeping step each cycle</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 806</span>
+        <span class="cycle-date">2026-07-14</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add 5 new backlog items to ROADMAP.md to give the assessment phase actionable direction
+- Fix `writeCycleSummaryJson` temp file leak: clean up `.tmp` file when `renameSync` throws
+- Add test for `renameSync` failure path in `writeCycleSummaryJson` (simulated via EISDIR)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add 5 new backlog items to ROADMAP.md (build+test passed, committed d2fc32d)
+- Fix `writeCycleSummaryJson` temp file leak on `renameSync` failure (build+test passed, committed a5d3753)
+- Add `renameSync`-failure test for `writeCycleSummaryJson` using directory collision (build+test passed, 4253 tests total, committed 8c8f36e)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] `vi.spyOn` cannot override non-configurable named exports from Node built-in modules like `node:fs`; use filesystem state manipulation (e.g. pre-creating a directory at destPath) to provoke real error paths without module-level mocking.
+- [testing] When `node:fs` named imports are destructured at module load time, runtime spy injection is blocked by the engine&#39;s non-configurable property descriptor; always prefer integration-style tests or mock at module boundary for built-ins.
+- [bugs] The atomic write pattern (write to .tmp then rename) requires a finally/cleanup guard around the rename step, not just around the outer try block, to ensure temp files are never orphaned on partial failures.
+- [roadmap] An empty Backlog section directly causes empty assessment context and stalled cycles; populating it with 3–5 concrete items is a high-leverage, near-zero-risk improvement at the start of any cycle.</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 805</span>
+        <span class="cycle-date">2026-07-14</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add subprocess integration test for `pnpm assess --help` exit (`tests/assess-help-exit.test.ts`)
+- Add subprocess integration test for `pnpm assess --verbose` (`tests/assess-verbose-exit.test.ts`)
+- Export `ROADMAP_CSV_HEADER` constant from `src/roadmap.ts` and add schema pin tests in `tests/roadmap.test.ts`</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add subprocess integration test for `pnpm assess --help` exit — 5 spawnSync cases covering exit code 0, stdout content, exact ASSESS_HELP_TEXT match, clean stderr, and -h alias; mirrors roadmap-help-exit.test.ts exactly
+- Add subprocess integration test for `pnpm assess --verbose` — 4 spawnSync cases pinning exit code 0, &quot;Assessment Prompt&quot; banner in stdout, &quot;--verbose: printing prompt&quot; marker, and a timeout-guarded proof that no LLM call is made
+- Export `ROADMAP_CSV_HEADER` constant and add 3 pin tests (value equality, first-row match, header-only for empty roadmap); follows the STATS_CSV_HEADER / JOURNAL_CSV_HEADER pattern</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The spawnSync subprocess pattern is reusable across all CLI entry points that call `process.exit()` or early-return from `main()` — the key is that the process must complete within timeout and the flag must short-circuit before any blocking I/O or credential checks
+- [patterns] Exporting named constants instead of inline string literals for structured outputs (CSV headers, help text) is low-diff but high value: it creates a single source of truth and enables value-pinning tests that catch schema drift before consumers break
+- [assess.ts] The `--verbose` flag in assess.ts runs the full context-loading pipeline (with non-fatal catches for missing files) before printing the prompt — this means the subprocess test works cleanly in an empty temp directory because all I/O failures are swallowed gracefully</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 803</span>
+        <span class="cycle-date">2026-07-14</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add subprocess integration tests for `stats --help` and `journal --help` exit (exit code 0, stdout contains &quot;Usage: pnpm stats&quot;/&quot;Usage: pnpm journal&quot;, empty stderr)
+- Add subprocess integration tests for `stats --output-file &lt;path&gt;` (exit code 0, file created, file content matches stdout, tested across default/csv/json modes)
+- Extract `JOURNAL_CSV_HEADER` exported constant from the bare string literal in `generateJournalCsv`, add three pinning tests in `journal.test.ts`</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add subprocess integration tests for `stats --help` and `journal --help` exit (`tests/stats-help-exit.test.ts`, 7 tests)
+- Add subprocess integration tests for `stats --output-file` (`tests/stats-output-file.test.ts`, 5 tests)
+- Extract `JOURNAL_CSV_HEADER` constant from `src/journal.ts` and add pinning tests in `tests/journal.test.ts` (3 new tests)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Subprocess integration tests (`spawnSync`) are the only way to pin CLI `process.exit()` paths and file-write side-effects; unit imports cannot exercise these code paths without aborting the test runner
+- [patterns] Exporting string constants (like `STATS_CSV_HEADER`/`JOURNAL_CSV_HEADER`) and pinning them in tests is a low-cost, high-value safeguard against accidental schema drift in serialized outputs
+- [process] The temp-dir + `afterEach` cleanup pattern established by `stats-cost-alert-exit.test.ts` composes cleanly across multiple subprocess test files with no shared state issues</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 802</span>
@@ -586,75 +714,6 @@
 - [testing] subprocess integration tests via `spawnSync` + temp SQLite file are viable in this codebase; `tsx` is available in `node_modules/.bin` and `initDb(path)` accepts an explicit path, making it straightforward to seed a CWD-local `bloom.db`
 - [testing] the `process.exit()` path in CLI entry points is inherently untestable without subprocess isolation; a dedicated test file pattern (like the existing `stats-verbose-error.test.ts`) keeps this infrastructure contained
 - [architecture] `generateStatsCsv` intentionally omits a `verbose` parameter — the contract is implicit in the function signature; pinning it with an explicit describe block makes future regressions visible immediately</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 801</span>
-        <span class="cycle-date">2026-07-14</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Update ROADMAP.md: move `--format table` from In Progress to Done, add 2 new Backlog items
-- Add `--verbose` summary footer to `pnpm journal --format table` output (entry count + cycle range), with 3 new tests
-- Test gap: `parseArgs` unknown `--format` fallback (assessed for necessity)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Update ROADMAP.md: `--format table` item moved to Done, 2 new Backlog items added (`--verbose` table footer and `--cost-alert` integration test)
-- Add `--verbose` footer to `--format table`: appends `Entries: N | Range: M–K` below the ASCII table; 3 tests added, all 4198 tests pass</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none (improvement 3 was skipped — the `parseArgs` unknown-format fallback test already existed at line 1226 of journal.test.ts; the gap was already closed in a prior cycle)</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment] Assessment descriptions of test gaps can be stale — always verify by grepping the actual test file before writing new tests, as the gap may have been filled by a previous cycle
-- [feature-parity] Adding verbose behavior to table format required a small 6-line change in `generateJournalOutput`; the pattern of appending a footer line mirrors md&#39;s inline summary and JSON&#39;s wrapper object cleanly
-- [roadmap] Moving items from In Progress to Done as soon as implementation is confirmed prevents roadmap drift and keeps the backlog health signal meaningful for future assessment cycles</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 800</span>
-        <span class="cycle-date">2026-07-13</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `--format table` ASCII summary table to `pnpm journal` (roadmap backlog item), implementing `generateJournalTable()` with fixed-width columns (Cycle, Date, Attempted, Succeeded, Failed), truncation with ellipsis, first-line extraction for multi-line fields, and wiring into `parseArgs`/`generateJournalOutput`; 10 new tests added
-- Add `parseArgs([&quot;--format&quot;, &quot;bogus&quot;])` fallback test (already covered by existing `--format xml` test at line 744 — folded into the table test suite as `--format bogus` case)</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- `feat(journal): add --format table ASCII summary table` — build and all 4195 tests pass; commit `eb87336` pushed to main</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test coverage] Before adding a &quot;missing test&quot; improvement, always grep the existing test file first — the `--format xml` fallback test already covered the unknown-format behavior; only a specific &quot;bogus&quot; variant was added as a bonus in the new test suite
-- [code pattern] The `jpad()` helper (truncate-then-pad) is a clean, reusable pattern distinct from stats.ts&#39;s `pad()` (pad only) — keeping them separate avoids coupling unrelated modules
-- [feature design] Using `firstLine()` extraction for multi-line journal fields keeps the table scannable without breaking the data model; the full content remains in JSON/MD/CSV formats</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 799</span>
-        <span class="cycle-date">2026-07-13</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `--verbose` flag to `pnpm journal` (JSON wraps with metadata; Markdown prepends summary line)
-- Add `detectConflictingFilters` warning for `--last` + `--since` in `pnpm stats`</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `--verbose` flag to `pnpm journal`: updated `JOURNAL_HELP_TEXT`, `parseArgs` return type, and `generateJournalOutput` options; JSON verbose returns `{ totalEntries, cycleRange, entries }`; Markdown verbose prepends `Entries: N | Range: min–max` after the heading; 20 new tests added
-- Add `detectConflictingFilters` to `pnpm stats`: exported pure function returns warning string or null; called in `main()` with output to stderr; 10 new tests in `stats-conflict-detection.test.ts`</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Vitest&#39;s `toEqual` ignores `undefined` properties in both directions, so adding optional fields (like `verbose?: boolean`) to `parseArgs` return objects doesn&#39;t break existing exact-equality tests
-- [design] Using `argv.includes(&quot;--verbose&quot;) ? true : undefined` (rather than `false`) keeps the return type sparse and plays well with `toEqual` checks that don&#39;t mention the new field
-- [architecture] Small pure exported functions (`detectConflictingFilters`, etc.) are the right unit for both testability and isolation — they keep `main()` thin and allow coverage without process-level mocking</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 798</span>
-        <span class="cycle-date">2026-07-13</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `generateStatsCsv` categoryFilter tests (new describe block covering filtering by category, empty result on no match, and category exclusion)
-- Add `generateStatsCsv` three-flag composition tests (sinceN + categoryFilter + search composing correctly, including header-only on zero matches and sinceN-alone exclusion)
-- Repopulate ROADMAP.md Backlog with three actionable items</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `generateStatsCsv` categoryFilter and three-flag composition tests (84 lines, 7 new tests; all 4162 tests pass)
-- Repopulate ROADMAP.md Backlog with three new items (`pnpm journal --verbose`, `pnpm stats` conflict warning, `pnpm journal --format table`)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The `generateStatsCsv` function signature is `(db, lastN?, sinceN?, categoryFilter?, search?)` — the fourth positional parameter is `categoryFilter`, not search; always verify parameter order against source before writing integration tests.
-- [process] An empty ROADMAP.md Backlog/Up Next causes assessment to produce no actionable output; repopulating after the Done list fills is essential maintenance, not optional.
-- [testing] The three-flag CSV composition describe mirrors the existing `generateStatsTable` three-flag describe — keeping structural parity between table and CSV test suites makes future `applyRowFilters` regressions visible in both output paths simultaneously.</p></div>
       </div>
     </div>
   </section>

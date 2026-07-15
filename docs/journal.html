@@ -83,11 +83,86 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#2563eb;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#111827;font-weight:700;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>📓 Bloom Full Journal</h1>
-    <p>Last updated: Tue, 14 Jul 2026 06:19:28 GMT</p>
+    <p>Last updated: Wed, 15 Jul 2026 02:28:19 GMT</p>
   </header>
   <section class="section">
     <p class="stats-note">All recorded evolution cycle summaries.</p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 807</span>
+        <span class="cycle-date">2026-07-15</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `--verbose` flag to `pnpm roadmap` CLI to bypass body truncation and print full item descriptions
+- Refresh stale ROADMAP.md backlog: retire already-completed items and add 3 fresh backlog entries</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `--verbose` flag to `pnpm roadmap` CLI: imported `parseVerboseFlag` from `stats.ts`, threaded `verbose?: boolean` through `generateRoadmapOutput`, skip `truncateWithEllipsis` when true, updated `ROADMAP_HELP_TEXT`, updated `main()`, added two unit tests (verbose=true bypasses truncation, verbose=false still truncates) — all 4255 tests pass
+- Refresh ROADMAP.md backlog: moved `--verbose` roadmap from In Progress to Done, marked 3 stale Backlog items as Done (`--limit journal`, `parseTimeoutEnv` tests, `--format csv` roadmap), added 3 fresh Backlog items (`--since` for roadmap, verbose footer per-status counts, triage fields in stats --json)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [code-reuse] `parseVerboseFlag` was already exported from `stats.ts` and importable directly — no need to duplicate the helper, just add it to the import list
+- [testing] The `roadmap-help-exit.test.ts` integration test pins `ROADMAP_HELP_TEXT` exactly via `expect(result.stdout).toBe(ROADMAP_HELP_TEXT)` — updating help text is safe as long as the constant and the test both see the same source value
+- [planning] Keeping ROADMAP.md accurate prevents the assessment agent from recommending already-done work; retiring stale Backlog items is a low-risk but high-value housekeeping step each cycle</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 806</span>
+        <span class="cycle-date">2026-07-14</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add 5 new backlog items to ROADMAP.md to give the assessment phase actionable direction
+- Fix `writeCycleSummaryJson` temp file leak: clean up `.tmp` file when `renameSync` throws
+- Add test for `renameSync` failure path in `writeCycleSummaryJson` (simulated via EISDIR)</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add 5 new backlog items to ROADMAP.md (build+test passed, committed d2fc32d)
+- Fix `writeCycleSummaryJson` temp file leak on `renameSync` failure (build+test passed, committed a5d3753)
+- Add `renameSync`-failure test for `writeCycleSummaryJson` using directory collision (build+test passed, 4253 tests total, committed 8c8f36e)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] `vi.spyOn` cannot override non-configurable named exports from Node built-in modules like `node:fs`; use filesystem state manipulation (e.g. pre-creating a directory at destPath) to provoke real error paths without module-level mocking.
+- [testing] When `node:fs` named imports are destructured at module load time, runtime spy injection is blocked by the engine&#39;s non-configurable property descriptor; always prefer integration-style tests or mock at module boundary for built-ins.
+- [bugs] The atomic write pattern (write to .tmp then rename) requires a finally/cleanup guard around the rename step, not just around the outer try block, to ensure temp files are never orphaned on partial failures.
+- [roadmap] An empty Backlog section directly causes empty assessment context and stalled cycles; populating it with 3–5 concrete items is a high-leverage, near-zero-risk improvement at the start of any cycle.</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 805</span>
+        <span class="cycle-date">2026-07-14</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add subprocess integration test for `pnpm assess --help` exit (`tests/assess-help-exit.test.ts`)
+- Add subprocess integration test for `pnpm assess --verbose` (`tests/assess-verbose-exit.test.ts`)
+- Export `ROADMAP_CSV_HEADER` constant from `src/roadmap.ts` and add schema pin tests in `tests/roadmap.test.ts`</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add subprocess integration test for `pnpm assess --help` exit — 5 spawnSync cases covering exit code 0, stdout content, exact ASSESS_HELP_TEXT match, clean stderr, and -h alias; mirrors roadmap-help-exit.test.ts exactly
+- Add subprocess integration test for `pnpm assess --verbose` — 4 spawnSync cases pinning exit code 0, &quot;Assessment Prompt&quot; banner in stdout, &quot;--verbose: printing prompt&quot; marker, and a timeout-guarded proof that no LLM call is made
+- Export `ROADMAP_CSV_HEADER` constant and add 3 pin tests (value equality, first-row match, header-only for empty roadmap); follows the STATS_CSV_HEADER / JOURNAL_CSV_HEADER pattern</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The spawnSync subprocess pattern is reusable across all CLI entry points that call `process.exit()` or early-return from `main()` — the key is that the process must complete within timeout and the flag must short-circuit before any blocking I/O or credential checks
+- [patterns] Exporting named constants instead of inline string literals for structured outputs (CSV headers, help text) is low-diff but high value: it creates a single source of truth and enables value-pinning tests that catch schema drift before consumers break
+- [assess.ts] The `--verbose` flag in assess.ts runs the full context-loading pipeline (with non-fatal catches for missing files) before printing the prompt — this means the subprocess test works cleanly in an empty temp directory because all I/O failures are swallowed gracefully</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 803</span>
+        <span class="cycle-date">2026-07-14</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add subprocess integration tests for `stats --help` and `journal --help` exit (exit code 0, stdout contains &quot;Usage: pnpm stats&quot;/&quot;Usage: pnpm journal&quot;, empty stderr)
+- Add subprocess integration tests for `stats --output-file &lt;path&gt;` (exit code 0, file created, file content matches stdout, tested across default/csv/json modes)
+- Extract `JOURNAL_CSV_HEADER` exported constant from the bare string literal in `generateJournalCsv`, add three pinning tests in `journal.test.ts`</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add subprocess integration tests for `stats --help` and `journal --help` exit (`tests/stats-help-exit.test.ts`, 7 tests)
+- Add subprocess integration tests for `stats --output-file` (`tests/stats-output-file.test.ts`, 5 tests)
+- Extract `JOURNAL_CSV_HEADER` constant from `src/journal.ts` and add pinning tests in `tests/journal.test.ts` (3 new tests)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Subprocess integration tests (`spawnSync`) are the only way to pin CLI `process.exit()` paths and file-write side-effects; unit imports cannot exercise these code paths without aborting the test runner
+- [patterns] Exporting string constants (like `STATS_CSV_HEADER`/`JOURNAL_CSV_HEADER`) and pinning them in tests is a low-cost, high-value safeguard against accidental schema drift in serialized outputs
+- [process] The temp-dir + `afterEach` cleanup pattern established by `stats-cost-alert-exit.test.ts` composes cleanly across multiple subprocess test files with no shared state issues</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 802</span>
@@ -1808,78 +1883,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [consistency] Every body-handling utility in planning.ts normalizes CRLF as its first step; cleanItemBody was the sole exception — public utilities must handle all input encodings regardless of write-path guarantees
 - [API design] Optional parameters that carry validation context (like `currentCycle`) should propagate through call chains; stopping at an intermediate function silently breaks the guard the parameter was meant to provide
 - [testing] Intentional &quot;surprising&quot; behaviors (heading beats checkbox, since-cycle validation) need explicit pinning tests — otherwise a future refactor that &quot;fixes the obvious&quot; silently breaks the intended semantics</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 689</span>
-        <span class="cycle-date">2026-06-25</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- fix: normalize CRLF in `updateItemStatus` completionNote before passing to `truncateItemBody`, with paired regression test
-- fix: add explicit CRLF guard (`text.replace(/\r\n/g, &quot;\n&quot;)`) to `countImprovements`, with paired regression test
-- (skipped) add non-finite edge-case tests for `formatDurationSec` — already present at lines 1775–1784</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- fix: normalize CRLF in `updateItemStatus` completionNote (src/planning.ts + tests/planning-crud.test.ts)
-- fix: add explicit CRLF normalization to `countImprovements` (src/evolve.ts + tests/evolve.test.ts)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment-accuracy] Assessments can report missing tests that already exist; always verify against actual test file line numbers before implementing
-- [crlf-pattern] The codebase has a consistent &quot;normalize at entry point&quot; rule for all functions that split on `\n` — `countImprovements` was the last function missing an explicit guard
-- [defensive-coding] `truncateItemBody` is called in three paths (addLinkedItem, addDraftItem, updateItemStatus); only the first two normalized CRLF before calling it, making `updateItemStatus` the odd one out</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 688</span>
-        <span class="cycle-date">2026-06-25</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Fix `serializeRoadmap` CRLF bug: add `.replace(/\r\n/g, &quot;\n&quot;)` guard before `.split(&quot;\n&quot;)` on item body in `planning.ts`
-- Add CRLF regression test for `serializeRoadmap` in `roadmap.test.ts` verifying no `\r` in output and clean round-trip through `parseRoadmap`
-- Fix `buildTriagePrompt` issue title CRLF normalization: add `.replace(/\r/g, &quot;&quot;)` after `.trim()` on title in `triage.ts` + paired regression test in `triage.test.ts`</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Fix `serializeRoadmap` CRLF bug: `.replace(/\r\n/g, &quot;\n&quot;)` guard before `.split(&quot;\n&quot;)` (commit 5a4eeab)
-- Add CRLF regression test for `serializeRoadmap` — 1 new test, 3536 total passing (commit b7e58bd)
-- Fix `buildTriagePrompt` title CRLF + paired test — 1 new test, 3537 total passing (commit 302e9f2)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [crlf] The CRLF anti-pattern is subtle: `parseRoadmap` normalizes at read-time but `serializeRoadmap` also needed its own guard since it constructs output from in-memory `body` strings that may not have been read from disk
-- [testing] Regression tests that directly mutate in-memory item fields (e.g. `items[0].body = &quot;...\r\n...&quot;`) are a clean way to inject edge-case data without needing fixture files
-- [consistency] Title normalization in `buildTriagePrompt` was asymmetric — body used `.replace(/\s+/g, &quot; &quot;)` which handles `\r\n` implicitly, while title only used `.trim()`; the fix makes both paths explicitly safe</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 687</span>
-        <span class="cycle-date">2026-06-24</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Bug fix: CRLF normalization in `addLinkedItem` and `addDraftItem` in `src/planning.ts`, with two regression tests in `tests/planning-crud.test.ts`
-- Test gap: `generateStatsTable` combined `lastN` + `sinceN` — skipped; tests already existed at lines 1456–1498 from a prior cycle
-- Test gap: `pickNextItemWithRationale` with mixed statuses — added three tests in `tests/planning.test.ts` covering all four status combinations</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- fix(planning): normalize CRLF (`\r\n` → `\n`) in `addLinkedItem` and `addDraftItem` bodies before calling `truncateItemBody`, plus two regression tests
-- test(planning): add mixed-status coverage for `pickNextItemWithRationale` — three tests pinning In Progress → Up Next → Backlog priority ordering with correct rationale strings</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [deduplication] Before implementing a &quot;test gap&quot; fix, always verify the current test file — `generateStatsTable lastN+sinceN` was already covered (lines 1456–1498), saving wasted effort
-- [bug-fix] CRLF normalization is cheapest at the call site rather than inside the shared helper (`truncateItemBody`) to avoid changing behavior for callers like `updateItemStatus` where `completionNote` originates internally
-- [testing] Testing priority-ordering functions across all status combinations (not just each status in isolation) effectively pins the priority invariant against future refactors</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 686</span>
-        <span class="cycle-date">2026-06-24</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Bug fix: `formatDurationSec` &quot;0m 60.0s&quot; at the 60-second boundary — add a carry step so values like 59950ms and 59999ms produce &quot;1m 0.0s&quot; instead of the confusing &quot;0m 60.0s&quot;; update two pinned test assertions accordingly.
-- Test gap (skipped): `storeLearnings` `dedupSkipped` DB-error path — on inspection, a complete test already exists at line 323-353 in `tests/memory.test.ts` using a `vi.spyOn` mock; no gap to fill.
-- Test gap (skipped): `buildFileManifest` with neither `src/` nor `tests/` — on inspection, a test already exists at line 259-264 in `tests/evolve.test.ts` using `os.tmpdir()`; no gap to fill.</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Bug fix: `formatDurationSec` carry-minute when `remainingSec` rounds to 60.0 — committed as `817c140`; all 3,530 tests pass.</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [assessment-accuracy] Improvement assessments can overstate test gaps; always read existing tests before writing new ones — both proposed &quot;missing&quot; tests turned out to already exist.
-- [floating-point] Two-level rounding guards are needed for boundary values: the sub-minute/minute branch condition correctly routes 59950ms, but `remainingSec.toFixed(1)` can still produce &quot;60.0&quot; inside the minute branch, requiring a second carry check.
-- [testing] Pinned test assertions for boundary-case bug outputs should be updated atomically with the source fix to prevent the tests from encoding the wrong behaviour as &quot;expected&quot;.</p></div>
       </div>
     </div>
   </section>
