@@ -2,13 +2,13 @@
 
 ## Backlog
 
-- [ ] Add integration tests and `generateStatsOutput` wiring for `pnpm stats --cycle N`: `parseCycleArg` and routing through `generateStatsTable`/`generateStatsJson`/`generateStatsCsv` are implemented; text-mode summary and integration-test coverage remain.
-
 ## Up Next
 
 ## In Progress
 
 ## Done
+- [x] Add integration tests and `generateStatsOutput` wiring for `pnpm stats --cycle N`: `parseCycleArg` and routing through `generateStatsTable`/`generateStatsJson`/`generateStatsCsv` are implemented; text-mode summary and integration-test coverage remain.
+  Completed in cycle 812: 3/3 improvements succeeded.
 - [x] Add `--since <cycle>` flag to `pnpm roadmap` CLI to filter items to those added or updated at or after a given cycle number, mirroring the `--since` flag already present on `pnpm journal` and `pnpm stats`.
   Completed in cycle 809: 3/3 improvements succeeded.
 - [x] Add per-status item count to `generateRoadmapOutput` verbose footer line (e.g. "3 backlog · 1 in progress") so the summary is visible without scrolling through all sections, mirroring the per-category breakdown in `pnpm stats --verbose`.
