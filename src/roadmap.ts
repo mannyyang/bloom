@@ -328,6 +328,21 @@ export function generateRoadmapOutput(content: string, filterStatus?: StatusColu
     );
   }
 
+  // In verbose mode, append a closing footer that mirrors the top-of-output
+  // summary — useful when full item bodies push the header off-screen.
+  if (verbose && anyRendered) {
+    const footerItems = filterStatus ? items.filter(i => i.status === filterStatus) : items;
+    const footerParts: string[] = [];
+    for (const status of STATUS_ORDER) {
+      const count = footerItems.filter(i => i.status === status).length;
+      if (count > 0) footerParts.push(`${count} ${status.toLowerCase()}`);
+    }
+    if (footerParts.length > 0) {
+      lines.push("");
+      lines.push(`  Items: ${footerParts.join(" · ")}`);
+    }
+  }
+
   lines.push("");
   return lines;
 }
