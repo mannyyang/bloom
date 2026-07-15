@@ -394,7 +394,12 @@ export interface RoadmapJsonSummary {
  * behaviour of `generateRoadmapOutput` with a filterStatus argument.
  */
 export function generateRoadmapJson(content: string, filterStatus?: StatusColumn, currentCycle?: number, search?: string, sinceCycle?: number): { items: RoadmapJsonItem[]; summary: RoadmapJsonSummary } {
-  const items = parseRoadmap(content);
+  let items = parseRoadmap(content);
+
+  // Apply --since filter on raw items so filterItemsBySinceCycle can read the
+  // un-cleaned body annotation.  Must happen before cleanItemBody strips [since: N].
+  if (sinceCycle !== undefined) items = filterItemsBySinceCycle(items, sinceCycle);
+
   let cleanItems: RoadmapJsonItem[] = items.map((item) => {
     const itemSinceCycle =
       item.status === STATUS_IN_PROGRESS && item.body
@@ -407,15 +412,6 @@ export function generateRoadmapJson(content: string, filterStatus?: StatusColumn
   // Apply status filter before sorting/summary, mirroring generateRoadmapOutput.
   if (filterStatus !== undefined) {
     cleanItems = cleanItems.filter((item) => item.status === filterStatus);
-  }
-
-  // Apply --since filter: exclude In Progress items whose sinceCycle is below threshold.
-  // Items with null sinceCycle (no annotation) pass through to avoid silent data loss.
-  if (sinceCycle !== undefined) {
-    cleanItems = cleanItems.filter((item) => {
-      if (item.status !== STATUS_IN_PROGRESS) return true;
-      return item.sinceCycle === null || item.sinceCycle >= sinceCycle;
-    });
   }
 
   // Apply --search filter post-clean via shared csv.ts helper.
