@@ -1,18 +1,23 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-
-- [ ] Add `--verbose` flag to `pnpm roadmap` CLI to print full item descriptions inline, mirroring the `--verbose` enrichment already available on `pnpm journal` and `pnpm stats`.
 - [ ] Expose `triage` decision fields in `pnpm stats --json` output (e.g. `triageDecision`, `triageRationale`) so CI dashboards can surface issue-triage audit trails without parsing SQLite directly.
-- [ ] Add `--limit <n>` flag to `pnpm journal` CLI to cap the number of entries returned, preventing unbounded output as the database grows and mirroring the `--last N` pattern on `pnpm stats`.
-- [ ] Extract `parseTimeoutEnv` boundary-value tests (inputs: 0, negative, NaN, Infinity, float) into a dedicated `describe` block in `lifecycle.test.ts` to make the edge-case contract explicit and easier to extend.
-- [ ] Add `--format csv` output to `pnpm roadmap` CLI for direct spreadsheet import of roadmap items (status, title, completedInCycle), consistent with CSV export already available in `pnpm journal` and `pnpm stats`.
+- [ ] Add `--since <cycle>` flag to `pnpm roadmap` CLI to filter items to those added or updated at or after a given cycle number, mirroring the `--since` flag already present on `pnpm journal` and `pnpm stats`.
+- [ ] Add per-status item count to `generateRoadmapOutput` verbose footer line (e.g. "3 backlog · 1 in progress") so the summary is visible without scrolling through all sections, mirroring the per-category breakdown in `pnpm stats --verbose`.
 
 ## Up Next
 
 ## In Progress
 
 ## Done
+- [x] Add `--verbose` flag to `pnpm roadmap` CLI to print full item descriptions inline, mirroring the `--verbose` enrichment already available on `pnpm journal` and `pnpm stats`.
+  Completed in cycle 807: 2/2 improvements succeeded.
+- [x] Add `--limit <n>` flag to `pnpm journal` CLI to cap the number of entries returned, preventing unbounded output as the database grows and mirroring the `--last N` pattern on `pnpm stats`.
+  Completed: `--limit` flag is present in JOURNAL_HELP_TEXT and implemented in journal.ts.
+- [x] Extract `parseTimeoutEnv` boundary-value tests (inputs: 0, negative, NaN, Infinity, float) into a dedicated `describe` block in `lifecycle.test.ts` to make the edge-case contract explicit and easier to extend.
+  Completed: comprehensive describe block for parseTimeoutEnv boundary values already present in lifecycle.test.ts.
+- [x] Add `--format csv` output to `pnpm roadmap` CLI for direct spreadsheet import of roadmap items (status, title, completedInCycle), consistent with CSV export already available in `pnpm journal` and `pnpm stats`.
+  Completed in cycle 736: generateRoadmapCsv and parseFormatFlag are live in roadmap.ts.
 - [x] Add `pnpm stats --cost-alert` integration test covering non-zero exit when threshold is exceeded (the flag exists in `stats.ts` but the exit path is only tested manually).
   Completed in cycle 802: 3/3 improvements succeeded.
 - [x] Add `--verbose` summary footer to `pnpm journal --format table` (entry count + cycle range), matching how `--verbose` enriches `--format md` and JSON.
