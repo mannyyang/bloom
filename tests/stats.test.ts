@@ -200,6 +200,7 @@ describe("STATS_HELP_TEXT", () => {
       `Options:\n` +
       `  --last <N>            Show stats for the last N cycles only\n` +
       `  --since <N>           Show stats starting from cycle number N (inclusive)\n` +
+      `  --cycle <N>           Show stats for exactly one specific cycle number\n` +
       `  --category <CAT>      Filter to cycles matching failure_category (e.g. build_failure, none)\n` +
       `  --search <term>       Filter --table/--csv rows by cycle number or failure_category substring\n` +
       `  --trend <N>           Show an ASCII success-rate bar for the last N cycles\n` +

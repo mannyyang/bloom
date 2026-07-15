@@ -2,6 +2,8 @@
 
 ## Backlog
 
+- [ ] Add integration tests and `generateStatsOutput` wiring for `pnpm stats --cycle N`: `parseCycleArg` and routing through `generateStatsTable`/`generateStatsJson`/`generateStatsCsv` are implemented; text-mode summary and integration-test coverage remain.
+
 ## Up Next
 
 ## In Progress

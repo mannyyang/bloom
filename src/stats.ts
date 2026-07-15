@@ -138,6 +138,17 @@ export function parseSearchArg(argv: string[]): string | undefined {
 }
 
 /**
+ * Parse `--cycle N` from an argv array, returning N as a positive integer
+ * representing an exact cycle number to pin output to, or undefined when the
+ * flag is absent, missing a value, or the value is invalid.
+ * When provided, filters rows to only the single cycle matching cycleNumber === N.
+ * Mirrors the `--cycle N` flag already available on `pnpm journal`.
+ */
+export function parseCycleArg(argv: string[]): number | undefined {
+  return parseIntArg(argv, "--cycle");
+}
+
+/**
  * Parse `--trend N` from an argv array, returning N as a positive integer or
  * undefined when the flag is absent, missing a value, or the value is invalid.
  * N controls how many of the most-recent cycles are rendered in the trend bar.
@@ -254,6 +265,7 @@ Usage: pnpm stats [options]
 Options:
   --last <N>            Show stats for the last N cycles only
   --since <N>           Show stats starting from cycle number N (inclusive)
+  --cycle <N>           Show stats for exactly one specific cycle number
   --category <CAT>      Filter to cycles matching failure_category (e.g. build_failure, none)
   --search <term>       Filter --table/--csv rows by cycle number or failure_category substring
   --trend <N>           Show an ASCII success-rate bar for the last N cycles
@@ -370,12 +382,17 @@ function pad(s: string, width: number, right = false): string {
 }
 
 /**
- * Apply sinceN and categoryFilter to an array of CycleRows, returning the filtered subset.
+ * Apply sinceN, categoryFilter, and cycleN to an array of CycleRows, returning the filtered subset.
  * Extracted from the repeated filter pattern in generateStatsTable, generateStatsCsv, and
  * generateStatsJson — a single point of truth so filter logic changes need one edit, not three.
+ * When cycleN is provided it pins output to exactly one cycle (cycleNumber === cycleN),
+ * mirroring the --cycle N flag already available on pnpm journal.
  * Exported for unit-testability.
  */
-export function applyRowFilters(rows: CycleRow[], sinceN?: number, categoryFilter?: string): CycleRow[] {
+export function applyRowFilters(rows: CycleRow[], sinceN?: number, categoryFilter?: string, cycleN?: number): CycleRow[] {
+  if (cycleN !== undefined) {
+    return rows.filter((r: CycleRow) => r.cycleNumber === cycleN);
+  }
   if (sinceN !== undefined) {
     rows = rows.filter((r: CycleRow) => r.cycleNumber >= sinceN);
   }
@@ -412,9 +429,9 @@ export function computeEffectiveLimit(lastN?: number, sinceN?: number, categoryF
  * When `verbose` is true, appends a Failures column showing each row's
  * failure_category (rendered as "—" when the category is "none" or absent).
  */
-export function generateStatsTable(db: Database.Database, lastN?: number, verbose?: boolean, sinceN?: number, categoryFilter?: string, search?: string): string {
-  const effectiveLimit = computeEffectiveLimit(lastN, sinceN, categoryFilter);
-  let rows = applyRowFilters(getCycleRows(db, effectiveLimit), sinceN, categoryFilter);
+export function generateStatsTable(db: Database.Database, lastN?: number, verbose?: boolean, sinceN?: number, categoryFilter?: string, search?: string, cycleN?: number): string {
+  const effectiveLimit = cycleN !== undefined ? undefined : computeEffectiveLimit(lastN, sinceN, categoryFilter);
+  let rows = applyRowFilters(getCycleRows(db, effectiveLimit), sinceN, categoryFilter, cycleN);
   const preSearchCount = rows.length;
   if (search !== undefined) {
     rows = filterBySearchTerm(rows, search, (r) => [String(r.cycleNumber), r.failureCategory]);
@@ -531,9 +548,9 @@ export function generateStatsCsvFromRows(rows: CycleRow[]): string {
  * categoryFilter logic used by generateStatsTable and generateStatsJson.
  * Returns a CSV string (always includes the header row, even when no cycles exist).
  */
-export function generateStatsCsv(db: Database.Database, lastN?: number, sinceN?: number, categoryFilter?: string, search?: string): string {
-  const effectiveLimit = computeEffectiveLimit(lastN, sinceN, categoryFilter);
-  let rows = applyRowFilters(getCycleRows(db, effectiveLimit), sinceN, categoryFilter);
+export function generateStatsCsv(db: Database.Database, lastN?: number, sinceN?: number, categoryFilter?: string, search?: string, cycleN?: number): string {
+  const effectiveLimit = cycleN !== undefined ? undefined : computeEffectiveLimit(lastN, sinceN, categoryFilter);
+  let rows = applyRowFilters(getCycleRows(db, effectiveLimit), sinceN, categoryFilter, cycleN);
   if (search !== undefined) {
     rows = filterBySearchTerm(rows, search, (r) => [String(r.cycleNumber), r.failureCategory]);
   }
@@ -665,14 +682,15 @@ export function generateStatsJson(
   roadmapPath?: string,
   categoryFilter?: string,
   search?: string,
+  cycleN?: number,
 ): StatsJsonOutput {
   const latestCycle = getLatestCycleNumber(db);
-  const effectiveLimit = computeEffectiveLimit(lastN, sinceN, categoryFilter);
+  const effectiveLimit = cycleN !== undefined ? undefined : computeEffectiveLimit(lastN, sinceN, categoryFilter);
   const stats = getCycleStats(db, effectiveLimit, sinceN, categoryFilter);
 
   // Apply same filtering logic as generateStatsTable so rows are consistent
   // with the stats aggregate.
-  let rows = applyRowFilters(getCycleRows(db, effectiveLimit), sinceN, categoryFilter);
+  let rows = applyRowFilters(getCycleRows(db, effectiveLimit), sinceN, categoryFilter, cycleN);
   if (search !== undefined) {
     rows = filterBySearchTerm(rows, search, (r) => [String(r.cycleNumber), r.failureCategory]);
   }
@@ -809,6 +827,7 @@ function main() {
   }
   const lastN = parseLastNArg(process.argv);
   const sinceN = parseSinceArg(process.argv);
+  const cycleN = parseCycleArg(process.argv);
   const categoryFilter = parseCategoryArg(process.argv);
   const searchTerm = parseSearchArg(process.argv);
   const trendN = parseTrendArg(process.argv);
@@ -832,12 +851,12 @@ function main() {
     if (trendN !== undefined) {
       outputContent = generateStatsTrend(db, trendN) + "\n";
     } else if (jsonMode) {
-      const result = generateStatsJson(db, lastN, verbose, sinceN, undefined, categoryFilter, searchTerm);
+      const result = generateStatsJson(db, lastN, verbose, sinceN, undefined, categoryFilter, searchTerm, cycleN);
       outputContent = JSON.stringify(result, null, 2) + "\n";
     } else if (csvMode) {
-      outputContent = generateStatsCsv(db, lastN, sinceN, categoryFilter, searchTerm);
+      outputContent = generateStatsCsv(db, lastN, sinceN, categoryFilter, searchTerm, cycleN);
     } else if (tableMode) {
-      const table = generateStatsTable(db, lastN, verbose, sinceN, categoryFilter, searchTerm);
+      const table = generateStatsTable(db, lastN, verbose, sinceN, categoryFilter, searchTerm, cycleN);
       outputContent = (table || "No evolution cycles recorded yet.") + "\n";
     } else {
       const output = generateStatsOutput(db, lastN, verbose, sinceN, undefined, categoryFilter);
