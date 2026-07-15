@@ -627,12 +627,12 @@ export interface StatsJsonOutput {
   /** Number of active DANGEROUS_PATTERNS entries (verbose only). Lets operators confirm safety coverage without reading source. */
   dangerousPatternsCount?: number;
   /**
-   * Strategic context memory preview (verbose only). Mirrors the
-   * formatMemoryForPrompt snippet shown in text-mode verbose output so
-   * dashboard consumers using --json --verbose get a complete picture.
+   * Strategic context memory preview. Mirrors the formatMemoryForPrompt snippet
+   * shown unconditionally in text-mode output so JSON consumers always get a
+   * complete picture without needing --verbose.
    * null when no memory has been recorded yet.
    */
-  strategicContext?: string | null;
+  strategicContext: string | null;
   /**
    * In Progress items whose [since: N] annotation age meets or exceeds
    * STATS_STUCK_ITEM_AGE_THRESHOLD (verbose only). Mirrors the stuck-items
@@ -675,11 +675,11 @@ export function generateStatsJson(
 
   const result: StatsJsonOutput = {
     latestCycle, window: lastN ?? null, since: sinceN ?? null, category: categoryFilter ?? null, generatedAt: new Date().toISOString(), stats, rows,
+    strategicContext: formatMemoryForPrompt(db, STATS_MEMORY_PREVIEW_CHARS) || null,
   };
   if (verbose) {
     result.learningsStaleness = getLastUpdatedCyclePerCategory(db);
     result.dangerousPatternsCount = DANGEROUS_PATTERNS.length;
-    result.strategicContext = formatMemoryForPrompt(db, STATS_MEMORY_PREVIEW_CHARS) || null;
     try {
       const roadmapContent = readRoadmap(roadmapPath);
       const items = parseRoadmap(roadmapContent);

@@ -107,6 +107,40 @@ describe("generateStatsJson verbose nextItemRationale", () => {
   });
 });
 
+describe("generateStatsJson strategicContext parity", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    mockReadRoadmap.mockReturnValue("");
+    mockParseRoadmap.mockReturnValue([]);
+    mockPickNextItem.mockReturnValue({ item: null, rationale: null });
+  });
+
+  it("non-verbose JSON always includes strategicContext field", () => {
+    const result = generateStatsJson(db, undefined, false);
+    expect(Object.prototype.hasOwnProperty.call(result, "strategicContext")).toBe(true);
+  });
+
+  it("non-verbose JSON strategicContext is null when no memory recorded", () => {
+    const result = generateStatsJson(db, undefined, false);
+    expect(result.strategicContext).toBeNull();
+  });
+
+  it("non-verbose JSON strategicContext is JSON-serialisable", () => {
+    const result = generateStatsJson(db, undefined, false);
+    expect(() => JSON.stringify(result)).not.toThrow();
+    const parsed = JSON.parse(JSON.stringify(result));
+    expect(Object.prototype.hasOwnProperty.call(parsed, "strategicContext")).toBe(true);
+  });
+
+  it("verbose JSON also includes strategicContext", () => {
+    const result = generateStatsJson(db, undefined, true);
+    expect(Object.prototype.hasOwnProperty.call(result, "strategicContext")).toBe(true);
+  });
+});
+
 describe("generateStatsJson --search filtering", () => {
   let db: Database.Database;
 
