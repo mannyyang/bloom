@@ -734,7 +734,7 @@ export function generateStatsJson(
  * @param sinceN - when provided, the header notes that the view starts from
  *   cycle N; mirrors the sinceN parameter of generateStatsTable/generateStatsJson
  */
-export function generateStatsOutput(db: Database.Database, lastN?: number, verbose?: boolean, sinceN?: number, roadmapPath?: string, categoryFilter?: string): string[] {
+export function generateStatsOutput(db: Database.Database, lastN?: number, verbose?: boolean, sinceN?: number, roadmapPath?: string, categoryFilter?: string, cycleN?: number): string[] {
   const lines: string[] = [];
 
   const latestCycle = getLatestCycleNumber(db);
@@ -743,13 +743,17 @@ export function generateStatsOutput(db: Database.Database, lastN?: number, verbo
     return lines;
   }
 
-  const effectiveLimit = computeEffectiveLimit(lastN, sinceN, categoryFilter);
-  const stats = getCycleStats(db, effectiveLimit, sinceN, categoryFilter);
+  const effectiveLimit = cycleN !== undefined ? undefined : computeEffectiveLimit(lastN, sinceN, categoryFilter);
+  const stats = getCycleStats(db, effectiveLimit, cycleN !== undefined ? cycleN : sinceN, categoryFilter);
   const formatted = formatCycleStats(stats);
 
   const windowParts: string[] = [];
-  if (sinceN !== undefined) windowParts.push(`since cycle ${sinceN}`);
-  if (lastN !== undefined) windowParts.push(`last ${lastN} cycles`);
+  if (cycleN !== undefined) {
+    windowParts.push(`cycle: ${cycleN}`);
+  } else {
+    if (sinceN !== undefined) windowParts.push(`since cycle ${sinceN}`);
+    if (lastN !== undefined) windowParts.push(`last ${lastN} cycles`);
+  }
   if (categoryFilter !== undefined) windowParts.push(`category: ${categoryFilter}`);
   const windowLabel = windowParts.length > 0 ? ` (${windowParts.join(", ")})` : "";
 
@@ -859,7 +863,7 @@ function main() {
       const table = generateStatsTable(db, lastN, verbose, sinceN, categoryFilter, searchTerm, cycleN);
       outputContent = (table || "No evolution cycles recorded yet.") + "\n";
     } else {
-      const output = generateStatsOutput(db, lastN, verbose, sinceN, undefined, categoryFilter);
+      const output = generateStatsOutput(db, lastN, verbose, sinceN, undefined, categoryFilter, cycleN);
       outputContent = output.join("\n") + "\n";
     }
 
