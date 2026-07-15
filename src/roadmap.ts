@@ -23,7 +23,7 @@ import {
   type StatusColumn,
   type ProjectItem,
 } from "./planning.js";
-import { parseJsonFlag, parseHelpFlag, parseSearchArg } from "./stats.js";
+import { parseJsonFlag, parseHelpFlag, parseSearchArg, parseVerboseFlag } from "./stats.js";
 import { csvQuoteField, filterBySearchTerm } from "./csv.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "./db.js";
 import { errorMessage } from "./errors.js";
@@ -43,6 +43,7 @@ Options:
   --search <term>    Filter items by case-insensitive keyword search across title and body
   --format md        Output roadmap as GitHub-flavoured Markdown
   --format csv       Output roadmap as RFC 4180 CSV
+  --verbose          Print full item descriptions without truncation
   --json             Output roadmap as JSON (for scripting/CI)
   --help, -h         Print this help message and exit
 `;
@@ -224,7 +225,7 @@ export function generateRoadmapMarkdown(content: string, filterStatus?: StatusCo
  * Returns the lines that would be printed to the console.
  * When `filterStatus` is provided, only items with that status are shown.
  */
-export function generateRoadmapOutput(content: string, filterStatus?: StatusColumn, search?: string): string[] {
+export function generateRoadmapOutput(content: string, filterStatus?: StatusColumn, search?: string, verbose?: boolean): string[] {
   let items = parseRoadmap(content);
   // Apply --search filter post-parse via shared csv.ts helper.
   items = filterBySearchTerm(items, search ?? "", (i) => [i.title, i.body]);
@@ -284,8 +285,8 @@ export function generateRoadmapOutput(content: string, filterStatus?: StatusColu
         // in human-readable output.
         const displayBody = cleanItemBody(item.body);
         if (displayBody) {
-          // Indent and wrap the body description
-          const preview = truncateWithEllipsis(displayBody, ROADMAP_BODY_PREVIEW_MAX_CHARS);
+          // Indent and wrap the body description; skip truncation in verbose mode.
+          const preview = verbose ? displayBody : truncateWithEllipsis(displayBody, ROADMAP_BODY_PREVIEW_MAX_CHARS);
           for (const bodyLine of preview.split("\n")) {
             lines.push(`      ${bodyLine}`);
           }
@@ -413,6 +414,7 @@ function main() {
   const formatFlag = parseFormatFlag(process.argv);
   const filterStatus = parseRoadmapFilterFlag(process.argv);
   const search = parseRoadmapSearchFlag(process.argv);
+  const verbose = parseVerboseFlag(process.argv);
 
   if (jsonMode) {
     const result = generateRoadmapJson(content, filterStatus, undefined, search);
@@ -422,7 +424,7 @@ function main() {
   } else if (formatFlag === "csv") {
     process.stdout.write(generateRoadmapCsv(content, filterStatus, search));
   } else {
-    const output = generateRoadmapOutput(content, filterStatus, search);
+    const output = generateRoadmapOutput(content, filterStatus, search, verbose);
     for (const line of output) {
       console.log(line);
     }

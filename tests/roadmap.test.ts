@@ -187,6 +187,26 @@ describe("generateRoadmapOutput", () => {
     expect(joined).not.toContain("z".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS + 1));
   });
 
+  it("verbose=true bypasses truncation and prints full body", () => {
+    const fullBody = "v".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS + 50);
+    const roadmap = `# Bloom Evolution Roadmap\n\n## Backlog\n- [ ] Verbose item\n  ${fullBody}\n`;
+    const output = generateRoadmapOutput(roadmap, undefined, undefined, true);
+    const joined = output.join("\n");
+    // No ellipsis — body is printed in full
+    expect(joined).not.toContain("…");
+    // Full body must appear
+    expect(joined).toContain("v".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS + 50));
+  });
+
+  it("verbose=false (default) still truncates long bodies", () => {
+    const longBody = "w".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS + 20);
+    const roadmap = `# Bloom Evolution Roadmap\n\n## Backlog\n- [ ] Default item\n  ${longBody}\n`;
+    const output = generateRoadmapOutput(roadmap, undefined, undefined, false);
+    const joined = output.join("\n");
+    expect(joined).toContain("…");
+    expect(joined).not.toContain("w".repeat(ROADMAP_BODY_PREVIEW_MAX_CHARS + 20));
+  });
+
   it("renders multi-line body as separate indented lines", () => {
     const spy = vi.spyOn(planning, "parseRoadmap").mockReturnValueOnce([
       {
