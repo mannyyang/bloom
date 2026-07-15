@@ -23,7 +23,7 @@ import {
   type StatusColumn,
   type ProjectItem,
 } from "./planning.js";
-import { parseJsonFlag, parseHelpFlag, parseSearchArg, parseVerboseFlag } from "./stats.js";
+import { parseJsonFlag, parseHelpFlag, parseSearchArg, parseVerboseFlag, parseSinceArg } from "./stats.js";
 import { csvQuoteField, filterBySearchTerm } from "./csv.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "./db.js";
 import { errorMessage } from "./errors.js";
@@ -40,6 +40,7 @@ Usage: pnpm roadmap [options]
 
 Options:
   --filter <status>  Show only items with the given status (e.g. Backlog, "In Progress", Done)
+  --since <N>        Show only In Progress items that entered progress at cycle N or later
   --search <term>    Filter items by case-insensitive keyword search across title and body
   --format md        Output roadmap as GitHub-flavoured Markdown
   --format csv       Output roadmap as RFC 4180 CSV
@@ -49,6 +50,25 @@ Options:
 `;
 
 export const STATUS_ORDER: StatusColumn[] = [STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, STATUS_DONE];
+
+/**
+ * Filter a ProjectItem array by a minimum sinceCycle threshold.
+ * Applies only to In Progress items: an item is excluded if it has a valid
+ * [since: N] annotation and N < sinceCycle. Items without the annotation
+ * (sinceCycle null) are always kept — silently hiding unannotated work would
+ * be worse than showing too much.  Non-In Progress items are always kept.
+ * Exported so tests can assert filtering behaviour in isolation.
+ */
+export function filterItemsBySinceCycle<T extends { status: StatusColumn | null; body: string }>(
+  items: T[],
+  sinceCycle: number,
+): T[] {
+  return items.filter((item) => {
+    if (item.status !== STATUS_IN_PROGRESS) return true;
+    const since = item.body ? parseInProgressSinceCycle(item.body) : null;
+    return since === null || since >= sinceCycle;
+  });
+}
 
 /**
  * Parse `--filter <status>` from an argv array, returning the matched StatusColumn
@@ -125,8 +145,8 @@ export function parseRoadmapSearchFlag(argv: string[]): string | undefined {
  */
 export const ROADMAP_CSV_HEADER = "title,status,linkedIssueNumber,reactions,sinceCycle,body";
 
-export function generateRoadmapCsv(content: string, filterStatus?: StatusColumn, search?: string): string {
-  const { items } = generateRoadmapJson(content, filterStatus, undefined, search);
+export function generateRoadmapCsv(content: string, filterStatus?: StatusColumn, search?: string, sinceCycle?: number): string {
+  const { items } = generateRoadmapJson(content, filterStatus, undefined, search, sinceCycle);
   const lines: string[] = [ROADMAP_CSV_HEADER];
   for (const item of items) {
     lines.push([
@@ -159,10 +179,12 @@ export function generateRoadmapCsv(content: string, filterStatus?: StatusColumn,
  * Storage metadata ([since: N] annotations and …[truncated] markers) are
  * stripped from item bodies — matching the behaviour of generateRoadmapOutput.
  */
-export function generateRoadmapMarkdown(content: string, filterStatus?: StatusColumn, search?: string): string {
+export function generateRoadmapMarkdown(content: string, filterStatus?: StatusColumn, search?: string, sinceCycle?: number): string {
   let items = parseRoadmap(content);
   // Apply --search filter post-parse via shared csv.ts helper.
   items = filterBySearchTerm(items, search ?? "", (i) => [i.title, i.body]);
+  // Apply --since filter: exclude In Progress items whose sinceCycle is below threshold.
+  if (sinceCycle !== undefined) items = filterItemsBySinceCycle(items, sinceCycle);
   const lines: string[] = [];
 
   lines.push("# Bloom Evolution Roadmap");
@@ -225,10 +247,12 @@ export function generateRoadmapMarkdown(content: string, filterStatus?: StatusCo
  * Returns the lines that would be printed to the console.
  * When `filterStatus` is provided, only items with that status are shown.
  */
-export function generateRoadmapOutput(content: string, filterStatus?: StatusColumn, search?: string, verbose?: boolean): string[] {
+export function generateRoadmapOutput(content: string, filterStatus?: StatusColumn, search?: string, verbose?: boolean, sinceCycle?: number): string[] {
   let items = parseRoadmap(content);
   // Apply --search filter post-parse via shared csv.ts helper.
   items = filterBySearchTerm(items, search ?? "", (i) => [i.title, i.body]);
+  // Apply --since filter: exclude In Progress items whose sinceCycle is below threshold.
+  if (sinceCycle !== undefined) items = filterItemsBySinceCycle(items, sinceCycle);
   const lines: string[] = [];
 
   lines.push("");
@@ -354,20 +378,29 @@ export interface RoadmapJsonSummary {
  * the output and the summary reflects the filtered subset — matching the
  * behaviour of `generateRoadmapOutput` with a filterStatus argument.
  */
-export function generateRoadmapJson(content: string, filterStatus?: StatusColumn, currentCycle?: number, search?: string): { items: RoadmapJsonItem[]; summary: RoadmapJsonSummary } {
+export function generateRoadmapJson(content: string, filterStatus?: StatusColumn, currentCycle?: number, search?: string, sinceCycle?: number): { items: RoadmapJsonItem[]; summary: RoadmapJsonSummary } {
   const items = parseRoadmap(content);
   let cleanItems: RoadmapJsonItem[] = items.map((item) => {
-    const sinceCycle =
+    const itemSinceCycle =
       item.status === STATUS_IN_PROGRESS && item.body
         ? parseInProgressSinceCycle(item.body, currentCycle)
         : null;
     const cleanBody = cleanItemBody(item.body);
-    return { ...item, body: cleanBody, sinceCycle };
+    return { ...item, body: cleanBody, sinceCycle: itemSinceCycle };
   });
 
   // Apply status filter before sorting/summary, mirroring generateRoadmapOutput.
   if (filterStatus !== undefined) {
     cleanItems = cleanItems.filter((item) => item.status === filterStatus);
+  }
+
+  // Apply --since filter: exclude In Progress items whose sinceCycle is below threshold.
+  // Items with null sinceCycle (no annotation) pass through to avoid silent data loss.
+  if (sinceCycle !== undefined) {
+    cleanItems = cleanItems.filter((item) => {
+      if (item.status !== STATUS_IN_PROGRESS) return true;
+      return item.sinceCycle === null || item.sinceCycle >= sinceCycle;
+    });
   }
 
   // Apply --search filter post-clean via shared csv.ts helper.
@@ -415,16 +448,17 @@ function main() {
   const filterStatus = parseRoadmapFilterFlag(process.argv);
   const search = parseRoadmapSearchFlag(process.argv);
   const verbose = parseVerboseFlag(process.argv);
+  const sinceCycle = parseSinceArg(process.argv);
 
   if (jsonMode) {
-    const result = generateRoadmapJson(content, filterStatus, undefined, search);
+    const result = generateRoadmapJson(content, filterStatus, undefined, search, sinceCycle);
     console.log(JSON.stringify(result, null, 2));
   } else if (formatFlag === "md") {
-    console.log(generateRoadmapMarkdown(content, filterStatus, search));
+    console.log(generateRoadmapMarkdown(content, filterStatus, search, sinceCycle));
   } else if (formatFlag === "csv") {
-    process.stdout.write(generateRoadmapCsv(content, filterStatus, search));
+    process.stdout.write(generateRoadmapCsv(content, filterStatus, search, sinceCycle));
   } else {
-    const output = generateRoadmapOutput(content, filterStatus, search, verbose);
+    const output = generateRoadmapOutput(content, filterStatus, search, verbose, sinceCycle);
     for (const line of output) {
       console.log(line);
     }
