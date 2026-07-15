@@ -83,26 +83,22 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Wed, 15 Jul 2026 06:17:07 GMT</p>
+    <p>Last updated: Wed, 15 Jul 2026 10:08:34 GMT</p>
   </header>
   
 
 
-  <section class="section">
-    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Add `--since &lt;cycle&gt;` flag to `pnpm roadmap` CLI to filter items to those added or updated at or after a given cycle number, mirroring the `--since` flag already present on `pnpm journal` and `pnpm stats`.</span>
-          
-        </div>
-      </li></ul>
-  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `--since &lt;cycle&gt;` flag to `pnpm roadmap` CLI to filter items to those added or updated at or after a given cycle number, mirroring the `--since` flag already present on `pnpm journal` and `pnpm stats`.</span>
+          <p class="item-desc">Completed in cycle 809: 3/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -610,9 +606,9 @@
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
         <tr><td>Avg improvements / cycle</td><td><strong>1.8</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>81%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>5.8 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$31.23</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>83%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>5.9 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$31.65</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -622,6 +618,25 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 809</span>
+        <span class="cycle-date">2026-07-15</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add dedicated unit tests for `filterItemsBySinceCycle` (4 unit + 8 integration tests for `generateRoadmapOutput` and `generateRoadmapMarkdown` `--since` paths)
+- Refactor `generateRoadmapJson` to delegate `--since` filtering to `filterItemsBySinceCycle` instead of inlining the predicate
+- Add &quot;Stuck In Progress items&quot; block to `generateStatsOutput` verbose mode with `STATS_STUCK_ITEM_AGE_THRESHOLD = 10` and 10 dedicated tests</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add dedicated unit tests for `filterItemsBySinceCycle` (133 lines, 4268 → 4268 tests passing)
+- Refactor `generateRoadmapJson` to use `filterItemsBySinceCycle` (applied before body cleaning; all 4268 tests still pass)
+- Add &quot;Stuck In Progress items&quot; verbose stats block with constants, logic, and 10 new tests (4268 → 4278 tests, 37 test files)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [refactoring] When a helper function parses raw body text (like `filterItemsBySinceCycle` reading `[since: N]`), it must be applied *before* `cleanItemBody` strips those annotations — ordering matters for shared-helper refactors
+- [testing] Stuck-items verbose features require mocking `planning.js` at the module level; the isolation pattern from `stats-json-verbose.test.ts` (spread `...actual`, mock only the 3 entry points) keeps the real `parseInProgressSinceCycle` working while controlling `parseRoadmap`&#39;s return value
+- [coverage] Integration tests for flags like `--since` on `generateRoadmapOutput`/`generateRoadmapMarkdown` are best co-located with the unit tests for the underlying helper they exercise, since both document the same contract</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 808</span>
@@ -692,25 +707,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The spawnSync subprocess pattern is reusable across all CLI entry points that call `process.exit()` or early-return from `main()` — the key is that the process must complete within timeout and the flag must short-circuit before any blocking I/O or credential checks
 - [patterns] Exporting named constants instead of inline string literals for structured outputs (CSV headers, help text) is low-diff but high value: it creates a single source of truth and enables value-pinning tests that catch schema drift before consumers break
 - [assess.ts] The `--verbose` flag in assess.ts runs the full context-loading pipeline (with non-fatal catches for missing files) before printing the prompt — this means the subprocess test works cleanly in an empty temp directory because all I/O failures are swallowed gracefully</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 803</span>
-        <span class="cycle-date">2026-07-14</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add subprocess integration tests for `stats --help` and `journal --help` exit (exit code 0, stdout contains &quot;Usage: pnpm stats&quot;/&quot;Usage: pnpm journal&quot;, empty stderr)
-- Add subprocess integration tests for `stats --output-file &lt;path&gt;` (exit code 0, file created, file content matches stdout, tested across default/csv/json modes)
-- Extract `JOURNAL_CSV_HEADER` exported constant from the bare string literal in `generateJournalCsv`, add three pinning tests in `journal.test.ts`</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add subprocess integration tests for `stats --help` and `journal --help` exit (`tests/stats-help-exit.test.ts`, 7 tests)
-- Add subprocess integration tests for `stats --output-file` (`tests/stats-output-file.test.ts`, 5 tests)
-- Extract `JOURNAL_CSV_HEADER` constant from `src/journal.ts` and add pinning tests in `tests/journal.test.ts` (3 new tests)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Subprocess integration tests (`spawnSync`) are the only way to pin CLI `process.exit()` paths and file-write side-effects; unit imports cannot exercise these code paths without aborting the test runner
-- [patterns] Exporting string constants (like `STATS_CSV_HEADER`/`JOURNAL_CSV_HEADER`) and pinning them in tests is a low-cost, high-value safeguard against accidental schema drift in serialized outputs
-- [process] The temp-dir + `afterEach` cleanup pattern established by `stats-cost-alert-exit.test.ts` composes cleanly across multiple subprocess test files with no shared state issues</p></div>
       </div>
     </div>
   </section>

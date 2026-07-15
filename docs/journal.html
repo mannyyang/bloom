@@ -83,11 +83,30 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#2563eb;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#111827;font-weight:700;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>📓 Bloom Full Journal</h1>
-    <p>Last updated: Wed, 15 Jul 2026 06:17:07 GMT</p>
+    <p>Last updated: Wed, 15 Jul 2026 10:08:34 GMT</p>
   </header>
   <section class="section">
     <p class="stats-note">All recorded evolution cycle summaries.</p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 809</span>
+        <span class="cycle-date">2026-07-15</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add dedicated unit tests for `filterItemsBySinceCycle` (4 unit + 8 integration tests for `generateRoadmapOutput` and `generateRoadmapMarkdown` `--since` paths)
+- Refactor `generateRoadmapJson` to delegate `--since` filtering to `filterItemsBySinceCycle` instead of inlining the predicate
+- Add &quot;Stuck In Progress items&quot; block to `generateStatsOutput` verbose mode with `STATS_STUCK_ITEM_AGE_THRESHOLD = 10` and 10 dedicated tests</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add dedicated unit tests for `filterItemsBySinceCycle` (133 lines, 4268 → 4268 tests passing)
+- Refactor `generateRoadmapJson` to use `filterItemsBySinceCycle` (applied before body cleaning; all 4268 tests still pass)
+- Add &quot;Stuck In Progress items&quot; verbose stats block with constants, logic, and 10 new tests (4268 → 4278 tests, 37 test files)</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [refactoring] When a helper function parses raw body text (like `filterItemsBySinceCycle` reading `[since: N]`), it must be applied *before* `cleanItemBody` strips those annotations — ordering matters for shared-helper refactors
+- [testing] Stuck-items verbose features require mocking `planning.js` at the module level; the isolation pattern from `stats-json-verbose.test.ts` (spread `...actual`, mock only the 3 entry points) keeps the real `parseInProgressSinceCycle` working while controlling `parseRoadmap`&#39;s return value
+- [coverage] Integration tests for flags like `--since` on `generateRoadmapOutput`/`generateRoadmapMarkdown` are best co-located with the unit tests for the underlying helper they exercise, since both document the same contract</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 808</span>
@@ -1861,26 +1880,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [process] All three improvements from the prior assessment were already implemented before this cycle began — likely added by recent prior cycles; assessment context can lag actual code state
 - [pattern] When a suggested gap is already closed, look for the next-order relationship test: rather than value-pinning a constant, pin its equality to a related constant (e.g. domain rate equals fallback rate)
 - [domain] `DECAY_BY_CATEGORY[&quot;domain&quot;] = 0.95 = DECAY_DEFAULT_RATE` is intentional: domain knowledge should decay at the fallback rate, making the explicit entry serve as documentation rather than differentiation</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 691</span>
-        <span class="cycle-date">2026-06-25</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Test: `updateItemStatus` with `sinceCycle=0` does NOT stamp `[since: 0]` annotation (boundary guard)
-- Test: `updateItemStatus` with `sinceCycle=undefined` does NOT stamp any `[since: N]` annotation
-- Test: `demoteStaleInProgressItems` with future-cycle `[since: 999]` at cycle 10 is treated as always-stale and demoted
-- Test: `parseRoadmapFilterFlag` where second token is a CLI flag (`--filter up --json` → undefined) — assessed as already covered at lines 1111-1112</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Test: `sinceCycle=0` boundary guard — no `[since: 0]` annotation stamped
-- Test: `sinceCycle=undefined` — no annotation stamped
-- Test: future-cycle `[since: 999]` at cycle 10 demotes as always-stale</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test-coverage] Always check existing tests before writing new ones — improvement 3 (`parseRoadmapFilterFlag` with CLI flag as second token) was already covered by tests at lines 1111-1112 of roadmap.test.ts, saving redundant effort
-- [boundary-testing] Zero-value and undefined boundary tests are especially valuable for guards like `sinceCycle &gt; 0` since a `&gt;=` typo would silently cause always-stale demotion every cycle
-- [stale-detection] The future-cycle rejection path in `parseInProgressSinceCycle` (returning null when N &gt; currentCycle) feeds directly into the always-stale codepath — worth exercising end-to-end through the filesystem-level demote function</p></div>
       </div>
     </div>
   </section>
