@@ -335,28 +335,32 @@ export function computeStreakStartCycles(rows: CycleRow[]): Map<number, number |
  * streakStart through the current cycle (inclusive). Returns null when all
  * cycle durations in the streak are null (no data to sum).
  * Exported for unit-testability, parallel to computeStreakStartCycles.
+ *
+ * Implemented in O(n) by processing oldest-first with a running total that
+ * resets to null on each success row and accumulates non-null durations on
+ * failure rows.
  */
 export function computeStreakDurations(
   rows: CycleRow[],
   streakStarts: Map<number, number | null>,
 ): Map<number, number | null> {
   const result = new Map<number, number | null>();
-  const durationByN = new Map<number, number | null>();
-  for (const r of rows) durationByN.set(r.cycleNumber, r.durationMs);
+  const ordered = [...rows].reverse(); // process oldest-first
+  let runningTotal: number | null = null;
 
-  for (const r of rows) {
+  for (const r of ordered) {
     const start = streakStarts.get(r.cycleNumber);
     if (start === null || start === undefined) {
-      result.set(r.cycleNumber, null); // success row — no active streak
-      continue;
-    }
-    let total: number | null = null;
-    for (const [cn, dur] of durationByN) {
-      if (cn >= start && cn <= r.cycleNumber && dur !== null) {
-        total = (total ?? 0) + dur;
+      // Success row — reset streak accumulator
+      runningTotal = null;
+      result.set(r.cycleNumber, null);
+    } else {
+      // Failure row — accumulate non-null duration into running streak total
+      if (r.durationMs !== null) {
+        runningTotal = (runningTotal ?? 0) + r.durationMs;
       }
+      result.set(r.cycleNumber, runningTotal);
     }
-    result.set(r.cycleNumber, total);
   }
   return result;
 }
