@@ -14,7 +14,7 @@ import { writeFileSync } from "node:fs";
 import type Database from "better-sqlite3";
 import { initDb, getCycleStats, formatCycleStats, getLatestCycleNumber, getCycleRows, getLastUpdatedCyclePerCategory, CYCLE_SUMMARY_SEPARATOR, MS_PER_MINUTE, type CycleStats, type CycleRow, type CategoryStaleness } from "./db.js";
 import { formatMemoryForPrompt } from "./memory.js";
-import { readRoadmap, parseRoadmap, pickNextItemWithRationale } from "./planning.js";
+import { readRoadmap, parseRoadmap, pickNextItemWithRationale, parseInProgressSinceCycle, STATUS_IN_PROGRESS } from "./planning.js";
 import { errorMessage, ERROR_CATEGORY_NONE } from "./errors.js";
 import { DANGEROUS_PATTERNS } from "./safety.js";
 import { csvQuoteField, filterBySearchTerm } from "./csv.js";
@@ -55,6 +55,23 @@ export const STATS_NEXT_ITEM_HEADER = "Next item selection:";
  * STATS_NO_FAILURE_SYMBOL / STATS_NO_DURATION_SYMBOL pattern.
  */
 export const STATS_NO_ACTIONABLE_ITEMS_MSG = "No actionable items on the roadmap.";
+
+/**
+ * Minimum age (in cycles) for an In Progress item to be reported as "stuck"
+ * in the verbose stats output. An item is considered stuck when
+ * `currentCycle − sinceCycle >= STATS_STUCK_ITEM_AGE_THRESHOLD`.
+ * Chosen at 10 cycles as a pragmatic signal: shorter periods are normal
+ * multi-cycle work; longer periods suggest blocked or forgotten items.
+ */
+export const STATS_STUCK_ITEM_AGE_THRESHOLD = 10;
+
+/**
+ * Section header rendered in verbose output before the list of In Progress
+ * items whose [since: N] age has reached STATS_STUCK_ITEM_AGE_THRESHOLD.
+ * Exported so tests can pin the exact string and a future wording change
+ * is auditable in one place.
+ */
+export const STATS_STUCK_ITEMS_HEADER = `Stuck In Progress items (age >= ${STATS_STUCK_ITEM_AGE_THRESHOLD} cycles):`;
 
 /**
  * Shared implementation for flag-followed-by-integer argv parsing.
@@ -733,6 +750,25 @@ export function generateStatsOutput(db: Database.Database, lastN?: number, verbo
       lines.push("");
       lines.push(STATS_NEXT_ITEM_HEADER);
       lines.push(`  ${rationale ?? STATS_NO_ACTIONABLE_ITEMS_MSG}`);
+
+      // Cross-reference In Progress items against latestCycle to surface stuck work.
+      // An item is "stuck" when its [since: N] annotation age (latestCycle − N) meets
+      // or exceeds STATS_STUCK_ITEM_AGE_THRESHOLD. Items without a [since: N]
+      // annotation are silently skipped — missing annotation means untracked, not stuck.
+      const stuckItems = items.filter((item) => {
+        if (item.status !== STATUS_IN_PROGRESS || !item.body) return false;
+        const since = parseInProgressSinceCycle(item.body);
+        return since !== null && latestCycle - since >= STATS_STUCK_ITEM_AGE_THRESHOLD;
+      });
+      if (stuckItems.length > 0) {
+        lines.push("");
+        lines.push(STATS_STUCK_ITEMS_HEADER);
+        for (const item of stuckItems) {
+          const since = parseInProgressSinceCycle(item.body);
+          const age = latestCycle - since!;
+          lines.push(`  ${item.title} (since cycle ${since}, age: ${age})`);
+        }
+      }
     } catch (err) {
       lines.push("");
       lines.push(`${STATS_NEXT_ITEM_HEADER} unavailable (${errorMessage(err)})`);
