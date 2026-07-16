@@ -632,6 +632,12 @@ export interface StatsJsonOutput {
   latestCycle: number;
   window: number | null;
   since: number | null;
+  /**
+   * Specific cycle number requested via --cycle N, or null when not filtering
+   * to a single cycle. Complements `window` and `since` so JSON consumers
+   * can reconstruct exactly which filter was active without inspecting `rows`.
+   */
+  cycle: number | null;
   /** Category filter applied to this output, or null when no filter was used. */
   category: string | null;
   generatedAt: string;
@@ -696,7 +702,7 @@ export function generateStatsJson(
   }
 
   const result: StatsJsonOutput = {
-    latestCycle, window: lastN ?? null, since: sinceN ?? null, category: categoryFilter ?? null, generatedAt: new Date().toISOString(), stats, rows,
+    latestCycle, window: lastN ?? null, since: sinceN ?? null, cycle: cycleN ?? null, category: categoryFilter ?? null, generatedAt: new Date().toISOString(), stats, rows,
     strategicContext: formatMemoryForPrompt(db, STATS_MEMORY_PREVIEW_CHARS) || null,
   };
   if (verbose) {
