@@ -686,7 +686,7 @@ export function generateStatsJson(
 ): StatsJsonOutput {
   const latestCycle = getLatestCycleNumber(db);
   const effectiveLimit = cycleN !== undefined ? undefined : computeEffectiveLimit(lastN, sinceN, categoryFilter);
-  const stats = getCycleStats(db, effectiveLimit, sinceN, categoryFilter);
+  const stats = getCycleStats(db, effectiveLimit, sinceN, categoryFilter, cycleN);
 
   // Apply same filtering logic as generateStatsTable so rows are consistent
   // with the stats aggregate.
@@ -744,7 +744,7 @@ export function generateStatsOutput(db: Database.Database, lastN?: number, verbo
   }
 
   const effectiveLimit = cycleN !== undefined ? undefined : computeEffectiveLimit(lastN, sinceN, categoryFilter);
-  const stats = getCycleStats(db, effectiveLimit, cycleN !== undefined ? cycleN : sinceN, categoryFilter);
+  const stats = getCycleStats(db, effectiveLimit, sinceN, categoryFilter, cycleN);
   const formatted = formatCycleStats(stats);
 
   const windowParts: string[] = [];

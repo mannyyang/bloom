@@ -607,11 +607,16 @@ export function getPhaseTokensByPhase(db: Database.Database, cycleNumbers: numbe
  * @param sinceN - when provided, only cycles with cycle_number >= sinceN are included
  * @param categoryFilter - when provided, only cycles with failure_category equal to
  *   this value are included (e.g. "build_failure", "none")
+ * @param cycleN - when provided, only the exact cycle with cycle_number = cycleN is
+ *   included. Takes precedence over sinceN when both are supplied.
  */
-export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS_HISTORY_LIMIT, sinceN?: number, categoryFilter?: string): CycleStats {
+export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS_HISTORY_LIMIT, sinceN?: number, categoryFilter?: string, cycleN?: number): CycleStats {
   const conditions: string[] = [];
   const params: unknown[] = [];
-  if (sinceN !== undefined) {
+  if (cycleN !== undefined) {
+    conditions.push("cycle_number = ?");
+    params.push(cycleN);
+  } else if (sinceN !== undefined) {
     conditions.push("cycle_number >= ?");
     params.push(sinceN);
   }

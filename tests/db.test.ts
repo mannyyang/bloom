@@ -1331,6 +1331,44 @@ describe("db", () => {
       // 1/3 = 33.33% → rounds to 33
       expect(stats.avgConversionRate).toBe(33);
     });
+
+    it("cycleN returns only the exact matching cycle, not all >= cycleN", () => {
+      // Three cycles: 10, 11, 12. cycleN=11 should include only cycle 11.
+      insertCycle(db, makeOutcome({
+        cycleNumber: 10, improvementsAttempted: 2, improvementsSucceeded: 2,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
+      insertCycle(db, makeOutcome({
+        cycleNumber: 11, improvementsAttempted: 1, improvementsSucceeded: 0,
+        buildVerificationPassed: false, pushSucceeded: false,
+        failureCategory: ERROR_CATEGORY_BUILD_FAILURE,
+      }));
+      insertCycle(db, makeOutcome({
+        cycleNumber: 12, improvementsAttempted: 3, improvementsSucceeded: 3,
+        buildVerificationPassed: true, pushSucceeded: true,
+      }));
+
+      const stats = getCycleStats(db, undefined, undefined, undefined, 11);
+      // Only cycle 11 is in scope — totalCycles must be exactly 1
+      expect(stats.totalCycles).toBe(1);
+      // Cycle 11 failed (build not passed) → successRate 0%
+      expect(stats.successRate).toBe(0);
+      // failureCategoryBreakdown includes cycle 11's category
+      expect(stats.failureCategoryBreakdown[ERROR_CATEGORY_BUILD_FAILURE]).toBe(1);
+    });
+
+    it("cycleN takes precedence over sinceN when both are provided", () => {
+      // Cycles 5, 6, 7 all exist; cycleN=6, sinceN=5 → only cycle 6 returned
+      for (let i = 5; i <= 7; i++) {
+        insertCycle(db, makeOutcome({
+          cycleNumber: i, improvementsAttempted: 1, improvementsSucceeded: 1,
+          buildVerificationPassed: true, pushSucceeded: true,
+        }));
+      }
+
+      const stats = getCycleStats(db, undefined, 5, undefined, 6);
+      expect(stats.totalCycles).toBe(1);
+    });
   });
 
   describe("formatCycleStats", () => {
