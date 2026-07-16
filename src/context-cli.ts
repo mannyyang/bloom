@@ -12,7 +12,7 @@ import { resolve } from "node:path";
 import { initDb, getLatestCycleNumber } from "./db.js";
 import { loadEvolutionContext } from "./context.js";
 import { errorMessage } from "./errors.js";
-import { parseVerboseFlag, parseHelpFlag, parseCycleArg } from "./stats.js";
+import { parseVerboseFlag, parseHelpFlag, parseCycleArg, parseDryRunFlag } from "./stats.js";
 
 /**
  * Usage text printed when `pnpm context --help` is invoked.
@@ -23,13 +23,64 @@ Usage: pnpm context [options]
 Options:
   --verbose             Print the full content of each context section
   --cycle N             Load context as it would appear for cycle N (default: latest + 1)
+  --dry-run             Print per-section char-count breakdown with % of total and exit (no DB, no LLM)
   --help, -h            Print this help message and exit
 `;
+
+/**
+ * Render a dry-run breakdown table: section name, char count, and percentage of
+ * total chars. Exported for unit-testability independent of main().
+ *
+ * @param sections - ordered array of [label, charCount] pairs
+ * @returns multi-line string with one row per section plus a Total row
+ */
+export function renderDryRunBreakdown(sections: Array<[string, number]>): string {
+  const total = sections.reduce((sum, [, n]) => sum + n, 0);
+  const lines: string[] = [];
+  for (const [label, n] of sections) {
+    const pct = total > 0 ? ((n / total) * 100).toFixed(1) : "0.0";
+    lines.push(`  ${label.padEnd(20)} ${String(n).padStart(6)} chars  ${pct.padStart(5)}%`);
+  }
+  lines.push(`  ${"Total".padEnd(20)} ${String(total).padStart(6)} chars  100.0%`);
+  return lines.join("\n");
+}
 
 export async function main() {
   // --help: print usage text and exit immediately (no DB, no LLM call).
   if (parseHelpFlag(process.argv)) {
     process.stdout.write(CONTEXT_CLI_HELP_TEXT);
+    return;
+  }
+
+  // --dry-run: load context from DB, print char-count breakdown, exit — no LLM call.
+  if (parseDryRunFlag(process.argv)) {
+    const db = initDb();
+    let cycleCount = 0;
+    try {
+      cycleCount = getLatestCycleNumber(db) + 1;
+    } catch {
+      // non-fatal — use cycleCount = 0
+    }
+    let ctx;
+    try {
+      ctx = await loadEvolutionContext(db, cycleCount);
+    } catch (err) {
+      console.error(`[context-cli] Failed to load evolution context: ${errorMessage(err)}`);
+      db.close();
+      process.exit(1);
+    }
+    db.close();
+
+    const sections: Array<[string, number]> = [
+      ["Identity", ctx.identity.length],
+      ["Journal summary", ctx.journalSummary?.length ?? 0],
+      ["Cycle stats", ctx.cycleStatsText?.length ?? 0],
+      ["Memory context", ctx.memoryContext?.length ?? 0],
+      ["Planning context", ctx.planningContext?.length ?? 0],
+    ];
+    console.log("\nContext char-count breakdown (cycle " + cycleCount + "):\n");
+    console.log(renderDryRunBreakdown(sections));
+    console.log("");
     return;
   }
 

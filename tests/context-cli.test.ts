@@ -19,14 +19,15 @@ vi.mock("../src/stats.js", () => ({
   parseVerboseFlag: vi.fn().mockReturnValue(false),
   parseHelpFlag: vi.fn().mockReturnValue(false),
   parseCycleArg: vi.fn().mockReturnValue(undefined),
+  parseDryRunFlag: vi.fn().mockReturnValue(false),
 }));
 
 // --- Import after mocks are set up ---
 
 import { initDb, getLatestCycleNumber } from "../src/db.js";
 import { loadEvolutionContext } from "../src/context.js";
-import { parseVerboseFlag, parseHelpFlag, parseCycleArg } from "../src/stats.js";
-import { main, CONTEXT_CLI_HELP_TEXT } from "../src/context-cli.js";
+import { parseVerboseFlag, parseHelpFlag, parseCycleArg, parseDryRunFlag } from "../src/stats.js";
+import { main, CONTEXT_CLI_HELP_TEXT, renderDryRunBreakdown } from "../src/context-cli.js";
 
 const mockInitDb = vi.mocked(initDb);
 const mockGetLatestCycleNumber = vi.mocked(getLatestCycleNumber);
@@ -34,6 +35,7 @@ const mockLoadEvolutionContext = vi.mocked(loadEvolutionContext);
 const mockParseVerboseFlag = vi.mocked(parseVerboseFlag);
 const mockParseHelpFlag = vi.mocked(parseHelpFlag);
 const mockParseCycleArg = vi.mocked(parseCycleArg);
+const mockParseDryRunFlag = vi.mocked(parseDryRunFlag);
 
 function makeCtx(overrides = {}) {
   return {
@@ -54,6 +56,58 @@ describe("context-cli.ts CONTEXT_CLI_HELP_TEXT", () => {
     expect(CONTEXT_CLI_HELP_TEXT).toContain("--verbose");
     expect(CONTEXT_CLI_HELP_TEXT).toContain("--help");
   });
+
+  it("contains --dry-run flag", () => {
+    expect(CONTEXT_CLI_HELP_TEXT).toContain("--dry-run");
+  });
+});
+
+describe("context-cli.ts renderDryRunBreakdown()", () => {
+  it("renders one row per section plus a Total row", () => {
+    const result = renderDryRunBreakdown([["Identity", 100], ["Journal", 400]]);
+    expect(result).toContain("Identity");
+    expect(result).toContain("Journal");
+    expect(result).toContain("Total");
+  });
+
+  it("computes percentages correctly", () => {
+    const result = renderDryRunBreakdown([["A", 50], ["B", 50]]);
+    // Each section is 50% of 100 total
+    expect(result).toContain("50.0%");
+    expect(result).toContain("100.0%");
+  });
+
+  it("handles zero-total gracefully (shows 0.0% for all sections)", () => {
+    const result = renderDryRunBreakdown([["Empty", 0]]);
+    expect(result).toContain("0.0%");
+    expect(result).toContain("100.0%");
+  });
+
+  it("--dry-run: prints breakdown and does NOT fall through to full context load", async () => {
+    mockParseDryRunFlag.mockReturnValue(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockInitDb.mockReturnValue({ close: vi.fn() } as any);
+    mockGetLatestCycleNumber.mockReturnValue(5);
+    mockLoadEvolutionContext.mockResolvedValue(makeCtx({
+      identity: "ID",
+      journalSummary: "JJ",
+    }));
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    const logged = consoleSpy.mock.calls.map((c) => c.join(" "));
+    expect(logged.some((l) => l.includes("Identity"))).toBe(true);
+    expect(logged.some((l) => l.includes("Total"))).toBe(true);
+    // Should NOT print the normal "Community issues" summary line
+    expect(logged.some((l) => l.includes("Community issues:"))).toBe(false);
+
+    consoleSpy.mockRestore();
+  });
+
+  it("--dry-run: CONTEXT_CLI_HELP_TEXT includes --dry-run description", () => {
+    expect(CONTEXT_CLI_HELP_TEXT).toContain("--dry-run");
+  });
 });
 
 describe("context-cli.ts main()", () => {
@@ -66,6 +120,7 @@ describe("context-cli.ts main()", () => {
     mockParseVerboseFlag.mockReturnValue(false);
     mockParseHelpFlag.mockReturnValue(false);
     mockParseCycleArg.mockReturnValue(undefined);
+    mockParseDryRunFlag.mockReturnValue(false);
   });
 
   it("--help: prints CONTEXT_CLI_HELP_TEXT and does NOT call loadEvolutionContext", async () => {

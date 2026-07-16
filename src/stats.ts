@@ -255,6 +255,16 @@ export function parseHelpFlag(argv: string[]): boolean {
 }
 
 /**
+ * Parse `--dry-run` from an argv array, returning true when the flag is present.
+ * When true, context-cli main() prints a per-section char-count breakdown with
+ * percentages of total and exits — no DB connection, no LLM call, no side effects.
+ * Mirrors the parseHelpFlag pattern: one boolean flag, one line of logic.
+ */
+export function parseDryRunFlag(argv: string[]): boolean {
+  return argv.includes("--dry-run");
+}
+
+/**
  * Usage text printed when `pnpm stats --help` is invoked.
  * Lists every supported flag with a short description, mirroring the
  * convention used by standard CLI tools.
