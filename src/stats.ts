@@ -621,6 +621,15 @@ export function renderTrendBar(rows: CycleRow[]): string {
 export const STATS_TREND_PREFIX = "Trend (last ";
 
 /**
+ * Label prepended to the inline sparkline appended to the default summary
+ * output by generateStatsOutput.  Extracted as a constant so tests can pin the
+ * exact label text and a future wording change is auditable in one place.
+ *
+ * Example full line: "Trend: ▁▃▅█  95%"
+ */
+export const STATS_SPARKLINE_LABEL = "Trend:";
+
+/**
  * Generate a single-line trend summary showing the success rate of the last N cycles
  * as an ASCII bar plus a trailing percentage.
  * Returns "No evolution cycles recorded yet." when the database is empty.
@@ -780,6 +789,14 @@ export function generateStatsOutput(db: Database.Database, lastN?: number, verbo
   lines.push(CYCLE_SUMMARY_SEPARATOR);
   lines.push("");
   lines.push(formatted);
+
+  // Append inline sparkline using all available cycles (no window limit) so
+  // the trend reflects the full history rather than the filtered view.
+  const sparklineRows = getCycleRows(db);
+  const sparkline = renderTrendBar(sparklineRows);
+  if (sparkline) {
+    lines.push(`${STATS_SPARKLINE_LABEL} ${sparkline}`);
+  }
 
   // Show latest strategic context if available
   const memory = formatMemoryForPrompt(db, STATS_MEMORY_PREVIEW_CHARS);
