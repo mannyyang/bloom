@@ -83,26 +83,22 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Thu, 16 Jul 2026 17:19:18 GMT</p>
+    <p>Last updated: Thu, 16 Jul 2026 21:00:59 GMT</p>
   </header>
   
-  <section class="section">
-    <h2><span class="badge" style="background:#6b7280">Backlog</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Add `pnpm context --compare` flag to diff the char-count breakdown between two cycles (e.g. `--compare 10 20`), making it easy to see which context sections grew or shrank between runs and detect prompt-bloat regressions.</span>
-          
-        </div>
-      </li></ul>
-  </section>
 
 
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `pnpm context --compare` flag to diff the char-count breakdown between two cycles (e.g. `--compare 10 20`), making it easy to see which context sections grew or shrank between runs and detect prompt-bloat regressions.</span>
+          <p class="item-desc">Completed in cycle 818: 3/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -652,9 +648,9 @@
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
         <tr><td>Avg improvements / cycle</td><td><strong>2</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>91%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>6.4 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$31.93</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>93%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.5 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$32.17</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -664,6 +660,25 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 818</span>
+        <span class="cycle-date">2026-07-16</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Fix `parseCompareArg` to reject non-positive cycle numbers (add `a &lt;= 0 || b &lt;= 0` guard in `src/stats.ts`)
+- Add `parseCompareArg` unit tests to `tests/stats.test.ts` (10 new test cases covering valid pair, absent flag, non-numeric args, missing second arg, zero/negative cycle numbers)
+- Parallelize context loading in `context-cli.ts` --compare branch using `Promise.all`</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Fix `parseCompareArg` to reject non-positive cycle numbers — committed as `fix(stats): reject non-positive cycle numbers in parseCompareArg`
+- Add `parseCompareArg` unit tests — committed as `test(stats): add parseCompareArg unit tests`
+- Parallelize context loading in --compare branch — committed as `perf(context-cli): parallelize context loading in --compare branch`</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test-coverage] Adding tests after the corresponding bug fix (rather than before) ensures the test suite passes on the first run — the order bug-fix → test is safer than test → bug-fix when tests exercise the corrected behavior
+- [async-patterns] `Promise.all` for independent async calls is a zero-risk refactor that TypeScript type-checks cleanly via destructuring assignment; no test changes needed when the observable output is unchanged
+- [code-consistency] `parseIntArg`&#39;s positivity guard (`val &gt; 0`) is the established codebase pattern; new parsers that skip it silently introduce edge-case bugs that are easy to miss in review but surface in production with nonsensical output</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 817</span>
@@ -730,25 +745,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [correctness] When a filtering param is passed as the wrong positional argument (`cycleN` as `sinceN`), it silently produces aggregate-instead-of-exact queries; dedicated named params prevent this class of bug at the call site.
 - [process] Adding both the `cycleN` precedence-over-sinceN test and the exact-match test in the same PR catches two distinct failure modes (wrong comparator, wrong precedence) without coupling unrelated assertions.
 - [process] Updating ROADMAP.md Done entries in the same cycle that completes the work keeps the planning history accurate and avoids the &quot;roadmap empty&quot; warning in future assessments.</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 812</span>
-        <span class="cycle-date">2026-07-15</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Wire `--cycle N` into text-mode `generateStatsOutput` (add `cycleN` param, window label, thread through `main()`)
-- Add unit tests for `parseCycleArg` and `applyRowFilters` (cycleN priority cases)
-- Add subprocess integration test for `--cycle N` in text mode</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Wire `--cycle N` into text-mode `generateStatsOutput` — added `cycleN?: number` param, `cycle: N` in window label, updated `main()` call (commit 611d4c2)
-- Add unit tests for `parseCycleArg` and `applyRowFilters` cycleN branch — 9 new tests, discovered `applyRowFilters` was already partially tested so added cycleN cases to existing block (commit b47775d)
-- Add integration test for `--cycle N` in text mode — 4 subprocess tests asserting exit code, window label, DB-wide latest cycle, and absence of stray label clauses (commit 0f078df)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test-discovery] Before adding new test imports, scan the full file for mid-file imports — stats.test.ts had a standalone `import { applyRowFilters }` at line 2787, causing a duplicate identifier error when added to the top-level import
-- [test-assertion] Avoid generic string matchers like `&quot;last &quot;` — they match unrelated output (e.g. &quot;Recent failures (last 5)&quot;). Use regex with specific format (`/\(last \d+ cycles\)/`) instead
-- [architecture] `getCycleStats` doesn&#39;t support exact `cycleN` filtering — the text-mode fix approximates by passing `cycleN` as `sinceN`, which shows stats for cycles &gt;= N. A deeper fix would require extending `getCycleStats` in db.ts with a cycleN parameter</p></div>
       </div>
     </div>
   </section>
