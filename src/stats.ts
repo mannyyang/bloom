@@ -275,6 +275,7 @@ export function parseCompareArg(argv: string[]): [number, number] | undefined {
   const a = parseInt(argv[idx + 1], 10);
   const b = parseInt(argv[idx + 2], 10);
   if (isNaN(a) || isNaN(b)) return undefined;
+  if (a <= 0 || b <= 0) return undefined;
   return [a, b];
 }
 
