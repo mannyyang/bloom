@@ -1,16 +1,17 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-
-- [ ] Add `pnpm stats --sparkline` single-line trend visualization: render one Unicode block character per cycle (▁▃▅█) directly in the default summary table output so success-rate trends are visible at a glance without the extra `--trend N` flag.
-- [ ] Add `pnpm journal --stats` aggregate summary command: print entry count, cycle range, average learnings per cycle, and most-common failure category — giving a quick health snapshot without reading individual entries.
 - [ ] Add `pnpm context --compare` flag to diff the char-count breakdown between two cycles (e.g. `--compare 10 20`), making it easy to see which context sections grew or shrank between runs and detect prompt-bloat regressions.
 
 ## Up Next
 
 ## In Progress
+- [ ] Add `pnpm stats --sparkline` single-line trend visualization: render one Unicode block character per cycle (▁▃▅█) directly in the default summary table output so success-rate trends are visible at a glance without the extra `--trend N` flag.
+  [since: 816]
 
 ## Done
+- [x] Add `pnpm journal --stats` aggregate summary command: print entry count, cycle range, average learnings per cycle, and most-common failure category — giving a quick health snapshot without reading individual entries.
+  Completed in cycle 816: 2/2 improvements succeeded.
 - [x] Add `--dry-run` flag to `pnpm context` that prints a character-count breakdown of each section that would be injected into the assessment prompt, helping operators reason about token budget before a cycle runs.
   Completed in cycle 814: 2/3 improvements succeeded.
 - [x] Fix `getCycleStats` exact `cycleN` filtering and add `cycle` field to `StatsJsonOutput`: `cycle_number = ?` now used for exact-cycle queries; `StatsJsonOutput.cycle` field added for `--cycle N --json` parity.
