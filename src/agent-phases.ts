@@ -108,6 +108,9 @@ export async function runAssessmentPhase(
       memoryContext: ctx.memoryContext,
       planningContext: ctx.planningContext,
       fileManifest,
+      recentFailure: ctx.recentFailure
+        ? { cycleNumber: ctx.recentFailure.cycleNumber, detail: ctx.recentFailure.content }
+        : undefined,
     }),
     options: {
       cwd: process.cwd(),

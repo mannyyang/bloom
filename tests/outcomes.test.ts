@@ -5,6 +5,8 @@ import {
   createOutcome,
   formatOutcomeForJournal,
   classifyBuildFailure,
+  formatFailureTail,
+  FAILURE_DETAIL_MAX_CHARS,
   OUTCOME_METRICS_HEADER,
 } from "../src/outcomes.js";
 import {
@@ -786,5 +788,28 @@ describe("classifyBuildFailure", () => {
       "      Tests  490 passed | 3 failed (493)\n" +
       "   Duration  1.23s\n";
     expect(classifyBuildFailure(realisticMixed)).toBe(ERROR_CATEGORY_TEST_FAILURE);
+  });
+});
+
+describe("formatFailureTail", () => {
+  it("returns trimmed output unchanged when under the limit", () => {
+    expect(formatFailureTail("  build failed: TS2322  ")).toBe("build failed: TS2322");
+  });
+
+  it("returns an empty string for whitespace-only input", () => {
+    expect(formatFailureTail("   \n  ")).toBe("");
+  });
+
+  it("keeps the tail (where errors surface) and marks truncation", () => {
+    const long = "HEAD" + "x".repeat(FAILURE_DETAIL_MAX_CHARS) + "TAIL-ERROR";
+    const result = formatFailureTail(long);
+    expect(result.startsWith("…[truncated]\n")).toBe(true);
+    expect(result.endsWith("TAIL-ERROR")).toBe(true);
+    expect(result).not.toContain("HEAD");
+  });
+
+  it("respects a custom maxChars", () => {
+    const result = formatFailureTail("abcdefghij", 4);
+    expect(result).toBe("…[truncated]\nghij");
   });
 });

@@ -31,6 +31,31 @@ export interface CycleOutcome {
   testTotalAfter: number | null;
   durationMs: number | null;
   failureCategory: ErrorCategory;
+  /**
+   * Tail of the captured build/test output when a failure occurred, used to
+   * persist *what* broke (not just a category) so the next cycle can see it.
+   * Transient carrier only — written to a `failure_detail` journal entry by the
+   * orchestrator; not stored as a `cycles` column.
+   */
+  failureDetail?: string;
+}
+
+/**
+ * Maximum characters of captured build/test output retained as failure detail.
+ * Compiler/test errors surface at the END of the output, so we keep the tail.
+ */
+export const FAILURE_DETAIL_MAX_CHARS = 1500;
+
+/**
+ * Extract the tail of failing build/test output for durable storage.
+ * Keeps the last {@link FAILURE_DETAIL_MAX_CHARS} characters (where the actual
+ * error messages live), prefixing an ellipsis marker when truncated. Returns an
+ * empty string for empty/whitespace-only input.
+ */
+export function formatFailureTail(output: string, maxChars: number = FAILURE_DETAIL_MAX_CHARS): string {
+  const trimmed = output.trim();
+  if (trimmed.length <= maxChars) return trimmed;
+  return "…[truncated]\n" + trimmed.slice(trimmed.length - maxChars);
 }
 
 /**

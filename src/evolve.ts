@@ -7,6 +7,9 @@ import { truncateWithEllipsis } from "./planning.js";
 /** Maximum characters allowed for the assessment passed into the evolution prompt. */
 export const ASSESSMENT_CHAR_LIMIT = 2000;
 
+/** Maximum characters of recent build/test failure detail injected into the assessment prompt. */
+export const RECENT_FAILURE_CONTEXT_MAX_CHARS = 800;
+
 export interface AssessmentContext {
   journalSummary: string;
   cycleCount: number;
@@ -17,6 +20,9 @@ export interface AssessmentContext {
    * When present, the LLM skips its own Glob calls to discover files,
    * saving assessment turns. */
   fileManifest?: string;
+  /** Captured build/test failure from the most recent failed cycle, surfaced so
+   * the agent can check whether it still applies. Omitted when there is none. */
+  recentFailure?: { cycleNumber: number; detail: string };
 }
 
 /**
@@ -65,13 +71,17 @@ export function buildAssessmentPrompt(ctx: AssessmentContext): string {
     ? `\nFile index (pre-built — no need to Glob src/, tests/, or scripts/):\n${ctx.fileManifest}\n`
     : "";
 
+  const recentFailureSection = ctx.recentFailure
+    ? `\nMost recent build/test failure (cycle ${ctx.recentFailure.cycleNumber}) — check whether it still applies and fix it if so:\n${truncateWithEllipsis(ctx.recentFailure.detail, RECENT_FAILURE_CONTEXT_MAX_CHARS)}\n`
+    : "";
+
   return `This is evolution cycle ${ctx.cycleCount}.
 
 Read src/, tests/, scripts/, README.md, and the GitHub Pages site in .github/pages/, then list top 1-3 improvements (bugs, roadmap items, test gaps, README/docs accuracy, website/journal presentation, clarity, new capabilities) — for each: what/why/difficulty. Keep your assessment under ${ASSESSMENT_CHAR_LIMIT} characters — it is passed directly into the implementation prompt.
 
 Recent journal entries:
 ${truncateWithEllipsis(ctx.journalSummary, CONTEXT_JOURNAL_MAX_CHARS)}
-${ctx.cycleStatsText ? `\nYour track record:\n${ctx.cycleStatsText}\n` : ""}${ctx.memoryContext ? `\nYour accumulated knowledge:\n${ctx.memoryContext}\n` : ""}${ctx.planningContext ? `\n${ctx.planningContext}\n` : ""}${manifestSection}`;
+${recentFailureSection}${ctx.cycleStatsText ? `\nYour track record:\n${ctx.cycleStatsText}\n` : ""}${ctx.memoryContext ? `\nYour accumulated knowledge:\n${ctx.memoryContext}\n` : ""}${ctx.planningContext ? `\n${ctx.planningContext}\n` : ""}${manifestSection}`;
 }
 
 /** Options passed to buildEvolutionPrompt for injecting resource-usage and outcome sections. */

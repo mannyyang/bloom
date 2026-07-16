@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import type Database from "better-sqlite3";
-import { getRecentJournalSummary, getCycleStats, formatCycleStats } from "./db.js";
+import { getRecentJournalSummary, getCycleStats, formatCycleStats, getLatestFailureDetail, type FailureDetail } from "./db.js";
 import { fetchCommunityIssues, syncReactionsToItems, type CommunityIssue } from "./issues.js";
 import { triageIssues, PROMPT_TITLE_PREVIEW_CHARS } from "./triage.js";
 import { errorMessage } from "./errors.js";
@@ -52,6 +52,8 @@ export interface EvolutionContext {
   issues: CommunityIssue[];
   projectConfig: ProjectConfig | null;
   currentItem: ProjectItem | null;
+  /** Captured build/test output from the most recent cycle that failed, if any. */
+  recentFailure?: FailureDetail | null;
 }
 
 /**
@@ -73,6 +75,13 @@ export async function loadEvolutionContext(
 
   const journalSummary = getRecentJournalSummary(db, CONTEXT_JOURNAL_MAX_CHARS, CONTEXT_JOURNAL_MAX_CYCLES);
   console.log(`[context] Journal summary: ${journalSummary ? `${journalSummary.length} chars` : "empty"}`);
+
+  // Surface the most recent build/test failure (from a prior cycle) so the
+  // assessment agent can see what broke and check whether it still applies.
+  const recentFailure = getLatestFailureDetail(db, cycleCount);
+  if (recentFailure) {
+    console.log(`[context] Recent failure: cycle ${recentFailure.cycleNumber} (${recentFailure.content.length} chars)`);
+  }
 
   const cycleStats = getCycleStats(db);
   const cycleStatsText = formatCycleStats(cycleStats);
@@ -196,5 +205,6 @@ export async function loadEvolutionContext(
     issues,
     projectConfig,
     currentItem,
+    recentFailure,
   };
 }

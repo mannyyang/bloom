@@ -17,7 +17,7 @@ import {
 } from "./lifecycle.js";
 import { runBuildVerificationPhase, updatePlanningStatus, pushChangesPhase } from "./phases.js";
 import { type PhaseUsage, formatDurationSec } from "./usage.js";
-import { createOutcome, formatOutcomeForJournal, parseTestCount, parseTestTotal } from "./outcomes.js";
+import { createOutcome, formatOutcomeForJournal, parseTestCount, parseTestTotal, classifyBuildFailure, formatFailureTail } from "./outcomes.js";
 import { formatCycleSummaryWithDuration, isDryRun } from "./orchestrator.js";
 import { loadEvolutionContext } from "./context.js";
 import {
@@ -42,25 +42,30 @@ async function main() {
     console.log(`  Started: ${new Date().toISOString()}`);
     console.log(`========================================\n`);
 
-    // Pre-flight check (before cycle row exists, safe to exit early)
+    setGitBotIdentity();
+
+    // Insert the cycle row up front so a preflight failure is still recorded
+    // (visible in stats and the journal) rather than exiting silently. The row
+    // is updated with final metrics in the finally block.
+    insertCycle(db, outcome);
+
+    // Pre-flight check
     console.log("[preflight] Running build + test check...");
     const preflightStart = Date.now();
     const preflight = runPreflightCheck();
     const preflightMs = Date.now() - preflightStart;
     if (!preflight.passed) {
       console.error(`[preflight] FAILED after ${formatDurationSec(preflightMs)}. Aborting evolution.`);
-      db.close();
-      process.exit(1);
+      outcome.failureCategory = classifyBuildFailure(preflight.output);
+      outcome.failureDetail = formatFailureTail(preflight.output);
+      throw new Error("Preflight build+test check failed before evolution could run.");
     }
     outcome.preflightPassed = true;
     outcome.testCountBefore = parseTestCount(preflight.output);
     outcome.testTotalBefore = parseTestTotal(preflight.output);
     console.log(`[preflight] PASSED in ${formatDurationSec(preflightMs)} (${outcome.testCountBefore ?? "?"}/${outcome.testTotalBefore ?? "?"} tests)`);
 
-    setGitBotIdentity();
-
-    // Insert cycle row (will be updated at end)
-    insertCycle(db, outcome);
+    // Persist the cycle row to git now that preflight has passed.
     if (!commitDb(cycleCount, "start")) {
       console.error("[db] Start commit produced no changes — cycle row may not be persisted to git.");
     }
@@ -101,10 +106,16 @@ async function main() {
       outcome.failureCategory = ERROR_CATEGORY_LLM_ERROR;
     }
 
-    // Record the error as a journal entry so it's visible on GitHub Pages
+    // Record the error as a journal entry so it's visible on GitHub Pages.
+    // When a build/test failure captured its output, also persist that as a
+    // `failure_detail` entry so the next cycle can see *what* broke, not just
+    // that something did.
     if (db && cycleCount > 0) {
       try {
         insertJournalEntry(db, cycleCount, "failed", `Evolution error: ${errorMessage(err)}`);
+        if (outcome.failureDetail) {
+          insertJournalEntry(db, cycleCount, "failure_detail", outcome.failureDetail);
+        }
       } catch (journalErr) {
         console.warn(`[index] insertJournalEntry failed (non-fatal): ${journalErr}`);
       }

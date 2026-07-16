@@ -12,6 +12,7 @@ import {
   insertIssueAction,
   hasIssueAction,
   getJournalEntries,
+  getLatestFailureDetail,
   exportJournalJson,
   getRecentJournalSummary,
   getCycleStats,
@@ -283,6 +284,30 @@ describe("db", () => {
       insertCycle(db, makeOutcome({ cycleNumber: 5 }));
       insertCycle(db, makeOutcome({ cycleNumber: 10 }));
       expect(getLatestCycleNumber(db)).toBe(10);
+    });
+  });
+
+  describe("getLatestFailureDetail", () => {
+    it("returns null when no failure_detail entries exist", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertJournalEntry(db, 1, "failed", "generic failure line");
+      expect(getLatestFailureDetail(db)).toBeNull();
+    });
+
+    it("returns the most recent failure_detail entry", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+      insertJournalEntry(db, 1, "failure_detail", "cycle 1 error");
+      insertJournalEntry(db, 2, "failure_detail", "cycle 2 error");
+      expect(getLatestFailureDetail(db)).toEqual({ cycleNumber: 2, content: "cycle 2 error" });
+    });
+
+    it("excludes the current cycle when beforeCycle is passed", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+      insertCycle(db, makeOutcome({ cycleNumber: 2 }));
+      insertJournalEntry(db, 1, "failure_detail", "cycle 1 error");
+      insertJournalEntry(db, 2, "failure_detail", "cycle 2 error");
+      expect(getLatestFailureDetail(db, 2)).toEqual({ cycleNumber: 1, content: "cycle 1 error" });
     });
   });
 

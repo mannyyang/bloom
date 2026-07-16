@@ -370,6 +370,41 @@ export function insertJournalEntry(
   ).run(cycleNumber, section, content);
 }
 
+export interface FailureDetail {
+  cycleNumber: number;
+  content: string;
+}
+
+/**
+ * Fetch the most recent `failure_detail` journal entry — the captured build/test
+ * output tail from the last cycle that broke. Used to surface *what* broke into
+ * the next cycle's assessment context. Pass `beforeCycle` to exclude the current
+ * in-progress cycle. Returns null when no failure detail has ever been recorded.
+ */
+export function getLatestFailureDetail(
+  db: Database.Database,
+  beforeCycle?: number,
+): FailureDetail | null {
+  const params: number[] = [];
+  let where = "section = 'failure_detail'";
+  if (beforeCycle !== undefined) {
+    where += " AND cycle_number < ?";
+    params.push(beforeCycle);
+  }
+  const rows = validateRows<FailureDetail>(
+    db.prepare(`
+      SELECT cycle_number as cycleNumber, content
+      FROM journal_entries
+      WHERE ${where}
+      ORDER BY cycle_number DESC, id DESC
+      LIMIT 1
+    `).all(...params),
+    { cycleNumber: "number", content: "string" },
+    "getLatestFailureDetail",
+  );
+  return rows.length > 0 ? rows[0] : null;
+}
+
 export function insertPhaseUsage(
   db: Database.Database,
   cycleNumber: number,

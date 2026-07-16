@@ -10,6 +10,7 @@ vi.mock("../src/db.js", () => ({
   getRecentJournalSummary: vi.fn(),
   getCycleStats: vi.fn(),
   formatCycleStats: vi.fn(),
+  getLatestFailureDetail: vi.fn(),
 }));
 
 vi.mock("../src/issues.js", () => ({

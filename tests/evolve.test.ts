@@ -1094,3 +1094,32 @@ describe("countImprovements", () => {
   });
 });
 
+describe("buildAssessmentPrompt recentFailure section", () => {
+  it("renders the recent failure with its cycle number when provided", () => {
+    const prompt = buildAssessmentPrompt({
+      journalSummary: "",
+      cycleCount: 42,
+      recentFailure: { cycleNumber: 41, detail: "TS2322: Type 'string' is not assignable" },
+    });
+    expect(prompt).toContain("Most recent build/test failure (cycle 41)");
+    expect(prompt).toContain("TS2322: Type 'string' is not assignable");
+  });
+
+  it("omits the section entirely when there is no recent failure", () => {
+    const prompt = buildAssessmentPrompt({ journalSummary: "", cycleCount: 42 });
+    expect(prompt).not.toContain("Most recent build/test failure");
+  });
+
+  it("truncates an oversized failure detail", () => {
+    const huge = "E".repeat(5000);
+    const prompt = buildAssessmentPrompt({
+      journalSummary: "",
+      cycleCount: 42,
+      recentFailure: { cycleNumber: 41, detail: huge },
+    });
+    expect(prompt).toContain("Most recent build/test failure (cycle 41)");
+    // The 5000-char detail must not appear in full — it is capped.
+    expect(prompt).not.toContain(huge);
+  });
+});
+
