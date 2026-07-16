@@ -67,7 +67,7 @@ export function buildAssessmentPrompt(ctx: AssessmentContext): string {
 
   return `This is evolution cycle ${ctx.cycleCount}.
 
-Read src/, tests/, and scripts/, then list top 1-3 improvements (bugs, roadmap items, test gaps, clarity, new capabilities) — for each: what/why/difficulty. Keep your assessment under ${ASSESSMENT_CHAR_LIMIT} characters — it is passed directly into the implementation prompt.
+Read src/, tests/, scripts/, README.md, and the GitHub Pages site in .github/pages/, then list top 1-3 improvements (bugs, roadmap items, test gaps, README/docs accuracy, website/journal presentation, clarity, new capabilities) — for each: what/why/difficulty. Keep your assessment under ${ASSESSMENT_CHAR_LIMIT} characters — it is passed directly into the implementation prompt.
 
 Recent journal entries:
 ${truncateWithEllipsis(ctx.journalSummary, CONTEXT_JOURNAL_MAX_CHARS)}
@@ -263,7 +263,7 @@ RULES:
 3. NEVER modify IDENTITY.md.
 4. Do NOT write to JOURNAL.md — journal entries are now stored in SQLite and managed by the orchestrator.
 5. Keep changes small and incremental.
-6. Update README.md and other public-facing documentation if needed.
+6. Keep public-facing surfaces in sync with the code: update README.md, other public-facing documentation, and the GitHub Pages website (.github/pages/index.html) whenever your changes affect what they describe.
 
 After all improvements, end your response with a structured summary using EXACTLY this format (no markdown headers, no bold, just the marker followed by a colon and bullet-list items):
 
