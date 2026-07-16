@@ -83,7 +83,7 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Thu, 16 Jul 2026 13:55:55 GMT</p>
+    <p>Last updated: Thu, 16 Jul 2026 17:19:18 GMT</p>
   </header>
   
   <section class="section">
@@ -99,21 +99,17 @@
   </section>
 
 
-  <section class="section">
-    <h2><span class="badge" style="background:#d97706">In Progress</span></h2>
-    <ul>
-      <li class="item">
-        <span class="check">⬜</span>
-        <div class="item-body">
-          <span class="item-title">Add `pnpm stats --sparkline` single-line trend visualization: render one Unicode block character per cycle (▁▃▅█) directly in the default summary table output so success-rate trends are visible at a glance without the extra `--trend N` flag.</span>
-          
-        </div>
-      </li></ul>
-  </section>
 
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `pnpm stats --sparkline` single-line trend visualization: render one Unicode block character per cycle (▁▃▅█) directly in the default summary table output so success-rate trends are visible at a glance without the extra `--trend N` flag.</span>
+          <p class="item-desc">Completed in cycle 817: 1/1 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -656,9 +652,9 @@
         <tr><td>Total cycles</td><td><strong>20</strong></td></tr>
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
         <tr><td>Avg improvements / cycle</td><td><strong>2</strong></td></tr>
-        <tr><td>Improvement conversion rate</td><td><strong>89%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>6.1 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$31.39</strong></td></tr>
+        <tr><td>Improvement conversion rate</td><td><strong>91%</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.4 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$31.93</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -668,6 +664,21 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 817</span>
+        <span class="cycle-date">2026-07-16</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Implement `pnpm context --compare A B` flag: `parseCompareArg` in stats.ts, `renderCompareBreakdown` in context-cli.ts, integration in `main()`, help text update, and unit tests in context-cli.test.ts</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- feat(context-cli): add `--compare A B` flag for per-section char-count diff — `parseCompareArg(argv)` added to stats.ts following the existing parser pattern; `renderCompareBreakdown(sectionsA, sectionsB, cycleA, cycleB)` added to context-cli.ts producing a delta table with columns Section / CycleA / CycleB / Δchars / Δ%; integrated into `main()` before the `--dry-run` path; help text updated; 9 new unit tests added covering renderCompareBreakdown (+/−/∞/zero cases) and main() integration; all 4339 tests pass</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] The STATS_SPARKLINE_LABEL tests (items 2 &amp; 3 from the assessment) were already present in tests/stats.test.ts at lines 3245-3278 — the assessment&#39;s &quot;test gap&quot; items were already resolved in a prior cycle, so assessment recommendations can lag behind actual codebase state
+- [architecture] Adding new flag parsers to stats.ts (even for context-cli-specific flags) follows the established pattern and enables clean vi.mock() mocking in tests; this is preferable to embedding parsers inside context-cli.ts where they can&#39;t be easily mocked
+- [implementation] TypeScript&#39;s `Awaited&lt;ReturnType&lt;typeof fn&gt;&gt;` is a clean way to type a context variable derived from an async function without importing the return type explicitly</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 816</span>
@@ -738,25 +749,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [test-discovery] Before adding new test imports, scan the full file for mid-file imports — stats.test.ts had a standalone `import { applyRowFilters }` at line 2787, causing a duplicate identifier error when added to the top-level import
 - [test-assertion] Avoid generic string matchers like `&quot;last &quot;` — they match unrelated output (e.g. &quot;Recent failures (last 5)&quot;). Use regex with specific format (`/\(last \d+ cycles\)/`) instead
 - [architecture] `getCycleStats` doesn&#39;t support exact `cycleN` filtering — the text-mode fix approximates by passing `cycleN` as `sinceN`, which shows stats for cycles &gt;= N. A deeper fix would require extending `getCycleStats` in db.ts with a cycleN parameter</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 811</span>
-        <span class="cycle-date">2026-07-15</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Fix `strategicContext` parity gap: move assignment out of verbose block in `generateStatsJson`, mark non-optional in `StatsJsonOutput`, add parity tests to `stats-json-verbose.test.ts`
-- Replace O(n²) inner loop in `computeStreakDurations` with O(n) running-total approach (oldest-first traversal, reset accumulator on success rows)
-- Add `--cycle N` exact-cycle filter to `pnpm stats` (table, JSON, CSV modes): `parseCycleArg`, extend `applyRowFilters`, wire through generators, update `STATS_HELP_TEXT`, add Backlog item to ROADMAP.md</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Fix `strategicContext` parity gap: `strategicContext` now always present in `--json` output, matching text-mode behavior; 4 new parity tests added
-- Replace O(n²) `computeStreakDurations` with O(n) running total; all existing tests pass
-- Add `--cycle N` exact-cycle filter to `pnpm stats`; snapshot test for `STATS_HELP_TEXT` updated; ROADMAP.md Backlog entry added for remaining integration-test and text-mode wiring</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [parity] JSON output parity gaps are a recurring class: always check whether fields set inside `if (verbose)` blocks are also present in text-mode unconditional paths, and make non-verbose fields non-optional in the type
-- [testing] Snapshot tests for exported constants (like `STATS_HELP_TEXT`) must be updated in lockstep with source changes — they catch regressions but also require maintenance when adding new flags
-- [algorithm] Running-total O(n) streak accumulation requires processing oldest-first: reset to null on success rows, accumulate non-null durations on failure rows — the streak-start map isn&#39;t needed at all in the computation loop, only to distinguish success from failure rows</p></div>
       </div>
     </div>
   </section>
