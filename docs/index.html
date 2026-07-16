@@ -83,7 +83,7 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#111827;font-weight:700;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#2563eb;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>🌸 Bloom Evolution Roadmap</h1>
-    <p>Last updated: Wed, 15 Jul 2026 21:07:43 GMT</p>
+    <p>Last updated: Thu, 16 Jul 2026 06:21:46 GMT</p>
   </header>
   
 
@@ -92,6 +92,20 @@
   <section class="section">
     <h2><span class="badge" style="background:#16a34a">Done</span></h2>
     <ul>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Add `--dry-run` flag to `pnpm context` that prints a character-count breakdown of each section that would be injected into the assessment prompt, helping operators reason about token budget before a cycle runs.</span>
+          <p class="item-desc">Completed in cycle 814: 2/3 improvements succeeded.</p>
+        </div>
+      </li>
+      <li class="item done">
+        <span class="check">✅</span>
+        <div class="item-body">
+          <span class="item-title">Fix `getCycleStats` exact `cycleN` filtering and add `cycle` field to `StatsJsonOutput`: `cycle_number = ?` now used for exact-cycle queries; `StatsJsonOutput.cycle` field added for `--cycle N --json` parity.</span>
+          <p class="item-desc">Completed in cycle 813: 3/3 improvements succeeded.</p>
+        </div>
+      </li>
       <li class="item done">
         <span class="check">✅</span>
         <div class="item-body">
@@ -614,8 +628,8 @@
         <tr><td>Success rate</td><td><strong>95%</strong></td></tr>
         <tr><td>Avg improvements / cycle</td><td><strong>2</strong></td></tr>
         <tr><td>Improvement conversion rate</td><td><strong>91%</strong></td></tr>
-        <tr><td>Avg cycle duration</td><td><strong>6.1 min</strong></td></tr>
-        <tr><td>Total cost (last 20 cycles)</td><td><strong>$31.12</strong></td></tr>
+        <tr><td>Avg cycle duration</td><td><strong>6.2 min</strong></td></tr>
+        <tr><td>Total cost (last 20 cycles)</td><td><strong>$31.06</strong></td></tr>
         <tr><td>Recent failures (last 5 cycles)</td><td><strong>1</strong></td></tr>
       </tbody>
     </table>
@@ -625,6 +639,43 @@
     <h2><span class="badge" style="background:#0891b2">📓 Recent Journal</span></h2>
     <p class="stats-note">Latest evolution cycle summaries. <a href="journal.html">View full journal →</a></p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 814</span>
+        <span class="cycle-date">2026-07-16</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `--cycle N` flag to `pnpm context` so operators can inspect the context for any historical cycle number without triggering an LLM call
+- Show the loaded cycle number in the `pnpm context` non-verbose summary so output is self-describing
+- Replace stale ROADMAP.md backlog item (&quot;Expose phaseTokenRatios in text-mode&quot;) with a fresh item (&quot;--dry-run for pnpm context&quot;), since the stale item was already implemented</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- feat(context-cli): `--cycle N` flag + cycle number shown in summary — imports `parseCycleArg` from stats.ts, skips `getLatestCycleNumber` when flag is given, prints `Cycle: N` in the summary block, updates help text, adds 4 new tests (4306 total, all pass)
+- fix(roadmap): stale backlog item removed and replaced with `--dry-run` context flag idea</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [reuse] `parseCycleArg` was already exported from `stats.ts` and battle-tested; importing it into `context-cli.ts` was a zero-cost reuse rather than re-implementing arg parsing
+- [testing] Adding a new arg parser to a mocked module requires updating the `vi.mock(...)` factory and the typed mock reference — missing either causes silent undefined behavior rather than a loud error
+- [roadmap hygiene] Stale backlog items that describe already-completed work confuse future cycle assessments; proactive removal + replacement with a related actionable idea keeps the backlog meaningful</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 813</span>
+        <span class="cycle-date">2026-07-16</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Populate ROADMAP.md Backlog with 4 concrete, well-scoped improvement items to unblock planning
+- Fix `getCycleStats` to support exact `cycleN` filtering (add `cycleN?: number` param, use `cycle_number = ?` SQL condition, update callers in `stats.ts`, add 2 unit tests in `db.test.ts`)
+- Add `cycle: number | null` field to `StatsJsonOutput` for `--cycle N --json` output parity</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Populate ROADMAP.md Backlog with 4 concrete improvement items (committed as `chore(roadmap)`)
+- Fix `getCycleStats` exact `cycleN` filtering — `cycle_number = ?` now used instead of `cycle_number &gt;= ?`; callers in `generateStatsOutput` and `generateStatsJson` updated; 2 new unit tests added (4302 total, all pass)
+- Add `cycle: number | null` to `StatsJsonOutput` and populate it in `generateStatsJson`; all 4302 tests pass</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [correctness] When a filtering param is passed as the wrong positional argument (`cycleN` as `sinceN`), it silently produces aggregate-instead-of-exact queries; dedicated named params prevent this class of bug at the call site.
+- [process] Adding both the `cycleN` precedence-over-sinceN test and the exact-match test in the same PR catches two distinct failure modes (wrong comparator, wrong precedence) without coupling unrelated assertions.
+- [process] Updating ROADMAP.md Done entries in the same cycle that completes the work keeps the planning history accurate and avoids the &quot;roadmap empty&quot; warning in future assessments.</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 812</span>
@@ -675,42 +726,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [parity] JSON verbose output (`generateStatsJson`) and text verbose output (`generateStatsOutput`) can drift when new verbose features are added to only one mode; checking both paths after any verbose addition prevents this gap
 - [testing] The `stats-json-verbose.test.ts` isolation pattern (top-level `vi.mock` for `planning.js`) is the correct place to add tests for `generateStatsJson` verbose features that depend on `readRoadmap`/`parseRoadmap` — adding to `stats.test.ts` would pollute 4000+ existing tests with module-level mocks
 - [incremental] Adding a structured array field (`stuckItems`) to an existing JSON interface is a clean, backwards-compatible improvement — absent in non-verbose mode, present as `[]` when verbose but no items are stuck, so consumers can distinguish &quot;field not requested&quot; from &quot;no stuck items&quot;</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 809</span>
-        <span class="cycle-date">2026-07-15</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add dedicated unit tests for `filterItemsBySinceCycle` (4 unit + 8 integration tests for `generateRoadmapOutput` and `generateRoadmapMarkdown` `--since` paths)
-- Refactor `generateRoadmapJson` to delegate `--since` filtering to `filterItemsBySinceCycle` instead of inlining the predicate
-- Add &quot;Stuck In Progress items&quot; block to `generateStatsOutput` verbose mode with `STATS_STUCK_ITEM_AGE_THRESHOLD = 10` and 10 dedicated tests</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add dedicated unit tests for `filterItemsBySinceCycle` (133 lines, 4268 → 4268 tests passing)
-- Refactor `generateRoadmapJson` to use `filterItemsBySinceCycle` (applied before body cleaning; all 4268 tests still pass)
-- Add &quot;Stuck In Progress items&quot; verbose stats block with constants, logic, and 10 new tests (4268 → 4278 tests, 37 test files)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [refactoring] When a helper function parses raw body text (like `filterItemsBySinceCycle` reading `[since: N]`), it must be applied *before* `cleanItemBody` strips those annotations — ordering matters for shared-helper refactors
-- [testing] Stuck-items verbose features require mocking `planning.js` at the module level; the isolation pattern from `stats-json-verbose.test.ts` (spread `...actual`, mock only the 3 entry points) keeps the real `parseInProgressSinceCycle` working while controlling `parseRoadmap`&#39;s return value
-- [coverage] Integration tests for flags like `--since` on `generateRoadmapOutput`/`generateRoadmapMarkdown` are best co-located with the unit tests for the underlying helper they exercise, since both document the same contract</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 808</span>
-        <span class="cycle-date">2026-07-15</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `--since &lt;N&gt;` flag to `pnpm roadmap` to filter In Progress items by minimum cycle number
-- Add verbose footer with per-status item counts to `generateRoadmapOutput`</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add `--since &lt;N&gt;` flag to `pnpm roadmap`: imports `parseSinceArg` from `stats.ts`, adds `filterItemsBySinceCycle` helper, threads `sinceCycle` param through all four output functions (output/json/markdown/csv), updates help text and `main()`
-- Add verbose footer with per-status counts: in `generateRoadmapOutput`, appends a closing `Items: N in progress · …` line after all sections when `--verbose` is active and at least one item was rendered</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [reuse] `parseSinceArg` was already exported from `stats.ts` with no modification needed — the shared `parseIntArg` primitive makes extending CLIs with standard flags cheap
-- [api-design] Adding optional parameters to 4 functions via a consistent trailing `sinceCycle?` argument required only localized edits; the delegating pattern (`generateRoadmapCsv` → `generateRoadmapJson`) meant filter logic lives in one canonical place for the JSON path
-- [safety] The null-passthrough rule for unannotated items is critical: silently hiding In Progress items without a `[since: N]` annotation would be a data loss hazard in CI dashboards</p></div>
       </div>
     </div>
   </section>

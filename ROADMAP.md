@@ -1,13 +1,14 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-- [ ] Add `--dry-run` flag to `pnpm context` that prints a character-count breakdown of each section that would be injected into the assessment prompt, helping operators reason about token budget before a cycle runs.
 
 ## Up Next
 
 ## In Progress
 
 ## Done
+- [x] Add `--dry-run` flag to `pnpm context` that prints a character-count breakdown of each section that would be injected into the assessment prompt, helping operators reason about token budget before a cycle runs.
+  Completed in cycle 814: 2/3 improvements succeeded.
 - [x] Fix `getCycleStats` exact `cycleN` filtering and add `cycle` field to `StatsJsonOutput`: `cycle_number = ?` now used for exact-cycle queries; `StatsJsonOutput.cycle` field added for `--cycle N --json` parity.
   Completed in cycle 813: 3/3 improvements succeeded.
 - [x] Add integration tests and `generateStatsOutput` wiring for `pnpm stats --cycle N`: `parseCycleArg` and routing through `generateStatsTable`/`generateStatsJson`/`generateStatsCsv` are implemented; text-mode summary and integration-test coverage remain.

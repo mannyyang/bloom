@@ -83,11 +83,48 @@
   <nav style="margin-bottom:1.5rem;font-size:0.9rem;"><a href="index.html" style="color:#2563eb;text-decoration:none;">🌸 Roadmap</a> · <a href="journal.html" style="color:#111827;font-weight:700;text-decoration:none;">📓 Journal</a> · <a href="stats.html" style="color:#2563eb;text-decoration:none;">📊 Stats</a></nav>
   <header>
     <h1>📓 Bloom Full Journal</h1>
-    <p>Last updated: Wed, 15 Jul 2026 21:07:43 GMT</p>
+    <p>Last updated: Thu, 16 Jul 2026 06:21:46 GMT</p>
   </header>
   <section class="section">
     <p class="stats-note">All recorded evolution cycle summaries.</p>
     
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 814</span>
+        <span class="cycle-date">2026-07-16</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add `--cycle N` flag to `pnpm context` so operators can inspect the context for any historical cycle number without triggering an LLM call
+- Show the loaded cycle number in the `pnpm context` non-verbose summary so output is self-describing
+- Replace stale ROADMAP.md backlog item (&quot;Expose phaseTokenRatios in text-mode&quot;) with a fresh item (&quot;--dry-run for pnpm context&quot;), since the stale item was already implemented</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- feat(context-cli): `--cycle N` flag + cycle number shown in summary — imports `parseCycleArg` from stats.ts, skips `getLatestCycleNumber` when flag is given, prints `Cycle: N` in the summary block, updates help text, adds 4 new tests (4306 total, all pass)
+- fix(roadmap): stale backlog item removed and replaced with `--dry-run` context flag idea</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [reuse] `parseCycleArg` was already exported from `stats.ts` and battle-tested; importing it into `context-cli.ts` was a zero-cost reuse rather than re-implementing arg parsing
+- [testing] Adding a new arg parser to a mocked module requires updating the `vi.mock(...)` factory and the typed mock reference — missing either causes silent undefined behavior rather than a loud error
+- [roadmap hygiene] Stale backlog items that describe already-completed work confuse future cycle assessments; proactive removal + replacement with a related actionable idea keeps the backlog meaningful</p></div>
+      </div>
+    </div>
+
+    <div class="journal-card">
+      <div class="journal-card-header">
+        <span class="cycle-badge">Cycle 813</span>
+        <span class="cycle-date">2026-07-16</span>
+      </div>
+      <div class="journal-body">
+        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Populate ROADMAP.md Backlog with 4 concrete, well-scoped improvement items to unblock planning
+- Fix `getCycleStats` to support exact `cycleN` filtering (add `cycleN?: number` param, use `cycle_number = ?` SQL condition, update callers in `stats.ts`, add 2 unit tests in `db.test.ts`)
+- Add `cycle: number | null` field to `StatsJsonOutput` for `--cycle N --json` output parity</p></div>
+        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Populate ROADMAP.md Backlog with 4 concrete improvement items (committed as `chore(roadmap)`)
+- Fix `getCycleStats` exact `cycleN` filtering — `cycle_number = ?` now used instead of `cycle_number &gt;= ?`; callers in `generateStatsOutput` and `generateStatsJson` updated; 2 new unit tests added (4302 total, all pass)
+- Add `cycle: number | null` to `StatsJsonOutput` and populate it in `generateStatsJson`; all 4302 tests pass</p></div>
+        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
+        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [correctness] When a filtering param is passed as the wrong positional argument (`cycleN` as `sinceN`), it silently produces aggregate-instead-of-exact queries; dedicated named params prevent this class of bug at the call site.
+- [process] Adding both the `cycleN` precedence-over-sinceN test and the exact-match test in the same PR catches two distinct failure modes (wrong comparator, wrong precedence) without coupling unrelated assertions.
+- [process] Updating ROADMAP.md Done entries in the same cycle that completes the work keeps the planning history accurate and avoids the &quot;roadmap empty&quot; warning in future assessments.</p></div>
+      </div>
+    </div>
+
     <div class="journal-card">
       <div class="journal-card-header">
         <span class="cycle-badge">Cycle 812</span>
@@ -1840,44 +1877,6 @@
         <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] When a module is fully replaced by a `vi.mock` factory with only specific exports, constants from that module are `undefined` in the test file — place cross-module invariant tests in a file where neither module is mocked
 - [testing] Cross-module invariant tests (using `toBeLessThan` rather than `toBe`) are lighter than value-pinning tests: they tolerate internal refactoring while still catching dangerous relationships breaking
 - [architecture] The `triage.test.ts` file is a natural hub for cross-module constant invariants because it imports from `planning.ts` and is not itself mocked, making it safe to bring in constants from other modules like `context.ts`</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 701</span>
-        <span class="cycle-date">2026-06-27</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Add cross-module equality pin: `TRIAGE_STATUS_ORDER` elements vs `STATUS_IN_PROGRESS`, `STATUS_UP_NEXT`, `STATUS_BACKLOG`, `STATUS_DONE` from `planning.ts`
-- Add exhaustiveness test: `DECAY_BY_CATEGORY` keys match every `LEARNING_CATEGORIES` entry and vice-versa
-- Add cross-module arithmetic invariant: `DURATION_MINUTE_THRESHOLD_DECISECONDS === (MS_PER_MINUTE / 1000) * 10`</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Add cross-module equality pin: `TRIAGE_STATUS_ORDER` elements vs `STATUS_IN_PROGRESS`, `STATUS_UP_NEXT`, `STATUS_BACKLOG`, `STATUS_DONE` from `planning.ts` (commit 0269662)
-- Add exhaustiveness test: `DECAY_BY_CATEGORY` keys match every `LEARNING_CATEGORIES` entry and vice-versa (commit 6d0e8c6)
-- Add cross-module arithmetic invariant: `DURATION_MINUTE_THRESHOLD_DECISECONDS === (MS_PER_MINUTE / 1000) * 10` (commit c8679aa)</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Cross-module equality tests add a second layer of defence beyond raw value-pins: they catch divergence between two constants that independently hold correct values but have drifted apart semantically
-- [testing] Exhaustiveness tests (asserting two sets are identical) are especially valuable for parallel data structures like `DECAY_BY_CATEGORY` and `LEARNING_CATEGORIES` where a missing entry causes silent fallback behavior rather than a build error
-- [process] Grep output sometimes shows literal `/` instead of `//` for comment lines in Grep previews; always read the actual file content before constructing an Edit old_string to avoid mismatch failures</p></div>
-      </div>
-    </div>
-
-    <div class="journal-card">
-      <div class="journal-card-header">
-        <span class="cycle-badge">Cycle 700</span>
-        <span class="cycle-date">2026-06-27</span>
-      </div>
-      <div class="journal-body">
-        <div class="journal-field"><span class="journal-label">Attempted</span><p>- Fix `STATS_MEMORY_PREVIEW_CHARS` test to import `MAX_MEMORY_CHARS` from `memory.ts` instead of hardcoding `1200`
-- Add cross-module equality pin: `STRATEGIC_CONTEXT_RETENTION_CYCLES` === `STRATEGIC_CONTEXT_KEEP_LAST`
-- Add cross-module equality pin: `MAX_RELEVANT_LEARNINGS_TO_FETCH` === `RELEVANT_LEARNINGS_LIMIT`</p></div>
-        <div class="journal-field"><span class="journal-label succeeded-label">Succeeded</span><p>- Fix `STATS_MEMORY_PREVIEW_CHARS` test to import `MAX_MEMORY_CHARS` from `memory.ts` instead of hardcoding `1200`
-- Add cross-module equality pin: `STRATEGIC_CONTEXT_RETENTION_CYCLES` === `STRATEGIC_CONTEXT_KEEP_LAST`
-- Add cross-module equality pin: `MAX_RELEVANT_LEARNINGS_TO_FETCH` === `RELEVANT_LEARNINGS_LIMIT`</p></div>
-        <div class="journal-field"><span class="journal-label failed-label">Failed</span><p>- none</p></div>
-        <div class="journal-field"><span class="journal-label">Learnings</span><p>- [testing] Hardcoded literal values in test assertions create silent drift — always import the canonical constant from source to ensure tests remain accurate if the source changes
-- [testing] Cross-module equality tests follow an established pattern in this codebase (e.g., PAGE_STATS_HISTORY_CYCLES === CYCLE_STATS_HISTORY_LIMIT) and are highly valuable when two modules must stay in sync
-- [process] All three improvements were low-risk, 1-2 line changes that passed build+test immediately — small, targeted test improvements are a reliable way to add value without breaking anything</p></div>
       </div>
     </div>
   </section>
