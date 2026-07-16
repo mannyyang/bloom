@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { initDb, insertCycle, insertPhaseUsage, insertStrategicContext, insertLearning, getCycleStats, formatCycleStats, getLearningCategoryDistribution, getLastUpdatedCyclePerCategory } from "../src/db.js";
 import type { CycleStats } from "../src/db.js";
-import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseCsvFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, parseTrendArg, parseCostAlertArg, parseOutputFileArg, checkCostAlert, generateStatsJson, generateStatsTable, generateStatsTrend, renderTrendBar, TREND_BAR_CHARS, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES, COL_COST, COL_SINCE_CYCLE, COL_STREAK_DUR, computeStreakStartCycles, computeStreakDurations, generateStatsCsvFromRows, generateStatsCsv, STATS_CSV_HEADER, computeEffectiveLimit, STATS_TREND_PREFIX, parseCycleArg, STATS_SPARKLINE_LABEL } from "../src/stats.js";
+import { generateStatsOutput, parseIntArg, parseLastNArg, parseSinceArg, parseCategoryArg, parseSearchArg, parseJsonFlag, parseCsvFlag, parseTableFlag, parseVerboseFlag, parseHelpFlag, parseTrendArg, parseCostAlertArg, parseOutputFileArg, checkCostAlert, generateStatsJson, generateStatsTable, generateStatsTrend, renderTrendBar, TREND_BAR_CHARS, STATS_MEMORY_PREVIEW_CHARS, STATS_NO_FAILURE_SYMBOL, STATS_NO_DURATION_SYMBOL, STATS_HELP_TEXT, STATS_NEXT_ITEM_HEADER, STATS_NO_ACTIONABLE_ITEMS_MSG, COL_FAILURES, COL_COST, COL_SINCE_CYCLE, COL_STREAK_DUR, computeStreakStartCycles, computeStreakDurations, generateStatsCsvFromRows, generateStatsCsv, STATS_CSV_HEADER, computeEffectiveLimit, STATS_TREND_PREFIX, parseCycleArg, STATS_SPARKLINE_LABEL, parseCompareArg } from "../src/stats.js";
 import { CYCLE_SUMMARY_SEPARATOR } from "../src/orchestrator.js";
 import { ERROR_CATEGORY_NONE, ERROR_CATEGORY_BUILD_FAILURE, ERROR_CATEGORY_TEST_FAILURE, ERROR_CATEGORY_LLM_ERROR } from "../src/errors.js";
 import { MAX_MEMORY_CHARS } from "../src/memory.js";
@@ -3279,3 +3279,51 @@ describe("generateStatsOutput sparkline", () => {
   });
 });
 
+
+// ---------------------------------------------------------------------------
+// parseCompareArg
+// ---------------------------------------------------------------------------
+
+describe("parseCompareArg", () => {
+  it("returns undefined when --compare flag is absent", () => {
+    expect(parseCompareArg(["node", "stats.js"])).toBeUndefined();
+  });
+
+  it("returns [A, B] for a valid pair of positive integers", () => {
+    expect(parseCompareArg(["node", "stats.js", "--compare", "5", "10"])).toEqual([5, 10]);
+    expect(parseCompareArg(["--compare", "1", "2"])).toEqual([1, 2]);
+    expect(parseCompareArg(["--compare", "100", "200"])).toEqual([100, 200]);
+  });
+
+  it("returns undefined when --compare is given only one argument (second missing)", () => {
+    expect(parseCompareArg(["node", "stats.js", "--compare", "5"])).toBeUndefined();
+  });
+
+  it("returns undefined when first argument is non-numeric", () => {
+    expect(parseCompareArg(["--compare", "abc", "10"])).toBeUndefined();
+  });
+
+  it("returns undefined when second argument is non-numeric", () => {
+    expect(parseCompareArg(["--compare", "5", "xyz"])).toBeUndefined();
+  });
+
+  it("returns undefined when first argument is zero", () => {
+    expect(parseCompareArg(["--compare", "0", "5"])).toBeUndefined();
+  });
+
+  it("returns undefined when first argument is negative", () => {
+    expect(parseCompareArg(["--compare", "-3", "10"])).toBeUndefined();
+  });
+
+  it("returns undefined when second argument is zero", () => {
+    expect(parseCompareArg(["--compare", "5", "0"])).toBeUndefined();
+  });
+
+  it("returns undefined when second argument is negative", () => {
+    expect(parseCompareArg(["--compare", "5", "-1"])).toBeUndefined();
+  });
+
+  it("returns undefined when --compare flag is entirely absent from a populated argv", () => {
+    expect(parseCompareArg(["node", "stats.js", "--dry-run", "--verbose"])).toBeUndefined();
+  });
+});
