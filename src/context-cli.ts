@@ -113,8 +113,10 @@ export async function main() {
     const db = initDb();
     let ctxA, ctxB;
     try {
-      ctxA = await loadEvolutionContext(db, cycleA);
-      ctxB = await loadEvolutionContext(db, cycleB);
+      [ctxA, ctxB] = await Promise.all([
+        loadEvolutionContext(db, cycleA),
+        loadEvolutionContext(db, cycleB),
+      ]);
     } catch (err) {
       console.error(`[context-cli] Failed to load evolution context: ${errorMessage(err)}`);
       db.close();
