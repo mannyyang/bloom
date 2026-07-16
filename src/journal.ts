@@ -51,8 +51,48 @@ Options:
   --cycle <N>       Show the journal entry for exactly one specific cycle
   --search <term>   Filter entries by case-insensitive keyword search across all text fields
   --verbose         Show summary metadata (entry count and cycle range)
+  --stats           Print aggregate health summary (entry count, cycle range, avg learnings length)
   --help, -h        Print this help message and exit
 `;
+
+/**
+ * Parse `--stats` from an argv array, returning true when the flag is present.
+ * When true, generateJournalOutput prints an aggregate health summary instead
+ * of the normal entry export. Mirrors the parseHelpFlag / parseVerboseFlag pattern.
+ */
+export function parseStatsFlag(argv: string[]): boolean {
+  return argv.includes("--stats");
+}
+
+/**
+ * Header line for the `--stats` aggregate health summary.
+ * Exported so tests can pin the exact label without duplicating the string.
+ */
+export const JOURNAL_STATS_HEADER = "Journal Stats:";
+
+/**
+ * Generate an aggregate health summary from a set of journal entries.
+ * Prints:
+ *   - Total entry count
+ *   - Cycle range (min – max cycle number)
+ *   - Average length of the `learnings` field (proxy for learning density)
+ * Returns "No journal entries recorded yet." when entries is empty.
+ * Exported for unit-testability.
+ */
+export function generateJournalStats(entries: JournalExportEntry[]): string {
+  if (entries.length === 0) return "No journal entries recorded yet.";
+  const cycleNumbers = entries.map((e) => e.cycleNumber);
+  const minCycle = Math.min(...cycleNumbers);
+  const maxCycle = Math.max(...cycleNumbers);
+  const totalLearningsLength = entries.reduce((sum, e) => sum + (e.learnings?.length ?? 0), 0);
+  const avgLearningsLength = Math.round(totalLearningsLength / entries.length);
+  return [
+    JOURNAL_STATS_HEADER,
+    `  Entries: ${entries.length}`,
+    `  Cycle range: ${minCycle}–${maxCycle}`,
+    `  Avg learnings length: ${avgLearningsLength} chars`,
+  ].join("\n");
+}
 
 /**
  * Append a Markdown section (header + content + blank line) to `lines`
@@ -182,9 +222,9 @@ export function generateJournalCsv(entries: JournalExportEntry[]): string {
  */
 export function generateJournalOutput(
   db: Database.Database,
-  options: { format?: "json" | "md" | "csv" | "table"; limit?: number; since?: number; cycle?: number; search?: string; verbose?: boolean } = {},
+  options: { format?: "json" | "md" | "csv" | "table"; limit?: number; since?: number; cycle?: number; search?: string; verbose?: boolean; stats?: boolean } = {},
 ): string {
-  const { format = "json", limit, since, cycle, search, verbose } = options;
+  const { format = "json", limit, since, cycle, search, verbose, stats } = options;
   // Math.floor normalises fractional values (e.g. 3.7 → 3).
   // The explicit `!== undefined` guard makes intent clear: 0 is not a valid
   // limit (pass undefined to mean "no limit"), and `safeLimit > 0` already
@@ -204,6 +244,10 @@ export function generateJournalOutput(
     search ?? "",
     (e) => [e.attempted, e.succeeded, e.failed, e.learnings, e.strategic_context],
   );
+
+  if (stats) {
+    return generateJournalStats(entries);
+  }
 
   if (format === "md") {
     let mdOutput = formatJournalMarkdown(entries);
@@ -254,7 +298,7 @@ export function generateJournalOutput(
   return JSON.stringify(entries, null, 2);
 }
 
-export function parseArgs(argv: string[]): { format: "json" | "md" | "csv" | "table"; limit?: number; since?: number; cycle?: number; search?: string; verbose?: boolean } {
+export function parseArgs(argv: string[]): { format: "json" | "md" | "csv" | "table"; limit?: number; since?: number; cycle?: number; search?: string; verbose?: boolean; stats?: boolean } {
   let format: "json" | "md" | "csv" | "table" = "json";
   // --format <fmt> takes precedence; unknown values fall back to "json"
   const formatFlagIdx = argv.indexOf("--format");
@@ -274,6 +318,7 @@ export function parseArgs(argv: string[]): { format: "json" | "md" | "csv" | "ta
     cycle: parseIntArg(argv, "--cycle"),
     search: parseSearchArg(argv),
     verbose: argv.includes("--verbose") ? true : undefined,
+    stats: parseStatsFlag(argv) ? true : undefined,
   };
 }
 

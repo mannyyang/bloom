@@ -14,6 +14,9 @@ import {
   JOURNAL_STRATEGIC_CONTEXT_HEADER,
   JOURNAL_HELP_TEXT,
   JOURNAL_CSV_HEADER,
+  parseStatsFlag,
+  generateJournalStats,
+  JOURNAL_STATS_HEADER,
 } from "../src/journal.js";
 import type { JournalExportEntry } from "../src/db.js";
 import { makeOutcome } from "./helpers.js";
@@ -1293,5 +1296,88 @@ describe("JOURNAL_CSV_HEADER", () => {
   it("header-only output for empty entries is exactly JOURNAL_CSV_HEADER + newline", () => {
     const csv = generateJournalCsv([]);
     expect(csv).toBe(JOURNAL_CSV_HEADER + "\n");
+  });
+});
+
+describe("parseStatsFlag", () => {
+  it("returns false when --stats flag is absent", () => {
+    expect(parseStatsFlag(["node", "journal.js"])).toBe(false);
+  });
+
+  it("returns true when --stats flag is present", () => {
+    expect(parseStatsFlag(["node", "journal.js", "--stats"])).toBe(true);
+  });
+});
+
+describe("JOURNAL_STATS_HEADER", () => {
+  it('is the string "Journal Stats:"', () => {
+    expect(JOURNAL_STATS_HEADER).toBe("Journal Stats:");
+  });
+});
+
+describe("generateJournalStats", () => {
+  it("returns no-entries message when entries array is empty", () => {
+    expect(generateJournalStats([])).toBe("No journal entries recorded yet.");
+  });
+
+  it("includes JOURNAL_STATS_HEADER in output", () => {
+    const entries: JournalExportEntry[] = [
+      { cycleNumber: 1, date: "2026-01-01", attempted: "", succeeded: "", failed: "", learnings: "abc", strategic_context: "" },
+    ];
+    expect(generateJournalStats(entries)).toContain(JOURNAL_STATS_HEADER);
+  });
+
+  it("includes correct entry count", () => {
+    const entries: JournalExportEntry[] = [
+      { cycleNumber: 1, date: "2026-01-01", attempted: "", succeeded: "", failed: "", learnings: "", strategic_context: "" },
+      { cycleNumber: 2, date: "2026-01-02", attempted: "", succeeded: "", failed: "", learnings: "", strategic_context: "" },
+    ];
+    expect(generateJournalStats(entries)).toContain("Entries: 2");
+  });
+
+  it("includes correct cycle range", () => {
+    const entries: JournalExportEntry[] = [
+      { cycleNumber: 5, date: "2026-01-05", attempted: "", succeeded: "", failed: "", learnings: "", strategic_context: "" },
+      { cycleNumber: 10, date: "2026-01-10", attempted: "", succeeded: "", failed: "", learnings: "", strategic_context: "" },
+    ];
+    expect(generateJournalStats(entries)).toContain("Cycle range: 5–10");
+  });
+
+  it("includes avg learnings length (proxy for learning density)", () => {
+    const entries: JournalExportEntry[] = [
+      { cycleNumber: 1, date: "2026-01-01", attempted: "", succeeded: "", failed: "", learnings: "abcd", strategic_context: "" },
+      { cycleNumber: 2, date: "2026-01-02", attempted: "", succeeded: "", failed: "", learnings: "ab", strategic_context: "" },
+    ];
+    // avg = (4 + 2) / 2 = 3
+    expect(generateJournalStats(entries)).toContain("Avg learnings length: 3 chars");
+  });
+});
+
+describe("generateJournalOutput --stats mode", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = initDb(":memory:");
+  });
+
+  it("returns no-entries message when DB is empty", () => {
+    const output = generateJournalOutput(db, { stats: true });
+    expect(output).toBe("No journal entries recorded yet.");
+  });
+
+  it("includes JOURNAL_STATS_HEADER when entries exist", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertJournalEntry(db, 1, "learnings", "Some learnings text");
+    const output = generateJournalOutput(db, { stats: true });
+    expect(output).toContain(JOURNAL_STATS_HEADER);
+  });
+
+  it("--stats takes precedence over --format md", () => {
+    insertCycle(db, makeOutcome({ cycleNumber: 1 }));
+    insertJournalEntry(db, 1, "learnings", "Keep it incremental");
+    const output = generateJournalOutput(db, { stats: true, format: "md" });
+    // Should output stats header, not the markdown journal title
+    expect(output).toContain(JOURNAL_STATS_HEADER);
+    expect(output).not.toContain("# Bloom Evolution Journal");
   });
 });
