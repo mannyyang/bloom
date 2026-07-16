@@ -41,7 +41,7 @@ Bloom is an ongoing experiment, not a product with a finish line. However, the p
 
 ## How It Works
 
-Every 4 hours, Bloom runs an evolution cycle via GitHub Actions:
+Twice a day (00:00 and 12:00 UTC), Bloom runs an evolution cycle via GitHub Actions:
 
 1. **Pre-flight** - Verifies build and tests pass before starting
 2. **Memory & Planning** - Loads accumulated learnings, strategic context, and the project roadmap
@@ -134,7 +134,7 @@ src/
 
 ## GitHub Actions
 
-Evolution runs automatically on a 4-hour cron schedule. You can also trigger it manually from the **Actions** tab → **Bloom Evolution** → **Run workflow**.
+Evolution runs automatically on a twice-daily cron schedule (00:00 and 12:00 UTC). You can also trigger it manually from the **Actions** tab → **Bloom Evolution** → **Run workflow**.
 
 ### Required Secrets
 
