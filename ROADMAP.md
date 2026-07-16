@@ -1,9 +1,7 @@
 # Bloom Evolution Roadmap
 
 ## Backlog
-
-- [ ] Add `pnpm context --cycle N` flag to inspect the context that would have been loaded for a historical cycle number, enabling cost-free debugging of context-loading for past cycles.
-- [ ] Expose `phaseTokenRatios` in `pnpm stats` text-mode verbose output (currently only in JSON/formatCycleStats), giving operators a readable per-phase token breakdown without switching to JSON mode.
+- [ ] Add `--dry-run` flag to `pnpm context` that prints a character-count breakdown of each section that would be injected into the assessment prompt, helping operators reason about token budget before a cycle runs.
 
 ## Up Next
 
