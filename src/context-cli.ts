@@ -67,6 +67,13 @@ export async function main() {
   console.log("  Context Summary");
   console.log("========================================\n");
 
+  const totalChars =
+    ctx.identity.length +
+    (ctx.journalSummary?.length ?? 0) +
+    (ctx.cycleStatsText?.length ?? 0) +
+    (ctx.memoryContext?.length ?? 0) +
+    (ctx.planningContext?.length ?? 0);
+
   console.log(`Cycle:            ${cycleCount}`);
   console.log(`Identity:         ${ctx.identity.length} chars`);
   console.log(`Journal summary:  ${ctx.journalSummary ? `${ctx.journalSummary.length} chars` : "empty"}`);
@@ -75,6 +82,7 @@ export async function main() {
   console.log(`Planning context: ${ctx.planningContext ? `${ctx.planningContext.length} chars` : "empty"}`);
   console.log(`Community issues: ${ctx.issues.length}`);
   console.log(`Current focus:    ${ctx.currentItem ? `"${ctx.currentItem.title}"` : "none"}`);
+  console.log(`Total context:    ${totalChars} chars`);
 
   if (verbose) {
     console.log("\n========================================");

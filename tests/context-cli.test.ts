@@ -118,6 +118,43 @@ describe("context-cli.ts main()", () => {
     consoleSpy.mockRestore();
   });
 
+  it("prints a Total context chars summary line summing all section lengths", async () => {
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    mockLoadEvolutionContext.mockResolvedValue(makeCtx({
+      identity: "AB",          // 2
+      journalSummary: "CDE",   // 3
+      cycleStatsText: "FG",    // 2
+      memoryContext: "H",      // 1
+      planningContext: "IJKL", // 4
+    }));
+
+    await main();
+
+    const logged = consoleSpy.mock.calls.map((c) => c.join(" "));
+    // 2 + 3 + 2 + 1 + 4 = 12
+    expect(logged.some((l) => l.includes("Total context:") && l.includes("12 chars"))).toBe(true);
+
+    consoleSpy.mockRestore();
+  });
+
+  it("Total context chars counts only identity when all other sections are empty", async () => {
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    mockLoadEvolutionContext.mockResolvedValue(makeCtx({
+      identity: "HELLO",       // 5
+      journalSummary: "",
+      cycleStatsText: "",
+      memoryContext: "",
+      planningContext: "",
+    }));
+
+    await main();
+
+    const logged = consoleSpy.mock.calls.map((c) => c.join(" "));
+    expect(logged.some((l) => l.includes("Total context:") && l.includes("5 chars"))).toBe(true);
+
+    consoleSpy.mockRestore();
+  });
+
   it("--verbose: prints full identity section", async () => {
     mockParseVerboseFlag.mockReturnValue(true);
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
