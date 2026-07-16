@@ -2,6 +2,11 @@
 
 ## Backlog
 
+- [ ] Fix `getCycleStats` to support exact `cycleN` filtering: add `cycleN?: number` param, use `cycle_number = ?` condition when set, update callers in `stats.ts` so `pnpm stats --cycle N` shows data for only that cycle rather than all cycles >= N.
+- [ ] Add `cycle` field to `StatsJsonOutput` for `--cycle N --json` output parity: include a `cycle: number | null` field alongside `window`/`since` so JSON consumers can tell which specific cycle was requested.
+- [ ] Add `pnpm context --cycle N` flag to inspect the context that would have been loaded for a historical cycle number, enabling cost-free debugging of context-loading for past cycles.
+- [ ] Expose `phaseTokenRatios` in `pnpm stats` text-mode verbose output (currently only in JSON/formatCycleStats), giving operators a readable per-phase token breakdown without switching to JSON mode.
+
 ## Up Next
 
 ## In Progress
