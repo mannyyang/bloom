@@ -20,14 +20,15 @@ vi.mock("../src/stats.js", () => ({
   parseHelpFlag: vi.fn().mockReturnValue(false),
   parseCycleArg: vi.fn().mockReturnValue(undefined),
   parseDryRunFlag: vi.fn().mockReturnValue(false),
+  parseCompareArg: vi.fn().mockReturnValue(undefined),
 }));
 
 // --- Import after mocks are set up ---
 
 import { initDb, getLatestCycleNumber } from "../src/db.js";
 import { loadEvolutionContext } from "../src/context.js";
-import { parseVerboseFlag, parseHelpFlag, parseCycleArg, parseDryRunFlag } from "../src/stats.js";
-import { main, CONTEXT_CLI_HELP_TEXT, renderDryRunBreakdown } from "../src/context-cli.js";
+import { parseVerboseFlag, parseHelpFlag, parseCycleArg, parseDryRunFlag, parseCompareArg } from "../src/stats.js";
+import { main, CONTEXT_CLI_HELP_TEXT, renderDryRunBreakdown, renderCompareBreakdown } from "../src/context-cli.js";
 
 const mockInitDb = vi.mocked(initDb);
 const mockGetLatestCycleNumber = vi.mocked(getLatestCycleNumber);
@@ -36,6 +37,7 @@ const mockParseVerboseFlag = vi.mocked(parseVerboseFlag);
 const mockParseHelpFlag = vi.mocked(parseHelpFlag);
 const mockParseCycleArg = vi.mocked(parseCycleArg);
 const mockParseDryRunFlag = vi.mocked(parseDryRunFlag);
+const mockParseCompareArg = vi.mocked(parseCompareArg);
 
 function makeCtx(overrides = {}) {
   return {
@@ -121,6 +123,7 @@ describe("context-cli.ts main()", () => {
     mockParseHelpFlag.mockReturnValue(false);
     mockParseCycleArg.mockReturnValue(undefined);
     mockParseDryRunFlag.mockReturnValue(false);
+    mockParseCompareArg.mockReturnValue(undefined);
   });
 
   it("--help: prints CONTEXT_CLI_HELP_TEXT and does NOT call loadEvolutionContext", async () => {
@@ -373,6 +376,10 @@ describe("context-cli.ts main()", () => {
     expect(CONTEXT_CLI_HELP_TEXT).toContain("--cycle");
   });
 
+  it("CONTEXT_CLI_HELP_TEXT includes --compare flag", () => {
+    expect(CONTEXT_CLI_HELP_TEXT).toContain("--compare");
+  });
+
   it("closes DB and logs error when loadEvolutionContext throws, then exits", async () => {
     mockLoadEvolutionContext.mockRejectedValue(new Error("identity missing"));
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -393,5 +400,122 @@ describe("context-cli.ts main()", () => {
 
     exitSpy.mockRestore();
     errorSpy.mockRestore();
+  });
+});
+
+describe("context-cli.ts renderCompareBreakdown()", () => {
+  it("renders a header row and one row per section plus Total", () => {
+    const sectionsA: Array<[string, number]> = [["Identity", 100], ["Journal summary", 200]];
+    const sectionsB: Array<[string, number]> = [["Identity", 120], ["Journal summary", 180]];
+    const result = renderCompareBreakdown(sectionsA, sectionsB, 5, 10);
+    expect(result).toContain("Identity");
+    expect(result).toContain("Journal summary");
+    expect(result).toContain("Total");
+    expect(result).toContain("Cycle 5");
+    expect(result).toContain("Cycle 10");
+  });
+
+  it("shows positive delta with + sign when section B is larger", () => {
+    const sectionsA: Array<[string, number]> = [["Identity", 100]];
+    const sectionsB: Array<[string, number]> = [["Identity", 150]];
+    const result = renderCompareBreakdown(sectionsA, sectionsB, 1, 2);
+    expect(result).toContain("+50");
+    expect(result).toContain("+50.0%");
+  });
+
+  it("shows negative delta when section B is smaller", () => {
+    const sectionsA: Array<[string, number]> = [["Identity", 200]];
+    const sectionsB: Array<[string, number]> = [["Identity", 100]];
+    const result = renderCompareBreakdown(sectionsA, sectionsB, 3, 4);
+    expect(result).toContain("-100");
+    expect(result).toContain("-50.0%");
+  });
+
+  it("shows +∞% when section A is 0 and B is non-zero", () => {
+    const sectionsA: Array<[string, number]> = [["Memory context", 0]];
+    const sectionsB: Array<[string, number]> = [["Memory context", 50]];
+    const result = renderCompareBreakdown(sectionsA, sectionsB, 1, 2);
+    expect(result).toContain("+∞%");
+  });
+
+  it("shows 0.0% when both sections are 0", () => {
+    const sectionsA: Array<[string, number]> = [["Planning context", 0]];
+    const sectionsB: Array<[string, number]> = [["Planning context", 0]];
+    const result = renderCompareBreakdown(sectionsA, sectionsB, 1, 2);
+    expect(result).toContain("0.0%");
+  });
+});
+
+describe("context-cli.ts main() --compare", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockInitDb.mockReturnValue({ close: vi.fn() } as any);
+    mockGetLatestCycleNumber.mockReturnValue(10);
+    mockLoadEvolutionContext.mockResolvedValue(makeCtx());
+    mockParseVerboseFlag.mockReturnValue(false);
+    mockParseHelpFlag.mockReturnValue(false);
+    mockParseCycleArg.mockReturnValue(undefined);
+    mockParseDryRunFlag.mockReturnValue(false);
+    mockParseCompareArg.mockReturnValue(undefined);
+  });
+
+  it("--compare: prints comparison header with both cycle numbers", async () => {
+    mockParseCompareArg.mockReturnValue([5, 10]);
+    mockLoadEvolutionContext
+      .mockResolvedValueOnce(makeCtx({ identity: "A".repeat(100) }))
+      .mockResolvedValueOnce(makeCtx({ identity: "A".repeat(150) }));
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    const logged = consoleSpy.mock.calls.map((c) => c.join(" "));
+    expect(logged.some((l) => l.includes("cycle 5") && l.includes("cycle 10"))).toBe(true);
+
+    consoleSpy.mockRestore();
+  });
+
+  it("--compare: prints Total row in output", async () => {
+    mockParseCompareArg.mockReturnValue([3, 7]);
+    mockLoadEvolutionContext
+      .mockResolvedValueOnce(makeCtx())
+      .mockResolvedValueOnce(makeCtx());
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    const logged = consoleSpy.mock.calls.map((c) => c.join(" "));
+    expect(logged.some((l) => l.includes("Total"))).toBe(true);
+
+    consoleSpy.mockRestore();
+  });
+
+  it("--compare: does NOT print Community issues summary line", async () => {
+    mockParseCompareArg.mockReturnValue([1, 2]);
+    mockLoadEvolutionContext
+      .mockResolvedValueOnce(makeCtx())
+      .mockResolvedValueOnce(makeCtx());
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    const logged = consoleSpy.mock.calls.map((c) => c.join(" "));
+    expect(logged.some((l) => l.includes("Community issues:"))).toBe(false);
+
+    consoleSpy.mockRestore();
+  });
+
+  it("--compare: closes the DB after loading both contexts", async () => {
+    mockParseCompareArg.mockReturnValue([1, 2]);
+    mockLoadEvolutionContext
+      .mockResolvedValueOnce(makeCtx())
+      .mockResolvedValueOnce(makeCtx());
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mockDb = (mockInitDb.mock.results[0].value as any);
+    expect(mockDb.close).toHaveBeenCalledOnce();
   });
 });

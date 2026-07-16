@@ -265,6 +265,20 @@ export function parseDryRunFlag(argv: string[]): boolean {
 }
 
 /**
+ * Parse `--compare A B` from an argv array, returning [A, B] as cycle numbers
+ * when the flag is present with two valid integer arguments, or undefined otherwise.
+ * Used by context-cli to diff per-section char counts across two cycle numbers.
+ */
+export function parseCompareArg(argv: string[]): [number, number] | undefined {
+  const idx = argv.indexOf("--compare");
+  if (idx === -1) return undefined;
+  const a = parseInt(argv[idx + 1], 10);
+  const b = parseInt(argv[idx + 2], 10);
+  if (isNaN(a) || isNaN(b)) return undefined;
+  return [a, b];
+}
+
+/**
  * Usage text printed when `pnpm stats --help` is invoked.
  * Lists every supported flag with a short description, mirroring the
  * convention used by standard CLI tools.
