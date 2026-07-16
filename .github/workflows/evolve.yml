@@ -2,7 +2,7 @@ name: Bloom Evolution
 
 on:
   schedule:
-    - cron: '0 */4 * * *'
+    - cron: '0 0,12 * * *'
   workflow_dispatch:
 
 permissions:
@@ -21,6 +21,7 @@ jobs:
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       BLOOM_APP_PRIVATE_KEY: ${{ secrets.BLOOM_APP_PRIVATE_KEY }}
+      BLOOM_MODEL: claude-opus-4-8
     steps:
       - uses: actions/checkout@v4
         with:
