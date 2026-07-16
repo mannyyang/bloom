@@ -82,6 +82,17 @@
     .item-desc { color: #656d76; font-size: 0.85rem; margin-top: 0.25rem; }
     .item-reactions { color: #9ca3af; font-size: 0.8rem; margin-top: 0.2rem; }
 
+    /* Stats styles */
+    .stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: 0.75rem; margin-bottom: 2rem; }
+    .stat-tile { background: #fff; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.75rem 1rem; }
+    @media (prefers-color-scheme: dark) { .stat-tile { background: #161b22; border-color: #3d444d; } }
+    .stat-value { font-size: 1.5rem; font-weight: 700; }
+    .stat-label { color: #656d76; font-size: 0.8rem; }
+    .chart { margin-bottom: 2rem; }
+    .chart h3 { font-size: 0.95rem; margin-bottom: 0.5rem; }
+    .chart svg { width: 100%; height: 160px; display: block; }
+    .chart-caption { color: #9ca3af; font-size: 0.75rem; margin-top: 0.25rem; }
+
     .empty { color: #656d76; text-align: center; padding: 4rem 0; }
     footer { color: #9ca3af; font-size: 0.8rem; text-align: center; margin-top: 3rem; }
   </style>
@@ -93,6 +104,7 @@
   <nav class="tabs">
     <button class="tab-btn active" data-tab="roadmap">Roadmap</button>
     <button class="tab-btn" data-tab="journal">Evolution Journal</button>
+    <button class="tab-btn" data-tab="stats">Stats</button>
   </nav>
 
   <div id="roadmap" class="tab-panel active">
@@ -101,6 +113,10 @@
 
   <div id="journal" class="tab-panel">
     <div id="journal-content"><p class="empty">Loading journal…</p></div>
+  </div>
+
+  <div id="stats" class="tab-panel">
+    <div id="stats-content"><p class="empty">Loading stats…</p></div>
   </div>
 
   <footer>
@@ -217,6 +233,72 @@
       })
       .catch(() => {
         document.getElementById('journal-content').innerHTML = '<p class="empty">Failed to load journal.</p>';
+      });
+
+    // --- Load stats ---
+    function barChart(vals, colorFn) {
+      const n = vals.length;
+      const bw = 3, gap = 1, H = 100;
+      const W = Math.max(1, n * (bw + gap));
+      const max = Math.max(1, ...vals.map(v => v.h));
+      let bars = '';
+      vals.forEach((v, i) => {
+        const h = v.h > 0 ? Math.max(2, (v.h / max) * H) : (v.stub ? 6 : 0);
+        const x = i * (bw + gap);
+        bars += `<rect x="${x}" y="${(H - h).toFixed(2)}" width="${bw}" height="${h.toFixed(2)}" fill="${colorFn(v)}"><title>Cycle ${v.cycle}</title></rect>`;
+      });
+      return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img">${bars}</svg>`;
+    }
+
+    fetch('stats.json')
+      .then(r => r.json())
+      .then(data => {
+        const el = document.getElementById('stats-content');
+        const cycles = (data && data.cycles) || [];
+        if (!cycles.length) {
+          el.innerHTML = '<p class="empty">No stats yet.</p>';
+          return;
+        }
+        const chron = [...cycles].reverse(); // oldest → newest
+        const shown = cycles.length;
+        const buildPassed = cycles.filter(c => c.buildPassed).length;
+        const successRate = Math.round(100 * buildPassed / shown);
+        const totalSucceeded = cycles.reduce((s, c) => s + (c.succeeded || 0), 0);
+        const totalCost = cycles.reduce((s, c) => s + (c.totalCostUsd || 0), 0);
+
+        const tiles = [
+          ['Cycles shown', shown],
+          ['Build success', successRate + '%'],
+          ['Improvements landed', totalSucceeded],
+          ['Total cost', '$' + totalCost.toFixed(2)],
+        ].map(([label, value]) =>
+          `<div class="stat-tile"><div class="stat-value">${esc(String(value))}</div><div class="stat-label">${esc(label)}</div></div>`
+        ).join('');
+
+        const impChart = barChart(
+          chron.map(c => ({ h: c.succeeded || 0, cycle: c.cycleNumber, ok: c.buildPassed, stub: !c.buildPassed })),
+          v => v.ok ? '#16a34a' : '#dc2626',
+        );
+        const costChart = barChart(
+          chron.map(c => ({ h: c.totalCostUsd || 0, cycle: c.cycleNumber })),
+          () => '#2563eb',
+        );
+
+        el.innerHTML = `
+          <div class="stat-tiles">${tiles}</div>
+          <div class="chart">
+            <h3>Improvements landed per cycle</h3>
+            ${impChart}
+            <div class="chart-caption">Oldest → newest. Green = build passed, red = build/test failed.</div>
+          </div>
+          <div class="chart">
+            <h3>Cost per cycle (USD)</h3>
+            ${costChart}
+            <div class="chart-caption">Oldest → newest.</div>
+          </div>`;
+      })
+      .catch(() => {
+        document.getElementById('stats-content').innerHTML = '<p class="empty">Failed to load stats.</p>';
       });
   </script>
 </body>

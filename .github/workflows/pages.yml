@@ -36,6 +36,7 @@ jobs:
         run: |
           npx tsx scripts/export-journal.ts
           npx tsx scripts/export-roadmap.ts
+          npx tsx scripts/export-stats.ts
           cp .github/pages/index.html _site/index.html
 
       - uses: actions/upload-pages-artifact@v3
