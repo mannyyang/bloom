@@ -5,14 +5,14 @@
  * Useful for cost-free prompt inspection and pipeline debugging without
  * triggering a full evolution cycle.
  *
- * Usage: pnpm context [--verbose]
+ * Usage: pnpm context [--verbose] [--cycle N]
  */
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { initDb, getLatestCycleNumber } from "./db.js";
 import { loadEvolutionContext } from "./context.js";
 import { errorMessage } from "./errors.js";
-import { parseVerboseFlag, parseHelpFlag } from "./stats.js";
+import { parseVerboseFlag, parseHelpFlag, parseCycleArg } from "./stats.js";
 
 /**
  * Usage text printed when `pnpm context --help` is invoked.
@@ -22,6 +22,7 @@ Usage: pnpm context [options]
 
 Options:
   --verbose             Print the full content of each context section
+  --cycle N             Load context as it would appear for cycle N (default: latest + 1)
   --help, -h            Print this help message and exit
 `;
 
@@ -33,6 +34,7 @@ export async function main() {
   }
 
   const verbose = parseVerboseFlag(process.argv);
+  const cycleArg = parseCycleArg(process.argv);
 
   console.log("\n========================================");
   console.log("  Bloom Context Inspector");
@@ -41,10 +43,14 @@ export async function main() {
 
   const db = initDb();
   let cycleCount = 0;
-  try {
-    cycleCount = getLatestCycleNumber(db) + 1;
-  } catch (err) {
-    console.error(`[context-cli] Could not load cycle number (non-fatal): ${errorMessage(err)}`);
+  if (cycleArg !== undefined) {
+    cycleCount = cycleArg;
+  } else {
+    try {
+      cycleCount = getLatestCycleNumber(db) + 1;
+    } catch (err) {
+      console.error(`[context-cli] Could not load cycle number (non-fatal): ${errorMessage(err)}`);
+    }
   }
 
   let ctx;
@@ -61,6 +67,7 @@ export async function main() {
   console.log("  Context Summary");
   console.log("========================================\n");
 
+  console.log(`Cycle:            ${cycleCount}`);
   console.log(`Identity:         ${ctx.identity.length} chars`);
   console.log(`Journal summary:  ${ctx.journalSummary ? `${ctx.journalSummary.length} chars` : "empty"}`);
   console.log(`Cycle stats:      ${ctx.cycleStatsText ? `${ctx.cycleStatsText.length} chars` : "empty"}`);

@@ -18,13 +18,14 @@ vi.mock("../src/errors.js", () => ({
 vi.mock("../src/stats.js", () => ({
   parseVerboseFlag: vi.fn().mockReturnValue(false),
   parseHelpFlag: vi.fn().mockReturnValue(false),
+  parseCycleArg: vi.fn().mockReturnValue(undefined),
 }));
 
 // --- Import after mocks are set up ---
 
 import { initDb, getLatestCycleNumber } from "../src/db.js";
 import { loadEvolutionContext } from "../src/context.js";
-import { parseVerboseFlag, parseHelpFlag } from "../src/stats.js";
+import { parseVerboseFlag, parseHelpFlag, parseCycleArg } from "../src/stats.js";
 import { main, CONTEXT_CLI_HELP_TEXT } from "../src/context-cli.js";
 
 const mockInitDb = vi.mocked(initDb);
@@ -32,6 +33,7 @@ const mockGetLatestCycleNumber = vi.mocked(getLatestCycleNumber);
 const mockLoadEvolutionContext = vi.mocked(loadEvolutionContext);
 const mockParseVerboseFlag = vi.mocked(parseVerboseFlag);
 const mockParseHelpFlag = vi.mocked(parseHelpFlag);
+const mockParseCycleArg = vi.mocked(parseCycleArg);
 
 function makeCtx(overrides = {}) {
   return {
@@ -63,6 +65,7 @@ describe("context-cli.ts main()", () => {
     mockLoadEvolutionContext.mockResolvedValue(makeCtx());
     mockParseVerboseFlag.mockReturnValue(false);
     mockParseHelpFlag.mockReturnValue(false);
+    mockParseCycleArg.mockReturnValue(undefined);
   });
 
   it("--help: prints CONTEXT_CLI_HELP_TEXT and does NOT call loadEvolutionContext", async () => {
@@ -240,6 +243,42 @@ describe("context-cli.ts main()", () => {
     expect(mockLoadEvolutionContext).toHaveBeenCalledWith(expect.anything(), 0);
 
     errorSpy.mockRestore();
+  });
+
+  it("--cycle N: passes N directly to loadEvolutionContext without calling getLatestCycleNumber", async () => {
+    mockParseCycleArg.mockReturnValue(5);
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    expect(mockLoadEvolutionContext).toHaveBeenCalledWith(expect.anything(), 5);
+    expect(mockGetLatestCycleNumber).not.toHaveBeenCalled();
+  });
+
+  it("--cycle N: summary header shows the pinned cycle number", async () => {
+    mockParseCycleArg.mockReturnValue(42);
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    const logged = consoleSpy.mock.calls.map((c) => c.join(" "));
+    expect(logged.some((l) => l.includes("Cycle:") && l.includes("42"))).toBe(true);
+  });
+
+  it("summary prints cycle number even without --cycle flag", async () => {
+    mockGetLatestCycleNumber.mockReturnValue(99);
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await main();
+
+    const logged = consoleSpy.mock.calls.map((c) => c.join(" "));
+    expect(logged.some((l) => l.includes("Cycle:") && l.includes("100"))).toBe(true);
+
+    consoleSpy.mockRestore();
+  });
+
+  it("CONTEXT_CLI_HELP_TEXT includes --cycle flag", () => {
+    expect(CONTEXT_CLI_HELP_TEXT).toContain("--cycle");
   });
 
   it("closes DB and logs error when loadEvolutionContext throws, then exits", async () => {
