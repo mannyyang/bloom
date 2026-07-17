@@ -3,7 +3,7 @@ import { type CommunityIssue, closeIssueWithComment, detectRepo, isValidRepo, IS
 import { hasIssueAction, insertIssueAction } from "./db.js";
 import { errorMessage } from "./errors.js";
 import { addLinkedItem, cleanItemBody, truncateWithEllipsis, type ProjectConfig, type ProjectItem, STATUS_DONE } from "./planning.js";
-import { STATUS_ORDER } from "./roadmap.js";
+import { STATUS_ORDER, compareByStatusThenTitle } from "./roadmap.js";
 import { type QueryFn, resolveModel } from "./agent-phases.js";
 import { extractResultText } from "./usage.js";
 
@@ -115,13 +115,8 @@ export function buildTriagePrompt(
 
   // Defensively sort boardItems by status rank then title so the board section
   // is stable across calls regardless of the order the caller provides items.
-  // Mirrors the generateRoadmapJson sort pattern in roadmap.ts.
-  const statusRank = new Map<string, number>(TRIAGE_STATUS_ORDER.map((s, i) => [s, i]));
-  const sortedBoardItems = [...boardItems].sort((a, b) => {
-    const ra = a.status !== null ? (statusRank.get(a.status) ?? TRIAGE_STATUS_ORDER.length) : TRIAGE_STATUS_ORDER.length;
-    const rb = b.status !== null ? (statusRank.get(b.status) ?? TRIAGE_STATUS_ORDER.length) : TRIAGE_STATUS_ORDER.length;
-    return ra !== rb ? ra - rb : a.title.localeCompare(b.title);
-  });
+  // Uses the shared comparator from roadmap.ts so triage and roadmap JSON agree.
+  const sortedBoardItems = [...boardItems].sort(compareByStatusThenTitle);
 
   // Cap Done items to avoid unbounded prompt growth as the roadmap history
   // accumulates. All non-Done items are always included; Done items beyond

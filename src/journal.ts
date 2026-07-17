@@ -79,11 +79,18 @@ export const JOURNAL_STATS_HEADER = "Journal Stats:";
  * Returns "No journal entries recorded yet." when entries is empty.
  * Exported for unit-testability.
  */
+/**
+ * Compute the [min, max] cycle-number span of the given entries. Callers must
+ * guard against empty input (Math.min/max of nothing yields ±Infinity).
+ */
+function cycleRange(entries: JournalExportEntry[]): { min: number; max: number } {
+  const cycleNumbers = entries.map((e) => e.cycleNumber);
+  return { min: Math.min(...cycleNumbers), max: Math.max(...cycleNumbers) };
+}
+
 export function generateJournalStats(entries: JournalExportEntry[]): string {
   if (entries.length === 0) return "No journal entries recorded yet.";
-  const cycleNumbers = entries.map((e) => e.cycleNumber);
-  const minCycle = Math.min(...cycleNumbers);
-  const maxCycle = Math.max(...cycleNumbers);
+  const { min: minCycle, max: maxCycle } = cycleRange(entries);
   const totalLearningsLength = entries.reduce((sum, e) => sum + (e.learnings?.length ?? 0), 0);
   const avgLearningsLength = Math.round(totalLearningsLength / entries.length);
   return [
@@ -252,9 +259,7 @@ export function generateJournalOutput(
   if (format === "md") {
     let mdOutput = formatJournalMarkdown(entries);
     if (verbose && entries.length > 0) {
-      const cycleNumbers = entries.map((e) => e.cycleNumber);
-      const minCycle = Math.min(...cycleNumbers);
-      const maxCycle = Math.max(...cycleNumbers);
+      const { min: minCycle, max: maxCycle } = cycleRange(entries);
       const summaryLine = `Entries: ${entries.length} | Range: ${minCycle}–${maxCycle}`;
       mdOutput = mdOutput.replace(
         "# Bloom Evolution Journal\n",
@@ -272,22 +277,17 @@ export function generateJournalOutput(
     const tableOutput = generateJournalTable(entries);
     if (!tableOutput) return "No journal entries recorded yet.";
     if (verbose && entries.length > 0) {
-      const cycleNumbers = entries.map((e) => e.cycleNumber);
-      const minCycle = Math.min(...cycleNumbers);
-      const maxCycle = Math.max(...cycleNumbers);
+      const { min: minCycle, max: maxCycle } = cycleRange(entries);
       return `${tableOutput}\nEntries: ${entries.length} | Range: ${minCycle}–${maxCycle}`;
     }
     return tableOutput;
   }
 
   if (verbose) {
-    const cycleNumbers = entries.map((e) => e.cycleNumber);
     return JSON.stringify(
       {
         totalEntries: entries.length,
-        cycleRange: entries.length > 0
-          ? { min: Math.min(...cycleNumbers), max: Math.max(...cycleNumbers) }
-          : null,
+        cycleRange: entries.length > 0 ? cycleRange(entries) : null,
         entries,
       },
       null,

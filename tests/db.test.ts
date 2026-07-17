@@ -247,6 +247,17 @@ describe("db", () => {
         unlinkSync(path);
       });
 
+      it("adds failure_detail column when missing", () => {
+        const path = join(tmpdir(), `bloom-migration-test-${Date.now()}-f.db`);
+        createLegacyDb(path);
+        const migratedDb = initDb(path);
+        const cols = migratedDb.prepare("PRAGMA table_info(cycles)").all() as { name: string }[];
+        const colNames = new Set(cols.map(c => c.name));
+        expect(colNames.has("failure_detail")).toBe(true);
+        migratedDb.close();
+        unlinkSync(path);
+      });
+
       it("migration DDL rolls back atomically when a mid-migration ALTER TABLE fails", () => {
         // Verify the fundamental SQLite guarantee that the initDb migration block
         // relies on: wrapping multiple ALTER TABLE calls in a db.transaction()
@@ -288,25 +299,21 @@ describe("db", () => {
   });
 
   describe("getLatestFailureDetail", () => {
-    it("returns null when no failure_detail entries exist", () => {
+    it("returns null when no cycle has a failure detail", () => {
       insertCycle(db, makeOutcome({ cycleNumber: 1 }));
       insertJournalEntry(db, 1, "failed", "generic failure line");
       expect(getLatestFailureDetail(db)).toBeNull();
     });
 
-    it("returns the most recent failure_detail entry", () => {
-      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
-      insertCycle(db, makeOutcome({ cycleNumber: 2 }));
-      insertJournalEntry(db, 1, "failure_detail", "cycle 1 error");
-      insertJournalEntry(db, 2, "failure_detail", "cycle 2 error");
+    it("returns the most recent cycle's failure detail", () => {
+      insertCycle(db, makeOutcome({ cycleNumber: 1, failureDetail: "cycle 1 error" }));
+      insertCycle(db, makeOutcome({ cycleNumber: 2, failureDetail: "cycle 2 error" }));
       expect(getLatestFailureDetail(db)).toEqual({ cycleNumber: 2, content: "cycle 2 error" });
     });
 
     it("excludes the current cycle when beforeCycle is passed", () => {
-      insertCycle(db, makeOutcome({ cycleNumber: 1 }));
-      insertCycle(db, makeOutcome({ cycleNumber: 2 }));
-      insertJournalEntry(db, 1, "failure_detail", "cycle 1 error");
-      insertJournalEntry(db, 2, "failure_detail", "cycle 2 error");
+      insertCycle(db, makeOutcome({ cycleNumber: 1, failureDetail: "cycle 1 error" }));
+      insertCycle(db, makeOutcome({ cycleNumber: 2, failureDetail: "cycle 2 error" }));
       expect(getLatestFailureDetail(db, 2)).toEqual({ cycleNumber: 1, content: "cycle 1 error" });
     });
   });

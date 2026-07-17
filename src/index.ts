@@ -17,7 +17,7 @@ import {
 } from "./lifecycle.js";
 import { runBuildVerificationPhase, updatePlanningStatus, pushChangesPhase } from "./phases.js";
 import { type PhaseUsage, formatDurationSec } from "./usage.js";
-import { createOutcome, formatOutcomeForJournal, parseTestCount, parseTestTotal, classifyBuildFailure, formatFailureTail } from "./outcomes.js";
+import { createOutcome, formatOutcomeForJournal, parseTestCount, parseTestTotal, recordBuildFailure } from "./outcomes.js";
 import { formatCycleSummaryWithDuration, isDryRun } from "./orchestrator.js";
 import { loadEvolutionContext } from "./context.js";
 import {
@@ -56,8 +56,7 @@ async function main() {
     const preflightMs = Date.now() - preflightStart;
     if (!preflight.passed) {
       console.error(`[preflight] FAILED after ${formatDurationSec(preflightMs)}. Aborting evolution.`);
-      outcome.failureCategory = classifyBuildFailure(preflight.output);
-      outcome.failureDetail = formatFailureTail(preflight.output);
+      recordBuildFailure(outcome, preflight.output);
       throw new Error("Preflight build+test check failed before evolution could run.");
     }
     outcome.preflightPassed = true;
@@ -106,16 +105,14 @@ async function main() {
       outcome.failureCategory = ERROR_CATEGORY_LLM_ERROR;
     }
 
-    // Record the error as a journal entry so it's visible on GitHub Pages.
-    // When a build/test failure captured its output, also persist that as a
-    // `failure_detail` entry so the next cycle can see *what* broke, not just
-    // that something did.
+    // Record the error as a journal entry so it's visible on GitHub Pages. The
+    // captured failure output tail (when a build/test step broke) is persisted
+    // separately on the cycle's `failure_detail` column via recordBuildFailure +
+    // updateCycleOutcome, so the next cycle can see *what* broke, not just that
+    // something did.
     if (db && cycleCount > 0) {
       try {
         insertJournalEntry(db, cycleCount, "failed", `Evolution error: ${errorMessage(err)}`);
-        if (outcome.failureDetail) {
-          insertJournalEntry(db, cycleCount, "failure_detail", outcome.failureDetail);
-        }
       } catch (journalErr) {
         console.warn(`[index] insertJournalEntry failed (non-fatal): ${journalErr}`);
       }

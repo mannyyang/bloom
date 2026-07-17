@@ -51,6 +51,24 @@ Options:
 
 export const STATUS_ORDER: StatusColumn[] = [STATUS_IN_PROGRESS, STATUS_UP_NEXT, STATUS_BACKLOG, STATUS_DONE];
 
+/** Map of status → display rank (index in STATUS_ORDER), for stable sorting. */
+const STATUS_RANK = new Map<string, number>(STATUS_ORDER.map((s, i) => [s, i]));
+
+/**
+ * Compare two roadmap/board items by status rank (STATUS_ORDER) then title.
+ * Items with a null or unrecognised status sort last; ties within a status
+ * break alphabetically by title. Shared by the roadmap JSON output and the
+ * triage board so both orderings stay in lockstep.
+ */
+export function compareByStatusThenTitle(
+  a: { status: string | null; title: string },
+  b: { status: string | null; title: string },
+): number {
+  const rank = (s: string | null): number =>
+    s !== null ? (STATUS_RANK.get(s) ?? STATUS_ORDER.length) : STATUS_ORDER.length;
+  return rank(a.status) - rank(b.status) || a.title.localeCompare(b.title);
+}
+
 /**
  * Filter a ProjectItem array by a minimum sinceCycle threshold.
  * Applies only to In Progress items: an item is excluded if it has a valid
@@ -417,16 +435,10 @@ export function generateRoadmapJson(content: string, filterStatus?: StatusColumn
   // Apply --search filter post-clean via shared csv.ts helper.
   cleanItems = filterBySearchTerm(cleanItems, search ?? "", (i) => [i.title, i.body]);
 
-  // Sort items by STATUS_ORDER so JSON output matches CLI display order.
-  // Items with an unrecognised/null status are placed last.
-  // Secondary sort by title (localeCompare) breaks ties within the same status,
-  // making JSON output fully deterministic regardless of parse order.
-  const statusRank = new Map<string, number>(STATUS_ORDER.map((s, i) => [s, i]));
-  cleanItems.sort((a, b) => {
-    const ra = a.status !== null ? (statusRank.get(a.status) ?? STATUS_ORDER.length) : STATUS_ORDER.length;
-    const rb = b.status !== null ? (statusRank.get(b.status) ?? STATUS_ORDER.length) : STATUS_ORDER.length;
-    return ra - rb || a.title.localeCompare(b.title);
-  });
+  // Sort items by STATUS_ORDER so JSON output matches CLI display order. Items
+  // with an unrecognised/null status are placed last; ties within a status break
+  // by title, making JSON output fully deterministic regardless of parse order.
+  cleanItems.sort(compareByStatusThenTitle);
 
   // Build summary: total count and per-status breakdown (reflects filtered subset).
   const byStatus: Partial<Record<StatusColumn, number>> = {};

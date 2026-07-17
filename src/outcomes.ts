@@ -32,10 +32,10 @@ export interface CycleOutcome {
   durationMs: number | null;
   failureCategory: ErrorCategory;
   /**
-   * Tail of the captured build/test output when a failure occurred, used to
-   * persist *what* broke (not just a category) so the next cycle can see it.
-   * Transient carrier only — written to a `failure_detail` journal entry by the
-   * orchestrator; not stored as a `cycles` column.
+   * Tail of the captured build/test output when a failure occurred — persists
+   * *what* broke (not just a category) so the next cycle can surface it. Stored
+   * in the `failure_detail` column of the `cycles` table, alongside
+   * failureCategory, via insertCycle/updateCycleOutcome.
    */
   failureDetail?: string;
 }
@@ -110,6 +110,17 @@ export function classifyBuildFailure(output: string): ErrorCategory {
     return ERROR_CATEGORY_TEST_FAILURE;
   }
   return ERROR_CATEGORY_BUILD_FAILURE;
+}
+
+/**
+ * Record a build/test failure on the outcome: classify the failure category and
+ * capture the output tail as failure detail. Shared by the preflight and
+ * post-evolution build-verification sites so the classify + capture pair lives
+ * in one place rather than being duplicated at each call site.
+ */
+export function recordBuildFailure(outcome: CycleOutcome, output: string): void {
+  outcome.failureCategory = classifyBuildFailure(output);
+  outcome.failureDetail = formatFailureTail(output);
 }
 
 /**

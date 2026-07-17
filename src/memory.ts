@@ -8,6 +8,8 @@ import {
   insertStrategicContext,
   getLatestStrategicContext,
   pruneStrategicContext,
+  RELEVANT_LEARNINGS_LIMIT,
+  STRATEGIC_CONTEXT_KEEP_LAST,
   type Learning,
 } from "./db.js";
 
@@ -139,7 +141,7 @@ export function storeLearnings(
  * Older entries are pruned after each insert to prevent unbounded table growth
  * while still preserving enough history for meaningful trend analysis.
  */
-export const STRATEGIC_CONTEXT_RETENTION_CYCLES = 20;
+export const STRATEGIC_CONTEXT_RETENTION_CYCLES = STRATEGIC_CONTEXT_KEEP_LAST;
 
 /**
  * Store strategic context for a cycle.
@@ -162,7 +164,7 @@ export function storeStrategicContext(
  * Maximum number of learnings fetched from the DB for prompt injection.
  * Ranked by relevance; excess entries are dropped before budget formatting.
  */
-export const MAX_RELEVANT_LEARNINGS_TO_FETCH = 25;
+export const MAX_RELEVANT_LEARNINGS_TO_FETCH = RELEVANT_LEARNINGS_LIMIT;
 
 /**
  * Default character budget for memory injected into the assessment prompt.

@@ -129,6 +129,7 @@ export function initDb(path: string = DEFAULT_DB_PATH): Database.Database {
       test_total_after         INTEGER,
       duration_ms              INTEGER,
       failure_category         TEXT NOT NULL DEFAULT 'none',
+      failure_detail           TEXT,
       completed_at             TEXT
     );
 
@@ -212,6 +213,9 @@ export function initDb(path: string = DEFAULT_DB_PATH): Database.Database {
     }
     if (!cycleColNames.has("failure_category")) {
       db.exec("ALTER TABLE cycles ADD COLUMN failure_category TEXT NOT NULL DEFAULT 'none'");
+    }
+    if (!cycleColNames.has("failure_detail")) {
+      db.exec("ALTER TABLE cycles ADD COLUMN failure_detail TEXT");
     }
   })();
 
@@ -303,8 +307,8 @@ export function insertCycle(db: Database.Database, outcome: CycleOutcome): void 
       cycle_number, started_at, preflight_passed, improvements_attempted,
       improvements_succeeded, build_verification_passed, push_succeeded,
       test_count_before, test_count_after, test_total_before, test_total_after,
-      duration_ms, failure_category
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      duration_ms, failure_category, failure_detail
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     outcome.cycleNumber,
     new Date().toISOString(),
@@ -319,6 +323,7 @@ export function insertCycle(db: Database.Database, outcome: CycleOutcome): void 
     outcome.testTotalAfter,
     outcome.durationMs,
     outcome.failureCategory,
+    outcome.failureDetail || null,
   );
 }
 
@@ -340,6 +345,7 @@ export function updateCycleOutcome(db: Database.Database, outcome: CycleOutcome)
       test_total_after = ?,
       duration_ms = ?,
       failure_category = ?,
+      failure_detail = ?,
       completed_at = ?
     WHERE cycle_number = ?
   `).run(
@@ -354,6 +360,7 @@ export function updateCycleOutcome(db: Database.Database, outcome: CycleOutcome)
     outcome.testTotalAfter,
     outcome.durationMs,
     outcome.failureCategory,
+    outcome.failureDetail || null,
     new Date().toISOString(),
     outcome.cycleNumber,
   );
@@ -376,27 +383,28 @@ export interface FailureDetail {
 }
 
 /**
- * Fetch the most recent `failure_detail` journal entry — the captured build/test
- * output tail from the last cycle that broke. Used to surface *what* broke into
- * the next cycle's assessment context. Pass `beforeCycle` to exclude the current
- * in-progress cycle. Returns null when no failure detail has ever been recorded.
+ * Fetch the most recent cycle's captured build/test failure output — the
+ * `failure_detail` column, set when a cycle's build/test step broke. Used to
+ * surface *what* broke into the next cycle's assessment context. Pass
+ * `beforeCycle` to exclude the current in-progress cycle. Returns null when no
+ * cycle has recorded a failure detail.
  */
 export function getLatestFailureDetail(
   db: Database.Database,
   beforeCycle?: number,
 ): FailureDetail | null {
   const params: number[] = [];
-  let where = "section = 'failure_detail'";
+  let where = "failure_detail IS NOT NULL";
   if (beforeCycle !== undefined) {
     where += " AND cycle_number < ?";
     params.push(beforeCycle);
   }
   const rows = validateRows<FailureDetail>(
     db.prepare(`
-      SELECT cycle_number as cycleNumber, content
-      FROM journal_entries
+      SELECT cycle_number as cycleNumber, failure_detail as content
+      FROM cycles
       WHERE ${where}
-      ORDER BY cycle_number DESC, id DESC
+      ORDER BY cycle_number DESC
       LIMIT 1
     `).all(...params),
     { cycleNumber: "number", content: "string" },
@@ -637,6 +645,29 @@ export function getPhaseTokensByPhase(db: Database.Database, cycleNumbers: numbe
 }
 
 /**
+ * Build a zero-valued CycleStats — returned when no cycles match the query.
+ * Extracted so the empty-result shape lives in one place next to the interface.
+ */
+function emptyCycleStats(): CycleStats {
+  return {
+    totalCycles: 0,
+    successRate: 0,
+    avgImprovements: 0,
+    avgConversionRate: null,
+    testCountTrend: null,
+    recentFailures: 0,
+    avgDurationMinutes: null,
+    totalCostUsd: 0,
+    avgCostPerCycle: 0,
+    totalInputTokens: 0,
+    totalOutputTokens: 0,
+    failureCategoryBreakdown: {},
+    learningCategoryDistribution: {},
+    phaseTokenRatios: [],
+  };
+}
+
+/**
  * Compute aggregate success metrics over the last N cycles.
  * Answers the question: "How are you measuring success?" (community issue #3).
  * @param sinceN - when provided, only cycles with cycle_number >= sinceN are included
@@ -666,7 +697,7 @@ export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS
       cycle_number, preflight_passed, improvements_attempted, improvements_succeeded,
       build_verification_passed, push_succeeded,
       test_count_before, test_count_after,
-      duration_ms, started_at, completed_at
+      duration_ms, started_at, completed_at, failure_category
     FROM cycles ${whereClause} ORDER BY cycle_number DESC LIMIT ?
   `).all(...params);
 
@@ -684,6 +715,7 @@ export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS
     duration_ms: number | null;
     started_at: string;
     completed_at: string | null;
+    failure_category: string;
   }
 
   const cycleRowSchema: RowSchema = {
@@ -691,28 +723,13 @@ export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS
     improvements_succeeded: "number", build_verification_passed: "number",
     push_succeeded: "number", test_count_before: "number?",
     test_count_after: "number?", duration_ms: "number?",
-    started_at: "string", completed_at: "string?",
+    started_at: "string", completed_at: "string?", failure_category: "string",
   };
 
   const rows = validateRows<RawStatsCycleRow>(rawRows, cycleRowSchema, "getCycleStats");
 
   if (rows.length === 0) {
-    return {
-      totalCycles: 0,
-      successRate: 0,
-      avgImprovements: 0,
-      avgConversionRate: null,
-      testCountTrend: null,
-      recentFailures: 0,
-      avgDurationMinutes: null,
-      totalCostUsd: 0,
-      avgCostPerCycle: 0,
-      totalInputTokens: 0,
-      totalOutputTokens: 0,
-      failureCategoryBreakdown: {},
-      learningCategoryDistribution: {},
-      phaseTokenRatios: [],
-    };
+    return emptyCycleStats();
   }
 
   const totalCycles = rows.length;
@@ -786,27 +803,28 @@ export function getCycleStats(db: Database.Database, limit: number = CYCLE_STATS
   const totalInputTokens = usageRow.total_input;
   const totalOutputTokens = usageRow.total_output;
 
-  // Failure category breakdown across all queried cycles (excluding 'none')
-  const failureCategoryRaw = validateRows<{ failure_category: string; cnt: number }>(
-    db.prepare(`
-      SELECT failure_category, COUNT(*) as cnt
-      FROM cycles
-      WHERE cycle_number IN (${inPlaceholders})
-        AND failure_category != 'none'
-      GROUP BY failure_category
-    `).all(...cycleNumbers),
-    { failure_category: "string", cnt: "number" },
-    "getCycleStats.failureCategory",
-  );
+  // Failure category breakdown across all queried cycles (excluding 'none').
+  // Tallied from the already-fetched rows rather than a second scan of cycles.
   const failureCategoryBreakdown: Record<string, number> = {};
-  for (const row of failureCategoryRaw) {
-    failureCategoryBreakdown[row.failure_category] = row.cnt;
+  for (const r of rows) {
+    if (r.failure_category !== "none") {
+      failureCategoryBreakdown[r.failure_category] = (failureCategoryBreakdown[r.failure_category] ?? 0) + 1;
+    }
   }
 
   const learningCategoryDistribution = getLearningCategoryDistribution(db);
   const phaseTokenRatios = getPhaseTokensByPhase(db, cycleNumbers);
 
   return { totalCycles, successRate, avgImprovements, avgConversionRate, testCountTrend, recentFailures, avgDurationMinutes, totalCostUsd, avgCostPerCycle, totalInputTokens, totalOutputTokens, failureCategoryBreakdown, learningCategoryDistribution, phaseTokenRatios };
+}
+
+/**
+ * Abbreviate a token count to "Nk" form at/above TOKEN_DISPLAY_THRESHOLD,
+ * otherwise render the plain integer. Shared by the cost and per-phase lines
+ * of formatCycleStats.
+ */
+function formatTokenCount(n: number): string {
+  return n >= TOKEN_DISPLAY_THRESHOLD ? `${Math.round(n / TOKEN_DISPLAY_THRESHOLD)}k` : `${n}`;
 }
 
 /**
@@ -849,12 +867,11 @@ export function formatCycleStats(stats: CycleStats): string {
     lines.push(`- **Avg cycle duration**: ${stats.avgDurationMinutes} min`);
   }
   if (stats.totalCostUsd > 0 || stats.totalInputTokens > 0 || stats.totalOutputTokens > 0) {
-    const fmtTokens = (n: number) => n >= TOKEN_DISPLAY_THRESHOLD ? `${Math.round(n / TOKEN_DISPLAY_THRESHOLD)}k` : `${n}`;
     const costPart = stats.totalCostUsd > 0
       ? `$${stats.totalCostUsd.toFixed(2)} total / $${stats.avgCostPerCycle.toFixed(2)} avg`
       : null;
     const tokenPart = (stats.totalInputTokens > 0 || stats.totalOutputTokens > 0)
-      ? `${fmtTokens(stats.totalInputTokens)} in / ${fmtTokens(stats.totalOutputTokens)} out tokens`
+      ? `${formatTokenCount(stats.totalInputTokens)} in / ${formatTokenCount(stats.totalOutputTokens)} out tokens`
       : null;
     const parts = [costPart, tokenPart].filter(Boolean).join(" · ");
     lines.push(`- **Cost**: ${parts}`);
@@ -875,11 +892,10 @@ export function formatCycleStats(stats: CycleStats): string {
     lines.push(`- **Learnings by category**: ${dist}`);
   }
   if (stats.phaseTokenRatios.length > 0) {
-    const fmtTokens = (n: number) => n >= TOKEN_DISPLAY_THRESHOLD ? `${Math.round(n / TOKEN_DISPLAY_THRESHOLD)}k` : `${n}`;
     const phaseDetails = stats.phaseTokenRatios
       .map(p => {
         const ratioStr = p.ratio !== null ? ` (ratio: ${p.ratio.toFixed(2)})` : "";
-        return `${p.phase}: ${fmtTokens(p.inputTokens)} in / ${fmtTokens(p.outputTokens)} out${ratioStr}`;
+        return `${p.phase}: ${formatTokenCount(p.inputTokens)} in / ${formatTokenCount(p.outputTokens)} out${ratioStr}`;
       })
       .join(", ");
     lines.push(`- **Per-phase token efficiency**: ${phaseDetails}`);

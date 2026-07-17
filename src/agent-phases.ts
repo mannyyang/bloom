@@ -82,6 +82,22 @@ export function createDefaultDeps(queryFn: QueryFn): PhaseDeps {
 }
 
 /**
+ * Dump raw SDK messages at debug level so maintainers can distinguish model
+ * timeouts, tool-loop hangs, and prompt failures without re-running. Shared by
+ * both phase runners' empty-output fallback paths.
+ */
+function debugDumpRawMessages(phase: string, messages: unknown[]): void {
+  console.debug(`[${phase}] Raw messages (${messages.length}):`);
+  for (let i = 0; i < messages.length; i++) {
+    try {
+      console.debug(`  [${i}] ${JSON.stringify(messages[i])}`);
+    } catch {
+      console.debug(`  [${i}] (non-serializable message)`);
+    }
+  }
+}
+
+/**
  * Run the read-only assessment phase using the Claude agent.
  * Returns the assessment text and populates phaseUsages.
  */
@@ -146,16 +162,7 @@ export async function runAssessmentPhase(
     console.warn(
       `[assessment] Warning: ${assessmentTurns} turn(s) completed but produced no text output. Using fallback assessment.`,
     );
-    // Dump raw messages at debug level so maintainers can distinguish model
-    // timeouts, tool-loop hangs, and prompt failures without re-running.
-    console.debug(`[assessment] Raw messages (${rawAssessmentMessages.length}):`);
-    for (let i = 0; i < rawAssessmentMessages.length; i++) {
-      try {
-        console.debug(`  [${i}] ${JSON.stringify(rawAssessmentMessages[i])}`);
-      } catch {
-        console.debug(`  [${i}] (non-serializable message)`);
-      }
-    }
+    debugDumpRawMessages("assessment", rawAssessmentMessages);
     assessment = `(The assessment phase completed ${assessmentTurns} turn(s) but produced no readable text output. Please review the codebase independently and suggest small, safe improvements.)`;
   }
 
@@ -239,16 +246,7 @@ export async function runEvolutionPhase(
     console.warn(
       `[evolution] Warning: ${evolutionTurns} turn(s) completed but produced no text output. Using fallback result.`,
     );
-    // Dump raw messages at debug level so maintainers can distinguish model
-    // timeouts, tool-loop hangs, and prompt failures without re-running.
-    console.debug(`[evolution] Raw messages (${rawEvolutionMessages.length}):`);
-    for (let i = 0; i < rawEvolutionMessages.length; i++) {
-      try {
-        console.debug(`  [${i}] ${JSON.stringify(rawEvolutionMessages[i])}`);
-      } catch {
-        console.debug(`  [${i}] (non-serializable message)`);
-      }
-    }
+    debugDumpRawMessages("evolution", rawEvolutionMessages);
     evolutionResult = `(The evolution phase completed ${evolutionTurns} turn(s) but produced no readable text output. No improvements were recorded.)`;
   }
 

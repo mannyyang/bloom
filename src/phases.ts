@@ -7,7 +7,7 @@ import {
   pushChanges,
   commitRoadmap,
 } from "./lifecycle.js";
-import { parseTestCount, parseTestTotal, classifyBuildFailure, formatFailureTail } from "./outcomes.js";
+import { parseTestCount, parseTestTotal, recordBuildFailure } from "./outcomes.js";
 import { errorMessage } from "./errors.js";
 import { formatDurationSec } from "./usage.js";
 import { updateItemStatus, STATUS_UP_NEXT, STATUS_DONE, type ProjectConfig, type ProjectItem } from "./planning.js";
@@ -33,8 +33,7 @@ export function runBuildVerificationPhase(
   outcome.testTotalAfter = parseTestTotal(buildResult.output);
   console.log(`[build] ${buildResult.passed ? "PASSED" : "FAILED"} in ${formatDurationSec(buildMs)} (${outcome.testCountAfter ?? "?"}/${outcome.testTotalAfter ?? "?"} tests)`);
   if (!buildResult.passed) {
-    outcome.failureCategory = classifyBuildFailure(buildResult.output);
-    outcome.failureDetail = formatFailureTail(buildResult.output);
+    recordBuildFailure(outcome, buildResult.output);
     throw new Error("Build verification failed. Hard reset performed.");
   }
 }

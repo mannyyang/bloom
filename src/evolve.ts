@@ -38,10 +38,9 @@ export const MANIFEST_DIRS = ["src", "tests", "scripts"] as const;
  * Paths are relative to cwd (e.g. "src/evolve.ts", "tests/evolve.test.ts").
  */
 export function buildFileManifest(cwd: string = process.cwd()): string {
-  const dirs = MANIFEST_DIRS;
   const files: string[] = [];
 
-  for (const dir of dirs) {
+  for (const dir of MANIFEST_DIRS) {
     try {
       // Node 18.17+ supports { recursive: true } in readdirSync
       const entries = readdirSync(join(cwd, dir), { recursive: true, encoding: "utf-8" }) as string[];

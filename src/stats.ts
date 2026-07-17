@@ -114,11 +114,22 @@ export function parseSinceArg(argv: string[]): number | undefined {
  * The value is not validated against known ErrorCategory constants so that
  * callers can filter by any category string, including future additions.
  */
-export function parseCategoryArg(argv: string[]): string | undefined {
-  const idx = argv.indexOf("--category");
+/**
+ * Parse `<flag> <value>` from an argv array, returning the value string when the
+ * flag is present and followed by a non-empty, non-flag value, or undefined
+ * otherwise. Shared by the --category/--search/--output-file parsers so the
+ * indexOf → guard → return pattern lives in one place.
+ */
+export function parseStringArg(argv: string[], flag: string): string | undefined {
+  const idx = argv.indexOf(flag);
   if (idx === -1) return undefined;
   const val = argv[idx + 1];
-  return val && !val.startsWith("--") ? val : undefined;
+  if (!val || val.startsWith("--")) return undefined;
+  return val;
+}
+
+export function parseCategoryArg(argv: string[]): string | undefined {
+  return parseStringArg(argv, "--category");
 }
 
 /**
@@ -130,11 +141,7 @@ export function parseCategoryArg(argv: string[]): string | undefined {
  * duplicating the same indexOf → guard → return pattern.
  */
 export function parseSearchArg(argv: string[]): string | undefined {
-  const idx = argv.indexOf("--search");
-  if (idx === -1) return undefined;
-  const val = argv[idx + 1];
-  if (!val || val.startsWith("--")) return undefined;
-  return val;
+  return parseStringArg(argv, "--search");
 }
 
 /**
@@ -164,11 +171,7 @@ export function parseTrendArg(argv: string[]): number | undefined {
  * Exported so tests can verify parsing without touching process.argv.
  */
 export function parseOutputFileArg(argv: string[]): string | undefined {
-  const idx = argv.indexOf("--output-file");
-  if (idx === -1) return undefined;
-  const val = argv[idx + 1];
-  if (!val || val.startsWith("--")) return undefined;
-  return val;
+  return parseStringArg(argv, "--output-file");
 }
 
 /**

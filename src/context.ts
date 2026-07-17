@@ -73,6 +73,10 @@ export async function loadEvolutionContext(
   }
   console.log(`[context] Identity loaded (${identity.length} chars)`);
 
+  // Kick off the community-issue fetch (network I/O) now so its round-trip
+  // overlaps with the synchronous DB reads below; awaited once issues are needed.
+  const issuesPromise = fetchCommunityIssues();
+
   const journalSummary = getRecentJournalSummary(db, CONTEXT_JOURNAL_MAX_CHARS, CONTEXT_JOURNAL_MAX_CYCLES);
   console.log(`[context] Journal summary: ${journalSummary ? `${journalSummary.length} chars` : "empty"}`);
 
@@ -95,7 +99,7 @@ export async function loadEvolutionContext(
   // so a transient GitHub API failure does not abort the evolution cycle.
   let issues: CommunityIssue[] = [];
   try {
-    issues = await fetchCommunityIssues();
+    issues = await issuesPromise;
   } catch (err) {
     console.error(`[context] Failed to fetch community issues (non-fatal): ${errorMessage(err)}`);
   }
