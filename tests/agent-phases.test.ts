@@ -225,7 +225,7 @@ describe("runAssessmentPhase", () => {
 
     expect(queryCalls).toHaveLength(1);
     expect(queryCalls[0].options).toMatchObject({
-      model: "claude-sonnet-4-6",
+      model: resolveModel(),
       allowedTools: ["Read", "Glob", "Grep", "Bash"],
       permissionMode: "dontAsk",
       maxTurns: AGENT_ASSESSMENT_MAX_TURNS,
@@ -378,7 +378,7 @@ describe("runEvolutionPhase", () => {
 
     expect(queryCalls).toHaveLength(1);
     expect(queryCalls[0].options).toMatchObject({
-      model: "claude-sonnet-4-6",
+      model: resolveModel(),
       allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
       permissionMode: "acceptEdits",
       systemPrompt: "my identity",
